@@ -527,3 +527,68 @@ body:not(.measurement-card) #themeToggle {
 .nav-button:hover {
   background: #388bfd;
 }
+
+
+/* App Tabs */
+.app-tabs{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:var(--bg, #0b1220);
+  padding:8px 0;
+}
+.app-tabs .tab{
+  padding:8px 14px;
+  border-radius:6px;
+  text-decoration:none;
+  font-weight:600;
+  font-size:0.9rem;
+  color:#cfd8ff;
+  background:rgba(255,255,255,0.06);
+}
+.app-tabs .tab.active{
+  background:#1f6feb;
+  color:#fff;
+}
+.version-badge{
+  margin-left:auto;
+  font-size:0.75rem;
+  opacity:0.7;
+}
+
+/* Print styles for Measurement Card */
+@media print{
+  body{
+    background:#fff;
+    color:#000;
+  }
+  .app-tabs, .theme-toggle, .nav-button{
+    display:none !important;
+  }
+  .ptc-warning{
+    border-left-color:#000;
+    background:#eee;
+    color:#000;
+  }
+  input{
+    border:1px solid #000;
+  }
+}
+
+/* Mobile polish */
+@media (max-width: 600px){
+  .app-tabs{
+    flex-wrap:wrap;
+  }
+  .app-tabs .tab{
+    flex:1 1 auto;
+    text-align:center;
+  }
+  .row{
+    gap:6px;
+  }
+}
