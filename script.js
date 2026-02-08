@@ -1,7 +1,36 @@
+
+// ===== GLOBAL THEME TOGGLE FACTORY =====
+(function () {
+  if (window.__BCO_THEME_READY__) return;
+  window.__BCO_THEME_READY__ = true;
+
+  const btn = document.createElement('button');
+  btn.id = 'themeToggle';
+  btn.className = 'theme-btn';
+  btn.innerHTML = '🌓';
+  btn.style.position = 'fixed';
+  btn.style.top = '16px';
+  btn.style.right = '16px';
+  btn.style.zIndex = '9999';
+
+  document.body.appendChild(btn);
+
+  const current = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', current);
+
+  btn.addEventListener('click', () => {
+    const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+  });
+})();
+// ===== END THEME TOGGLE FACTORY =====
+
+
 // BCO Calculator - FULL script.js (restored) with fixes:
 // - Uses TRUE OD for BCO calculation (fixes 8" showing ~1.1 instead of ~1.42)
 // - Service-worker/cache friendliness (pair with updated service-worker.js)
-// - Single, consistent theme system (body.dark) with localStorage persistence
+
 // - History preserved (toggle + clear)
 
 const pipeData = {
@@ -124,6 +153,16 @@ function calculateBCO() {
   li.textContent = bcoText;
   document.getElementById("historyList").appendChild(li);
 
+  // Save BCO + geometry for Measurement Card
+  const bcoData = {
+    pipeOD,
+    pipeID,
+    cutterOD,
+    bco: result
+  };
+  localStorage.setItem("bcoData", JSON.stringify(bcoData));
+
+
   // Save to localStorage
   let history = JSON.parse(localStorage.getItem("bcoHistory")) || [];
   history.push(bcoText);
@@ -154,7 +193,7 @@ function clearHistory() {
   }
 }
 
-// Theme toggle - single system: body.dark + localStorage
+
 function initTheme() {
   const toggleBtn = document.getElementById("themeToggle");
   if (!toggleBtn) return;

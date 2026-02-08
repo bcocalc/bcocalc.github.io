@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Measurement Card – Hot Tap</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .card { max-width: 900px; margin: auto; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .section { border: 1px solid #ccc; padding: 15px; }
+    .section h3 { margin-top: 0; }
+    .row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+    .row label { flex: 1; }
+    .row input, .row span, .row select { flex: 1; }
+    .calc { background: #fff3a0; padding: 2px 6px; display: inline-block; min-width: 80px; text-align: right; }
+    .note { font-size: 0.85em; color: #555; }
+    #mtWarning { color: red; font-weight: bold; }
+  </style>
+</head>
+<body>
+<div class="card">
+  
+<header class="app-header">
+  
+  <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
+  <h1>Measurement Card – Hot Tap</h1>
+
+    
+</header>
+
+  <p id="bcoStatus" class="note"></p>
+
+  <div class="grid">
+    <!-- Hot Tap -->
+    <div class="section">
+      <h3>Hot Tap</h3>
+
+      <div class="row"><label>MD</label><input id="md" type="number" step="any"></div>
+
+      <div class="row">
+        <label>LD</label>
+        <input id="ld" type="number" step="any">
+        <select id="ldSign"><option value="+">+</option><option value="-">−</option></select>
+      </div>
+
+      <div class="row"><label>LI</label><span id="li" class="calc"></span></div>
+
+      <div class="row"><label>PTC</label><input id="ptc" type="number" step="any"></div>
+<div class="row"><label>POD</label><input id="pod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+
+      <div class="row"><label>BCO</label><span id="rbco_geom" class="calc"></span><span class="note">From BCO Calculator</span></div>
+
+      <div class="row"><label>TTD</label><span id="ttd" class="calc"></span></div>
+
+      <div class="row"><label>MCO</label><span id="mco" class="calc"></span></div>
+
+      <div class="row"><label>MT</label><input id="mt" type="number" step="any"></div>
+
+      <p id="mtWarning"></p>
+    </div>
+
+    <!-- On Rod -->
+    <div class="section">
+      <h3>On Rod</h3>
+
+      <div class="row"><label>Rod Start</label><input id="start" type="number" step="any"></div>
+
+      <div class="row"><label>POP (Pilot on Pipe)</label><span id="pop" class="calc"></span></div>
+
+      <div class="row"><label>COP (Cutter on Pipe)</label><span id="cop" class="calc"></span></div>
+
+      <div class="row"><label>Rod BCO</label><span id="rbco" class="calc"></span></div>
+
+      <div class="row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
+
+      <div class="row"><label>Valve Bore</label><input type="number" step="any"></div>
+      <div class="row"><label>GTF</label><input type="number" step="any"></div>
+      <div class="row"><label>Lugs</label><select><option>Y</option><option>N</option></select></div>
+    </div>
+  </div>
+
+  <p><a href="index.html">Back to BCO Calculator</a></p>
+</div>
+
+<script src="measurement.js"></script>
+</body>
+</html>

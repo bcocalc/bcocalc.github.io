@@ -120,3 +120,389 @@ body.dark .history {
 body.dark .history li {
   border-bottom: 1px solid #555;
 }
+
+
+/* === Measurement Card Polish === */
+.card {
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  padding: 24px;
+}
+
+.section {
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.section h3 {
+  font-size: 1.2rem;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 6px;
+}
+
+.row {
+  align-items: center;
+}
+
+.row label {
+  font-weight: 600;
+  color: #333;
+}
+
+.row input,
+.row select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.row input:disabled {
+  background: #eee;
+  color: #555;
+}
+
+.calc {
+  font-weight: bold;
+  background: #fff3a0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 90px;
+}
+
+.note {
+  font-size: 0.75rem;
+  margin-left: 6px;
+}
+
+#mtWarning {
+  margin-top: 10px;
+  background: #ffe5e5;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* === Measurement Card Final Polish (BCO parity) === */
+.card h1 {
+  font-size: 1.6rem;
+  margin-bottom: 16px;
+}
+
+.grid {
+  gap: 28px;
+}
+
+.section {
+  padding: 20px;
+}
+
+.section h3 {
+  font-size: 1.25rem;
+  letter-spacing: 0.3px;
+}
+
+.row {
+  margin-bottom: 10px;
+}
+
+.row label {
+  font-size: 0.95rem;
+}
+
+.row input,
+.row select {
+  font-size: 0.95rem;
+}
+
+.calc {
+  font-size: 0.95rem;
+}
+
+.note {
+  color: #777;
+}
+
+a {
+  display: inline-block;
+  margin-top: 16px;
+  font-weight: 600;
+}
+
+
+/* === Shared BCO Color Scheme === */
+:root {
+  --primary: #0b3a66;
+  --primary-light: #1f5d99;
+  --accent: #f5c400;
+  --card-bg: #ffffff;
+}
+
+body {
+  background: linear-gradient(180deg, #0b3a66 0%, #1f5d99 100%);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.app-logo {
+  height: 42px;
+}
+
+.card {
+  background: var(--card-bg);
+}
+
+.section h3 {
+  color: var(--primary);
+  border-bottom-color: var(--primary-light);
+}
+
+.calc {
+  background: var(--accent);
+}
+
+a {
+  color: var(--primary);
+}
+
+
+/* === Global Theme Background (BCO + Measurement Card) === */
+body {
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  transition: background 0.3s ease;
+}
+
+:root {
+  --bg-top: #0b3a66;
+  --bg-bottom: #1f5d99;
+}
+
+body.dark {
+  --bg-top: #0b1f33;
+  --bg-bottom: #081826;
+}
+
+
+/* === Dark Mode Parity with BCO Calculator === */
+body.dark .card {
+  background: #1f1f1f;
+  color: #e6e6e6;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+}
+
+body.dark .section {
+  background: #242424;
+  border: 1px solid #2f2f2f;
+}
+
+body.dark .section h3 {
+  color: #ffffff;
+  border-bottom-color: #3a6ea5;
+}
+
+body.dark .row label {
+  color: #dcdcdc;
+}
+
+body.dark .row input,
+body.dark .row select {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: #f0f0f0;
+}
+
+body.dark .row input:disabled {
+  background: #2a2a2a;
+  color: #bbbbbb;
+}
+
+body.dark .calc {
+  background: #f5c400;
+  color: #1a1a1a;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+
+body.dark .note {
+  color: #a8a8a8;
+}
+
+body.dark a {
+  color: #6ea8ff;
+}
+
+body.dark #mtWarning {
+  background: #3a1e1e;
+  color: #ffb3b3;
+}
+
+
+/* === THEME TOGGLE: FLOATING (BCO + MEASUREMENT CARD) === */
+.theme-toggle {
+  position: fixed !important;
+  top: 16px;
+  right: 16px;
+  width: auto !important;
+  height: auto !important;
+  padding: 6px 10px;
+  background: rgba(40,40,40,0.95);
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Hide the text label, keep the button */
+.theme-toggle label {
+  display: none;
+}
+
+/* Button inside the wrapper */
+.theme-toggle button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Light mode */
+body:not(.dark) .theme-toggle {
+  background: rgba(240,240,240,0.95);
+  color: #222;
+}
+
+/* Dark mode */
+body.dark .theme-toggle {
+  background: rgba(40,40,40,0.95);
+  color: #f0f0f0;
+}
+
+/* === THEME TOGGLE HARD PARITY LOCK === */
+.theme-toggle {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 10px !important;
+}
+
+/* Defensive: hide legacy theme bars inside cards */
+.card .theme-toggle {
+  display: none !important;
+}
+
+/* === DEFINITIVE LEGACY REMOVAL (Measurement Card) === */
+/* Hide any theme-toggle that is NOT the floating body-level control */
+header .theme-toggle,
+.card .theme-toggle,
+.app-header .theme-toggle,
+.top-bar .theme-toggle,
+.theme-bar .theme-toggle {
+  display: none !important;
+}
+
+/* === COLLAPSE ANY LEGACY THEME BAR INTO THE FLOATING CONTROL === */
+.theme-toggle {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  left: auto !important;
+  width: max-content !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  height: auto !important;
+  padding: 6px 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+}
+
+/* Hide any text/label inside */
+.theme-toggle label,
+.theme-toggle span,
+.theme-toggle .label {
+  display: none !important;
+}
+
+/* Ensure Measurement Card toggle matches BCO position */
+.app-header {
+  position: relative;
+}
+
+.app-header .theme-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+/* === FINAL THEME TOGGLE POSITION FIX (BCO ONLY) === */
+body.bco-page #themeToggle,
+body:not(.measurement-card) #themeToggle {
+  top: 12px !important;
+  right: 12px !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  line-height: 34px !important;
+}
+
+/* === LOCKED THEME TOGGLE POSITION + ANIMATION === */
+#themeToggle {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 9999 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+#themeToggle:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+}
+
+#themeToggle:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+}
+
+
+/* PTC Warning – Polish Option 1 */
+.ptc-warning {
+  margin-top: 14px;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  line-height: 1.4;
+}
+
+
+/* Normalize From BCO Calculator font to match POD/BCO */
+.from-bco {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+}
