@@ -699,3 +699,74 @@ body.light .app-tabs .tab.active::after{
 .container > .app-tabs{
   margin-bottom: 12px;
 }
+
+
+/* ===============================
+   Measurement Card – Mobile Polish
+   =============================== */
+@media (max-width: 768px) {
+
+  /* Stack grid to single column */
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  /* Card padding */
+  .card {
+    padding: 0 10px;
+  }
+
+  /* Header adjustments */
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .app-header h1 {
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+
+  /* Tabs wrap nicely */
+  .app-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .app-tabs .tab {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  /* Rows become vertical for readability */
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .row label {
+    font-size: 0.85rem;
+  }
+
+  .row input,
+  .row select {
+    width: 100%;
+    font-size: 1rem;
+    padding: 8px;
+  }
+
+  /* Calculated fields */
+  .calc {
+    width: 100%;
+    text-align: right;
+    font-size: 1rem;
+  }
+
+  /* Sections spacing */
+  .section {
+    padding: 12px;
+  }
+}
