@@ -630,3 +630,72 @@ body.light .app-tabs .tab.active{
   background: #1f6feb;
   color: #ffffff;
 }
+
+
+/* === UNDERLINE-STYLE TABS (Option 2) === */
+.app-tabs{
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.app-tabs .tab{
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  padding: 10px 14px;
+  color: #cfd8ff;
+  position: relative;
+}
+
+.app-tabs .tab:hover{
+  color: #ffffff;
+}
+
+.app-tabs .tab::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 2px;
+  background: transparent;
+}
+
+.app-tabs .tab.active{
+  color: #ffffff;
+}
+
+.app-tabs .tab.active::after{
+  background: #1f6feb;
+}
+
+/* Light mode */
+body.light .app-tabs{
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+}
+
+body.light .app-tabs .tab{
+  color: #0b1220;
+}
+
+body.light .app-tabs .tab:hover{
+  color: #000000;
+}
+
+body.light .app-tabs .tab.active{
+  color: #1f6feb;
+}
+
+body.light .app-tabs .tab.active::after{
+  background: #1f6feb;
+}
+
+/* Header tabs alignment (Measurement Card) */
+.app-header .app-tabs{
+  margin-bottom: 8px;
+}
+
+/* Ensure BCO tabs placement */
+.container > .app-tabs{
+  margin-bottom: 12px;
+}
