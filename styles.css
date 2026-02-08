@@ -506,3 +506,24 @@ body:not(.measurement-card) #themeToggle {
   opacity: 0.7;
   letter-spacing: 0.02em;
 }
+
+/* Measurement Card navigation button */
+.top-nav {
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+.nav-button {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #1f6feb;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.nav-button:hover {
+  background: #388bfd;
+}
