@@ -592,3 +592,41 @@ body:not(.measurement-card) #themeToggle {
     gap:6px;
   }
 }
+
+
+/* === TAB VISIBILITY FIX (High Contrast) === */
+.app-tabs{
+  background: transparent;
+}
+
+.app-tabs .tab{
+  background: rgba(255,255,255,0.12);
+  color: #e6ebff;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+.app-tabs .tab:hover{
+  background: rgba(255,255,255,0.22);
+}
+
+.app-tabs .tab.active{
+  background: #1f6feb;
+  color: #ffffff;
+  border-color: #1f6feb;
+}
+
+/* Light mode safety */
+body.light .app-tabs .tab{
+  background: rgba(0,0,0,0.06);
+  color: #0b1220;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+body.light .app-tabs .tab:hover{
+  background: rgba(0,0,0,0.12);
+}
+
+body.light .app-tabs .tab.active{
+  background: #1f6feb;
+  color: #ffffff;
+}
