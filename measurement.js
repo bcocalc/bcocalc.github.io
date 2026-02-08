@@ -55,8 +55,26 @@ function calc() {
   rbcoEl.textContent = rbco.toFixed(4);
   rmcoEl.textContent = rmco.toFixed(4);
 
+  // === MULTI-WARNING SYSTEM (PTC + MT) ===
+  const warnings = [];
+
+  // PTC geometry warning
+  const wallEl = document.getElementById("wallThk");
+  const wall = wallEl ? parseFloat(wallEl.value) || 0 : 0;
+  const ptcLimit = (pod / 2) - wall;
+
+  if (ptcLimit > 0 && ptc > ptcLimit) {
+    warnings.push(`⚠️ PTC too long: must be < (POD/2 − Wall) = ${ptcLimit.toFixed(4)}`);
+  }
+
+  // Machine Travel warning
   if (mt && ttd > mt) {
-    warnEl.textContent = "⚠️ TTD exceeds Machine Travel (MT)";
+    warnings.push("⚠️ TTD exceeds Machine Travel (MT)");
+  }
+
+  // Render warnings
+  if (warnings.length) {
+    warnEl.innerHTML = warnings.join("<br>");
   } else {
     warnEl.textContent = "";
   }

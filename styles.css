@@ -770,3 +770,203 @@ body.light .app-tabs .tab.active::after{
     padding: 12px;
   }
 }
+
+
+/* =====================================
+   DATA-THEME BASED LIGHT MODE (CORRECT)
+   ===================================== */
+:root[data-theme="light"] {
+  --bg: #f5f7fb;
+  --panel-bg: #ffffff;
+  --text: #0f172a;
+  --muted: #334155;
+  --border: #cbd5e1;
+  --input-bg: #ffffff;
+  --calc-bg: #e5e7eb;
+}
+
+/* Global */
+/* Light theme text only – keep gradient background */
+:root[data-theme="light"] body {
+  color: var(--text);
+}
+
+/* Headings & labels */
+:root[data-theme="light"] h1,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] h3,
+:root[data-theme="light"] label {
+  color: var(--text);
+}
+
+/* Notes */
+:root[data-theme="light"] .note {
+  color: var(--muted);
+}
+
+/* Sections / cards */
+:root[data-theme="light"] .section,
+:root[data-theme="light"] .card {
+  background-color: var(--panel-bg);
+  border-color: var(--border);
+}
+
+/* Inputs */
+:root[data-theme="light"] input,
+:root[data-theme="light"] select {
+  background-color: var(--input-bg);
+  color: var(--text);
+  border: 1px solid #94a3b8;
+}
+
+/* Calculated fields */
+:root[data-theme="light"] .calc {
+  background-color: var(--calc-bg);
+  color: var(--text);
+}
+
+/* Tabs */
+:root[data-theme="light"] .app-tabs .tab {
+  color: var(--text);
+}
+
+:root[data-theme="light"] .app-tabs .tab.active {
+  color: #1f6feb;
+}
+
+
+/* Measurement Card Light Tabs Fix */
+:root[data-theme="light"] .app-tabs{
+  background: #f5f7fb;
+}
+:root[data-theme="light"] .app-tabs .tab{
+  color:#0f172a;
+}
+/* ================================
+   GLOBAL THEME VARIABLES (FINAL)
+   ================================ */
+
+:root[data-theme="dark"] {
+  --bg-main: linear-gradient(180deg, #0b2e52, #071a2f);
+  --card-bg: #121212;
+  --text-main: #eaeaea;
+  --text-muted: #9aa3ad;
+  --border-color: #374151;
+  --input-bg: #ffffff;
+}
+
+:root[data-theme="light"] {
+  --bg-main: linear-gradient(180deg, #e9f1fb, #dce8f7);
+  --card-bg: #ffffff;
+  --text-main: #111111;
+  --text-muted: #4b5563;
+  --border-color: #cbd5e1;
+  --input-bg: #ffffff;
+}
+
+/* Apply background + text */
+body {
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+/* Cards / sections */
+.section,
+.card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+/* Inputs */
+input,
+select {
+  background: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+/* Notes / helper text */
+.note,
+.from-bco {
+  color: var(--text-muted);
+}
+
+/* ================================
+   TAB CONTRAST FIX (BOTH PAGES)
+   ================================ */
+
+.app-tabs .tab {
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+}
+
+.app-tabs .tab:hover {
+  color: var(--text-main);
+}
+
+.app-tabs .tab.active {
+  color: #1f6feb;
+  border-bottom: 2px solid #1f6feb;
+}
+
+
+
+/* ================================
+   MEASUREMENT CARD LAYOUT + BG FIX
+   ================================ */
+
+.measurement-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .measurement-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+:root[data-theme="dark"] body {
+  background: linear-gradient(180deg, #0b2e52, #071a2f);
+}
+
+:root[data-theme="light"] body {
+  background: linear-gradient(180deg, #e9f1fb, #dce8f7);
+}
+
+
+/* Measurement Card width constraint */
+.measurement-page .card{
+  max-width:1000px;
+  margin:40px auto;
+}
+
+
+/* === FORCE BLUE BACKGROUND FOR BOTH THEMES === */
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --bg-main: linear-gradient(180deg, #0b2e52, #071a2f);
+}
+
+body {
+  background: var(--bg-main) !important;
+}
+
+/* Light mode cards stay light, background stays blue */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .section {
+  background: #ffffff;
+}
+
+
+/* === MEASUREMENT CARD BACKGROUND FIX (FORCE BLUE) === */
+body.measurement-page {
+  background: linear-gradient(180deg, #0b2e52, #071a2f) !important;
+}
+
+/* Ensure light mode does NOT override measurement page */
+body.measurement-page.light,
+body.measurement-page:not(.dark) {
+  background: linear-gradient(180deg, #0b2e52, #071a2f) !important;
+}
