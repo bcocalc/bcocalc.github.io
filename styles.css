@@ -1112,3 +1112,34 @@ body.dark .row select,
   background-color: #3a2f12 !important; /* dark amber */
   border: 1px solid #ffc107 !important;
 }
+
+
+/* === NUCLEAR FIX: WARNING VISIBILITY (DARK MODE) === */
+:root[data-theme="dark"] .warning {
+  background-color: #1f1f1f !important;
+  border: 2px solid #ffcc00 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"] .warning,
+:root[data-theme="dark"] .warning * {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+
+/* === REAL FIX: MT WARNING READABILITY IN DARK MODE === */
+:root[data-theme="dark"] #mtWarning,
+body.dark #mtWarning {
+  background: #3a2f12 !important; /* dark amber */
+  border: 1px solid #ffc107 !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+:root[data-theme="dark"] #mtWarning *,
+body.dark #mtWarning * {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}

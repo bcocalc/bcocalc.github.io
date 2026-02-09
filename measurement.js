@@ -170,7 +170,7 @@ function calc() {
 
   // PTC geometry warning
   const wallEl = document.getElementById("wallThk");
-  const wall = wallEl ? parseFloat(wallEl.value) || 0 : 0;
+  const wall = wallEl ? (parseFloat(wallEl.value ?? wallEl.textContent) || 0) : 0;
   const ptcLimit = (pod / 2) - wall;
 
   if (ptcLimit > 0 && ptc > ptcLimit) {
