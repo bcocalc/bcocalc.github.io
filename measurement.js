@@ -1,5 +1,114 @@
+(function(){
 
-const data = JSON.parse(localStorage.getItem("bcoData"));
+
+// ===== GLOBAL THEME TOGGLE FACTORY (shared) =====
+(function () {
+  if (window.__BCO_THEME_READY__) return;
+  window.__BCO_THEME_READY__ = true;
+
+  const btn = document.createElement('button');
+  btn.id = 'themeToggle';
+  btn.className = 'theme-btn';
+  btn.innerHTML = '🌓';
+  btn.style.position = 'fixed';
+  btn.style.top = '16px';
+  btn.style.right = '16px';
+  btn.style.zIndex = '9999';
+
+  document.body.appendChild(btn);
+
+  const current = localStorage.getItem('theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', current);
+
+  btn.addEventListener('click', () => {
+    const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('theme', t);
+  });
+})();
+// ===== END THEME TOGGLE FACTORY =====
+
+// === PIPE_GEOMETRY_DISPLAY_FINAL ===
+(function(){
+  function run(){
+    const podInput = document.getElementById("pod");
+    if (!podInput) return;
+
+    const podRow = podInput.closest(".row");
+    if (!podRow) return;
+
+    if (document.getElementById("pipeId")) return;
+
+    function makeRow(labelText, id){
+      const row = document.createElement("div");
+      row.className = "row pipe-support";
+
+      const label = document.createElement("label");
+      label.textContent = labelText;
+
+      const box = document.createElement("div");
+      box.id = id;
+      box.className = "display-geometry";
+      box.textContent = "—";
+
+      const span = document.createElement("span");
+      span.className = "from-bco";
+      span.textContent = "From BCO Calculator";
+
+      row.appendChild(label);
+      row.appendChild(box);
+      row.appendChild(span);
+      return row;
+    }
+
+    const pipeIdRow = makeRow("Pipe I.D.", "pipeId");
+    const wallRow = makeRow("Wall Thickness", "wallThk");
+
+    const mcoRow = document.getElementById("mco")?.closest(".row");
+    if (mcoRow) {
+      mcoRow.after(pipeIdRow);
+      pipeIdRow.after(wallRow);
+    } else {
+      podRow.after(pipeIdRow);
+      pipeIdRow.after(wallRow);
+    }
+
+    const bcoData = JSON.parse(localStorage.getItem("bcoData") || "{}");
+
+    // Only show supporting geometry when BCO has been calculated this session
+    if (sessionStorage.getItem("bcoCalculated") !== "true" || !bcoData || !isFinite(parseFloat(bcoData.pipeID)) || !isFinite(parseFloat(bcoData.pipeOD))) {
+      return;
+    }
+
+    const pipeID =
+      parseFloat(localStorage.getItem("pipeID")) ||
+      parseFloat(bcoData.pipeID);
+
+    const pipeOD =
+      parseFloat(localStorage.getItem("pipeOD")) ||
+      parseFloat(bcoData.pipeOD);
+
+    if (isFinite(pipeID)) {
+      document.getElementById("pipeId").textContent = pipeID.toFixed(4);
+    }
+
+    if (isFinite(pipeOD) && isFinite(pipeID)) {
+      document.getElementById("wallThk").textContent = ((pipeOD - pipeID) / 2).toFixed(4);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
+
+
+
+const data = sessionStorage.getItem("bcoCalculated") === "true"
+  ? JSON.parse(localStorage.getItem("bcoData"))
+  : null;
 const status = document.getElementById("bcoStatus");
 
 const mdEl = document.getElementById("md");
@@ -20,7 +129,8 @@ const rmcoEl = document.getElementById("rmco");
 const warnEl = document.getElementById("mtWarning");
 
 if (!data) {
-  status.textContent = "No BCO data found. Calculate BCO first.";
+  status.textContent = "No BCO data loaded. Calculate BCO first.";
+  return;
 } else {
   status.textContent = "Loaded BCO from Calculator";
   document.getElementById("rbco_geom").textContent = data.bco.toFixed(4);
@@ -86,81 +196,6 @@ function calc() {
 if (signEl) signEl.addEventListener("change", calc);
 window.addEventListener("load", calc);
 
-// Theme sync (shared with BCO page)
-const themeToggle = document.getElementById("themeToggle");
-const savedTheme = localStorage.getItem("theme");
-if (savedTheme === "dark") document.body.classList.add("dark");
-
-if (themeToggle) {
-  themeToggle.addEventListener("click", () => {
-    document.body.classList.toggle("dark");
-    localStorage.setItem("theme", document.body.classList.contains("dark") ? "dark" : "light");
-  });
-}
 
 
-// === PIPE_GEOMETRY_DISPLAY_FINAL ===
-(function(){
-  function run(){
-    const podInput = document.getElementById("pod");
-    if (!podInput) return;
-
-    const podRow = podInput.closest(".row");
-    if (!podRow) return;
-
-    if (document.getElementById("pipeId")) return;
-
-    function makeRow(labelText, id){
-      const row = document.createElement("div");
-      row.className = "row";
-
-      const label = document.createElement("label");
-      label.textContent = labelText;
-
-      const input = document.createElement("input");
-      input.type = "number";
-      input.id = id;
-      input.readOnly = true;
-
-      const span = document.createElement("span");
-      span.className = "from-bco";
-      span.textContent = "From BCO Calculator";
-
-      row.appendChild(label);
-      row.appendChild(input);
-      row.appendChild(span);
-      return row;
-    }
-
-    const pipeIdRow = makeRow("Pipe I.D.", "pipeId");
-    const wallRow = makeRow("Wall Thickness", "wallThk");
-
-    podRow.after(pipeIdRow);
-    pipeIdRow.after(wallRow);
-
-    const bcoData = JSON.parse(localStorage.getItem("bcoData") || "{}");
-
-    const pipeID =
-      parseFloat(localStorage.getItem("pipeID")) ||
-      parseFloat(bcoData.pipeID);
-
-    const pipeOD =
-      parseFloat(localStorage.getItem("pipeOD")) ||
-      parseFloat(bcoData.pipeOD);
-
-    if (isFinite(pipeID)) {
-      document.getElementById("pipeId").value = pipeID.toFixed(4);
-    }
-
-    if (isFinite(pipeOD) && isFinite(pipeID)) {
-      document.getElementById("wallThk").value =
-        ((pipeOD - pipeID) / 2).toFixed(4);
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
-  }
 })();

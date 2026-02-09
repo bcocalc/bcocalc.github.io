@@ -161,6 +161,7 @@ function calculateBCO() {
     bco: result
   };
   localStorage.setItem("bcoData", JSON.stringify(bcoData));
+  sessionStorage.setItem("bcoCalculated", "true");
 
 
   // Save to localStorage
@@ -235,3 +236,26 @@ window.onload = function () {
   populatePipeOD();
   loadHistory();
 };
+
+// === VISUAL PLACEHOLDER FIX (BCO PAGE ONLY) ===
+window.addEventListener("load", () => {
+  const material = document.getElementById("pipeMaterial");
+  const od = document.getElementById("pipeOD");
+  const schedule = document.getElementById("schedule");
+
+  // Only apply on BCO page
+  if (!material || !od || !schedule) return;
+
+  // Add placeholder to pipeOD if missing
+  if (!od.querySelector('option[value=""]')) {
+    const ph = document.createElement("option");
+    ph.value = "";
+    ph.textContent = "Select pipe size…";
+    ph.disabled = true;
+    ph.selected = true;
+    od.prepend(ph);
+  }
+
+  // Force visual selection to placeholder
+  od.selectedIndex = 0;
+});

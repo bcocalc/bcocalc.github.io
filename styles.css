@@ -970,3 +970,145 @@ body.measurement-page.light,
 body.measurement-page:not(.dark) {
   background: linear-gradient(180deg, #0b2e52, #071a2f) !important;
 }
+
+
+/* === MEASUREMENT CARD THEME SAFETY === */
+body.dark .card,
+:root[data-theme="dark"] .card {
+  background-color: #1f1f1f;
+  color: #e6e6e6;
+}
+
+body.dark .section,
+:root[data-theme="dark"] .section {
+  background-color: #242424;
+}
+
+body.dark .row input,
+body.dark .row select,
+:root[data-theme="dark"] .row input,
+:root[data-theme="dark"] .row select {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+}
+
+/* Supporting geometry rows */
+.row.pipe-support label {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+
+/* === CALC VALUE TOKEN (SEMANTIC YELLOW) === */
+.calc-value,
+.value-badge {
+  background: #ffd400 !important;
+  color: #000 !important;
+}
+
+:root[data-theme="light"] .calc-value,
+:root[data-theme="light"] .value-badge {
+  background: #ffd400 !important;
+  color: #000 !important;
+}
+
+
+/* === DISPLAY GEOMETRY (PIPE ID / WALL) === */
+.display-geometry {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.35);
+  font-size: 0.9rem;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .display-geometry {
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.3);
+  color: #000;
+}
+
+
+/* === CALC (AUTO-CALCULATED) SHOULD ALWAYS BE YELLOW === */
+.calc{
+  display:inline-block;
+  background:#ffd400 !important;
+  color:#000 !important;
+}
+:root[data-theme="light"] .calc{
+  background:#ffd400 !important;
+  color:#000 !important;
+}
+
+/* When calc is empty, show a subtle dash instead of a tiny yellow speck */
+.calc:empty::before{
+  content:"—";
+  opacity:0.55;
+}
+
+:root[data-theme="light"] .display-geometry{
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.30);
+  color:#000;
+}
+
+
+/* === PIPE GEOMETRY PLAIN TEXT (DISPLAY ONLY) === */
+.display-geometry{
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 4px;
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+:root[data-theme="light"] .display-geometry{
+  color: #000;
+}
+
+
+/* === MEASUREMENT CARD DARK MODE TEXT CONTRAST FIX === */
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .section,
+:root[data-theme="dark"] label {
+  color: #e8e8e8;
+}
+
+:root[data-theme="dark"] .row input,
+:root[data-theme="dark"] .row select {
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .from-bco {
+  color: #bfcad6;
+}
+
+/* Keep yellow semantic tokens untouched */
+
+
+/* === DARK MODE WARNING TEXT FIX === */
+:root[data-theme="dark"] .warning {
+  background-color: rgba(255, 193, 7, 0.18);
+  border: 1px solid #ffc107;
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .warning span,
+:root[data-theme="dark"] .warning strong {
+  color: #ffffff;
+}
+
+
+/* === HARD OVERRIDE: WARNING READABILITY (DARK MODE) === */
+:root[data-theme="dark"] .warning,
+:root[data-theme="dark"] .warning * {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .warning {
+  background-color: #3a2f12 !important; /* dark amber */
+  border: 1px solid #ffc107 !important;
+}
