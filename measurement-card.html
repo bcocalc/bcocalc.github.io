@@ -2,82 +2,282 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Measurement Card – Hot Tap</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#00468b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TEAM Calc">
+  <title>TEAM Field Measurement Calculator</title>
   <link rel="stylesheet" href="styles.css">
-  
 </head>
 <body class="measurement-page">
-
-<!-- App Tabs -->
-
-
 <div class="card">
-  
-<header class="app-header">
-<div class="app-tabs">
-  <a href="index.html" class="tab">BCO Calculator</a>
-  <a href="measurement-card.html" class="tab active">Measurement Card</a>
-  <span class="version-badge">v1.0 · 2026-02-08</span>
-</div>
-  
-  <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
-  <h1>Measurement Card – Hot Tap</h1>
+  <header class="app-header">
+    <div class="app-tabs">
+      <a href="measurement-card.html" class="tab active">Measurement Card Calculator</a>
+      <span class="version-badge">v1.6 · 2026-03-08</span>
+    </div>
 
-    
-</header>
+    <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
+    <h1>Measurement Card Calculator</h1>
+  </header>
 
   <p id="bcoStatus" class="note"></p>
 
-  <div class="measurement-grid">
-    <!-- Hot Tap -->
-    <div class="section">
-      <h3>Hot Tap</h3>
-
-      <div class="row"><label>MD</label><input id="md" type="number" step="any"></div>
-
-      <div class="row">
-        <label>LD</label>
-        <input id="ld" type="number" step="any">
-        <select id="ldSign"><option value="+">+</option><option value="-">−</option></select>
+  <section class="section job-info-section">
+    <div class="job-info-header">
+      <h3>Job Information</h3>
+      <div class="job-tools">
+        <label class="check-inline geometry-lock-toggle"><input id="geometryLockToggle" type="checkbox"> Lock Geometry</label>
+        <button type="button" id="exportPdfBtn" class="secondary-btn">Export PDF</button>
+        <button type="button" id="exportImageBtn" class="secondary-btn">Export Image</button>
       </div>
-
-      <div class="row"><label>LI</label><span id="li" class="calc"></span></div>
-
-      <div class="row"><label>PTC</label><input id="ptc" type="number" step="any"></div>
-<div class="row"><label>POD</label><input id="pod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
-
-      <div class="row"><label>BCO</label><span id="rbco_geom" class="calc"></span><span class="note">From BCO Calculator</span></div>
-
-      <div class="row"><label>TTD</label><span id="ttd" class="calc"></span></div>
-
-      <div class="row"><label>MCO</label><span id="mco" class="calc"></span></div>
-
-      <div class="row"><label>MT</label><input id="mt" type="number" step="any"></div>
-
-      <p id="mtWarning"></p>
     </div>
-
-    <!-- On Rod -->
-    <div class="section">
-      <h3>On Rod</h3>
-
-      <div class="row"><label>Rod Start</label><input id="start" type="number" step="any"></div>
-
-      <div class="row"><label>POP (Pilot on Pipe)</label><span id="pop" class="calc"></span></div>
-
-      <div class="row"><label>COP (Cutter on Pipe)</label><span id="cop" class="calc"></span></div>
-
-      <div class="row"><label>Rod BCO</label><span id="rbco" class="calc"></span></div>
-
-      <div class="row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
-
-      <div class="row"><label>Valve Bore</label><input type="number" step="any"></div>
-      <div class="row"><label>GTF</label><input type="number" step="any"></div>
-      <div class="row"><label>Lugs</label><select><option>Y</option><option>N</option></select></div>
+    <div class="job-info-grid">
+      <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
+      <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
+      <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
+      <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
+      <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
+      <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
+      <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
     </div>
+  </section>
+
+  <div class="operation-switcher" role="tablist" aria-label="Measurement card mode">
+    <button type="button" class="mode-btn active" data-mode="bco">BCO</button>
+    <button type="button" class="mode-btn" data-mode="hotTap">Hot Tap</button>
+    <button type="button" class="mode-btn" data-mode="lineStop">Line Stop</button>
+    <button type="button" class="mode-btn" data-mode="completionPlug">Completion Plug</button>
+    <button type="button" class="mode-btn" data-mode="glossary">Glossary</button>
   </div>
 
-  <p><a href="index.html">Back to BCO Calculator</a></p>
+  <div class="utility-bar">
+    <button type="button" id="saveHistoryBtn" class="secondary-btn">Save Job to History</button>
+    <button type="button" id="resetJobBtn" class="secondary-btn danger-btn">Reset Current Job</button>
+  </div>
+
+  <section id="bcoPanel" class="mode-panel active">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>BCO</h3>
+
+        <div class="row"><label>Pipe Material</label>
+          <select id="bcoPipeMaterial">
+            <option value="CarbonSteel">Carbon Steel</option>
+            <option value="DuctileIron">Ductile Iron</option>
+          </select>
+        </div>
+
+        <div class="row"><label>Pipe Size</label><select id="bcoPipeOD"></select></div>
+
+        <div class="row"><label>Schedule</label>
+          <select id="bcoSchedule">
+            <option value="STD">STD</option>
+            <option value="40">40</option>
+            <option value="XS">XS</option>
+            <option value="80">80</option>
+          </select>
+        </div>
+
+        <div class="row"><label>Pipe I.D.</label><input id="bcoPipeID" type="number" step="any"></div>
+        <div class="row"><label>Cutter O.D.</label><input id="bcoCutterOD" type="number" step="any"></div>
+
+        <div class="row"><label>True O.D.</label><span id="bcoTrueODDisplay" class="calc">—</span></div>
+        <div class="row"><label>Wall Thickness</label><span id="bcoWallDisplay" class="calc">—</span></div>
+
+        <div class="button-row">
+          <button type="button" id="bcoCalcBtn">Calculate BCO</button>
+          <button type="button" id="bcoCopyBtn">Copy Result</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Result</h3>
+        <div class="result" id="bcoResult">BCO: —</div>
+        <p id="bcoInlineStatus" class="note">Use this tab first, then the values carry into Hot Tap and Line Stop.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="hotTapPanel" class="mode-panel active">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Hot Tap</h3>
+
+        <div class="row"><label>MD</label><input id="md" type="number" step="any"></div>
+
+        <div class="row row-split">
+          <label>LD</label>
+          <input id="ld" type="number" step="any">
+          <select id="ldSign"><option value="+">+</option><option value="-">−</option></select>
+        </div>
+
+        <div class="row"><label>LI</label><span id="li" class="calc"></span></div>
+
+        <div class="row"><label>PTC</label><input id="ptc" type="number" step="any"></div>
+        <div class="row"><label>POD</label><input id="pod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+
+        <div class="row"><label>BCO</label><span id="rbco_geom" class="calc"></span><span class="note">From BCO Calculator</span></div>
+
+        <div class="row"><label>TTD</label><span id="ttd" class="calc"></span></div>
+
+        <div class="row"><label>MCO</label><span id="mco" class="calc"></span></div>
+
+        <div class="row"><label>MT</label><input id="mt" type="number" step="any"></div>
+
+        <p id="mtWarning" class="warning-box"></p>
+      </div>
+
+      <div class="section">
+        <h3>On Rod</h3>
+
+        <div class="row"><label>Rod Start</label><input id="start" type="number" step="any"></div>
+
+        <div class="row"><label>POP (Pilot on Pipe)</label><span id="pop" class="calc"></span></div>
+
+        <div class="row"><label>COP (Cutter on Pipe)</label><span id="cop" class="calc"></span></div>
+
+        <div class="row"><label>Rod BCO</label><span id="rbco" class="calc"></span></div>
+
+        <div class="row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
+
+        <div class="row"><label>Valve Bore</label><input id="valveBore" type="number" step="any"></div>
+        <div class="row"><label>GTF</label><input id="gtf" type="number" step="any"></div>
+        <div class="row"><label>Lugs</label><select id="lugs"><option>Y</option><option>N</option></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="lineStopPanel" class="mode-panel">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Line Stop</h3>
+
+        <div class="row"><label>Type</label><input value="Standard Line Stop" disabled></div>
+
+        <div class="row"><label>MD</label><input id="lsMd" type="number" step="any"></div>
+
+        <div class="row row-split">
+          <label>LD</label>
+          <input id="lsLd" type="number" step="any">
+          <select id="lsLdSign"><option value="+">+</option><option value="-">−</option></select>
+        </div>
+
+        <div class="row"><label>POD</label><input id="lsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+        <div class="row"><label>Wall Thickness</label><span id="lsWallDisplay" class="display-geometry">—</span><span class="note">From BCO Calculator</span></div>
+
+        <div class="row row-manual-toggle">
+          <label>LI Override</label>
+          <label class="check-inline"><input id="lsLiManualToggle" type="checkbox"> Manual</label>
+        </div>
+
+        <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
+
+        <p class="formula-note">Auto formula: LI = MD ± LD + POD − Wall</p>
+      </div>
+
+      <div class="section">
+        <h3>Checks</h3>
+
+        <div class="row"><label>Line Stop Travel</label><input id="lsTravel" type="number" step="any"></div>
+        <div class="row"><label>Machine Travel</label><input id="lsMachineTravel" type="number" step="any"></div>
+        <div class="row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
+
+        <div id="lsWarnings" class="warning-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="completionPlugPanel" class="mode-panel">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Completion Plug</h3>
+
+        <div class="row"><label>Start</label><input id="cpStart" type="number" step="any"></div>
+        <div class="row"><label>JBF</label><input id="cpJbf" type="number" step="any"></div>
+        <div class="row"><label>LD</label><input id="cpLd" type="number" step="any"></div>
+        <div class="row"><label>PT</label><input id="cpPt" type="number" step="any"></div>
+
+        <div class="row row-manual-toggle">
+          <label>LI Override</label>
+          <label class="check-inline"><input id="cpLiManualToggle" type="checkbox"> Manual</label>
+        </div>
+
+        <div class="row"><label>LI</label><input id="cpLiManual" type="number" step="any" disabled></div>
+
+        <p class="formula-note">Auto formula: LI = Start + JBF + LD + PT</p>
+      </div>
+
+      <div class="section">
+        <h3>Checks</h3>
+        <div id="cpWarnings" class="warning-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="glossaryPanel" class="mode-panel">
+    <div class="section glossary-section">
+      <h3>Glossary / Reference</h3>
+      <p class="note">Quick reference for the measurement terms used throughout the calculator.</p>
+      <div class="glossary-table-wrap">
+        <table class="glossary-table">
+          <thead>
+            <tr><th>Abbrev.</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>MD</td><td>Measured Distance</td></tr>
+            <tr><td>LD</td><td>Lost Distance</td></tr>
+            <tr><td>LI</td><td>Lower In</td></tr>
+            <tr><td>PTC</td><td>Pilot To Cutter</td></tr>
+            <tr><td>BCO</td><td>Book Cut Out</td></tr>
+            <tr><td>CCO</td><td>Coupon Cut Out</td></tr>
+            <tr><td>MCO</td><td>Maximum Cut Out</td></tr>
+            <tr><td>POP</td><td>Pilot On Pipe</td></tr>
+            <tr><td>COP</td><td>Cutter On Pipe</td></tr>
+            <tr><td>TTD</td><td>Total Travel Distance</td></tr>
+            <tr><td>MT</td><td>Machine Travel</td></tr>
+            <tr><td>POD</td><td>Pipe Outside Diameter</td></tr>
+            <tr><td>VB</td><td>Valve Bore</td></tr>
+            <tr><td>GTF</td><td>Gate To Flange</td></tr>
+            <tr><td>Valve T</td><td>Valve Turns</td></tr>
+            <tr><td>Seg T</td><td>Segment Turns</td></tr>
+            <tr><td>-1 Wall</td><td>Minus One Wall Thickness</td></tr>
+            <tr><td>JBF</td><td>Jack Bolt to Flange</td></tr>
+            <tr><td>PT</td><td>Plug Thickness</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section class="section summary-section">
+    <h3>Job Summary</h3>
+    <div class="summary-grid">
+      <div class="summary-item"><span class="summary-label">Pipe</span><span id="summaryPipe" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Cutter</span><span id="summaryCutter" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">BCO</span><span id="summaryBco" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Hot Tap</span><span id="summaryHotTap" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Line Stop LI</span><span id="summaryLineStopLi" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Completion Plug LI</span><span id="summaryCompletionLi" class="summary-value">—</span></div>
+      <div class="summary-item summary-item-wide"><span class="summary-label">Warnings</span><span id="summaryWarnings" class="summary-value">None</span></div>
+    </div>
+  </section>
+
+  <section class="section history-section">
+    <div class="history-header">
+      <button type="button" id="historyDrawerToggle" class="history-drawer-toggle" aria-expanded="false" aria-controls="historyDrawerContent">
+        <span class="history-toggle-text">Calculation History</span>
+        <span id="historyCountBadge" class="history-count-badge">0</span>
+        <span class="history-toggle-chevron" aria-hidden="true">▾</span>
+      </button>
+      <button type="button" id="clearHistoryBtn" class="secondary-btn">Clear History</button>
+    </div>
+    <div id="historyDrawerContent" class="history-drawer-content" hidden>
+      <div id="historyList" class="history-list">No saved jobs yet.</div>
+    </div>
+  </section>
+
 </div>
 
 <script src="measurement.js"></script>

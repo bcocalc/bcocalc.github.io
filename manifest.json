@@ -1,7 +1,7 @@
 {
-  "name": "BCO Calculator",
-  "short_name": "BCO Calc",
-  "start_url": ".",
+  "name": "TEAM Field Measurement Calculator",
+  "short_name": "TEAM Calc",
+  "start_url": "/measurement-card.html",
   "display": "standalone",
   "background_color": "#00468b",
   "theme_color": "#00468b",
@@ -16,5 +16,6 @@
       "sizes": "512x512",
       "type": "image/png"
     }
-  ]
+  ],
+  "scope": "/"
 }

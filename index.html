@@ -3,121 +3,19 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>BCO Calculator</title>
+  <title>TEAM Field Measurement Calculator</title>
   <link rel="stylesheet" href="styles.css" />
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#00468b" />
+  <meta http-equiv="refresh" content="0; url=measurement-card.html#bco">
 </head>
-<body class="">
-
-<!-- App Tabs -->
-
-
-  
-  <div class="container">
-<div class="app-tabs">
-  <a href="index.html" class="tab active">BCO Calculator</a>
-  <a href="measurement-card.html" class="tab">Measurement Card</a>
-  <span class="version-badge">v1.0 · 2026-02-08</span>
-</div>
-  <img src="team-logo.png" alt="TEAM Industrial Services" class="logo" />
-    <h1 class="title">BCO Calculator</h1>
-
-    <div class="form-group">
-      <label for="units">Units:</label>
-      <select id="units">
-        <option value="inches" selected>Inches</option>
-        <option value="cm">Centimeters</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="pipeMaterial">Pipe Material:</label>
-      <select id="pipeMaterial">
-        <option value="CarbonSteel" selected>Carbon Steel</option>
-        <option value="DuctileIron">Ductile Iron</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="pipeOD">Pipe O.D.:</label>
-      <select id="pipeOD"></select>
-    </div>
-
-    <div class="form-group">
-      <label for="schedule">Pipe Schedule:</label>
-      <select id="schedule">
-        <option value="STD">Standard (STD)</option>
-        <option value="40">Schedule 40</option>
-        <option value="XS">Extra Strong (XS)</option>
-        <option value="80">Schedule 80</option>
-      </select>
-    </div>
-
-    <div class="form-group">
-      <label for="pipeID">Pipe I.D. (auto-filled):</label>
-      <input type="number" id="pipeID" step="any" placeholder="Auto-filled or manually enter" title="Auto-filled unless you override" />
-    </div>
-
-    <div class="form-group">
-      <label for="cutterOD">Cutter O.D.:</label>
-      <input type="number" id="cutterOD" step="any" />
-    </div>
-
-    <div class="form-group">
-      <button onclick="calculateBCO()">Calculate</button>
-    </div>
-    <p id="result">BCO will appear here</p>
-
-    <div class="history-toggle">
-      <button onclick="toggleHistory()">Show History</button>
-    </div>
-
-    <div class="history" id="historyBox" style="display: none;">
-      <h2>History</h2>
-      <ul id="historyList"></ul>
-      <button onclick="clearHistory()">🗑️ Clear All History</button>
-    </div>
+<body class="measurement-page">
+  <div class="card" style="max-width:720px; text-align:center;">
+    <img src="team-logo.png" alt="TEAM Industrial Services" class="app-logo" />
+    <h1>BCO Calculator Moved</h1>
+    <p class="note">The standalone BCO page is being kept as a backup, but the live calculator now opens inside the Measurement Card tool.</p>
+    <p><a href="measurement-card.html#bco">Open the integrated calculator</a></p>
   </div>
-
-  
-<script src="script.js"></script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js");
-  });
-}
-</script>
-
-<script>
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('service-worker.js').then(registration => {
-    registration.onupdatefound = () => {
-      const installingWorker = registration.installing;
-      installingWorker.onstatechange = () => {
-        if (installingWorker.state === 'installed') {
-          if (navigator.serviceWorker.controller) {
-            const updateBanner = document.createElement('div');
-            updateBanner.style.position = 'fixed';
-            updateBanner.style.bottom = '20px';
-            updateBanner.style.left = '50%';
-            updateBanner.style.transform = 'translateX(-50%)';
-            updateBanner.style.background = '#00468b';
-            updateBanner.style.color = 'white';
-            updateBanner.style.padding = '10px 20px';
-            updateBanner.style.borderRadius = '8px';
-            updateBanner.style.boxShadow = '0 2px 6px rgba(0,0,0,0.3)';
-            updateBanner.style.zIndex = '1000';
-            updateBanner.innerHTML = 'Update available! <button style="margin-left: 10px; background: white; color: #00468b; border: none; border-radius: 5px; padding: 5px;" onclick="location.reload()">Reload</button>';
-            document.body.appendChild(updateBanner);
-          }
-        }
-      };
-    };
-  });
-}
-</script>
+  <script>
+    window.location.replace('measurement-card.html#bco');
+  </script>
 </body>
 </html>

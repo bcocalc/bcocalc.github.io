@@ -1,1 +1,1 @@
-const CACHE_NAME = "bcocalc-cache-20260208200342";
+const CACHE_NAME = "team-field-calc-v2";
