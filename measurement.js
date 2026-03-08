@@ -257,34 +257,56 @@ function applyBcoToMeasurementCard() {
   if (lsWallDisplay) lsWallDisplay.textContent = wall;
   calcHotTap();
   calcLineStop();
-  if (bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO calculated and pushed into Hot Tap and Line Stop.';
+  if (bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO live update pushed into Hot Tap and Line Stop.';
 }
 
-function calculateIntegratedBco() {
+function calculateIntegratedBco(options = {}) {
+  const { silent = false } = options;
   const material = bcoMaterialEl?.value;
   const nominal = bcoPipeOdEl?.value;
   const pipeOD = parseFloat(trueOD?.[material]?.[nominal]);
   const pipeID = parseFloat(bcoPipeIdEl?.value);
   const cutterOD = parseFloat(bcoCutterOdEl?.value);
+
+  localStorage.setItem('pipeMaterial', material || 'CarbonSteel');
+  if (nominal) localStorage.setItem('pipeOD', nominal);
+  if (bcoScheduleEl?.value) localStorage.setItem('schedule', bcoScheduleEl.value);
+
   if (!Number.isFinite(pipeOD) || !Number.isFinite(pipeID) || !Number.isFinite(cutterOD)) {
+    sessionStorage.removeItem('bcoCalculated');
+    localStorage.removeItem('bcoData');
     if (bcoResultEl) bcoResultEl.textContent = 'BCO: Enter Pipe I.D. and Cutter O.D.';
+    if (!silent && bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'Enter Pipe I.D. and Cutter O.D. to calculate BCO.';
+    refreshBcoState();
+    updateBcoDisplays();
+    calcHotTap();
+    calcLineStop();
+    updateSummary();
     return;
   }
+
   const underRoot = Math.pow(pipeID / 2, 2) - Math.pow(cutterOD / 2, 2);
   if (underRoot < 0) {
+    sessionStorage.removeItem('bcoCalculated');
+    localStorage.removeItem('bcoData');
     if (bcoResultEl) bcoResultEl.textContent = 'BCO: Error — Cutter O.D. cannot exceed Pipe I.D.';
+    if (!silent && bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'Check geometry: Cutter O.D. cannot exceed Pipe I.D.';
+    refreshBcoState();
+    updateBcoDisplays();
+    calcHotTap();
+    calcLineStop();
+    updateSummary();
     return;
   }
+
   const result = (pipeOD / 2) - Math.sqrt(underRoot);
-  localStorage.setItem('pipeMaterial', material);
-  localStorage.setItem('pipeOD', nominal);
-  localStorage.setItem('schedule', bcoScheduleEl.value);
   localStorage.setItem('pipeID', pipeID);
   localStorage.setItem('bcoData', JSON.stringify({ pipeOD, pipeID, cutterOD, bco: result }));
   sessionStorage.setItem('bcoCalculated', 'true');
   if (bcoResultEl) bcoResultEl.textContent = `BCO: ${result.toFixed(4)}`;
   updateBcoDisplays();
   applyBcoToMeasurementCard();
+  if (!silent && bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO updated automatically.';
 }
 
 function copyBcoResult() {
@@ -293,6 +315,10 @@ function copyBcoResult() {
   navigator.clipboard?.writeText(text).then(() => {
     if (bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO result copied.';
   }).catch(() => {});
+}
+
+function triggerLiveBcoCalculation() {
+  calculateIntegratedBco({ silent: true });
 }
 
 [bcoMaterialEl, bcoPipeOdEl, bcoScheduleEl].forEach(el => {
@@ -304,13 +330,22 @@ function copyBcoResult() {
     } else {
       updateBcoPipeId();
     }
+    triggerLiveBcoCalculation();
   });
 });
-if (bcoPipeIdEl) bcoPipeIdEl.addEventListener('input', () => { bcoIdManuallyEdited = true; updateBcoDisplays(); });
-if (bcoCutterOdEl) bcoCutterOdEl.addEventListener('input', updateBcoDisplays);
-if (bcoCalcBtnEl) bcoCalcBtnEl.addEventListener('click', calculateIntegratedBco);
+if (bcoPipeIdEl) bcoPipeIdEl.addEventListener('input', () => {
+  bcoIdManuallyEdited = true;
+  updateBcoDisplays();
+  triggerLiveBcoCalculation();
+});
+if (bcoCutterOdEl) bcoCutterOdEl.addEventListener('input', () => {
+  updateBcoDisplays();
+  triggerLiveBcoCalculation();
+});
+if (bcoCalcBtnEl) bcoCalcBtnEl.addEventListener('click', () => calculateIntegratedBco({ silent: false }));
 if (bcoCopyBtnEl) bcoCopyBtnEl.addEventListener('click', copyBcoResult);
 hydrateBcoInputsFromSavedData();
+triggerLiveBcoCalculation();
 
 // ===== HOT TAP =====
 const mdEl = document.getElementById("md");

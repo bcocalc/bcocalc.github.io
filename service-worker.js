@@ -1,1 +1,1 @@
-const CACHE_NAME = "team-field-calc-v2";
+const CACHE_NAME = "team-field-calc-v3";
