@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v49-sync-cache-fix";
+const CACHE_NAME = "tapcalc-v50-sync-write-fix";
 const ASSETS = [
   "./",
   "./index.html",
@@ -28,16 +28,14 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   const url = new URL(event.request.url);
-
-  // Always prefer fresh app files so old JS doesn't get stuck forever.
   const isAppShell = (
+    url.pathname.endsWith("/") ||
+    url.pathname.endsWith("/index.html") ||
+    url.pathname.endsWith("/measurement-card.html") ||
     url.pathname.endsWith("/measurement.js") ||
     url.pathname.endsWith("/script.js") ||
     url.pathname.endsWith("/styles.css") ||
-    url.pathname.endsWith("/firebase-config.js") ||
-    url.pathname.endsWith("/measurement-card.html") ||
-    url.pathname.endsWith("/index.html") ||
-    url.pathname.endsWith("/")
+    url.pathname.endsWith("/firebase-config.js")
   );
 
   if (isAppShell) {

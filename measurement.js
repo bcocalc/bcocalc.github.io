@@ -859,7 +859,6 @@ const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
 let firebaseModuleCache = null;
 let cloudJobsCache = [];
-let cloudJobsUnsubscribe = null;
 let jobsSearchTerm = '';
 
 
@@ -1410,7 +1409,6 @@ async function ensureFirebaseReady() {
     return { enabled: false };
   }
   try {
-    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connecting...';
     const [appModule, firestoreModule] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
@@ -1432,6 +1430,18 @@ function getJobsCollectionName() {
   return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 }
 
+function getTapCalcDeviceId() {
+  try {
+    let existing = localStorage.getItem('tapcalcDeviceId');
+    if (existing) return existing;
+    const created = 'device-' + Math.random().toString(36).slice(2, 10);
+    localStorage.setItem('tapcalcDeviceId', created);
+    return created;
+  } catch {
+    return 'device-unknown';
+  }
+}
+
 function formatFirebaseError(error) {
   if (!error) return 'Unknown Firebase error.';
   const parts = [];
@@ -1443,14 +1453,26 @@ function formatFirebaseError(error) {
 async function uploadHistoryItemToCloud(item) {
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) return null;
-  const { collection, addDoc, serverTimestamp } = ready.modules;
+  const { collection, addDoc, serverTimestamp, getDoc, doc } = ready.modules;
   const payload = {
     ...item.record,
     localId: item.id,
     syncedAt: serverTimestamp(),
-    source: 'tapcalc-web'
+    source: 'tapcalc-web',
+    deviceId: getTapCalcDeviceId(),
+    firebaseProjectId: window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown'
   };
   const docRef = await addDoc(collection(ready.db, getJobsCollectionName()), payload);
+
+  // Verify the write is actually visible from Firestore
+  try {
+    const verify = await getDoc(doc(ready.db, getJobsCollectionName(), docRef.id));
+    if (!verify.exists()) throw new Error('Write verification failed');
+  } catch (verifyError) {
+    console.error('Cloud write verification failed', verifyError);
+    throw verifyError;
+  }
+
   return docRef.id;
 }
 
@@ -1462,13 +1484,15 @@ async function syncLocalJobsToCloud() {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
     return;
   }
-  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'}...`;
+  let uploadedCount = 0;
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'} to ${getJobsCollectionName()}...`;
   for (const item of unsynced) {
     try {
       const cloudId = await uploadHistoryItemToCloud(item);
       if (cloudId) {
         item.cloudId = cloudId;
         item.synced = true;
+        uploadedCount += 1;
       }
     } catch (error) {
       console.error('TapCalc sync failed', error);
@@ -1479,6 +1503,7 @@ async function syncLocalJobsToCloud() {
   renderHistory();
   updateUnsyncedCount();
   await loadCloudJobs();
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Uploaded ${uploadedCount} job${uploadedCount === 1 ? '' : 's'} to ${getJobsCollectionName()}. Live sync active · ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} visible`;
 }
 
 function renderJobRecordDetails(record) {
@@ -1574,38 +1599,19 @@ async function loadCloudJobs() {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
     return;
   }
-
   try {
-    const { collection, getDocs, onSnapshot } = ready.modules;
+    const { collection, getDocs, getDocsFromServer } = ready.modules;
     const colRef = collection(ready.db, getJobsCollectionName());
-
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Checking shared jobs...';
-
-    // Fast initial read
-    const snapshot = await getDocs(colRef);
+    let snapshot;
+    try {
+      snapshot = getDocsFromServer ? await getDocsFromServer(colRef) : await getDocs(colRef);
+    } catch (serverError) {
+      console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
+      snapshot = await getDocs(colRef);
+    }
     cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() || {} }));
     renderJobsList();
-
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
-    }
-
-    // Realtime follow-up listener
-    if (cloudJobsUnsubscribe) {
-      try { cloudJobsUnsubscribe(); } catch {}
-      cloudJobsUnsubscribe = null;
-    }
-
-    cloudJobsUnsubscribe = onSnapshot(colRef, (liveSnapshot) => {
-      cloudJobsCache = liveSnapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() || {} }));
-      renderJobsList();
-      if (jobsCloudStatusEl) {
-        jobsCloudStatusEl.textContent = `Live sync active · ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} visible`;
-      }
-    }, (error) => {
-      console.error('Realtime shared jobs listener failed', error);
-      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Realtime sync failed. ${formatFirebaseError(error)}`;
-    });
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
   } catch (error) {
     console.error('Cloud jobs load failed', error);
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
@@ -1674,7 +1680,7 @@ function renderHistory() {
   `).join('');
 }
 
-async function saveCurrentJobToHistory() {
+async async function saveCurrentJobToHistory() {
   const items = getHistory();
   const snapshot = buildHistorySnapshot();
   items.unshift(snapshot);
@@ -1789,3 +1795,10 @@ window.addEventListener('load', () => {
 });
 
 })();
+
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    try { loadCloudJobs(); } catch (e) { console.error(e); }
+  }, 500);
+});
