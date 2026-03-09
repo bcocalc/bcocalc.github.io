@@ -2461,3 +2461,54 @@ body.dark .jobs-cloud-status,
 body.dark #jobsCloudStatus {
   color: #f3f6fb;
 }
+
+/* v43 dark-mode readability patch for Jobs + Calculation History */
+body.dark .job-record-card,
+body.dark .job-record-card summary {
+  background: #1f242b !important;
+  border-color: #313b47 !important;
+}
+
+body.dark .job-record-card {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+}
+
+body.dark .job-record-title,
+body.dark .job-record-summary,
+body.dark .job-record-summary *,
+body.dark .job-record-meta,
+body.dark .job-detail-grid,
+body.dark .job-detail-grid div,
+body.dark .job-detail-grid strong,
+body.dark .jobs-list,
+body.dark .jobs-list * {
+  color: #eef4fb !important;
+}
+
+body.dark .job-record-title,
+body.dark .job-detail-grid strong {
+  color: #ffffff !important;
+}
+
+body.dark .job-record-meta {
+  color: #d7e2ee !important;
+}
+
+body.dark .history,
+body.dark .history ul,
+body.dark .history li,
+body.dark .history-item,
+body.dark .history-item * {
+  color: #eef4fb !important;
+}
+
+body.dark .history {
+  background: #1f242b !important;
+  border-color: #313b47 !important;
+}
+
+body.dark .history li,
+body.dark .history-item {
+  background: transparent !important;
+  border-color: #3a4350 !important;
+}
