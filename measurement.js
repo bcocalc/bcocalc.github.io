@@ -1768,3 +1768,35 @@ window.addEventListener('load', () => {
 });
 
 })();
+
+
+// ===== REALTIME CLOUD SYNC PATCH (v2.2) =====
+async function startRealtimeSync() {
+  try {
+    const ready = await ensureFirebaseReady();
+    if (!ready?.db) return;
+
+    const { collection, onSnapshot } = ready.modules;
+    const col = collection(ready.db, getCollectionName());
+
+    onSnapshot(col, (snapshot) => {
+      cloudJobsCache = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        if (data) cloudJobsCache.push({ id: doc.id, record: data });
+      });
+
+      if (jobsCloudStatusEl) {
+        jobsCloudStatusEl.textContent =
+          `Realtime sync active · ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? "" : "s"} visible`;
+      }
+
+      renderJobs();
+    });
+  } catch (e) {
+    console.error("Realtime sync failed", e);
+  }
+}
+
+setTimeout(startRealtimeSync, 1500);
+// ===== END REALTIME CLOUD SYNC PATCH =====
