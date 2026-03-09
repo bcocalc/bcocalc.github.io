@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v44-live-sync";
+const CACHE_NAME = "tapcalc-v45-startup-cloud-refresh";
 const ASSETS = [
   "./",
   "./index.html",
