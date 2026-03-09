@@ -83,12 +83,6 @@ function setMode(mode) {
     syncBcoToEta({ force: true });
     updateEtaEstimate();
   }
-  if (mode === 'jobs') {
-    if (jobsCloudStatusEl && (!jobsCloudStatusEl.textContent || jobsCloudStatusEl.textContent.includes('Firebase config'))) {
-      jobsCloudStatusEl.textContent = 'Connecting to shared job database...';
-    }
-    loadCloudJobs();
-  }
   try {
     localStorage.setItem('measurementCardActiveModeV1', mode);
   } catch {}
@@ -1493,23 +1487,23 @@ function renderJobRecordDetails(record) {
   ].filter(Boolean);
   return `
     <div class="job-detail-grid">
-      <div><strong>Customer:</strong> ${record.job.client || '—'}</div>
-      <div><strong>Location:</strong> ${record.job.location || '—'}</div>
-      <div><strong>Technician:</strong> ${record.job.technician || '—'}</div>
-      <div><strong>Job #:</strong> ${record.job.jobNumber || '—'}</div>
-      <div><strong>Pipe:</strong> ${record.pipe.material || '—'} ${record.pipe.nominalSize || ''}</div>
-      <div><strong>Wall:</strong> ${record.pipe.wallThickness || '—'}</div>
-      <div><strong>Cutter:</strong> ${record.machine.cutterOd || '—'}</div>
-      <div><strong>Machine:</strong> ${record.machine.machine || '—'}</div>
-      <div><strong>BCO:</strong> ${record.calculations.bco || '—'}</div>
-      <div><strong>ETA:</strong> ${record.machine.etaRange || '—'}</div>
-      <div><strong>Operation:</strong> ${record.meta.operationType || '—'}</div>
-      <div><strong>Notes:</strong> ${record.job.notes || '—'}</div>
+      <div><strong>Customer:</strong> ${record?.job?.client || '—'}</div>
+      <div><strong>Location:</strong> ${record?.job?.location || '—'}</div>
+      <div><strong>Technician:</strong> ${record?.job?.technician || '—'}</div>
+      <div><strong>Job #:</strong> ${record?.job?.jobNumber || '—'}</div>
+      <div><strong>Pipe:</strong> ${record?.pipe?.material || '—'} ${record?.pipe?.nominalSize || ''}</div>
+      <div><strong>Wall:</strong> ${record?.pipe?.wallThickness || '—'}</div>
+      <div><strong>Cutter:</strong> ${record?.machine?.cutterOd || '—'}</div>
+      <div><strong>Machine:</strong> ${record?.machine?.machine || '—'}</div>
+      <div><strong>BCO:</strong> ${record?.calculations?.bco || '—'}</div>
+      <div><strong>ETA:</strong> ${record?.machine?.etaRange || '—'}</div>
+      <div><strong>Operation:</strong> ${record?.meta?.operationType || '—'}</div>
+      <div><strong>Notes:</strong> ${record?.job?.notes || '—'}</div>
     </div>
     <div class="job-detail-grid">
-      <div><strong>Hot Tap LI:</strong> ${record.calculations.hotTapLi || '—'}</div>
-      <div><strong>Line Stop LI:</strong> ${record.calculations.lineStopLi || '—'}</div>
-      <div><strong>Completion Plug LI:</strong> ${record.calculations.completionPlugLi || '—'}</div>
+      <div><strong>Hot Tap LI:</strong> ${record?.calculations?.hotTapLi || '—'}</div>
+      <div><strong>Line Stop LI:</strong> ${record?.calculations?.lineStopLi || '—'}</div>
+      <div><strong>Completion Plug LI:</strong> ${record?.calculations?.completionPlugLi || '—'}</div>
       <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
     </div>`;
 }
@@ -1517,11 +1511,11 @@ function renderJobRecordDetails(record) {
 function getCombinedJobsForDisplay() {
   const localItems = getHistory()
     .filter((item) => item && item.record)
-    .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, cloudId: item.cloudId || null, localId: item.id, record: item.record, savedAt: item.savedAt }));
+    .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, record: item.record, savedAt: item.savedAt }));
   const map = new Map();
   [...cloudJobsCache, ...localItems].forEach((entry) => {
-    const key = entry.cloudId || entry.id || entry.localId || entry.record?.localId || `${entry.record?.meta?.savedAtIso}-${entry.record?.job?.jobNumber || ''}`;
-    if (!map.has(key) || map.get(key)?.source === 'local' && entry.source !== 'local') map.set(key, entry);
+    const key = entry.id || `${entry.record?.meta?.savedAtIso}-${entry.record?.job?.jobNumber || ''}`;
+    if (!map.has(key)) map.set(key, entry);
   });
   let jobs = Array.from(map.values());
   if (jobsSearchTerm) {
@@ -1545,21 +1539,28 @@ function renderJobsList() {
     jobsListEl.innerHTML = 'No jobs loaded yet.';
     return;
   }
-  jobsListEl.innerHTML = jobs.map(({ source, id, record }) => `
+  jobsListEl.innerHTML = jobs.map(({ source, id, record }) => {
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+    const operationType = record?.meta?.operationType || record?.state?.activeMode || 'Job';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const client = record?.job?.client || 'No customer';
+    const nominalSize = record?.pipe?.nominalSize || '—';
+    const bco = record?.calculations?.bco || '—';
+    return `
     <details class="job-record-card">
       <summary>
         <div class="job-record-summary">
-          <span class="job-record-title">${record.meta.title || 'Saved Job'}</span>
+          <span class="job-record-title">${title}</span>
           <span class="job-record-badges">
             <span class="job-source-badge ${source}">${source === 'local' ? 'Local only' : source === 'synced' ? 'Synced' : 'Shared DB'}</span>
-            <span class="job-source-badge op">${record.meta.operationType || 'Job'}</span>
+            <span class="job-source-badge op">${operationType}</span>
           </span>
         </div>
-        <div class="job-record-meta">${record.meta.savedAtDisplay || '—'} • ${record.job.client || 'No customer'} • ${record.pipe.nominalSize || '—'} • BCO ${record.calculations.bco || '—'}</div>
+        <div class="job-record-meta">${savedAtDisplay} • ${client} • ${nominalSize} • BCO ${bco}</div>
       </summary>
       ${renderJobRecordDetails(record)}
-    </details>
-  `).join('');
+    </details>`;
+  }).join('');
 }
 
 async function loadCloudJobs() {
@@ -1572,7 +1573,7 @@ async function loadCloudJobs() {
     return;
   }
   try {
-    const { collection, getDocs, getDocsFromServer, onSnapshot } = ready.modules;
+    const { collection, getDocs, getDocsFromServer } = ready.modules;
     const colRef = collection(ready.db, getJobsCollectionName());
     let snapshot;
     try {
@@ -1581,21 +1582,9 @@ async function loadCloudJobs() {
       console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
       snapshot = await getDocs(colRef);
     }
-    cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, cloudId: docSnap.id, localId: docSnap.data()?.localId || null, record: docSnap.data() }));
+    cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() || {} }));
     renderJobsList();
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
-    if (typeof onSnapshot === 'function') {
-      if (window.__tapcalcCloudJobsUnsub__) {
-        try { window.__tapcalcCloudJobsUnsub__(); } catch {}
-      }
-      window.__tapcalcCloudJobsUnsub__ = onSnapshot(colRef, (liveSnapshot) => {
-        cloudJobsCache = liveSnapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, cloudId: docSnap.id, localId: docSnap.data()?.localId || null, record: docSnap.data() }));
-        renderJobsList();
-        if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
-      }, (liveError) => {
-        console.error('Live shared jobs listener failed', liveError);
-      });
-    }
   } catch (error) {
     console.error('Cloud jobs load failed', error);
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
@@ -1756,14 +1745,6 @@ if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () =>
 if (geometryLockToggleEl) geometryLockToggleEl.addEventListener('change', () => { setGeometryLocked(geometryLockToggleEl.checked); persistCurrentJob(); });
 if (exportPdfBtnEl) exportPdfBtnEl.addEventListener('click', exportJobPdf);
 if (exportImageBtnEl) exportImageBtnEl.addEventListener('click', exportJobImage);
-
-window.addEventListener('pageshow', () => {
-  loadCloudJobs();
-});
-
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') loadCloudJobs();
-});
 
 window.addEventListener('load', () => {
   enableMixedMeasurementInputs();
