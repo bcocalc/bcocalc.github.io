@@ -809,15 +809,7 @@ function initBoltingReference() {
 initBoltingReference();
 
 if ('serviceWorker' in navigator) {
-  
-window.addEventListener('pageshow', () => {
-  loadCloudJobs();
-});
-document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible') loadCloudJobs();
-});
-
-window.addEventListener('load', () => {
+  window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
   });
 }
@@ -873,7 +865,6 @@ const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
 let firebaseModuleCache = null;
 let cloudJobsCache = [];
-let cloudJobsUnsubscribe = null;
 let jobsSearchTerm = '';
 
 
@@ -1526,22 +1517,11 @@ function renderJobRecordDetails(record) {
 function getCombinedJobsForDisplay() {
   const localItems = getHistory()
     .filter((item) => item && item.record)
-    .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, localId: item.id, cloudId: item.cloudId || '', record: item.record, savedAt: item.savedAt }));
+    .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, cloudId: item.cloudId || null, localId: item.id, record: item.record, savedAt: item.savedAt }));
   const map = new Map();
   [...cloudJobsCache, ...localItems].forEach((entry) => {
     const key = entry.cloudId || entry.id || entry.localId || entry.record?.localId || `${entry.record?.meta?.savedAtIso}-${entry.record?.job?.jobNumber || ''}`;
-    const existing = map.get(key);
-    if (!existing) {
-      map.set(key, entry);
-      return;
-    }
-    if (existing.source !== 'cloud' && entry.source === 'cloud') {
-      map.set(key, { ...existing, ...entry, source: 'cloud' });
-      return;
-    }
-    if (existing.source === 'local' && entry.source === 'synced') {
-      map.set(key, { ...existing, ...entry, source: 'synced' });
-    }
+    if (!map.has(key) || map.get(key)?.source === 'local' && entry.source !== 'local') map.set(key, entry);
   });
   let jobs = Array.from(map.values());
   if (jobsSearchTerm) {
@@ -1582,36 +1562,6 @@ function renderJobsList() {
   `).join('');
 }
 
-function applyCloudSnapshot(snapshot) {
-  cloudJobsCache = snapshot.docs.map((docSnap) => ({
-    source: 'cloud',
-    id: docSnap.id,
-    cloudId: docSnap.id,
-    localId: docSnap.data()?.localId || '',
-    record: docSnap.data()
-  }));
-  renderJobsList();
-  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
-  updateUnsyncedCount();
-}
-
-async function startCloudJobsListener() {
-  const ready = await ensureFirebaseReady();
-  if (!ready.enabled) return;
-  try {
-    const { collection, onSnapshot } = ready.modules;
-    if (cloudJobsUnsubscribe) cloudJobsUnsubscribe();
-    cloudJobsUnsubscribe = onSnapshot(collection(ready.db, getJobsCollectionName()), (snapshot) => {
-      applyCloudSnapshot(snapshot);
-    }, (error) => {
-      console.error('Cloud jobs listener failed', error);
-      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Shared jobs live sync failed. ${formatFirebaseError(error)}`;
-    });
-  } catch (error) {
-    console.error('Cloud jobs listener setup failed', error);
-  }
-}
-
 async function loadCloudJobs() {
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) {
@@ -1622,11 +1572,30 @@ async function loadCloudJobs() {
     return;
   }
   try {
-    const { collection, getDocsFromServer, getDocs } = ready.modules;
+    const { collection, getDocs, getDocsFromServer, onSnapshot } = ready.modules;
     const colRef = collection(ready.db, getJobsCollectionName());
-    const snapshot = getDocsFromServer ? await getDocsFromServer(colRef) : await getDocs(colRef);
-    applyCloudSnapshot(snapshot);
-    await startCloudJobsListener();
+    let snapshot;
+    try {
+      snapshot = getDocsFromServer ? await getDocsFromServer(colRef) : await getDocs(colRef);
+    } catch (serverError) {
+      console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
+      snapshot = await getDocs(colRef);
+    }
+    cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, cloudId: docSnap.id, localId: docSnap.data()?.localId || null, record: docSnap.data() }));
+    renderJobsList();
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
+    if (typeof onSnapshot === 'function') {
+      if (window.__tapcalcCloudJobsUnsub__) {
+        try { window.__tapcalcCloudJobsUnsub__(); } catch {}
+      }
+      window.__tapcalcCloudJobsUnsub__ = onSnapshot(colRef, (liveSnapshot) => {
+        cloudJobsCache = liveSnapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, cloudId: docSnap.id, localId: docSnap.data()?.localId || null, record: docSnap.data() }));
+        renderJobsList();
+        if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
+      }, (liveError) => {
+        console.error('Live shared jobs listener failed', liveError);
+      });
+    }
   } catch (error) {
     console.error('Cloud jobs load failed', error);
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
@@ -1788,10 +1757,10 @@ if (geometryLockToggleEl) geometryLockToggleEl.addEventListener('change', () => 
 if (exportPdfBtnEl) exportPdfBtnEl.addEventListener('click', exportJobPdf);
 if (exportImageBtnEl) exportImageBtnEl.addEventListener('click', exportJobImage);
 
-
 window.addEventListener('pageshow', () => {
   loadCloudJobs();
 });
+
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'visible') loadCloudJobs();
 });

@@ -2512,3 +2512,27 @@ body.dark .history-item {
   background: transparent !important;
   border-color: #3a4350 !important;
 }
+
+
+:root[data-theme="dark"] .job-record-card,
+:root[data-theme="dark"] .history-item,
+:root[data-theme="dark"] .history li {
+  background: #1f242b !important;
+  color: #eef4fb !important;
+  border-color: #313b47 !important;
+}
+
+:root[data-theme="dark"] .job-record-title,
+:root[data-theme="dark"] .history-title,
+:root[data-theme="dark"] .job-detail-grid strong {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .job-record-meta,
+:root[data-theme="dark"] .job-detail-grid div,
+:root[data-theme="dark"] .history-meta,
+:root[data-theme="dark"] .history-values,
+:root[data-theme="dark"] #jobsCloudStatus {
+  color: #eef4fb !important;
+  opacity: 1 !important;
+}
