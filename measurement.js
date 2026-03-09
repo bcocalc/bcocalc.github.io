@@ -1416,7 +1416,7 @@ async function ensureFirebaseReady() {
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
     firebaseDb = firestoreModule.getFirestore(app);
     firebaseModuleCache = firestoreModule;
-    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connected';
+    if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
     return { enabled: true, db: firebaseDb, modules: firestoreModule };
   } catch (error) {
     console.error('Firebase init failed', error);
@@ -1430,18 +1430,6 @@ function getJobsCollectionName() {
   return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 }
 
-function getTapCalcDeviceId() {
-  try {
-    let existing = localStorage.getItem('tapcalcDeviceId');
-    if (existing) return existing;
-    const created = 'device-' + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem('tapcalcDeviceId', created);
-    return created;
-  } catch {
-    return 'device-unknown';
-  }
-}
-
 function formatFirebaseError(error) {
   if (!error) return 'Unknown Firebase error.';
   const parts = [];
@@ -1453,26 +1441,14 @@ function formatFirebaseError(error) {
 async function uploadHistoryItemToCloud(item) {
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) return null;
-  const { collection, addDoc, serverTimestamp, getDoc, doc } = ready.modules;
+  const { collection, addDoc, serverTimestamp } = ready.modules;
   const payload = {
     ...item.record,
     localId: item.id,
     syncedAt: serverTimestamp(),
-    source: 'tapcalc-web',
-    deviceId: getTapCalcDeviceId(),
-    firebaseProjectId: window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown'
+    source: 'tapcalc-web'
   };
   const docRef = await addDoc(collection(ready.db, getJobsCollectionName()), payload);
-
-  // Verify the write is actually visible from Firestore
-  try {
-    const verify = await getDoc(doc(ready.db, getJobsCollectionName(), docRef.id));
-    if (!verify.exists()) throw new Error('Write verification failed');
-  } catch (verifyError) {
-    console.error('Cloud write verification failed', verifyError);
-    throw verifyError;
-  }
-
   return docRef.id;
 }
 
@@ -1484,15 +1460,13 @@ async function syncLocalJobsToCloud() {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
     return;
   }
-  let uploadedCount = 0;
-  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'} to ${getJobsCollectionName()}...`;
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'} to ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'})...`;
   for (const item of unsynced) {
     try {
       const cloudId = await uploadHistoryItemToCloud(item);
       if (cloudId) {
         item.cloudId = cloudId;
         item.synced = true;
-        uploadedCount += 1;
       }
     } catch (error) {
       console.error('TapCalc sync failed', error);
@@ -1503,7 +1477,6 @@ async function syncLocalJobsToCloud() {
   renderHistory();
   updateUnsyncedCount();
   await loadCloudJobs();
-  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Uploaded ${uploadedCount} job${uploadedCount === 1 ? '' : 's'} to ${getJobsCollectionName()}. Live sync active · ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} visible`;
 }
 
 function renderJobRecordDetails(record) {
@@ -1611,7 +1584,7 @@ async function loadCloudJobs() {
     }
     cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() || {} }));
     renderJobsList();
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}).`;
   } catch (error) {
     console.error('Cloud jobs load failed', error);
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
@@ -1680,7 +1653,7 @@ function renderHistory() {
   `).join('');
 }
 
-async async function saveCurrentJobToHistory() {
+async function saveCurrentJobToHistory() {
   const items = getHistory();
   const snapshot = buildHistorySnapshot();
   items.unshift(snapshot);
@@ -1795,10 +1768,3 @@ window.addEventListener('load', () => {
 });
 
 })();
-
-
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    try { loadCloudJobs(); } catch (e) { console.error(e); }
-  }, 500);
-});
