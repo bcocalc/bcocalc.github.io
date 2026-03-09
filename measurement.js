@@ -1421,13 +1421,21 @@ async function ensureFirebaseReady() {
   } catch (error) {
     console.error('Firebase init failed', error);
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase could not connect. Check firebase-config.js and your Firestore rules.';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
     return { enabled: false, error };
   }
 }
 
 function getJobsCollectionName() {
   return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
+}
+
+function formatFirebaseError(error) {
+  if (!error) return 'Unknown Firebase error.';
+  const parts = [];
+  if (error.code) parts.push(String(error.code));
+  if (error.message) parts.push(String(error.message));
+  return parts.join(' — ') || String(error);
 }
 
 async function uploadHistoryItemToCloud(item) {
@@ -1462,6 +1470,7 @@ async function syncLocalJobsToCloud() {
       }
     } catch (error) {
       console.error('TapCalc sync failed', error);
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Cloud sync failed for "${item?.record?.meta?.title || 'Saved Job'}". ${formatFirebaseError(error)}`;
     }
   }
   saveHistory(items);
@@ -1564,7 +1573,7 @@ async function loadCloudJobs() {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
   } catch (error) {
     console.error('Cloud jobs load failed', error);
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Could not load shared jobs. Check Firestore rules and your Firebase config.';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
   }
   updateUnsyncedCount();
 }
@@ -1658,7 +1667,7 @@ async function saveCurrentJobToHistory() {
     }
   } catch (error) {
     console.error('TapCalc auto-sync failed', error);
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Saved locally. Cloud sync can be retried from the Jobs tab.';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally. Cloud sync can be retried from the Jobs tab. ${formatFirebaseError(error)}`;
   }
 }
 
