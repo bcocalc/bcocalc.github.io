@@ -1454,14 +1454,31 @@ async function uploadHistoryItemToCloud(item) {
 
 async function syncLocalJobsToCloud() {
   const items = getHistory();
-  const unsynced = items.filter((item) => !item.cloudId);
+
+  // Normal behavior: upload jobs with no cloudId.
+  let queue = items.filter((item) => !item.cloudId);
+
+  // Repair behavior:
+  // If local history exists but the shared DB is empty, re-upload local jobs once.
+  // This fixes cases where old jobs are marked synced locally but the cloud collection is blank.
+  if (!queue.length && items.length && cloudJobsCache.length === 0) {
+    queue = items.map((item) => {
+      item.cloudId = null;
+      item.synced = false;
+      return item;
+    });
+  }
+
   updateUnsyncedCount();
-  if (!unsynced.length) {
+
+  if (!queue.length) {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
     return;
   }
-  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'} to ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'})...`;
-  for (const item of unsynced) {
+
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${queue.length} local job${queue.length === 1 ? '' : 's'} to ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'})...`;
+
+  for (const item of queue) {
     try {
       const cloudId = await uploadHistoryItemToCloud(item);
       if (cloudId) {
@@ -1473,6 +1490,7 @@ async function syncLocalJobsToCloud() {
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Cloud sync failed for "${item?.record?.meta?.title || 'Saved Job'}". ${formatFirebaseError(error)}`;
     }
   }
+
   saveHistory(items);
   renderHistory();
   updateUnsyncedCount();

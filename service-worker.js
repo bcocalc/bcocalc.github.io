@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v51-ui-restore";
+const CACHE_NAME = "tapcalc-v52-repair-sync";
 const ASSETS = [
   "./",
   "./index.html",
