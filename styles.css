@@ -2230,3 +2230,195 @@ body.dark #fractionPrecision option {
   background: #2a2a2a !important;
   color: #ffffff !important;
 }
+
+
+/* === TapCalc Jobs / Shared Database === */
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font: inherit;
+  resize: vertical;
+}
+
+.row textarea {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.job-notes-row {
+  align-items: flex-start;
+}
+
+.jobs-grid {
+  gap: 16px;
+}
+
+.jobs-panel-card {
+  min-height: 100%;
+}
+
+.jobs-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.jobs-actions button {
+  width: auto;
+  min-width: 180px;
+}
+
+.jobs-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.jobs-search-row {
+  display: block;
+}
+
+.jobs-search-row label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.jobs-list {
+  display: grid;
+  gap: 12px;
+}
+
+.job-record-card {
+  border: 1px solid #d7dee6;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.job-record-card summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+}
+
+.job-record-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.job-record-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.job-record-title {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.job-record-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.job-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #e8eef6;
+  color: #16395f;
+}
+
+.job-source-badge.local {
+  background: #fce9b3;
+  color: #5a4200;
+}
+
+.job-source-badge.synced,
+.job-source-badge.cloud {
+  background: #d9f0dd;
+  color: #205a2a;
+}
+
+.job-source-badge.op {
+  background: #dde9f7;
+  color: #164274;
+}
+
+.job-record-meta {
+  color: #5b6572;
+  font-size: 0.9rem;
+}
+
+.job-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+body.dark textarea,
+body.dark .row textarea {
+  background: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #3a3a3a;
+}
+
+body.dark .job-record-card {
+  background: #242424;
+  border-color: #30363d;
+}
+
+body.dark .job-record-title {
+  color: #ffffff;
+}
+
+body.dark .job-record-meta,
+body.dark .job-detail-grid {
+  color: #e2e8f0;
+}
+
+body.dark .job-source-badge {
+  background: #304055;
+  color: #f5f7fa;
+}
+
+body.dark .job-source-badge.local {
+  background: #5b4300;
+  color: #ffe79a;
+}
+
+body.dark .job-source-badge.synced,
+body.dark .job-source-badge.cloud {
+  background: #1d4c2a;
+  color: #d8f6df;
+}
+
+body.dark .job-source-badge.op {
+  background: #1f3c63;
+  color: #d8e8ff;
+}
+
+@media (max-width: 768px) {
+  .jobs-actions button {
+    width: 100%;
+  }
+
+  .job-record-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -15,7 +15,7 @@
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">v2.0 · 2026-03-08</span>
+      <span class="version-badge">v2.1 · 2026-03-09</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -41,6 +41,9 @@
       <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
       <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
       <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
+      <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
+      <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
+      <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="3" placeholder="Notes"></textarea></div>
     </div>
   </section>
 
@@ -51,6 +54,7 @@
     <button type="button" class="mode-btn" data-mode="completionPlug">Completion Plug</button>
     <button type="button" class="mode-btn" data-mode="eta">Tap ETA</button>
     <button type="button" class="mode-btn" data-mode="glossary">Reference</button>
+    <button type="button" class="mode-btn" data-mode="jobs">Jobs</button>
   </div>
 
   <div class="utility-bar">
@@ -405,6 +409,33 @@
     </div>
   </section>
 
+  <section id="jobsPanel" class="mode-panel">
+    <div class="measurement-grid jobs-grid">
+      <div class="section jobs-panel-card">
+        <h3>Shared Jobs</h3>
+        <p class="note jobs-note">Save jobs locally like before, then sync them to the shared database when Firebase is connected.</p>
+        <div class="jobs-actions">
+          <button type="button" id="syncJobsBtn">Sync Local Jobs</button>
+          <button type="button" id="refreshCloudJobsBtn" class="secondary-btn">Refresh Shared Jobs</button>
+        </div>
+        <div class="jobs-status-grid">
+          <div class="summary-item"><span class="summary-label">Firebase</span><span id="firebaseStatus" class="summary-value">Not connected</span></div>
+          <div class="summary-item"><span class="summary-label">Unsynced Local Jobs</span><span id="unsyncedJobsCount" class="summary-value">0</span></div>
+        </div>
+        <p id="jobsCloudStatus" class="note">Add your Firebase config to firebase-config.js to turn on the shared company job database.</p>
+        <div class="row jobs-search-row">
+          <label for="jobsSearchInput">Search Jobs</label>
+          <input id="jobsSearchInput" type="text" placeholder="Search customer, location, job number, pipe size, or tech">
+        </div>
+      </div>
+
+      <div class="section jobs-panel-card">
+        <h3>Shared / Synced Job List</h3>
+        <div id="jobsList" class="jobs-list">No jobs loaded yet.</div>
+      </div>
+    </div>
+</section>
+
   <div id="decimalModal" class="modal-overlay" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="decimalModalTitle">
       <div class="modal-header">
@@ -457,6 +488,7 @@
 
 </div>
 
+<script src="firebase-config.js"></script>
 <script src="measurement.js"></script>
 </body>
 </html>

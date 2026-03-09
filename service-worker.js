@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v39-dark-reference-polish";
+const CACHE_NAME = "tapcalc-v40-shared-jobs";
 const ASSETS = [
   "./",
   "./index.html",
@@ -7,6 +7,7 @@ const ASSETS = [
   "./measurement.js",
   "./script.js",
   "./manifest.json",
+  "./firebase-config.js",
   "./team-logo.png"
 ];
 

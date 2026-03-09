@@ -69,7 +69,8 @@ const panels = {
   lineStop: document.getElementById('lineStopPanel'),
   completionPlug: document.getElementById('completionPlugPanel'),
   eta: document.getElementById('etaPanel'),
-  glossary: document.getElementById('glossaryPanel')
+  glossary: document.getElementById('glossaryPanel'),
+  jobs: document.getElementById('jobsPanel')
 };
 
 function setMode(mode) {
@@ -845,8 +846,21 @@ const HISTORY_DRAWER_OPEN_KEY = 'measurementCardHistoryDrawerOpenV1';
 const geometryLockToggleEl = document.getElementById('geometryLockToggle');
 const exportPdfBtnEl = document.getElementById('exportPdfBtn');
 const exportImageBtnEl = document.getElementById('exportImageBtn');
-const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct'];
+const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes'];
 const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD'];
+const syncJobsBtnEl = document.getElementById('syncJobsBtn');
+const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
+const jobsListEl = document.getElementById('jobsList');
+const jobsSearchInputEl = document.getElementById('jobsSearchInput');
+const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
+const firebaseStatusEl = document.getElementById('firebaseStatus');
+const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
+const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
+let firebaseDb = null;
+let firebaseModuleCache = null;
+let cloudJobsCache = [];
+let jobsSearchTerm = '';
+
 
 function calcHotTap() {
   if (!data) {
@@ -1125,7 +1139,10 @@ function getJobInfoLines() {
     ['Pressure', info.jobPressure],
     ['Temperature', info.jobTemperature],
     ['Date', info.jobDate],
-    ['Product', info.jobProduct]
+    ['Product', info.jobProduct],
+    ['Location', info.jobLocation],
+    ['Technician', info.jobTechnician],
+    ['Notes', info.jobNotes]
   ];
   return rows.filter(([,v]) => (v || '').trim() !== '');
 }
@@ -1187,7 +1204,7 @@ function exportJobImage() {
 
 function getStateFields() {
   return [
-    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','geometryLockToggle',
+    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
@@ -1255,25 +1272,308 @@ function saveHistory(items) {
   } catch {}
 }
 
-function buildHistorySnapshot() {
-  const material = bcoMaterialEl?.selectedOptions?.[0]?.textContent || bcoMaterialEl?.value || '—';
-  const nominal = bcoPipeOdEl?.value || '—';
-  const jobTitle = document.getElementById('jobDescription')?.value || document.getElementById('jobClient')?.value || document.getElementById('jobNumber')?.value || '';
+function inferOperationType(state = collectJobState()) {
+  const activeMode = state.activeMode || document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
+  if (activeMode === 'lineStop') return 'Line Stop';
+  if (activeMode === 'completionPlug') return 'Completion Plug';
+  if (activeMode === 'hotTap' || activeMode === 'eta') return 'Hot Tap';
+  const hasLineStop = ['lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel'].some((key) => String(state[key] || '').trim() !== '');
+  if (hasLineStop) return 'Line Stop';
+  const hasCompletion = ['cpStart','cpJbf','cpLd','cpPt','cpLiManual'].some((key) => String(state[key] || '').trim() !== '');
+  if (hasCompletion) return 'Completion Plug';
+  const hasHotTap = ['md','ld','ptc','start','mt'].some((key) => String(state[key] || '').trim() !== '');
+  if (hasHotTap) return 'Hot Tap';
+  return 'BCO / Geometry';
+}
+
+function buildJobRecord(state = collectJobState()) {
+  refreshBcoState();
+  const materialLabel = bcoMaterialEl?.selectedOptions?.[0]?.textContent || state.bcoPipeMaterial || '—';
+  const nominal = state.bcoPipeOD || '—';
+  const machineLabelMap = { '360': '360 / 152', '660': '660 / 760', '1200': '1200-M120' };
+  const operationType = inferOperationType(state);
+  const savedAtIso = new Date().toISOString();
+  const etaRpm = etaRpmDisplayEl?.textContent?.trim() || '—';
+  const etaRange = etaRangeDisplayEl?.textContent?.trim() || '—';
+  const etaFeedSpeed = etaFeedSpeedDisplayEl?.textContent?.trim() || '—';
+  const wallText = Number.isFinite(geometry.wall) ? geometry.wall.toFixed(4) : '';
+  const pipeOdText = Number.isFinite(geometry.pipeOD) ? geometry.pipeOD.toFixed(4) : '';
+  const pipeIdText = Number.isFinite(geometry.pipeID) ? geometry.pipeID.toFixed(4) : '';
+  const cutterText = String(state.bcoCutterOD || '').trim();
+  const title = (state.jobDescription || state.jobNumber || state.jobClient || `${operationType} Job`).trim();
+
   return {
-    id: `${Date.now()}`,
-    savedAt: new Date().toLocaleString(),
-    state: collectJobState(),
-    summary: {
-      title: jobTitle.trim(),
-      pipe: `${material} ${nominal}`.trim(),
+    meta: {
+      title,
+      operationType,
+      savedAtIso,
+      savedAtDisplay: new Date(savedAtIso).toLocaleString(),
+      app: 'TapCalc',
+      version: 'v40'
+    },
+    job: {
+      client: state.jobClient || '',
+      description: state.jobDescription || '',
+      jobNumber: state.jobNumber || '',
+      pressure: state.jobPressure || '',
+      temperature: state.jobTemperature || '',
+      date: state.jobDate || '',
+      product: state.jobProduct || '',
+      location: state.jobLocation || '',
+      technician: state.jobTechnician || '',
+      notes: state.jobNotes || ''
+    },
+    pipe: {
+      material: materialLabel,
+      nominalSize: nominal,
+      trueOd: pipeOdText,
+      pipeId: pipeIdText,
+      wallThickness: wallText,
+      schedule: state.bcoSchedule || ''
+    },
+    machine: {
+      machine: machineLabelMap[state.etaMachine] || state.etaMachine || '',
+      cutterOd: cutterText,
+      rpm: etaRpm,
+      feedRate: ETA_FEED_RATE.toFixed(4),
+      etaRange,
+      feedSpeed: etaFeedSpeed
+    },
+    calculations: {
       bco: formatValue(parseFloat(data?.bco)),
       hotTapLi: formatValue(lastHotTap.li),
+      hotTapTtd: formatValue(lastHotTap.ttd),
       lineStopLi: formatValue(lastLineStop.li),
-      completionLi: formatValue(lastCompletionPlug.li)
+      completionPlugLi: formatValue(lastCompletionPlug.li)
+    },
+    measurements: {
+      hotTap: {
+        md: state.md || '', ld: state.ld || '', ldSign: state.ldSign || '+', li: formatValue(lastHotTap.li),
+        ptc: state.ptc || '', pod: state.pod || pipeOdText, ttd: formatValue(lastHotTap.ttd),
+        mco: mcoEl?.textContent?.trim() || '', mt: state.mt || '', rodStart: state.start || '',
+        pop: popEl?.textContent?.trim() || '', cop: copEl?.textContent?.trim() || '',
+        rodBco: rbcoEl?.textContent?.trim() || '', rodMco: rmcoEl?.textContent?.trim() || ''
+      },
+      lineStop: {
+        md: state.lsMd || '', ld: state.lsLd || '', ldSign: state.lsLdSign || '+',
+        pod: state.lsPod || pipeOdText, wallThickness: wallText, li: formatValue(lastLineStop.li),
+        travel: state.lsTravel || '', machineTravel: state.lsMachineTravel || '',
+        travelMargin: lsTravelMarginEl?.textContent?.trim() || ''
+      },
+      completionPlug: {
+        start: state.cpStart || '', jbf: state.cpJbf || '', ld: state.cpLd || '',
+        pt: state.cpPt || '', li: formatValue(lastCompletionPlug.li)
+      }
+    },
+    warnings: {
+      hotTap: lastHotTap.warnings || [],
+      lineStop: lastLineStop.warnings || [],
+      completionPlug: lastCompletionPlug.warnings || []
+    },
+    state
+  };
+}
+
+function buildHistorySnapshot() {
+  const state = collectJobState();
+  const record = buildJobRecord(state);
+  const material = bcoMaterialEl?.selectedOptions?.[0]?.textContent || bcoMaterialEl?.value || '—';
+  const nominal = bcoPipeOdEl?.value || '—';
+  return {
+    id: `${Date.now()}`,
+    savedAt: record.meta.savedAtDisplay,
+    state,
+    synced: false,
+    cloudId: null,
+    record,
+    summary: {
+      title: record.meta.title,
+      operationType: record.meta.operationType,
+      pipe: `${material} ${nominal}`.trim(),
+      bco: record.calculations.bco,
+      hotTapLi: record.calculations.hotTapLi,
+      lineStopLi: record.calculations.lineStopLi,
+      completionLi: record.calculations.completionPlugLi,
+      wall: record.pipe.wallThickness || '—',
+      location: record.job.location || '—',
+      technician: record.job.technician || '—'
     }
   };
 }
 
+async function ensureFirebaseReady() {
+  if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+  const config = window.TAPCALC_FIREBASE_CONFIG;
+  if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
+    return { enabled: false };
+  }
+  try {
+    const [appModule, firestoreModule] = await Promise.all([
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
+    ]);
+    const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
+    firebaseDb = firestoreModule.getFirestore(app);
+    firebaseModuleCache = firestoreModule;
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connected';
+    return { enabled: true, db: firebaseDb, modules: firestoreModule };
+  } catch (error) {
+    console.error('Firebase init failed', error);
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase could not connect. Check firebase-config.js and your Firestore rules.';
+    return { enabled: false, error };
+  }
+}
+
+function getJobsCollectionName() {
+  return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
+}
+
+async function uploadHistoryItemToCloud(item) {
+  const ready = await ensureFirebaseReady();
+  if (!ready.enabled) return null;
+  const { collection, addDoc, serverTimestamp } = ready.modules;
+  const payload = {
+    ...item.record,
+    localId: item.id,
+    syncedAt: serverTimestamp(),
+    source: 'tapcalc-web'
+  };
+  const docRef = await addDoc(collection(ready.db, getJobsCollectionName()), payload);
+  return docRef.id;
+}
+
+async function syncLocalJobsToCloud() {
+  const items = getHistory();
+  const unsynced = items.filter((item) => !item.cloudId);
+  updateUnsyncedCount();
+  if (!unsynced.length) {
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
+    return;
+  }
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'}...`;
+  for (const item of unsynced) {
+    try {
+      const cloudId = await uploadHistoryItemToCloud(item);
+      if (cloudId) {
+        item.cloudId = cloudId;
+        item.synced = true;
+      }
+    } catch (error) {
+      console.error('TapCalc sync failed', error);
+    }
+  }
+  saveHistory(items);
+  renderHistory();
+  updateUnsyncedCount();
+  await loadCloudJobs();
+}
+
+function renderJobRecordDetails(record) {
+  const warnings = [
+    ...(record?.warnings?.hotTap || []),
+    ...(record?.warnings?.lineStop || []),
+    ...(record?.warnings?.completionPlug || [])
+  ].filter(Boolean);
+  return `
+    <div class="job-detail-grid">
+      <div><strong>Customer:</strong> ${record.job.client || '—'}</div>
+      <div><strong>Location:</strong> ${record.job.location || '—'}</div>
+      <div><strong>Technician:</strong> ${record.job.technician || '—'}</div>
+      <div><strong>Job #:</strong> ${record.job.jobNumber || '—'}</div>
+      <div><strong>Pipe:</strong> ${record.pipe.material || '—'} ${record.pipe.nominalSize || ''}</div>
+      <div><strong>Wall:</strong> ${record.pipe.wallThickness || '—'}</div>
+      <div><strong>Cutter:</strong> ${record.machine.cutterOd || '—'}</div>
+      <div><strong>Machine:</strong> ${record.machine.machine || '—'}</div>
+      <div><strong>BCO:</strong> ${record.calculations.bco || '—'}</div>
+      <div><strong>ETA:</strong> ${record.machine.etaRange || '—'}</div>
+      <div><strong>Operation:</strong> ${record.meta.operationType || '—'}</div>
+      <div><strong>Notes:</strong> ${record.job.notes || '—'}</div>
+    </div>
+    <div class="job-detail-grid">
+      <div><strong>Hot Tap LI:</strong> ${record.calculations.hotTapLi || '—'}</div>
+      <div><strong>Line Stop LI:</strong> ${record.calculations.lineStopLi || '—'}</div>
+      <div><strong>Completion Plug LI:</strong> ${record.calculations.completionPlugLi || '—'}</div>
+      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+    </div>`;
+}
+
+function getCombinedJobsForDisplay() {
+  const localItems = getHistory()
+    .filter((item) => item && item.record)
+    .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, record: item.record, savedAt: item.savedAt }));
+  const map = new Map();
+  [...cloudJobsCache, ...localItems].forEach((entry) => {
+    const key = entry.id || `${entry.record?.meta?.savedAtIso}-${entry.record?.job?.jobNumber || ''}`;
+    if (!map.has(key)) map.set(key, entry);
+  });
+  let jobs = Array.from(map.values());
+  if (jobsSearchTerm) {
+    const term = jobsSearchTerm.toLowerCase();
+    jobs = jobs.filter(({ record }) => {
+      const haystack = [
+        record?.meta?.title, record?.meta?.operationType, record?.job?.client, record?.job?.location, record?.job?.technician,
+        record?.job?.jobNumber, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd
+      ].join(' ').toLowerCase();
+      return haystack.includes(term);
+    });
+  }
+  jobs.sort((a,b) => String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
+  return jobs;
+}
+
+function renderJobsList() {
+  if (!jobsListEl) return;
+  const jobs = getCombinedJobsForDisplay();
+  if (!jobs.length) {
+    jobsListEl.innerHTML = 'No jobs loaded yet.';
+    return;
+  }
+  jobsListEl.innerHTML = jobs.map(({ source, id, record }) => `
+    <details class="job-record-card">
+      <summary>
+        <div class="job-record-summary">
+          <span class="job-record-title">${record.meta.title || 'Saved Job'}</span>
+          <span class="job-record-badges">
+            <span class="job-source-badge ${source}">${source === 'local' ? 'Local only' : source === 'synced' ? 'Synced' : 'Shared DB'}</span>
+            <span class="job-source-badge op">${record.meta.operationType || 'Job'}</span>
+          </span>
+        </div>
+        <div class="job-record-meta">${record.meta.savedAtDisplay || '—'} • ${record.job.client || 'No customer'} • ${record.pipe.nominalSize || '—'} • BCO ${record.calculations.bco || '—'}</div>
+      </summary>
+      ${renderJobRecordDetails(record)}
+    </details>
+  `).join('');
+}
+
+async function loadCloudJobs() {
+  const ready = await ensureFirebaseReady();
+  if (!ready.enabled) {
+    cloudJobsCache = [];
+    renderJobsList();
+    updateUnsyncedCount();
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
+    return;
+  }
+  try {
+    const { collection, getDocs } = ready.modules;
+    const snapshot = await getDocs(collection(ready.db, getJobsCollectionName()));
+    cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() }));
+    renderJobsList();
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
+  } catch (error) {
+    console.error('Cloud jobs load failed', error);
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Could not load shared jobs. Check Firestore rules and your Firebase config.';
+  }
+  updateUnsyncedCount();
+}
+
+function updateUnsyncedCount() {
+  if (!unsyncedJobsCountEl) return;
+  const unsynced = getHistory().filter((item) => !item.cloudId).length;
+  unsyncedJobsCountEl.textContent = String(unsynced);
+}
 
 function setHistoryDrawerOpen(isOpen) {
   if (historyDrawerContentEl) historyDrawerContentEl.hidden = !isOpen;
@@ -1321,24 +1621,45 @@ function renderHistory() {
         </div>
       </div>
       <div class="history-meta">
+        <span>${item.summary.operationType || 'Job'}</span>
         <span>BCO ${item.summary.bco}</span>
-        <span>Hot Tap LI ${item.summary.hotTapLi}</span>
-        <span>Line Stop LI ${item.summary.lineStopLi}</span>
-        <span>Completion LI ${item.summary.completionLi}</span>
+        <span>Wall ${item.summary.wall || '—'}</span>
+        <span>${item.cloudId ? 'Synced' : 'Local only'}</span>
       </div>
     </div>
   `).join('');
 }
 
-function saveCurrentJobToHistory() {
+async function saveCurrentJobToHistory() {
   const items = getHistory();
-  items.unshift(buildHistorySnapshot());
+  const snapshot = buildHistorySnapshot();
+  items.unshift(snapshot);
   saveHistory(items);
   initHistoryDrawer();
   renderHistory();
   updateHistoryCount();
+  updateUnsyncedCount();
+  renderJobsList();
   setHistoryDrawerOpen(true);
   if (historyListEl) historyListEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  try {
+    const cloudId = await uploadHistoryItemToCloud(snapshot);
+    if (cloudId) {
+      const refreshed = getHistory();
+      const target = refreshed.find((entry) => entry.id === snapshot.id);
+      if (target) {
+        target.cloudId = cloudId;
+        target.synced = true;
+        saveHistory(refreshed);
+        renderHistory();
+        updateUnsyncedCount();
+        await loadCloudJobs();
+      }
+    }
+  } catch (error) {
+    console.error('TapCalc auto-sync failed', error);
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Saved locally. Cloud sync can be retried from the Jobs tab.';
+  }
 }
 
 function resetCurrentJob() {
@@ -1356,6 +1677,8 @@ function clearHistory() {
   localStorage.removeItem(JOB_HISTORY_KEY);
   renderHistory();
   updateHistoryCount();
+  updateUnsyncedCount();
+  renderJobsList();
 }
 
 document.addEventListener('click', (event) => {
@@ -1377,16 +1700,21 @@ document.addEventListener('click', (event) => {
     const items = getHistory().filter(entry => entry.id !== deleteId);
     saveHistory(items);
     renderHistory();
+    updateUnsyncedCount();
+    renderJobsList();
   }
 });
 
-[...document.querySelectorAll('input, select')].forEach(el => {
+[...document.querySelectorAll('input, select, textarea')].forEach(el => {
   el.addEventListener('input', persistCurrentJob);
   el.addEventListener('change', persistCurrentJob);
 });
 if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobToHistory);
 if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
+if (syncJobsBtnEl) syncJobsBtnEl.addEventListener('click', syncLocalJobsToCloud);
+if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
+if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
   setHistoryDrawerOpen(!isOpen);
@@ -1411,6 +1739,9 @@ window.addEventListener('load', () => {
   initEtaCalculator();
   persistCurrentJob();
   renderHistory();
+  updateUnsyncedCount();
+  renderJobsList();
+  loadCloudJobs();
 });
 
 })();
