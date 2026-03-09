@@ -859,6 +859,7 @@ const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
 let firebaseModuleCache = null;
 let cloudJobsCache = [];
+let cloudJobsUnsubscribe = null;
 let jobsSearchTerm = '';
 
 
@@ -1409,6 +1410,7 @@ async function ensureFirebaseReady() {
     return { enabled: false };
   }
   try {
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connecting...';
     const [appModule, firestoreModule] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
@@ -1572,19 +1574,38 @@ async function loadCloudJobs() {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
     return;
   }
+
   try {
-    const { collection, getDocs, getDocsFromServer } = ready.modules;
+    const { collection, getDocs, onSnapshot } = ready.modules;
     const colRef = collection(ready.db, getJobsCollectionName());
-    let snapshot;
-    try {
-      snapshot = getDocsFromServer ? await getDocsFromServer(colRef) : await getDocs(colRef);
-    } catch (serverError) {
-      console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
-      snapshot = await getDocs(colRef);
-    }
+
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Checking shared jobs...';
+
+    // Fast initial read
+    const snapshot = await getDocs(colRef);
     cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() || {} }));
     renderJobsList();
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
+
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from Firebase.`;
+    }
+
+    // Realtime follow-up listener
+    if (cloudJobsUnsubscribe) {
+      try { cloudJobsUnsubscribe(); } catch {}
+      cloudJobsUnsubscribe = null;
+    }
+
+    cloudJobsUnsubscribe = onSnapshot(colRef, (liveSnapshot) => {
+      cloudJobsCache = liveSnapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() || {} }));
+      renderJobsList();
+      if (jobsCloudStatusEl) {
+        jobsCloudStatusEl.textContent = `Live sync active · ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} visible`;
+      }
+    }, (error) => {
+      console.error('Realtime shared jobs listener failed', error);
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Realtime sync failed. ${formatFirebaseError(error)}`;
+    });
   } catch (error) {
     console.error('Cloud jobs load failed', error);
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
@@ -1768,35 +1789,3 @@ window.addEventListener('load', () => {
 });
 
 })();
-
-
-// ===== REALTIME CLOUD SYNC PATCH (v2.2) =====
-async function startRealtimeSync() {
-  try {
-    const ready = await ensureFirebaseReady();
-    if (!ready?.db) return;
-
-    const { collection, onSnapshot } = ready.modules;
-    const col = collection(ready.db, getCollectionName());
-
-    onSnapshot(col, (snapshot) => {
-      cloudJobsCache = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data) cloudJobsCache.push({ id: doc.id, record: data });
-      });
-
-      if (jobsCloudStatusEl) {
-        jobsCloudStatusEl.textContent =
-          `Realtime sync active · ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? "" : "s"} visible`;
-      }
-
-      renderJobs();
-    });
-  } catch (e) {
-    console.error("Realtime sync failed", e);
-  }
-}
-
-setTimeout(startRealtimeSync, 1500);
-// ===== END REALTIME CLOUD SYNC PATCH =====

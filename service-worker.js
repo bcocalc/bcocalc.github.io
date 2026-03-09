@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v48-safe-jobs-render";
+const CACHE_NAME = "tapcalc-v49-sync-cache-fix";
 const ASSETS = [
   "./",
   "./index.html",
@@ -18,13 +18,41 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : Promise.resolve())))
+    caches.keys()
+      .then((keys) => Promise.all(keys.map((key) => key !== CACHE_NAME ? caches.delete(key) : Promise.resolve())))
       .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const url = new URL(event.request.url);
+
+  // Always prefer fresh app files so old JS doesn't get stuck forever.
+  const isAppShell = (
+    url.pathname.endsWith("/measurement.js") ||
+    url.pathname.endsWith("/script.js") ||
+    url.pathname.endsWith("/styles.css") ||
+    url.pathname.endsWith("/firebase-config.js") ||
+    url.pathname.endsWith("/measurement-card.html") ||
+    url.pathname.endsWith("/index.html") ||
+    url.pathname.endsWith("/")
+  );
+
+  if (isAppShell) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./measurement-card.html")))
+    );
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
