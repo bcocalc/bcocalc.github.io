@@ -1644,3 +1644,470 @@ body.dark .history-drawer-toggle {
   color: #f2f4f7;
   border-color: #334155;
 }
+
+
+/* Reference tools */
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.reference-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.reference-card h4,
+.reference-subheading {
+  margin: 0 0 10px;
+}
+
+.reference-copy,
+.reference-footnote {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.reference-footnote {
+  margin-top: 10px;
+  font-size: 0.86rem;
+}
+
+.converter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.converter-block {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.converter-block .decimal-input {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.quick-decimal-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.quick-decimal-btn {
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid #c8d3e3;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quick-decimal-btn:hover {
+  transform: translateY(-1px);
+}
+
+.converter-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.converter-result {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff3a0;
+  color: #111;
+  font-weight: 700;
+}
+
+.fraction-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.fraction-slash {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.converter-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reference-actions {
+  margin-top: 10px;
+}
+
+.reference-link-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.modal-search-row {
+  margin: 10px 0 12px;
+}
+
+.modal-search-row input {
+  width: 100%;
+}
+
+:root[data-theme="dark"] .quick-decimal-btn,
+body.dark .quick-decimal-btn {
+  background: #1e2733;
+  border-color: #455468;
+}
+
+.modal-overlay[hidden] {
+  display: none !important;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10000;
+}
+
+.modal-card {
+  width: min(960px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 16px;
+  padding: 18px;
+  background: var(--card-bg, #ffffff);
+  color: var(--text-main);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.modal-header h3 {
+  margin: 0 0 6px;
+}
+
+.modal-subtitle {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.modal-close-btn {
+  width: auto;
+  min-width: 44px;
+  padding: 8px 12px;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.modal-table-wrap {
+  margin-top: 0;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+:root[data-theme="light"] .reference-card,
+body.light .reference-card {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="dark"] .reference-card,
+body.dark .reference-card {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+}
+
+:root[data-theme="dark"] .modal-card,
+body.dark .modal-card {
+  background: #18202a;
+  color: #f2f4f7;
+}
+
+@media (max-width: 768px) {
+  .reference-grid,
+  .converter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-card {
+    padding: 14px;
+  }
+}
+
+
+.bolting-card {
+  display: grid;
+  gap: 14px;
+}
+
+.bolting-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bolting-selects {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bolting-selects label {
+  font-weight: 700;
+}
+
+.bolting-selects select {
+  min-width: 120px;
+  width: auto;
+  margin: 0;
+}
+
+.bolting-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bolting-summary-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  display: grid;
+  gap: 6px;
+}
+
+.bolting-summary-item .summary-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bolting-summary-item .summary-value {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.bolting-table-wrap {
+  max-height: 420px;
+  overflow: auto;
+}
+
+.bolting-table td:first-child {
+  width: auto;
+}
+
+:root[data-theme="light"] .bolting-summary-item,
+body.light .bolting-summary-item {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+@media (max-width: 768px) {
+  .bolting-controls,
+  .bolting-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bolting-selects {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .bolting-selects select {
+    width: 100%;
+  }
+}
+
+
+/* TapCalc v24 reference tool polish */
+.converter-block input,
+.converter-block select,
+.bolting-selects select {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.converter-block .converter-inline {
+  margin-top: 0;
+  align-items: center;
+}
+
+.reference-actions {
+  margin-top: 14px;
+}
+
+.bolting-selects {
+  align-items: flex-start;
+}
+
+.bolting-selects select {
+  width: 100%;
+  min-width: 0;
+}
+
+#boltingClassSelect,
+#boltingSizeSelect,
+#fractionPrecision {
+  color: var(--text-main) !important;
+  background: var(--input-bg) !important;
+}
+
+#boltingClassSelect option,
+#boltingSizeSelect option,
+#fractionPrecision option {
+  color: #111 !important;
+  background: #fff !important;
+}
+
+:root[data-theme="dark"] #boltingClassSelect option,
+:root[data-theme="dark"] #boltingSizeSelect option,
+:root[data-theme="dark"] #fractionPrecision option,
+body.dark #boltingClassSelect option,
+body.dark #boltingSizeSelect option,
+body.dark #fractionPrecision option {
+  color: #f4f7fb !important;
+  background: #1f2937 !important;
+}
+
+
+.tape-converter-card {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(128, 146, 176, 0.28);
+}
+
+.tape-converter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(180px, 0.85fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+#mixedMeasurementInput {
+  margin-top: 6px;
+}
+
+#mixedMeasurementResult {
+  min-height: 52px;
+}
+
+@media (max-width: 720px) {
+  .tape-converter-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.mixed-helper-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mixed-helper-btn {
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  color: var(--text-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mixed-helper-fill {
+  font-weight: 600;
+}
+
+
+.eta-note {
+  display: block;
+  margin: 0 0 14px;
+}
+
+.eta-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.eta-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(11, 58, 102, 0.06);
+  min-height: 88px;
+}
+
+.eta-result-card .summary-label {
+  font-size: 0.8rem;
+  color: #5f6b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eta-result-card .summary-value {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--primary);
+}
+
+:root[data-theme="dark"] .eta-result-card,
+body.dark .eta-result-card {
+  background: rgba(245, 196, 0, 0.12);
+}
+
+:root[data-theme="dark"] .eta-result-card .summary-label,
+body.dark .eta-result-card .summary-label {
+  color: #cbd5e1;
+}
+
+:root[data-theme="dark"] .eta-result-card .summary-value,
+body.dark .eta-result-card .summary-value {
+  color: #f8fafc;
+}
+
+@media (max-width: 768px) {
+  .eta-results-grid {
+    grid-template-columns: 1fr;
+  }
+}

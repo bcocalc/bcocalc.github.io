@@ -68,6 +68,7 @@ const panels = {
   hotTap: document.getElementById('hotTapPanel'),
   lineStop: document.getElementById('lineStopPanel'),
   completionPlug: document.getElementById('completionPlugPanel'),
+  eta: document.getElementById('etaPanel'),
   glossary: document.getElementById('glossaryPanel')
 };
 
@@ -77,6 +78,13 @@ function setMode(mode) {
     if (!panel) return;
     panel.classList.toggle('active', key === mode);
   });
+  if (mode === 'eta') {
+    syncBcoToEta({ force: true });
+    updateEtaEstimate();
+  }
+  try {
+    localStorage.setItem('measurementCardActiveModeV1', mode);
+  } catch {}
 }
 
 modeButtons.forEach(btn => {
@@ -86,7 +94,12 @@ modeButtons.forEach(btn => {
   });
 });
 
-setMode('bco');
+try {
+  const savedMode = localStorage.getItem('measurementCardActiveModeV1');
+  setMode(savedMode && panels[savedMode] ? savedMode : 'bco');
+} catch {
+  setMode('bco');
+}
 
 // ===== SUPPORTING GEOMETRY DISPLAY =====
 (function(){
@@ -206,7 +219,7 @@ function updateBcoDisplays() {
   const material = bcoMaterialEl?.value;
   const nominal = bcoPipeOdEl?.value;
   const pipeOD = parseFloat(trueOD?.[material]?.[nominal]);
-  const pipeID = parseFloat(bcoPipeIdEl?.value);
+  const pipeID = getMeasurementValue(bcoPipeIdEl);
   const wall = Number.isFinite(pipeOD) && Number.isFinite(pipeID) ? (pipeOD - pipeID) / 2 : NaN;
   if (bcoTrueOdDisplayEl) bcoTrueOdDisplayEl.textContent = Number.isFinite(pipeOD) ? pipeOD.toFixed(4) : '—';
   if (bcoWallDisplayEl) bcoWallDisplayEl.textContent = Number.isFinite(wall) ? wall.toFixed(4) : '—';
@@ -257,6 +270,8 @@ function applyBcoToMeasurementCard() {
   if (lsWallDisplay) lsWallDisplay.textContent = wall;
   calcHotTap();
   calcLineStop();
+  syncBcoToEta({ force: true });
+  updateEtaEstimate();
   if (bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO live update pushed into Hot Tap and Line Stop.';
 }
 
@@ -265,8 +280,8 @@ function calculateIntegratedBco(options = {}) {
   const material = bcoMaterialEl?.value;
   const nominal = bcoPipeOdEl?.value;
   const pipeOD = parseFloat(trueOD?.[material]?.[nominal]);
-  const pipeID = parseFloat(bcoPipeIdEl?.value);
-  const cutterOD = parseFloat(bcoCutterOdEl?.value);
+  const pipeID = getMeasurementValue(bcoPipeIdEl);
+  const cutterOD = getMeasurementValue(bcoCutterOdEl);
 
   localStorage.setItem('pipeMaterial', material || 'CarbonSteel');
   if (nominal) localStorage.setItem('pipeOD', nominal);
@@ -344,8 +359,453 @@ if (bcoCutterOdEl) bcoCutterOdEl.addEventListener('input', () => {
 });
 if (bcoCalcBtnEl) bcoCalcBtnEl.addEventListener('click', () => calculateIntegratedBco({ silent: false }));
 if (bcoCopyBtnEl) bcoCopyBtnEl.addEventListener('click', copyBcoResult);
-hydrateBcoInputsFromSavedData();
-triggerLiveBcoCalculation();
+const decimalReferenceBtnEl = document.getElementById('decimalReferenceBtn');
+const openDecimalModalBtnEl = document.getElementById('openDecimalModalBtn');
+const closeDecimalModalBtnEl = document.getElementById('closeDecimalModalBtn');
+const decimalModalEl = document.getElementById('decimalModal');
+const decimalChartBodyEl = document.getElementById('decimalChartBody');
+const fractionNumeratorEl = document.getElementById('fractionNumerator');
+const fractionDenominatorEl = document.getElementById('fractionDenominator');
+const fractionToDecimalResultEl = document.getElementById('fractionToDecimalResult');
+const decimalInputEl = document.getElementById('decimalInput');
+const fractionPrecisionEl = document.getElementById('fractionPrecision');
+const decimalToFractionResultEl = document.getElementById('decimalToFractionResult');
+const decimalChartSearchEl = document.getElementById('decimalChartSearch');
+const quickDecimalBtnEls = Array.from(document.querySelectorAll('.quick-decimal-btn'));
+
+function gcd(a, b) {
+  a = Math.abs(a);
+  b = Math.abs(b);
+  while (b) {
+    const temp = b;
+    b = a % b;
+    a = temp;
+  }
+  return a || 1;
+}
+
+function formatDecimal(value, digits = 4) {
+  if (!Number.isFinite(value)) return '—';
+  return value.toFixed(digits);
+}
+
+
+function shouldNormalizeMeasurement(rawValue) {
+  return /[\/\s-]/.test(String(rawValue || '').trim());
+}
+
+function getMeasurementValue(inputOrValue) {
+  const rawValue = typeof inputOrValue === 'string' ? inputOrValue : (inputOrValue?.value ?? '');
+  const parsed = parseMixedMeasurement(rawValue);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function normalizeMeasurementField(field, options = {}) {
+  if (!field || field.disabled) return;
+  const rawValue = String(field.value ?? '').trim();
+  if (!rawValue) return;
+  const parsed = parseMixedMeasurement(rawValue);
+  if (!Number.isFinite(parsed)) return;
+  const shouldNormalize = options.force || shouldNormalizeMeasurement(rawValue);
+  if (!shouldNormalize) return;
+  const normalized = formatDecimal(parsed);
+  if (field.value === normalized) return;
+  field.value = normalized;
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function enableMixedMeasurementInputs() {
+  const measurementFieldIds = [
+    'bcoPipeID','bcoCutterOD','md','ld','ptc','pod','start','mt','valveBore','gtf',
+    'lsMd','lsLd','lsPod','lsLiManual','lsTravel','lsMachineTravel',
+    'cpStart','cpJbf','cpLd','cpPt','cpLiManual',
+    'fractionNumerator','fractionDenominator','decimalInput','etaBco'
+  ];
+  measurementFieldIds.forEach((id) => {
+    const field = document.getElementById(id);
+    if (!field) return;
+    try { field.type = 'text'; } catch {}
+    field.setAttribute('inputmode', 'decimal');
+    field.setAttribute('autocomplete', 'off');
+    field.setAttribute('autocorrect', 'off');
+    field.setAttribute('spellcheck', 'false');
+    field.addEventListener('blur', () => normalizeMeasurementField(field, { force: true }));
+    field.addEventListener('change', () => normalizeMeasurementField(field, { force: true }));
+    field.addEventListener('input', () => {
+      if (shouldNormalizeMeasurement(field.value) && Number.isFinite(parseMixedMeasurement(field.value))) {
+        normalizeMeasurementField(field);
+      }
+    });
+  });
+}
+
+function openDecimalModal() {
+  if (!decimalModalEl) return;
+  decimalModalEl.hidden = false;
+  document.body.classList.add('modal-open');
+}
+
+function closeDecimalModal() {
+  if (!decimalModalEl) return;
+  decimalModalEl.hidden = true;
+  document.body.classList.remove('modal-open');
+}
+
+function simplifyFraction(numerator, denominator) {
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) return null;
+  const divisor = gcd(numerator, denominator);
+  return { numerator: numerator / divisor, denominator: denominator / divisor };
+}
+
+function buildDecimalChart(filterText = '') {
+  if (!decimalChartBodyEl) return;
+  const rows = [];
+  const normalizedFilter = String(filterText || '').trim().toLowerCase();
+  for (let start = 1; start <= 64; start += 2) {
+    const pair = [];
+    for (let current = start; current <= Math.min(start + 1, 64); current += 1) {
+      const simplified = simplifyFraction(current, 64);
+      const exactFraction = `${current}/64`;
+      const simpleFraction = simplified ? `${simplified.numerator}/${simplified.denominator}` : exactFraction;
+      const decimal = formatDecimal(current / 64);
+      const haystack = `${exactFraction} ${simpleFraction} ${decimal}`.toLowerCase();
+      if (!normalizedFilter || haystack.includes(normalizedFilter)) {
+        pair.push({ fraction: simpleFraction, decimal });
+      }
+    }
+    if (!pair.length) continue;
+    while (pair.length < 2) pair.push({ fraction: '', decimal: '' });
+    rows.push(`<tr><td>${pair[0].fraction}</td><td>${pair[0].decimal}</td><td>${pair[1].fraction}</td><td>${pair[1].decimal}</td></tr>`);
+  }
+  decimalChartBodyEl.innerHTML = rows.length ? rows.join('') : '<tr><td colspan="4">No matches found.</td></tr>';
+}
+
+function updateFractionToDecimal() {
+  if (!fractionNumeratorEl || !fractionDenominatorEl || !fractionToDecimalResultEl) return;
+  const numerator = parseFloat(fractionNumeratorEl.value);
+  const denominator = parseFloat(fractionDenominatorEl.value);
+  if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
+    fractionToDecimalResultEl.textContent = '—';
+    return;
+  }
+  fractionToDecimalResultEl.textContent = formatDecimal(numerator / denominator);
+}
+
+function updateDecimalToFraction() {
+  if (!decimalInputEl || !fractionPrecisionEl || !decimalToFractionResultEl) return;
+  const value = parseFloat(decimalInputEl.value);
+  const maxDenominator = parseInt(fractionPrecisionEl.value, 10) || 64;
+  if (!Number.isFinite(value)) {
+    decimalToFractionResultEl.textContent = '—';
+    return;
+  }
+  const whole = Math.floor(value);
+  const fractionalPart = value - whole;
+  let numerator = Math.round(fractionalPart * maxDenominator);
+  let denominator = maxDenominator;
+
+  if (numerator === 0) {
+    decimalToFractionResultEl.textContent = whole ? `${whole}` : '0';
+    return;
+  }
+
+  if (numerator === denominator) {
+    decimalToFractionResultEl.textContent = `${whole + 1}`;
+    return;
+  }
+
+  const simplified = simplifyFraction(numerator, denominator);
+  if (!simplified) {
+    decimalToFractionResultEl.textContent = '—';
+    return;
+  }
+  numerator = simplified.numerator;
+  denominator = simplified.denominator;
+
+  const fractionText = whole ? `${whole} ${numerator}/${denominator}` : `${numerator}/${denominator}`;
+  const exactText = value.toFixed(4);
+  decimalToFractionResultEl.textContent = `${fractionText} (from ${exactText})`;
+}
+
+function parseMixedMeasurement(rawValue) {
+  if (typeof rawValue !== 'string') return null;
+  const normalized = rawValue
+    .trim()
+    .replace(/[″”]/g, '')
+    .replace(/[–—]/g, '-')
+    .replace(/\s+/g, ' ');
+  if (!normalized) return null;
+
+  if (/^\d*\.?\d+$/.test(normalized)) {
+    const decimalValue = parseFloat(normalized);
+    return Number.isFinite(decimalValue) ? decimalValue : null;
+  }
+
+  const mixedMatch = normalized.match(/^(\d+)(?:\s|-)+(\d+)\/(\d+)$/);
+  if (mixedMatch) {
+    const whole = parseInt(mixedMatch[1], 10);
+    const numerator = parseInt(mixedMatch[2], 10);
+    const denominator = parseInt(mixedMatch[3], 10);
+    if (!denominator) return null;
+    return whole + (numerator / denominator);
+  }
+
+  const fractionMatch = normalized.match(/^(\d+)\/(\d+)$/);
+  if (fractionMatch) {
+    const numerator = parseInt(fractionMatch[1], 10);
+    const denominator = parseInt(fractionMatch[2], 10);
+    if (!denominator) return null;
+    return numerator / denominator;
+  }
+
+  return null;
+}
+
+
+if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openDecimalModal);
+
+
+const ETA_FEED_RATE = 0.004;
+const etaMachineEl = document.getElementById('etaMachine');
+const etaCutterSizeEl = document.getElementById('etaCutterSize');
+const etaBcoEl = document.getElementById('etaBco');
+const etaFeedRateDisplayEl = document.getElementById('etaFeedRateDisplay');
+const etaRpmDisplayEl = document.getElementById('etaRpmDisplay');
+const etaFeedSpeedDisplayEl = document.getElementById('etaFeedSpeedDisplay');
+const etaRangeDisplayEl = document.getElementById('etaRangeDisplay');
+const etaInlineStatusEl = document.getElementById('etaInlineStatus');
+const etaUseCurrentBcoBtnEl = document.getElementById('etaUseCurrentBcoBtn');
+const etaRefreshBtnEl = document.getElementById('etaRefreshBtn');
+const etaRpmChart = {
+  '360': {
+    '2': [35, 45], '3': [35, 45], '4': [35, 45], '6': [35]
+  },
+  '660': {
+    '3': [37], '4': [37], '6': [37], '8': [37], '10': [37], '12': [33], '14': [30]
+  },
+  '1200': {
+    '12': [25, 26, 27],
+    '14': [23, 24, 25],
+    '16': [21, 22, 23],
+    '18': [19, 20, 21],
+    '20': [17, 18, 19],
+    '22': [16, 17, 18],
+    '24': [14, 15, 16],
+    '26': [12, 13, 14],
+    '28': [12, 13, 14],
+    '30': [12, 13, 14],
+    '34': [12, 13, 14],
+    '36': [12, 13, 14],
+    '38': [12, 13, 14],
+    '40': [12, 13, 14]
+  }
+};
+
+function formatEtaMinutes(minutes) {
+  if (!Number.isFinite(minutes) || minutes < 0) return '—';
+  const totalSeconds = Math.round(minutes * 60);
+  const hours = Math.floor(totalSeconds / 3600);
+  const mins = Math.floor((totalSeconds % 3600) / 60);
+  const secs = totalSeconds % 60;
+  if (hours > 0) return `${hours} hr ${mins} min ${secs} sec`;
+  return `${mins} min ${secs} sec`;
+}
+
+function populateEtaCutterSizes() {
+  if (!etaMachineEl || !etaCutterSizeEl) return;
+  const machine = etaMachineEl.value || '360';
+  const sizes = Object.keys(etaRpmChart[machine] || {});
+  const previous = etaCutterSizeEl.value;
+  etaCutterSizeEl.innerHTML = sizes.map((size) => `<option value="${size}">${size}"</option>`).join('');
+  if (sizes.includes(previous)) etaCutterSizeEl.value = previous;
+  else if (sizes[0]) etaCutterSizeEl.value = sizes[0];
+}
+
+function syncBcoToEta(options = {}) {
+  if (!etaBcoEl) return;
+  refreshBcoState();
+  const force = !!options.force;
+  const currentBco = parseFloat(data?.bco);
+  if (!Number.isFinite(currentBco)) {
+    if (force) etaBcoEl.value = '';
+    return;
+  }
+  if (!etaBcoEl.value || force) etaBcoEl.value = currentBco.toFixed(4);
+}
+
+function updateEtaEstimate() {
+  if (!etaMachineEl || !etaCutterSizeEl || !etaBcoEl) return;
+  if (etaFeedRateDisplayEl) etaFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
+  const machine = etaMachineEl.value || '360';
+  const cutterSize = etaCutterSizeEl.value;
+  const rpmValues = etaRpmChart?.[machine]?.[cutterSize] || [];
+  const bco = getMeasurementValue(etaBcoEl);
+
+  if (etaRpmDisplayEl) {
+    etaRpmDisplayEl.textContent = rpmValues.length > 1
+      ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}`
+      : (rpmValues[0] ? `${rpmValues[0]}` : '—');
+  }
+
+  if (!rpmValues.length || !Number.isFinite(bco) || bco <= 0) {
+    if (etaFeedSpeedDisplayEl) etaFeedSpeedDisplayEl.textContent = '—';
+    if (etaRangeDisplayEl) etaRangeDisplayEl.textContent = '—';
+    if (etaInlineStatusEl) etaInlineStatusEl.textContent = 'Enter a valid BCO to calculate estimated time to BCO.';
+    return;
+  }
+
+  const minRpm = Math.min(...rpmValues);
+  const maxRpm = Math.max(...rpmValues);
+  const slowFeed = minRpm * ETA_FEED_RATE;
+  const fastFeed = maxRpm * ETA_FEED_RATE;
+  const lowEta = bco / fastFeed;
+  const highEta = bco / slowFeed;
+
+  if (etaFeedSpeedDisplayEl) {
+    etaFeedSpeedDisplayEl.textContent = slowFeed === fastFeed
+      ? `${slowFeed.toFixed(3)} in/min`
+      : `${slowFeed.toFixed(3)}-${fastFeed.toFixed(3)} in/min`;
+  }
+  if (etaRangeDisplayEl) {
+    etaRangeDisplayEl.textContent = lowEta === highEta
+      ? formatEtaMinutes(lowEta)
+      : `${formatEtaMinutes(lowEta)} to ${formatEtaMinutes(highEta)}`;
+  }
+  if (etaInlineStatusEl) {
+    etaInlineStatusEl.textContent = rpmValues.length > 1
+      ? `Estimate shown as a range using ${minRpm}-${maxRpm} RPM for the ${machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152')}.`
+      : `Estimate shown using ${rpmValues[0]} RPM for the ${machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152')}.`;
+  }
+}
+
+function initEtaCalculator() {
+  if (!etaMachineEl || !etaCutterSizeEl) return;
+  populateEtaCutterSizes();
+  syncBcoToEta();
+  updateEtaEstimate();
+  etaMachineEl.addEventListener('change', () => {
+    populateEtaCutterSizes();
+    updateEtaEstimate();
+  });
+  etaCutterSizeEl.addEventListener('change', updateEtaEstimate);
+  etaBcoEl?.addEventListener('input', updateEtaEstimate);
+  etaBcoEl?.addEventListener('change', updateEtaEstimate);
+  etaUseCurrentBcoBtnEl?.addEventListener('click', () => {
+    syncBcoToEta({ force: true });
+    updateEtaEstimate();
+  });
+  etaRefreshBtnEl?.addEventListener('click', updateEtaEstimate);
+}
+if (openDecimalModalBtnEl) openDecimalModalBtnEl.addEventListener('click', openDecimalModal);
+if (closeDecimalModalBtnEl) closeDecimalModalBtnEl.addEventListener('click', closeDecimalModal);
+if (decimalModalEl) decimalModalEl.addEventListener('click', (event) => {
+  if (event.target === decimalModalEl) closeDecimalModal();
+});
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && decimalModalEl && !decimalModalEl.hidden) closeDecimalModal();
+});
+if (fractionNumeratorEl) fractionNumeratorEl.addEventListener('input', updateFractionToDecimal);
+if (fractionDenominatorEl) fractionDenominatorEl.addEventListener('input', updateFractionToDecimal);
+if (decimalInputEl) decimalInputEl.addEventListener('input', updateDecimalToFraction);
+if (fractionPrecisionEl) fractionPrecisionEl.addEventListener('change', updateDecimalToFraction);
+if (decimalChartSearchEl) decimalChartSearchEl.addEventListener('input', (event) => buildDecimalChart(event.target.value));
+quickDecimalBtnEls.forEach((button) => {
+  button.addEventListener('click', () => {
+    if (!decimalInputEl) return;
+    decimalInputEl.value = button.dataset.decimal || '';
+    updateDecimalToFraction();
+    decimalInputEl.focus();
+  });
+});
+buildDecimalChart();
+updateFractionToDecimal();
+updateDecimalToFraction();
+
+
+const boltingChartData = {"150":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-"},{"size":"3/4","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-"},{"size":"1","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"1-1/4","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"1-1/2","bolts":"4","diameter":"0.50","stud_rf":"3","stud_rtj":"3-1/2"},{"size":"2","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"2-1/2","bolts":"4","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4"},{"size":"3","bolts":"4","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"3-1/2","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"4","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2"},{"size":"6","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2"},{"size":"8","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"4-1/2"},{"size":"10","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4"},{"size":"12","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4"},{"size":"14","bolts":"12","diameter":"1.00","stud_rf":"5-1/4","stud_rtj":"5-3/4"},{"size":"16","bolts":"16","diameter":"1.00","stud_rf":"5-1/2","stud_rtj":"6"},{"size":"18","bolts":"16","diameter":"1.12","stud_rf":"6","stud_rtj":"6-1/2"},{"size":"20","bolts":"20","diameter":"1.12","stud_rf":"6-1/4","stud_rtj":"6-3/4"},{"size":"24","bolts":"20","diameter":"1.25","stud_rf":"7","stud_rtj":"7-1/2"}]},"300":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.62","stud_rf":"3","stud_rtj":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4"},{"size":"4","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4-3/4","stud_rtj":"5-1/2"},{"size":"6","bolts":"12","diameter":"0.75","stud_rf":"5","stud_rtj":"5-3/4"},{"size":"8","bolts":"12","diameter":"0.88","stud_rf":"5-1/2","stud_rtj":"6-1/4"},{"size":"10","bolts":"16","diameter":"1.00","stud_rf":"6-1/4","stud_rtj":"7"},{"size":"12","bolts":"16","diameter":"1.12","stud_rf":"6-3/4","stud_rtj":"7-1/2"},{"size":"14","bolts":"20","diameter":"1.12","stud_rf":"7","stud_rtj":"7-3/4"},{"size":"16","bolts":"20","diameter":"1.25","stud_rf":"7-1/2","stud_rtj":"8-1/4"},{"size":"18","bolts":"24","diameter":"1.25","stud_rf":"7-3/4","stud_rtj":"8-1/2"},{"size":"20","bolts":"24","diameter":"1.25","stud_rf":"8-1/4","stud_rtj":"9"},{"size":"24","bolts":"24","diameter":"1.50","stud_rf":"9-1/4","stud_rtj":"10-1/4"}]},"400":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"5","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"6","bolts":"12","diameter":"0.88","stud":"6"},{"size":"8","bolts":"12","diameter":"1.00","stud":"6-3/4"},{"size":"10","bolts":"16","diameter":"1.13","stud":"7-1/2"},{"size":"12","bolts":"16","diameter":"1.25","stud":"8"},{"size":"14","bolts":"20","diameter":"1.25","stud":"8-1/4"},{"size":"16","bolts":"20","diameter":"1.38","stud":"8-3/4"},{"size":"18","bolts":"24","diameter":"1.38","stud":"9"},{"size":"20","bolts":"24","diameter":"1.50","stud":"9-3/4"},{"size":"24","bolts":"24","diameter":"1.75","stud":"10-3/4"}]},"600":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"5","bolts":"8","diameter":"1.00","stud":"6-1/2"},{"size":"6","bolts":"12","diameter":"1.00","stud":"6-3/4"},{"size":"8","bolts":"12","diameter":"1.13","stud":"7-3/4"},{"size":"10","bolts":"16","diameter":"1.25","stud":"8-1/2"},{"size":"12","bolts":"20","diameter":"1.25","stud":"8-3/4"},{"size":"14","bolts":"20","diameter":"1.38","stud":"9-1/4"},{"size":"16","bolts":"20","diameter":"1.50","stud":"10"},{"size":"18","bolts":"20","diameter":"1.63","stud":"10-3/4"},{"size":"20","bolts":"24","diameter":"1.63","stud":"11-1/2"},{"size":"24","bolts":"24","diameter":"1.88","stud":"13"}]},"900":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/4","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4"},{"size":"3","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.13","stud":"6-3/4"},{"size":"5","bolts":"8","diameter":"1.25","stud":"7-1/2"},{"size":"6","bolts":"12","diameter":"1.13","stud":"7-3/4"},{"size":"8","bolts":"12","diameter":"1.38","stud":"8-3/4"},{"size":"10","bolts":"16","diameter":"1.38","stud":"9-1/4"},{"size":"12","bolts":"20","diameter":"1.38","stud":"10"},{"size":"14","bolts":"20","diameter":"1.50","stud":"10-3/4"},{"size":"16","bolts":"20","diameter":"1.63","stud":"11-1/4"},{"size":"18","bolts":"20","diameter":"1.88","stud":"13"},{"size":"20","bolts":"20","diameter":"2.00","stud":"13-3/4"},{"size":"24","bolts":"20","diameter":"2.50","stud":"17-1/4"}]},"1500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/4","bolts":"4","diameter":"-","stud":"5"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4"},{"size":"3","bolts":"8","diameter":"1.13","stud":"7"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.25","stud":"7-3/4"},{"size":"5","bolts":"8","diameter":"1.50","stud":"9-3/4"},{"size":"6","bolts":"12","diameter":"1.38","stud":"10-1/4"},{"size":"8","bolts":"12","diameter":"1.63","stud":"11-1/2"},{"size":"10","bolts":"12","diameter":"1.88","stud":"13-1/2"},{"size":"12","bolts":"12","diameter":"2.00","stud":"15"},{"size":"14","bolts":"16","diameter":"2.25","stud":"16-1/4"},{"size":"16","bolts":"16","diameter":"2.50","stud":"17-3/4"},{"size":"18","bolts":"16","diameter":"2.75","stud":"19-1/2"},{"size":"20","bolts":"16","diameter":"3.00","stud":"21-1/4"},{"size":"24","bolts":"16","diameter":"3.50","stud":"24-1/4"}]},"2500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"5"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"5"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5-1/2"},{"size":"1-1/4","bolts":"4","diameter":"1.00","stud":"6"},{"size":"1-1/2","bolts":"4","diameter":"1.13","stud":"6-3/4"},{"size":"2","bolts":"8","diameter":"1.00","stud":"7"},{"size":"2-1/2","bolts":"8","diameter":"1.13","stud":"7-3/4"},{"size":"3","bolts":"8","diameter":"1.25","stud":"8-3/4"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.50","stud":"10"},{"size":"5","bolts":"8","diameter":"1.75","stud":"11-3/4"},{"size":"6","bolts":"8","diameter":"2.00","stud":"13-3/4"},{"size":"8","bolts":"12","diameter":"2.00","stud":"15-1/4"},{"size":"10","bolts":"12","diameter":"2.50","stud":"19-1/4"},{"size":"12","bolts":"12","diameter":"2.75","stud":"21-1/4"},{"size":"14","bolts":"-","diameter":"-","stud":"-"},{"size":"16","bolts":"-","diameter":"-","stud":"-"},{"size":"18","bolts":"-","diameter":"-","stud":"-"},{"size":"20","bolts":"-","diameter":"-","stud":"-"},{"size":"24","bolts":"-","diameter":"-","stud":"-"}]}};
+
+const boltingClassSelectEl = document.getElementById('boltingClassSelect');
+const boltingSizeSelectEl = document.getElementById('boltingSizeSelect');
+const boltingBoltCountEl = document.getElementById('boltingBoltCount');
+const boltingDiameterEl = document.getElementById('boltingDiameter');
+const boltingStudRfEl = document.getElementById('boltingStudRf');
+const boltingStudRtjEl = document.getElementById('boltingStudRtj');
+const boltingRtjItemEl = document.getElementById('boltingRtjItem');
+const boltingTableHeadEl = document.getElementById('boltingTableHead');
+const boltingTableBodyEl = document.getElementById('boltingTableBody');
+
+function getBoltingRowsForClass(flangeClass) {
+  return boltingChartData?.[flangeClass]?.rows || [];
+}
+
+function populateBoltingSizes() {
+  if (!boltingClassSelectEl || !boltingSizeSelectEl) return;
+  const flangeClass = boltingClassSelectEl.value || '150';
+  const rows = getBoltingRowsForClass(flangeClass);
+  const previousValue = boltingSizeSelectEl.value;
+  boltingSizeSelectEl.innerHTML = rows.map((row) => `<option value="${row.size}">${row.size}"</option>`).join('');
+  const match = rows.find((row) => row.size === previousValue);
+  boltingSizeSelectEl.value = match ? previousValue : (rows[0]?.size || '');
+}
+
+function renderBoltingTable() {
+  if (!boltingTableHeadEl || !boltingTableBodyEl || !boltingClassSelectEl) return;
+  const flangeClass = boltingClassSelectEl.value || '150';
+  const config = boltingChartData?.[flangeClass];
+  const rows = config?.rows || [];
+  const isDual = config?.type === 'dual';
+
+  boltingTableHeadEl.innerHTML = isDual
+    ? '<tr><th>Pipe Size</th><th>Bolts / Studs</th><th>Dia.</th><th>Stud RF</th><th>Stud RTJ</th></tr>'
+    : '<tr><th>Pipe Size</th><th>Bolts / Studs</th><th>Dia.</th><th>Stud Length</th></tr>';
+
+  boltingTableBodyEl.innerHTML = rows.map((row) => isDual
+    ? `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.stud_rf}</td><td>${row.stud_rtj}</td></tr>`
+    : `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.stud}</td></tr>`
+  ).join('');
+}
+
+function updateBoltingSummary() {
+  if (!boltingClassSelectEl || !boltingSizeSelectEl) return;
+  const flangeClass = boltingClassSelectEl.value || '150';
+  const config = boltingChartData?.[flangeClass];
+  const row = getBoltingRowsForClass(flangeClass).find((entry) => entry.size === boltingSizeSelectEl.value);
+  const isDual = config?.type === 'dual';
+  if (!row) {
+    if (boltingBoltCountEl) boltingBoltCountEl.textContent = '—';
+    if (boltingDiameterEl) boltingDiameterEl.textContent = '—';
+    if (boltingStudRfEl) boltingStudRfEl.textContent = '—';
+    if (boltingStudRtjEl) boltingStudRtjEl.textContent = '—';
+    return;
+  }
+  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts;
+  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter;
+  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? row.stud_rf : row.stud;
+  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? row.stud_rtj : '—';
+  if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
+}
+
+function initBoltingReference() {
+  if (!boltingClassSelectEl || !boltingSizeSelectEl) return;
+  populateBoltingSizes();
+  renderBoltingTable();
+  updateBoltingSummary();
+  boltingClassSelectEl.addEventListener('change', () => {
+    populateBoltingSizes();
+    renderBoltingTable();
+    updateBoltingSummary();
+  });
+  boltingSizeSelectEl.addEventListener('change', updateBoltingSummary);
+}
+
+initBoltingReference();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
 
 // ===== HOT TAP =====
 const mdEl = document.getElementById("md");
@@ -396,14 +856,14 @@ function calcHotTap() {
 
   if (rbcoGeomEl) rbcoGeomEl.textContent = Number(data.bco || 0).toFixed(4);
 
-  const md = parseFloat(mdEl?.value) || 0;
-  const ldRaw = parseFloat(ldEl?.value) || 0;
+  const md = getMeasurementValue(mdEl) || 0;
+  const ldRaw = getMeasurementValue(ldEl) || 0;
   const sign = signEl?.value || "+";
   const ld = sign === "-" ? -ldRaw : ldRaw;
-  const ptc = parseFloat(ptcEl?.value) || 0;
-  const pod = parseFloat(podEl?.value) || geometry.pipeOD || 0;
-  const start = parseFloat(startEl?.value) || 0;
-  const mt = parseFloat(mtEl?.value) || 0;
+  const ptc = getMeasurementValue(ptcEl) || 0;
+  const pod = getMeasurementValue(podEl) || geometry.pipeOD || 0;
+  const start = getMeasurementValue(startEl) || 0;
+  const mt = getMeasurementValue(mtEl) || 0;
 
   const li = md + ld;
   const mco = (pod / 2) + ptc;
@@ -488,17 +948,17 @@ const summaryEls = {
 };
 
 function calcLineStop() {
-  const md = parseFloat(lsMdEl?.value) || 0;
-  const ldRaw = parseFloat(lsLdEl?.value) || 0;
+  const md = getMeasurementValue(lsMdEl) || 0;
+  const ldRaw = getMeasurementValue(lsLdEl) || 0;
   const ld = (lsLdSignEl?.value || '+') === '-' ? -ldRaw : ldRaw;
-  const pod = parseFloat(lsPodEl?.value) || geometry.pipeOD || 0;
+  const pod = getMeasurementValue(lsPodEl) || geometry.pipeOD || 0;
   const wall = geometry.wall || 0;
   const manualEnabled = !!lsLiManualToggleEl?.checked;
   const liAuto = md + ld + pod - wall;
-  const liManual = parseFloat(lsLiManualEl?.value);
+  const liManual = getMeasurementValue(lsLiManualEl);
   const liUsed = manualEnabled && isFinite(liManual) ? liManual : liAuto;
-  const lineStopTravel = parseFloat(lsTravelEl?.value);
-  const machineTravel = parseFloat(lsMachineTravelEl?.value);
+  const lineStopTravel = getMeasurementValue(lsTravelEl);
+  const machineTravel = getMeasurementValue(lsMachineTravelEl);
   if (lsLiManualEl) {
     lsLiManualEl.disabled = !manualEnabled;
     if (!manualEnabled) {
@@ -550,13 +1010,13 @@ const cpLiManualEl = document.getElementById('cpLiManual');
 const cpLiManualToggleEl = document.getElementById('cpLiManualToggle');
 const cpWarningsEl = document.getElementById('cpWarnings');
 function calcCompletionPlug() {
-  const start = parseFloat(cpStartEl?.value);
-  const jbf = parseFloat(cpJbfEl?.value) || 0;
-  const ld = parseFloat(cpLdEl?.value) || 0;
-  const pt = parseFloat(cpPtEl?.value) || 0;
+  const start = getMeasurementValue(cpStartEl);
+  const jbf = getMeasurementValue(cpJbfEl) || 0;
+  const ld = getMeasurementValue(cpLdEl) || 0;
+  const pt = getMeasurementValue(cpPtEl) || 0;
   const manualEnabled = !!cpLiManualToggleEl?.checked;
   const liAuto = (Number.isFinite(start) ? start : 0) + jbf + ld + pt;
-  const liManual = parseFloat(cpLiManualEl?.value);
+  const liManual = getMeasurementValue(cpLiManualEl);
   const liUsed = manualEnabled && Number.isFinite(liManual) ? liManual : liAuto;
 
   if (cpLiManualEl) {
@@ -607,7 +1067,7 @@ function updateSummary() {
   }
 
   if (summaryEls.hotTap) {
-    const md = parseFloat(mdEl?.value);
+    const md = getMeasurementValue(mdEl);
     const li = lastHotTap.li;
     const ttd = lastHotTap.ttd;
     summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
@@ -671,7 +1131,7 @@ function getJobInfoLines() {
 }
 
 function buildExportText() {
-  const lines = ['TEAM Field Measurement Calculator', ''];
+  const lines = ['TapCalc', ''];
   const infoLines = getJobInfoLines();
   if (infoLines.length) {
     infoLines.forEach(([label, value]) => lines.push(`${label}: ${value}`));
@@ -691,7 +1151,7 @@ function exportJobPdf() {
   const printWindow = window.open('', '_blank', 'width=900,height=700');
   if (!printWindow) return;
   const text = buildExportText().split('\n').map(line => `<div>${line || '&nbsp;'}</div>`).join('');
-  printWindow.document.write(`<!DOCTYPE html><html><head><title>TEAM Field Measurement Calculator</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111;}h1{margin:0 0 16px;}div{margin:0 0 8px;white-space:pre-wrap;} .muted{color:#555;font-size:12px;margin-top:18px;}</style></head><body><h1>TEAM Field Measurement Calculator</h1>${text}<div class="muted">Generated from the field calculator.</div><script>window.onload=()=>{window.print();};<\/script></body></html>`);
+  printWindow.document.write(`<!DOCTYPE html><html><head><title>TapCalc</title><style>body{font-family:Arial,sans-serif;padding:24px;color:#111;}h1{margin:0 0 16px;}div{margin:0 0 8px;white-space:pre-wrap;} .muted{color:#555;font-size:12px;margin-top:18px;}</style></head><body><h1>TapCalc</h1>${text}<div class="muted">Generated from the field calculator.</div><script>window.onload=()=>{window.print();};<\/script></body></html>`);
   printWindow.document.close();
 }
 
@@ -710,7 +1170,7 @@ function exportJobImage() {
   ctx.fillRect(0, 0, width, 110);
   ctx.fillStyle = '#ffffff';
   ctx.font = 'bold 40px Arial';
-  ctx.fillText('TEAM Field Measurement Calculator', 50, 68);
+  ctx.fillText('TapCalc', 50, 68);
   ctx.fillStyle = '#111111';
   ctx.font = '28px Arial';
   let y = 160;
@@ -721,7 +1181,7 @@ function exportJobImage() {
   const link = document.createElement('a');
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
   link.href = canvas.toDataURL('image/png');
-  link.download = `team-field-calculator-${stamp}.png`;
+  link.download = `tapcalc-${stamp}.png`;
   link.click();
 }
 
@@ -731,7 +1191,8 @@ function getStateFields() {
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
-    'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual'
+    'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
+    'etaMachine','etaCutterSize','etaBco'
   ];
 }
 
@@ -767,7 +1228,7 @@ function applyJobState(state) {
     else delete lsMdEl.dataset.userEdited;
   }
   if (state.activeMode) {
-    switchMode(state.activeMode);
+    setMode(state.activeMode);
   }
 }
 
@@ -935,13 +1396,19 @@ if (exportPdfBtnEl) exportPdfBtnEl.addEventListener('click', exportJobPdf);
 if (exportImageBtnEl) exportImageBtnEl.addEventListener('click', exportJobImage);
 
 window.addEventListener('load', () => {
+  enableMixedMeasurementInputs();
   hydrateBcoInputsFromSavedData();
   restoreCurrentJob();
+  try {
+    const savedMode = localStorage.getItem(ACTIVE_MODE_KEY);
+    if (savedMode) setMode(savedMode);
+  } catch {}
   updateBcoDisplays();
   applyBcoToMeasurementCard();
   calcHotTap();
   calcLineStop();
   calcCompletionPlug();
+  initEtaCalculator();
   persistCurrentJob();
   renderHistory();
 });

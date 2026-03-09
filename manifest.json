@@ -1,7 +1,7 @@
 {
-  "name": "TEAM Field Measurement Calculator",
-  "short_name": "TEAM Calc",
-  "start_url": "/measurement-card.html",
+  "name": "TapCalc",
+  "short_name": "TapCalc",
+  "start_url": "./measurement-card.html",
   "display": "standalone",
   "background_color": "#00468b",
   "theme_color": "#00468b",
@@ -17,5 +17,5 @@
       "type": "image/png"
     }
   ],
-  "scope": "/"
+  "scope": "./"
 }
