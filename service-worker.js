@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v60-test-button-actual-fix";
+const CACHE_NAME="tapcalc-v215-longpoll";
 const ASSETS = [
   "./",
   "./index.html",
