@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v53-verified-sync";
+const CACHE_NAME = "tapcalc-v54-sync-fix";
 const ASSETS = [
   "./",
   "./index.html",

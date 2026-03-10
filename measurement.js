@@ -1438,19 +1438,12 @@ function formatFirebaseError(error) {
   return parts.join(' — ') || String(error);
 }
 
+
 async function uploadHistoryItemToCloud(item) {
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) return null;
 
-  const {
-    collection,
-    addDoc,
-    serverTimestamp,
-    waitForPendingWrites,
-    doc,
-    getDocFromServer,
-    getDoc
-  } = ready.modules;
+  const { collection, addDoc, serverTimestamp } = ready.modules;
 
   const payload = {
     ...item.record,
@@ -1459,33 +1452,14 @@ async function uploadHistoryItemToCloud(item) {
     source: 'tapcalc-web'
   };
 
-  const docRef = await addDoc(collection(ready.db, getJobsCollectionName()), payload);
-
-  // Do not mark a job as synced unless Firestore confirms the document exists.
-  try {
-    if (typeof waitForPendingWrites === 'function') {
-      await waitForPendingWrites(ready.db);
-    }
-
-    const docRefForRead = doc(ready.db, getJobsCollectionName(), docRef.id);
-    let verifySnap = null;
-
-    if (typeof getDocFromServer === 'function') {
-      verifySnap = await getDocFromServer(docRefForRead);
-    } else if (typeof getDoc === 'function') {
-      verifySnap = await getDoc(docRefForRead);
-    }
-
-    if (!verifySnap || !verifySnap.exists()) {
-      throw new Error('Cloud write could not be verified on the server.');
-    }
-  } catch (verifyError) {
-    console.error('Cloud write verification failed', verifyError);
-    throw verifyError;
-  }
+  const docRef = await addDoc(
+    collection(ready.db, getJobsCollectionName()),
+    payload
+  );
 
   return docRef.id;
 }
+
 
 async function syncLocalJobsToCloud() {
   const items = getHistory();
