@@ -1778,3 +1778,31 @@ window.addEventListener('load', () => {
 });
 
 })();
+
+
+
+async function tapcalcFirestoreTestWrite() {
+  const ready = await ensureFirebaseReady();
+  if (!ready.enabled) {
+    alert("Firebase not ready.");
+    return;
+  }
+
+  const { collection, addDoc, serverTimestamp } = ready.modules;
+
+  try {
+    const ref = await addDoc(
+      collection(ready.db, getJobsCollectionName()),
+      {
+        debug: "tapcalc-test",
+        created: serverTimestamp(),
+        source: "debug-button"
+      }
+    );
+
+    alert("Firestore write success. Doc ID: " + ref.id);
+  } catch (err) {
+    console.error(err);
+    alert("Firestore write FAILED: " + err.message);
+  }
+}
