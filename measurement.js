@@ -850,6 +850,7 @@ const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure',
 const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD'];
 const syncJobsBtnEl = document.getElementById('syncJobsBtn');
 const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
+const testFirestoreBtnEl = document.getElementById('testFirestoreBtn');
 const jobsListEl = document.getElementById('jobsList');
 const jobsSearchInputEl = document.getElementById('jobsSearchInput');
 const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
@@ -1747,6 +1748,7 @@ if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
 if (syncJobsBtnEl) syncJobsBtnEl.addEventListener('click', syncLocalJobsToCloud);
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
+if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
@@ -1778,37 +1780,3 @@ window.addEventListener('load', () => {
 });
 
 })();
-
-
-window.tapcalcFirestoreTestWrite = async function () {
-  const ready = await ensureFirebaseReady();
-  if (!ready.enabled) {
-    alert("Firebase not ready.");
-    return;
-  }
-
-  const { collection, addDoc, serverTimestamp } = ready.modules;
-
-  try {
-    const ref = await addDoc(
-      collection(ready.db, getJobsCollectionName()),
-      {
-        debug: "tapcalc-test",
-        created: serverTimestamp(),
-        source: "debug-button"
-      }
-    );
-
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent = `Firestore test upload succeeded. Doc ID: ${ref.id}`;
-    }
-    alert("Firestore write success. Doc ID: " + ref.id);
-    try { await loadCloudJobs(); } catch (e) { console.error(e); }
-  } catch (err) {
-    console.error(err);
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent = `Firestore test upload FAILED. ${err?.message || err}`;
-    }
-    alert("Firestore write FAILED: " + (err?.message || err));
-  }
-};

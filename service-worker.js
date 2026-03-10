@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v56-debug-button-fix";
+const CACHE_NAME = "tapcalc-v57-firestore-test-working";
 const ASSETS = [
   "./",
   "./index.html",
