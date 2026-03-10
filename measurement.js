@@ -1441,44 +1441,62 @@ function formatFirebaseError(error) {
 async function uploadHistoryItemToCloud(item) {
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) return null;
-  const { collection, addDoc, serverTimestamp } = ready.modules;
+
+  const {
+    collection,
+    addDoc,
+    serverTimestamp,
+    waitForPendingWrites,
+    doc,
+    getDocFromServer,
+    getDoc
+  } = ready.modules;
+
   const payload = {
     ...item.record,
     localId: item.id,
     syncedAt: serverTimestamp(),
     source: 'tapcalc-web'
   };
+
   const docRef = await addDoc(collection(ready.db, getJobsCollectionName()), payload);
+
+  // Do not mark a job as synced unless Firestore confirms the document exists.
+  try {
+    if (typeof waitForPendingWrites === 'function') {
+      await waitForPendingWrites(ready.db);
+    }
+
+    const docRefForRead = doc(ready.db, getJobsCollectionName(), docRef.id);
+    let verifySnap = null;
+
+    if (typeof getDocFromServer === 'function') {
+      verifySnap = await getDocFromServer(docRefForRead);
+    } else if (typeof getDoc === 'function') {
+      verifySnap = await getDoc(docRefForRead);
+    }
+
+    if (!verifySnap || !verifySnap.exists()) {
+      throw new Error('Cloud write could not be verified on the server.');
+    }
+  } catch (verifyError) {
+    console.error('Cloud write verification failed', verifyError);
+    throw verifyError;
+  }
+
   return docRef.id;
 }
 
 async function syncLocalJobsToCloud() {
   const items = getHistory();
-
-  // Normal behavior: upload jobs with no cloudId.
-  let queue = items.filter((item) => !item.cloudId);
-
-  // Repair behavior:
-  // If local history exists but the shared DB is empty, re-upload local jobs once.
-  // This fixes cases where old jobs are marked synced locally but the cloud collection is blank.
-  if (!queue.length && items.length && cloudJobsCache.length === 0) {
-    queue = items.map((item) => {
-      item.cloudId = null;
-      item.synced = false;
-      return item;
-    });
-  }
-
+  const unsynced = items.filter((item) => !item.cloudId);
   updateUnsyncedCount();
-
-  if (!queue.length) {
+  if (!unsynced.length) {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
     return;
   }
-
-  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${queue.length} local job${queue.length === 1 ? '' : 's'} to ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'})...`;
-
-  for (const item of queue) {
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'} to ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'})...`;
+  for (const item of unsynced) {
     try {
       const cloudId = await uploadHistoryItemToCloud(item);
       if (cloudId) {
@@ -1490,7 +1508,6 @@ async function syncLocalJobsToCloud() {
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Cloud sync failed for "${item?.record?.meta?.title || 'Saved Job'}". ${formatFirebaseError(error)}`;
     }
   }
-
   saveHistory(items);
   renderHistory();
   updateUnsyncedCount();
@@ -1695,11 +1712,12 @@ async function saveCurrentJobToHistory() {
         renderHistory();
         updateUnsyncedCount();
         await loadCloudJobs();
+        if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Uploaded to ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}). ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} visible.`;
       }
     }
   } catch (error) {
     console.error('TapCalc auto-sync failed', error);
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally. Cloud sync can be retried from the Jobs tab. ${formatFirebaseError(error)}`;
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally only. Cloud upload was not verified. Retry from the Jobs tab. ${formatFirebaseError(error)}`;
   }
 }
 
