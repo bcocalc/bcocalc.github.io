@@ -1747,6 +1747,36 @@ if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobT
 if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
 if (syncJobsBtnEl) syncJobsBtnEl.addEventListener('click', syncLocalJobsToCloud);
+
+async function testFirestoreUpload() {
+  const ready = await ensureFirebaseReady();
+  if (!ready.enabled) {
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase not ready for test upload.';
+    alert('Firebase not ready.');
+    return;
+  }
+
+  try {
+    const { collection, addDoc, serverTimestamp } = ready.modules;
+    const ref = await addDoc(
+      collection(ready.db, getJobsCollectionName()),
+      {
+        debug: 'tapcalc-test',
+        created: serverTimestamp(),
+        source: 'debug-button'
+      }
+    );
+
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firestore test upload succeeded. Doc ID: ${ref.id}`;
+    alert(`Firestore write success. Doc ID: ${ref.id}`);
+    await loadCloudJobs();
+  } catch (error) {
+    console.error('Firestore test upload failed', error);
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firestore test upload FAILED. ${formatFirebaseError(error)}`;
+    alert(`Firestore write FAILED: ${error?.message || error}`);
+  }
+}
+
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
