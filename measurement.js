@@ -1415,8 +1415,9 @@ async function ensureFirebaseReady() {
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
     ]);
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
-    firebaseDb = firestoreModule.getFirestore(app);
+    firebaseDb = firestoreModule.initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
     firebaseModuleCache = firestoreModule;
+    firestoreModule.setLogLevel("debug");
     if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
     return { enabled: true, db: firebaseDb, modules: firestoreModule };
   } catch (error) {
