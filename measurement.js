@@ -846,6 +846,11 @@ const HISTORY_DRAWER_OPEN_KEY = 'measurementCardHistoryDrawerOpenV1';
 const geometryLockToggleEl = document.getElementById('geometryLockToggle');
 const exportPdfBtnEl = document.getElementById('exportPdfBtn');
 const exportImageBtnEl = document.getElementById('exportImageBtn');
+const jobInfoSectionEl = document.getElementById('jobInfoSection');
+const jobInfoBodyEl = document.getElementById('jobInfoBody');
+const jobInfoSummaryEl = document.getElementById('jobInfoSummary');
+const jobInfoToggleBtnEl = document.getElementById('jobInfoToggleBtn');
+const JOB_INFO_COLLAPSED_KEY = 'measurementCardJobInfoCollapsedV1';
 const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes'];
 const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD'];
 const syncJobsBtnEl = document.getElementById('syncJobsBtn');
@@ -1115,6 +1120,57 @@ function updateSummary() {
 });
 if (lsLdSignEl) lsLdSignEl.addEventListener('change', calcLineStop);
 
+
+function formatJobDateForSummary(value) {
+  if (!value) return '';
+  try {
+    const parts = String(value).split('-');
+    if (parts.length === 3) return `${parts[1]}/${parts[2]}/${parts[0]}`;
+  } catch {}
+  return String(value);
+}
+
+function buildJobInfoSummary() {
+  const info = collectJobInfo();
+  const parts = [];
+  if ((info.jobClient || '').trim()) parts.push(info.jobClient.trim());
+  if ((info.jobDescription || '').trim()) parts.push(info.jobDescription.trim());
+  if ((info.jobNumber || '').trim()) parts.push(`Job # ${info.jobNumber.trim()}`);
+  if ((info.jobDate || '').trim()) parts.push(formatJobDateForSummary(info.jobDate.trim()));
+  if ((info.jobTechnician || '').trim()) parts.push(info.jobTechnician.trim());
+  if ((info.jobLocation || '').trim()) parts.push(info.jobLocation.trim());
+  return parts.length ? parts.join(' • ') : 'No job info yet.';
+}
+
+function updateJobInfoSummary() {
+  if (!jobInfoSummaryEl) return;
+  jobInfoSummaryEl.textContent = buildJobInfoSummary();
+}
+
+function setJobInfoCollapsed(collapsed) {
+  if (!jobInfoSectionEl || !jobInfoToggleBtnEl) return;
+  jobInfoSectionEl.classList.toggle('collapsed', !!collapsed);
+  jobInfoToggleBtnEl.textContent = collapsed ? 'Expand' : 'Collapse';
+  jobInfoToggleBtnEl.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+  try {
+    localStorage.setItem(JOB_INFO_COLLAPSED_KEY, collapsed ? 'true' : 'false');
+  } catch {}
+}
+
+function initJobInfoSection() {
+  updateJobInfoSummary();
+  let collapsed = false;
+  try {
+    const saved = localStorage.getItem(JOB_INFO_COLLAPSED_KEY);
+    if (saved === 'true') collapsed = true;
+    else if (saved === 'false') collapsed = false;
+    else collapsed = window.innerWidth <= 768;
+  } catch {
+    collapsed = window.innerWidth <= 768;
+  }
+  setJobInfoCollapsed(collapsed);
+}
+
 function setGeometryLocked(locked) {
   bcoGeometryFieldIds.forEach(id => {
     const el = document.getElementById(id);
@@ -1250,6 +1306,7 @@ function applyJobState(state) {
   if (state.activeMode) {
     setMode(state.activeMode);
   }
+  updateJobInfoSummary();
 }
 
 function restoreCurrentJob() {
@@ -1808,6 +1865,7 @@ async function saveCurrentJobToHistory() {
   renderJobsList();
   setHistoryDrawerOpen(true);
   if (historyListEl) historyListEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (window.innerWidth <= 768) setJobInfoCollapsed(true);
   try {
     const cloudId = await uploadHistoryItemToCloud(snapshot);
     if (cloudId) {
@@ -1864,6 +1922,17 @@ document.addEventListener('click', (event) => {
     updateUnsyncedCount();
     renderJobsList();
   }
+});
+
+jobInfoFieldIds.forEach((id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', updateJobInfoSummary);
+  el.addEventListener('change', updateJobInfoSummary);
+});
+if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
+  const collapsed = !jobInfoSectionEl?.classList.contains('collapsed');
+  setJobInfoCollapsed(collapsed);
 });
 
 [...document.querySelectorAll('input, select, textarea')].forEach(el => {
@@ -1931,6 +2000,7 @@ window.addEventListener('load', () => {
   enableMixedMeasurementInputs();
   hydrateBcoInputsFromSavedData();
   restoreCurrentJob();
+  initJobInfoSection();
   try {
     const savedMode = localStorage.getItem(ACTIVE_MODE_KEY);
     if (savedMode) setMode(savedMode);
@@ -1945,6 +2015,7 @@ window.addEventListener('load', () => {
   renderHistory();
   updateUnsyncedCount();
   renderJobsList();
+  updateJobInfoSummary();
   loadCloudJobs();
 });
 

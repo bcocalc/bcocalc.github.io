@@ -15,7 +15,7 @@
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">v2.21 · 2026-03-09</span>
+      <span class="version-badge">v2.22 · 2026-03-09</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -24,26 +24,35 @@
 
   <p id="bcoStatus" class="note"></p>
 
-  <section class="section job-info-section">
+  <section class="section job-info-section" id="jobInfoSection">
     <div class="job-info-header">
-      <h3>Job Information</h3>
+      <div class="job-info-heading">
+        <h3>Job Information</h3>
+        <button type="button" id="jobInfoToggleBtn" class="secondary-btn job-info-toggle-btn" aria-expanded="true">Collapse</button>
+      </div>
+      <div class="job-info-summary" id="jobInfoSummary">No job info yet.</div>
       <div class="job-tools">
         <label class="check-inline geometry-lock-toggle"><input id="geometryLockToggle" type="checkbox"> Lock Geometry</label>
         <button type="button" id="exportPdfBtn" class="secondary-btn">Export PDF</button>
         <button type="button" id="exportImageBtn" class="secondary-btn">Export Image</button>
       </div>
     </div>
-    <div class="job-info-grid">
-      <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
-      <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
-      <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
-      <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
-      <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
-      <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
-      <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
-      <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
-      <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
-      <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="3" placeholder="Notes"></textarea></div>
+    <div class="job-info-body" id="jobInfoBody">
+      <div class="job-info-grid job-info-grid-primary">
+        <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
+        <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
+        <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
+        <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
+        <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
+        <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
+      </div>
+      <div class="job-info-subtitle">More Details</div>
+      <div class="job-info-grid job-info-grid-secondary">
+        <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
+        <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
+        <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
+        <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="3" placeholder="Notes"></textarea></div>
+      </div>
     </div>
   </section>
 
