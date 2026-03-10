@@ -1,3 +1,4 @@
+
 (function(){
 
 // ===== GLOBAL THEME TOGGLE FACTORY (shared) =====
@@ -744,7 +745,7 @@ function populateBoltingSizes() {
   const flangeClass = boltingClassSelectEl.value || '150';
   const rows = getBoltingRowsForClass(flangeClass);
   const previousValue = boltingSizeSelectEl.value;
-  boltingSizeSelectEl.innerHTML = rows.map((row) => `<option value="${row.size}">${row.size}</option>`).join('');
+  boltingSizeSelectEl.innerHTML = rows.map((row) => `<option value="${row.size}">${row.size}"</option>`).join('');
   const match = rows.find((row) => row.size === previousValue);
   boltingSizeSelectEl.value = match ? previousValue : (rows[0]?.size || '');
 }
@@ -1414,12 +1415,7 @@ async function ensureFirebaseReady() {
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
     ]);
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
-
-    firebaseDb = firestoreModule.initializeFirestore(app, {
-      experimentalAutoDetectLongPolling: true,
-      useFetchStreams: false
-    });
-
+    firebaseDb = firestoreModule.getFirestore(app);
     firebaseModuleCache = firestoreModule;
     if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
     return { enabled: true, db: firebaseDb, modules: firestoreModule };
@@ -1468,7 +1464,6 @@ async function uploadHistoryItemToCloud(item) {
 
   return docRef.id;
 }
-
 
 async function syncLocalJobsToCloud() {
   const items = getHistory();
@@ -1534,7 +1529,6 @@ async function syncLocalJobsToCloud() {
     if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
   }
 }
-
 function renderJobRecordDetails(record) {
   const warnings = [
     ...(record?.warnings?.hotTap || []),
@@ -1676,7 +1670,6 @@ async function loadCloudJobs() {
 
   updateUnsyncedCount();
 }
-
 function updateUnsyncedCount() {
   if (!unsyncedJobsCountEl) return;
   const unsynced = getHistory().filter((item) => !item.cloudId).length;
@@ -1863,7 +1856,6 @@ async function testFirestoreUpload() {
     if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = false;
   }
 }
-
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
