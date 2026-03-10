@@ -850,6 +850,7 @@ const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure',
 const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD'];
 const syncJobsBtnEl = document.getElementById('syncJobsBtn');
 const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
+const testFirestoreBtnEl = document.getElementById('testFirestoreBtn');
 const jobsListEl = document.getElementById('jobsList');
 const jobsSearchInputEl = document.getElementById('jobsSearchInput');
 const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
@@ -1747,6 +1748,7 @@ if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
 if (syncJobsBtnEl) syncJobsBtnEl.addEventListener('click', syncLocalJobsToCloud);
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
+if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';

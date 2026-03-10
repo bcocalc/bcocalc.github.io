@@ -1,4 +1,4 @@
-const CACHE_NAME = "tapcalc-v58-root-firebase-path-fix";
+const CACHE_NAME = "tapcalc-v59-connected-plus-test";
 const ASSETS = [
   "./",
   "./index.html",
