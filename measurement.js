@@ -1453,42 +1453,82 @@ async function uploadHistoryItemToCloud(item) {
     source: 'tapcalc-web'
   };
 
-  const docRef = await addDoc(
-    collection(ready.db, getJobsCollectionName()),
-    payload
-  );
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Firestore upload timeout after 10000ms')), 10000);
+  });
+
+  const docRef = await Promise.race([
+    addDoc(collection(ready.db, getJobsCollectionName()), payload),
+    timeoutPromise
+  ]);
 
   return docRef.id;
 }
-
 
 async function syncLocalJobsToCloud() {
   const items = getHistory();
   const unsynced = items.filter((item) => !item.cloudId);
   updateUnsyncedCount();
-  if (!unsynced.length) {
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
-    return;
-  }
-  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Syncing ${unsynced.length} local job${unsynced.length === 1 ? '' : 's'} to ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'})...`;
-  for (const item of unsynced) {
-    try {
-      const cloudId = await uploadHistoryItemToCloud(item);
-      if (cloudId) {
-        item.cloudId = cloudId;
-        item.synced = true;
-      }
-    } catch (error) {
-      console.error('TapCalc sync failed', error);
-      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Cloud sync failed for "${item?.record?.meta?.title || 'Saved Job'}". ${formatFirebaseError(error)}`;
-    }
-  }
-  saveHistory(items);
-  renderHistory();
-  updateUnsyncedCount();
-  await loadCloudJobs();
-}
 
+  if (syncJobsBtnEl) syncJobsBtnEl.disabled = true;
+  if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = true;
+  if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
+
+  try {
+    if (!unsynced.length) {
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
+      return;
+    }
+
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent =
+        `Syncing 0 of ${unsynced.length} job${unsynced.length === 1 ? '' : 's'}...`;
+    }
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < unsynced.length; i += 1) {
+      const item = unsynced[i];
+
+      if (jobsCloudStatusEl) {
+        jobsCloudStatusEl.textContent =
+          `Syncing ${i + 1} of ${unsynced.length}: ${item?.record?.meta?.title || 'Saved Job'}...`;
+      }
+
+      try {
+        const cloudId = await uploadHistoryItemToCloud(item);
+        if (cloudId) {
+          item.cloudId = cloudId;
+          item.synced = true;
+          successCount += 1;
+        } else {
+          failCount += 1;
+        }
+      } catch (error) {
+        failCount += 1;
+        console.error('TapCalc sync failed', error);
+      }
+    }
+
+    saveHistory(items);
+    renderHistory();
+    updateUnsyncedCount();
+    await loadCloudJobs();
+
+    if (jobsCloudStatusEl) {
+      if (failCount === 0) {
+        jobsCloudStatusEl.textContent = `Sync complete. ${successCount} job${successCount === 1 ? '' : 's'} uploaded.`;
+      } else {
+        jobsCloudStatusEl.textContent = `Sync finished with issues. Uploaded ${successCount}, failed ${failCount}.`;
+      }
+    }
+  } finally {
+    if (syncJobsBtnEl) syncJobsBtnEl.disabled = false;
+    if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = false;
+    if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
+  }
+}
 function renderJobRecordDetails(record) {
   const warnings = [
     ...(record?.warnings?.hotTap || []),
@@ -1582,26 +1622,54 @@ async function loadCloudJobs() {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
     return;
   }
+
+  if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
+
   try {
     const { collection, getDocs, getDocsFromServer } = ready.modules;
     const colRef = collection(ready.db, getJobsCollectionName());
+
+    const withTimeout = (promise, label) =>
+      Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timeout after 10000ms`)), 10000)
+        )
+      ]);
+
     let snapshot;
     try {
-      snapshot = getDocsFromServer ? await getDocsFromServer(colRef) : await getDocs(colRef);
+      snapshot = getDocsFromServer
+        ? await withTimeout(getDocsFromServer(colRef), 'Firestore server read')
+        : await withTimeout(getDocs(colRef), 'Firestore read');
     } catch (serverError) {
       console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
-      snapshot = await getDocs(colRef);
+      snapshot = await withTimeout(getDocs(colRef), 'Firestore fallback read');
     }
-    cloudJobsCache = snapshot.docs.map((docSnap) => ({ source: 'cloud', id: docSnap.id, record: docSnap.data() || {} }));
+
+    cloudJobsCache = snapshot.docs.map((docSnap) => ({
+      source: 'cloud',
+      id: docSnap.id,
+      record: docSnap.data() || {}
+    }));
+
     renderJobsList();
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}).`;
+
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent =
+        `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}).`;
+    }
   } catch (error) {
     console.error('Cloud jobs load failed', error);
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
+    }
+  } finally {
+    if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
   }
+
   updateUnsyncedCount();
 }
-
 function updateUnsyncedCount() {
   if (!unsyncedJobsCountEl) return;
   const unsynced = getHistory().filter((item) => !item.cloudId).length;
@@ -1756,16 +1824,26 @@ async function testFirestoreUpload() {
     return;
   }
 
+  if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = true;
+
   try {
     const { collection, addDoc, serverTimestamp } = ready.modules;
-    const ref = await addDoc(
-      collection(ready.db, getJobsCollectionName()),
-      {
-        debug: 'tapcalc-test',
-        created: serverTimestamp(),
-        source: 'debug-button'
-      }
-    );
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Firestore test upload timeout after 10000ms')), 10000);
+    });
+
+    const ref = await Promise.race([
+      addDoc(
+        collection(ready.db, getJobsCollectionName()),
+        {
+          debug: 'tapcalc-test',
+          created: serverTimestamp(),
+          source: 'debug-button'
+        }
+      ),
+      timeoutPromise
+    ]);
 
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firestore test upload succeeded. Doc ID: ${ref.id}`;
     alert(`Firestore write success. Doc ID: ${ref.id}`);
@@ -1774,9 +1852,10 @@ async function testFirestoreUpload() {
     console.error('Firestore test upload failed', error);
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firestore test upload FAILED. ${formatFirebaseError(error)}`;
     alert(`Firestore write FAILED: ${error?.message || error}`);
+  } finally {
+    if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = false;
   }
 }
-
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });

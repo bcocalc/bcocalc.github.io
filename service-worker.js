@@ -1,4 +1,4 @@
-const CACHE_NAME="tapcalc-v215-longpoll";
+const CACHE_NAME = 'tapcalc-cache-v2.16';
 const ASSETS = [
   "./",
   "./index.html",
