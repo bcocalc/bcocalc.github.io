@@ -1780,8 +1780,7 @@ window.addEventListener('load', () => {
 })();
 
 
-
-async function tapcalcFirestoreTestWrite() {
+window.tapcalcFirestoreTestWrite = async function () {
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) {
     alert("Firebase not ready.");
@@ -1800,9 +1799,16 @@ async function tapcalcFirestoreTestWrite() {
       }
     );
 
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent = `Firestore test upload succeeded. Doc ID: ${ref.id}`;
+    }
     alert("Firestore write success. Doc ID: " + ref.id);
+    try { await loadCloudJobs(); } catch (e) { console.error(e); }
   } catch (err) {
     console.error(err);
-    alert("Firestore write FAILED: " + err.message);
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent = `Firestore test upload FAILED. ${err?.message || err}`;
+    }
+    alert("Firestore write FAILED: " + (err?.message || err));
   }
-}
+};
