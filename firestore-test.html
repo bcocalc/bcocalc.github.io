@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Firestore Test</title>
+</head>
+<body style="font-family: Arial, sans-serif; padding:20px;">
+<h1>Firestore Test</h1>
+<button id="testBtn">Run Firestore Test</button>
+<pre id="output" style="white-space: pre-wrap; background:#f4f4f4; padding:12px; margin-top:16px;"></pre>
+
+<script type="module">
+const output = document.getElementById("output");
+const log = (...args)=>{
+  output.textContent += args.join(" ") + "\n";
+  console.log(...args);
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { initializeFirestore, collection, addDoc, getDocs, serverTimestamp, setLogLevel }
+from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBth_tthBmg3o_VEJ3NgKlSj1coXIcHvSo",
+  authDomain: "tapcalc-afc92.firebaseapp.com",
+  projectId: "tapcalc-afc92",
+  storageBucket: "tapcalc-afc92.firebasestorage.app",
+  messagingSenderId: "730117208452",
+  appId: "1:730117208452:web:688fe41c7b9eef7c8545d1"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+  useFetchStreams: false
+});
+
+setLogLevel("debug");
+
+document.getElementById("testBtn").addEventListener("click", async ()=>{
+  output.textContent = "";
+
+  try{
+    log("Starting write test...");
+
+    const ref = await Promise.race([
+      addDoc(collection(db,"tapcalcJobs"),{
+        debug:"standalone-test",
+        created:serverTimestamp()
+      }),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Write timeout after 10000ms")),10000))
+    ]);
+
+    log("Write success. Doc ID:", ref.id);
+
+    log("Starting read test...");
+
+    const snap = await Promise.race([
+      getDocs(collection(db,"tapcalcJobs")),
+      new Promise((_,reject)=>setTimeout(()=>reject(new Error("Read timeout after 10000ms")),10000))
+    ]);
+
+    log("Read success. Docs found:", snap.size);
+
+  }catch(err){
+    log("FAILED:", err?.message || String(err));
+    console.error(err);
+  }
+});
+</script>
+</body>
+</html>
