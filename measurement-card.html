@@ -15,7 +15,7 @@
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">v2.19 · 2026-03-09</span>
+      <span class="version-badge">v2.20 · 2026-03-09</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -417,7 +417,6 @@
         <div class="jobs-actions">
           <button type="button" id="syncJobsBtn">Sync Local Jobs</button>
           <button type="button" id="refreshCloudJobsBtn" class="secondary-btn">Refresh Shared Jobs</button>
-          <button type="button" id="testFirestoreBtn" class="secondary-btn" style="margin-left:10px;">Test Firestore Upload</button>
         </div>
         <div class="jobs-status-grid">
           <div class="summary-item"><span class="summary-label">Firebase</span><span id="firebaseStatus" class="summary-value">Not connected</span></div>
@@ -431,8 +430,11 @@
       </div>
 
       <div class="section jobs-panel-card">
-        <h3>Shared / Synced Job List</h3>
-        <div id="jobsList" class="jobs-list">No jobs loaded yet.</div>
+        <h3>Shared Job Library</h3>
+        <p class="note jobs-note">Search every shared job by title, client, date, job number, location, technician, or pipe details, then open the one you need.</p>
+        <div class="jobs-library-meta" id="jobsResultsMeta">Loading jobs...</div>
+        <select id="jobsSelect" class="jobs-select" size="10" aria-label="Shared jobs results"></select>
+        <div id="jobsList" class="jobs-library-details">Select a job from the list to view its details.</div>
       </div>
     </div>
 </section>

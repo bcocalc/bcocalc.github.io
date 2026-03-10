@@ -852,6 +852,8 @@ const syncJobsBtnEl = document.getElementById('syncJobsBtn');
 const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
 const testFirestoreBtnEl = document.getElementById('testFirestoreBtn');
 const jobsListEl = document.getElementById('jobsList');
+const jobsSelectEl = document.getElementById('jobsSelect');
+const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
 const jobsSearchInputEl = document.getElementById('jobsSearchInput');
 const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
 const firebaseStatusEl = document.getElementById('firebaseStatus');
@@ -1310,7 +1312,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v40'
+      version: 'v2.20'
     },
     job: {
       client: state.jobClient || '',
@@ -1415,9 +1417,8 @@ async function ensureFirebaseReady() {
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
     ]);
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
-    firebaseDb = firestoreModule.initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
+    firebaseDb = firestoreModule.getFirestore(app);
     firebaseModuleCache = firestoreModule;
-    firestoreModule.setLogLevel("debug");
     if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
     return { enabled: true, db: firebaseDb, modules: firestoreModule };
   } catch (error) {
@@ -1574,7 +1575,7 @@ function getCombinedJobsForDisplay() {
     jobs = jobs.filter(({ record }) => {
       const haystack = [
         record?.meta?.title, record?.meta?.operationType, record?.job?.client, record?.job?.location, record?.job?.technician,
-        record?.job?.jobNumber, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd
+        record?.job?.jobNumber, record?.job?.date, record?.job?.notes, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd, record?.meta?.savedAtDisplay
       ].join(' ').toLowerCase();
       return haystack.includes(term);
     });
@@ -1586,32 +1587,66 @@ function getCombinedJobsForDisplay() {
 function renderJobsList() {
   if (!jobsListEl) return;
   const jobs = getCombinedJobsForDisplay();
+
+  if (jobsResultsMetaEl) {
+    const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
+    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}”` : countText;
+  }
+
   if (!jobs.length) {
-    jobsListEl.innerHTML = 'No jobs loaded yet.';
+    if (jobsSelectEl) jobsSelectEl.innerHTML = '';
+    jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     return;
   }
-  jobsListEl.innerHTML = jobs.map(({ source, id, record }) => {
-    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
-    const operationType = record?.meta?.operationType || record?.state?.activeMode || 'Job';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
-    const client = record?.job?.client || 'No customer';
-    const nominalSize = record?.pipe?.nominalSize || '—';
-    const bco = record?.calculations?.bco || '—';
-    return `
-    <details class="job-record-card">
-      <summary>
-        <div class="job-record-summary">
-          <span class="job-record-title">${title}</span>
-          <span class="job-record-badges">
-            <span class="job-source-badge ${source}">${source === 'local' ? 'Local only' : source === 'synced' ? 'Synced' : 'Shared DB'}</span>
-            <span class="job-source-badge op">${operationType}</span>
-          </span>
-        </div>
-        <div class="job-record-meta">${savedAtDisplay} • ${client} • ${nominalSize} • BCO ${bco}</div>
-      </summary>
-      ${renderJobRecordDetails(record)}
-    </details>`;
-  }).join('');
+
+  if (jobsSelectEl) {
+    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+      const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+      const client = record?.job?.client || 'No customer';
+      const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+      const op = record?.meta?.operationType || 'Job';
+      const nominalSize = record?.pipe?.nominalSize || '—';
+      const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+      const label = `${date} • ${title} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
+      const safe = label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      return `<option value="${id}">${safe}</option>`;
+    }).join('');
+
+    const selectedStillExists = jobs.some((job) => String(job.id) === String(jobsSelectEl.value));
+    if (!selectedStillExists) jobsSelectEl.value = String(jobs[0].id);
+  }
+
+  const selectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : String(jobs[0].id);
+  const selectedJob = jobs.find((job) => String(job.id) === selectedId) || jobs[0];
+  if (jobsSelectEl && selectedJob) jobsSelectEl.value = String(selectedJob.id);
+
+  const record = selectedJob.record;
+  const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+  const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
+  const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+  const warnings = [
+    ...(record?.warnings?.hotTap || []),
+    ...(record?.warnings?.lineStop || []),
+    ...(record?.warnings?.completionPlug || [])
+  ].filter(Boolean);
+
+  jobsListEl.innerHTML = `
+    <div class="job-detail-header">
+      <div>
+        <div class="job-detail-title">${title}</div>
+        <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+      </div>
+      <div class="job-record-badges">
+        <span class="job-source-badge ${selectedJob.source}">${sourceLabel}</span>
+      </div>
+    </div>
+    ${renderJobRecordDetails(record)}
+    <div class="job-detail-grid">
+      <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+      <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
+      <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+    </div>`;
 }
 
 async function loadCloudJobs() {
@@ -1860,6 +1895,7 @@ async function testFirestoreUpload() {
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
+if (jobsSelectEl) jobsSelectEl.addEventListener('change', renderJobsList);
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
   setHistoryDrawerOpen(!isOpen);

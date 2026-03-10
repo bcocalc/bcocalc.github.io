@@ -2512,3 +2512,16 @@ body.dark .history-item {
   background: transparent !important;
   border-color: #3a4350 !important;
 }
+
+
+.jobs-library-meta{margin:10px 0 12px;color:var(--muted,#9fb0c2);font-size:.95rem;}
+.jobs-select{width:100%;min-height:280px;border:1px solid rgba(255,255,255,.14);background:rgba(10,16,26,.72);color:#e8eef7;border-radius:14px;padding:10px;font:inherit;}
+.jobs-select option{padding:10px 12px;border-radius:8px;}
+.jobs-select option:checked{background:#1b5fc6;color:#fff;}
+.jobs-library-details{margin-top:14px;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px;background:rgba(255,255,255,.04);min-height:120px;color:#e8eef7;}
+.jobs-library-empty{color:var(--muted,#9fb0c2);}
+.job-detail-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;}
+.job-detail-title{font-size:1.1rem;font-weight:700;color:#fff;}
+.job-detail-subtitle{color:var(--muted,#9fb0c2);font-size:.95rem;margin-top:4px;}
+.job-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px;margin-top:12px;}
+.job-detail-grid div{color:#dbe6f5;}
