@@ -1260,6 +1260,27 @@ function restoreCurrentJob() {
   } catch {}
 }
 
+function loadRecordIntoCalculator(record, options = {}) {
+  if (!record?.state) return;
+  applyJobState(record.state);
+  refreshBcoState();
+  updateBcoDisplays();
+  calcHotTap();
+  calcLineStop();
+  calcCompletionPlug();
+  initEtaCalculator();
+  persistCurrentJob();
+  if (jobsCloudStatusEl && options.message !== false) {
+    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
+  }
+  const targetMode = record?.state?.activeMode || 'bco';
+  if (targetMode) setMode(targetMode);
+  try {
+    document.getElementById('bcoPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch {}
+}
+
+
 function getHistory() {
   try {
     const parsed = JSON.parse(localStorage.getItem(JOB_HISTORY_KEY) || '[]');
@@ -1312,7 +1333,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.20'
+      version: 'v2.21'
     },
     job: {
       client: state.jobClient || '',
@@ -1640,6 +1661,9 @@ function renderJobsList() {
         <span class="job-source-badge ${selectedJob.source}">${sourceLabel}</span>
       </div>
     </div>
+    <div class="job-detail-actions">
+      <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+    </div>
     ${renderJobRecordDetails(record)}
     <div class="job-detail-grid">
       <div><strong>Saved:</strong> ${savedAtDisplay}</div>
@@ -1647,6 +1671,11 @@ function renderJobsList() {
       <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
       <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
     </div>`;
+
+  const loadBtn = document.getElementById('jobsLoadSelectedBtn');
+  if (loadBtn) {
+    loadBtn.addEventListener('click', () => loadRecordIntoCalculator(record));
+  }
 }
 
 async function loadCloudJobs() {
@@ -1825,13 +1854,7 @@ document.addEventListener('click', (event) => {
   if (loadId) {
     const item = getHistory().find(entry => entry.id === loadId);
     if (item) {
-      applyJobState(item.state);
-      updateBcoDisplays();
-      refreshBcoState();
-      calcHotTap();
-      calcLineStop();
-      calcCompletionPlug();
-      persistCurrentJob();
+      loadRecordIntoCalculator(item.record || { state: item.state });
     }
   }
   if (deleteId) {
