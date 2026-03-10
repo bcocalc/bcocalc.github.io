@@ -2666,11 +2666,6 @@ body.light .job-info-summary {
   border-color: rgba(15, 23, 42, 0.08);
 }
 @media (max-width: 768px) {
-  .job-info-section {
-    position: sticky;
-    top: 8px;
-    z-index: 4;
-  }
   .job-info-header {
     align-items: stretch;
   }
