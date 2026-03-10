@@ -1,0 +1,2822 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f8f8;
+  color: #000;
+  margin: 0;
+  padding: 0;
+}
+body.dark-mode {
+  background-color: #1e1e1e;
+  color: #f8f8f8;
+}
+.container {
+  max-width: 500px;
+  margin: 50px auto;
+  background: #fff;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+body.dark-mode .container {
+  background: #2c2c2c;
+}
+.logo {
+  display: block;
+  margin: 0 auto 20px;
+  max-width: 100%;
+  height: auto;
+}
+.theme-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+}
+select, input[type='number'] {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+}
+button {
+  width: 100%;
+  padding: 10px;
+  background: #00468b;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+button:hover {
+  background: #003366;
+}
+#result {
+  margin-top: 15px;
+  font-weight: bold;
+}
+/* DARK MODE STYLES - ENFORCED */
+body.dark {
+  background-color: #121212 !important;
+  color: #f0f0f0 !important;
+}
+
+body.dark .container {
+  background-color: #1e1e1e !important;
+  border-color: #555 !important;
+}
+
+body.dark .form-group label,
+body.dark h1,
+body.dark h2,
+body.dark p {
+  color: #f0f0f0 !important;
+}
+
+body.dark input,
+body.dark select,
+body.dark button {
+  background-color: #333 !important;
+  color: #fff !important;
+  border-color: #555 !important;
+}
+
+
+.history {
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 10px;
+  border: 1px solid #ccc;
+  padding: 10px;
+  border-radius: 8px;
+  background-color: #f0f0f0;
+}
+
+body.dark .history {
+  background-color: #2c2c2c;
+  border-color: #555;
+}
+
+/* Scrollbar styling */
+.history::-webkit-scrollbar {
+  width: 8px;
+}
+
+.history::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
+
+.history::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+
+/* Divider between history items */
+.history li {
+  border-bottom: 1px solid #ccc;
+  padding: 6px 0;
+}
+
+body.dark .history li {
+  border-bottom: 1px solid #555;
+}
+
+
+/* === Measurement Card Polish === */
+.card {
+  background: var(--card-bg, #ffffff);
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  padding: 24px;
+}
+
+.section {
+  border-radius: 10px;
+  background: #f9fafb;
+}
+
+.section h3 {
+  font-size: 1.2rem;
+  border-bottom: 2px solid #ddd;
+  padding-bottom: 6px;
+}
+
+.row {
+  align-items: center;
+}
+
+.row label {
+  font-weight: 600;
+  color: #333;
+}
+
+.row input,
+.row select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.row input:disabled {
+  background: #eee;
+  color: #555;
+}
+
+.calc {
+  font-weight: bold;
+  background: #fff3a0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  min-width: 90px;
+}
+
+.note {
+  font-size: 0.75rem;
+  margin-left: 6px;
+}
+
+#mtWarning {
+  margin-top: 10px;
+  background: #ffe5e5;
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+/* Mobile tweaks */
+@media (max-width: 768px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* === Measurement Card Final Polish (BCO parity) === */
+.card h1 {
+  font-size: 1.6rem;
+  margin-bottom: 16px;
+}
+
+.grid {
+  gap: 28px;
+}
+
+.section {
+  padding: 20px;
+}
+
+.section h3 {
+  font-size: 1.25rem;
+  letter-spacing: 0.3px;
+}
+
+.row {
+  margin-bottom: 10px;
+}
+
+.row label {
+  font-size: 0.95rem;
+}
+
+.row input,
+.row select {
+  font-size: 0.95rem;
+}
+
+.calc {
+  font-size: 0.95rem;
+}
+
+.note {
+  color: #777;
+}
+
+a {
+  display: inline-block;
+  margin-top: 16px;
+  font-weight: 600;
+}
+
+
+/* === Shared BCO Color Scheme === */
+:root {
+  --primary: #0b3a66;
+  --primary-light: #1f5d99;
+  --accent: #f5c400;
+  --card-bg: #ffffff;
+}
+
+body {
+  background: linear-gradient(180deg, #0b3a66 0%, #1f5d99 100%);
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.app-logo {
+  height: 42px;
+}
+
+.card {
+  background: var(--card-bg);
+}
+
+.section h3 {
+  color: var(--primary);
+  border-bottom-color: var(--primary-light);
+}
+
+.calc {
+  background: var(--accent);
+}
+
+a {
+  color: var(--primary);
+}
+
+
+/* === Global Theme Background (BCO + Measurement Card) === */
+body {
+  background: linear-gradient(180deg, var(--bg-top), var(--bg-bottom));
+  transition: background 0.3s ease;
+}
+
+:root {
+  --bg-top: #0b3a66;
+  --bg-bottom: #1f5d99;
+}
+
+body.dark {
+  --bg-top: #0b1f33;
+  --bg-bottom: #081826;
+}
+
+
+/* === Dark Mode Parity with BCO Calculator === */
+body.dark .card {
+  background: #1f1f1f;
+  color: #e6e6e6;
+  box-shadow: 0 10px 28px rgba(0,0,0,0.45);
+}
+
+body.dark .section {
+  background: #242424;
+  border: 1px solid #2f2f2f;
+}
+
+body.dark .section h3 {
+  color: #ffffff;
+  border-bottom-color: #3a6ea5;
+}
+
+body.dark .row label {
+  color: #dcdcdc;
+}
+
+body.dark .row input,
+body.dark .row select {
+  background: #2a2a2a;
+  border: 1px solid #3a3a3a;
+  color: #f0f0f0;
+}
+
+body.dark .row input:disabled {
+  background: #2a2a2a;
+  color: #bbbbbb;
+}
+
+body.dark .calc {
+  background: #f5c400;
+  color: #1a1a1a;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.15);
+}
+
+body.dark .note {
+  color: #a8a8a8;
+}
+
+body.dark a {
+  color: #6ea8ff;
+}
+
+body.dark #mtWarning {
+  background: #3a1e1e;
+  color: #ffb3b3;
+}
+
+
+/* === THEME TOGGLE: FLOATING (BCO + MEASUREMENT CARD) === */
+.theme-toggle {
+  position: fixed !important;
+  top: 16px;
+  right: 16px;
+  width: auto !important;
+  height: auto !important;
+  padding: 6px 10px;
+  background: rgba(40,40,40,0.95);
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Hide the text label, keep the button */
+.theme-toggle label {
+  display: none;
+}
+
+/* Button inside the wrapper */
+.theme-toggle button {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Light mode */
+body:not(.dark) .theme-toggle {
+  background: rgba(240,240,240,0.95);
+  color: #222;
+}
+
+/* Dark mode */
+body.dark .theme-toggle {
+  background: rgba(40,40,40,0.95);
+  color: #f0f0f0;
+}
+
+/* === THEME TOGGLE HARD PARITY LOCK === */
+.theme-toggle {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 10px !important;
+}
+
+/* Defensive: hide legacy theme bars inside cards */
+.card .theme-toggle {
+  display: none !important;
+}
+
+/* === DEFINITIVE LEGACY REMOVAL (Measurement Card) === */
+/* Hide any theme-toggle that is NOT the floating body-level control */
+header .theme-toggle,
+.card .theme-toggle,
+.app-header .theme-toggle,
+.top-bar .theme-toggle,
+.theme-bar .theme-toggle {
+  display: none !important;
+}
+
+/* === COLLAPSE ANY LEGACY THEME BAR INTO THE FLOATING CONTROL === */
+.theme-toggle {
+  position: fixed !important;
+  top: 16px !important;
+  right: 16px !important;
+  left: auto !important;
+  width: max-content !important;
+  max-width: max-content !important;
+  min-width: 0 !important;
+  height: auto !important;
+  padding: 6px 10px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+}
+
+/* Hide any text/label inside */
+.theme-toggle label,
+.theme-toggle span,
+.theme-toggle .label {
+  display: none !important;
+}
+
+/* Ensure Measurement Card toggle matches BCO position */
+.app-header {
+  position: relative;
+}
+
+.app-header .theme-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+}
+
+/* === FINAL THEME TOGGLE POSITION FIX (BCO ONLY) === */
+body.bco-page #themeToggle,
+body:not(.measurement-card) #themeToggle {
+  top: 12px !important;
+  right: 12px !important;
+  width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  border-radius: 8px !important;
+  font-size: 16px !important;
+  line-height: 34px !important;
+}
+
+/* === LOCKED THEME TOGGLE POSITION + ANIMATION === */
+#themeToggle {
+  position: fixed !important;
+  top: 12px !important;
+  right: 12px !important;
+  z-index: 9999 !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+#themeToggle:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+}
+
+#themeToggle:active {
+  transform: translateY(0) scale(0.97);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+}
+
+
+/* PTC Warning – Polish Option 1 */
+.ptc-warning {
+  margin-top: 14px;
+  margin-bottom: 10px;
+  padding: 12px 14px;
+  line-height: 1.4;
+}
+
+
+/* Normalize From BCO Calculator font to match POD/BCO */
+.from-bco {
+  font-size: 0.75rem;
+  font-weight: 500;
+  opacity: 0.7;
+  letter-spacing: 0.02em;
+}
+
+/* Measurement Card navigation button */
+.top-nav {
+  margin-bottom: 16px;
+  text-align: right;
+}
+
+.nav-button {
+  display: inline-block;
+  padding: 8px 14px;
+  background: #1f6feb;
+  color: #ffffff;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.nav-button:hover {
+  background: #388bfd;
+}
+
+
+/* App Tabs */
+.app-tabs{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin-bottom:12px;
+  position:sticky;
+  top:0;
+  z-index:20;
+  background:var(--bg, #0b1220);
+  padding:8px 0;
+}
+.app-tabs .tab{
+  padding:8px 14px;
+  border-radius:6px;
+  text-decoration:none;
+  font-weight:600;
+  font-size:0.9rem;
+  color:#cfd8ff;
+  background:rgba(255,255,255,0.06);
+}
+.app-tabs .tab.active{
+  background:#1f6feb;
+  color:#fff;
+}
+.version-badge{
+  margin-left:auto;
+  font-size:0.75rem;
+  opacity:0.7;
+}
+
+/* Print styles for Measurement Card */
+@media print{
+  body{
+    background:#fff;
+    color:#000;
+  }
+  .app-tabs, .theme-toggle, .nav-button{
+    display:none !important;
+  }
+  .ptc-warning{
+    border-left-color:#000;
+    background:#eee;
+    color:#000;
+  }
+  input{
+    border:1px solid #000;
+  }
+}
+
+/* Mobile polish */
+@media (max-width: 600px){
+  .app-tabs{
+    flex-wrap:wrap;
+  }
+  .app-tabs .tab{
+    flex:1 1 auto;
+    text-align:center;
+  }
+  .row{
+    gap:6px;
+  }
+}
+
+
+/* === TAB VISIBILITY FIX (High Contrast) === */
+.app-tabs{
+  background: transparent;
+}
+
+.app-tabs .tab{
+  background: rgba(255,255,255,0.12);
+  color: #e6ebff;
+  border: 1px solid rgba(255,255,255,0.25);
+}
+
+.app-tabs .tab:hover{
+  background: rgba(255,255,255,0.22);
+}
+
+.app-tabs .tab.active{
+  background: #1f6feb;
+  color: #ffffff;
+  border-color: #1f6feb;
+}
+
+/* Light mode safety */
+body.light .app-tabs .tab{
+  background: rgba(0,0,0,0.06);
+  color: #0b1220;
+  border: 1px solid rgba(0,0,0,0.15);
+}
+
+body.light .app-tabs .tab:hover{
+  background: rgba(0,0,0,0.12);
+}
+
+body.light .app-tabs .tab.active{
+  background: #1f6feb;
+  color: #ffffff;
+}
+
+
+/* === UNDERLINE-STYLE TABS (Option 2) === */
+.app-tabs{
+  background: transparent;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+}
+
+.app-tabs .tab{
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0;
+  padding: 10px 14px;
+  color: #cfd8ff;
+  position: relative;
+}
+
+.app-tabs .tab:hover{
+  color: #ffffff;
+}
+
+.app-tabs .tab::after{
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 100%;
+  height: 2px;
+  background: transparent;
+}
+
+.app-tabs .tab.active{
+  color: #ffffff;
+}
+
+.app-tabs .tab.active::after{
+  background: #1f6feb;
+}
+
+/* Light mode */
+body.light .app-tabs{
+  border-bottom: 1px solid rgba(0,0,0,0.15);
+}
+
+body.light .app-tabs .tab{
+  color: #0b1220;
+}
+
+body.light .app-tabs .tab:hover{
+  color: #000000;
+}
+
+body.light .app-tabs .tab.active{
+  color: #1f6feb;
+}
+
+body.light .app-tabs .tab.active::after{
+  background: #1f6feb;
+}
+
+/* Header tabs alignment (Measurement Card) */
+.app-header .app-tabs{
+  margin-bottom: 8px;
+}
+
+/* Ensure BCO tabs placement */
+.container > .app-tabs{
+  margin-bottom: 12px;
+}
+
+
+/* ===============================
+   Measurement Card – Mobile Polish
+   =============================== */
+@media (max-width: 768px) {
+
+  /* Stack grid to single column */
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 14px;
+  }
+
+  /* Card padding */
+  .card {
+    padding: 0 10px;
+  }
+
+  /* Header adjustments */
+  .app-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .app-header h1 {
+    font-size: 1.2rem;
+    line-height: 1.3;
+  }
+
+  /* Tabs wrap nicely */
+  .app-tabs {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .app-tabs .tab {
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+
+  /* Rows become vertical for readability */
+  .row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .row label {
+    font-size: 0.85rem;
+  }
+
+  .row input,
+  .row select {
+    width: 100%;
+    font-size: 1rem;
+    padding: 8px;
+  }
+
+  /* Calculated fields */
+  .calc {
+    width: 100%;
+    text-align: right;
+    font-size: 1rem;
+  }
+
+  /* Sections spacing */
+  .section {
+    padding: 12px;
+  }
+}
+
+
+/* =====================================
+   DATA-THEME BASED LIGHT MODE (CORRECT)
+   ===================================== */
+:root[data-theme="light"] {
+  --bg: #f5f7fb;
+  --panel-bg: #ffffff;
+  --text: #0f172a;
+  --muted: #334155;
+  --border: #cbd5e1;
+  --input-bg: #ffffff;
+  --calc-bg: #e5e7eb;
+}
+
+/* Global */
+/* Light theme text only – keep gradient background */
+:root[data-theme="light"] body {
+  color: var(--text);
+}
+
+/* Headings & labels */
+:root[data-theme="light"] h1,
+:root[data-theme="light"] h2,
+:root[data-theme="light"] h3,
+:root[data-theme="light"] label {
+  color: var(--text);
+}
+
+/* Notes */
+:root[data-theme="light"] .note {
+  color: var(--muted);
+}
+
+/* Sections / cards */
+:root[data-theme="light"] .section,
+:root[data-theme="light"] .card {
+  background-color: var(--panel-bg);
+  border-color: var(--border);
+}
+
+/* Inputs */
+:root[data-theme="light"] input,
+:root[data-theme="light"] select {
+  background-color: var(--input-bg);
+  color: var(--text);
+  border: 1px solid #94a3b8;
+}
+
+/* Calculated fields */
+:root[data-theme="light"] .calc {
+  background-color: var(--calc-bg);
+  color: var(--text);
+}
+
+/* Tabs */
+:root[data-theme="light"] .app-tabs .tab {
+  color: var(--text);
+}
+
+:root[data-theme="light"] .app-tabs .tab.active {
+  color: #1f6feb;
+}
+
+
+/* Measurement Card Light Tabs Fix */
+:root[data-theme="light"] .app-tabs{
+  background: #f5f7fb;
+}
+:root[data-theme="light"] .app-tabs .tab{
+  color:#0f172a;
+}
+/* ================================
+   GLOBAL THEME VARIABLES (FINAL)
+   ================================ */
+
+:root[data-theme="dark"] {
+  --bg-main: linear-gradient(180deg, #0b2e52, #071a2f);
+  --card-bg: #121212;
+  --text-main: #eaeaea;
+  --text-muted: #9aa3ad;
+  --border-color: #374151;
+  --input-bg: #ffffff;
+}
+
+:root[data-theme="light"] {
+  --bg-main: linear-gradient(180deg, #e9f1fb, #dce8f7);
+  --card-bg: #ffffff;
+  --text-main: #111111;
+  --text-muted: #4b5563;
+  --border-color: #cbd5e1;
+  --input-bg: #ffffff;
+}
+
+/* Apply background + text */
+body {
+  background: var(--bg-main);
+  color: var(--text-main);
+}
+
+/* Cards / sections */
+.section,
+.card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+/* Inputs */
+input,
+select {
+  background: var(--input-bg);
+  color: var(--text-main);
+  border: 1px solid var(--border-color);
+}
+
+/* Notes / helper text */
+.note,
+.from-bco {
+  color: var(--text-muted);
+}
+
+/* ================================
+   TAB CONTRAST FIX (BOTH PAGES)
+   ================================ */
+
+.app-tabs .tab {
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+}
+
+.app-tabs .tab:hover {
+  color: var(--text-main);
+}
+
+.app-tabs .tab.active {
+  color: #1f6feb;
+  border-bottom: 2px solid #1f6feb;
+}
+
+
+
+/* ================================
+   MEASUREMENT CARD LAYOUT + BG FIX
+   ================================ */
+
+.measurement-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .measurement-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+:root[data-theme="dark"] body {
+  background: linear-gradient(180deg, #0b2e52, #071a2f);
+}
+
+:root[data-theme="light"] body {
+  background: linear-gradient(180deg, #e9f1fb, #dce8f7);
+}
+
+
+/* Measurement Card width constraint */
+.measurement-page .card{
+  max-width:1000px;
+  margin:40px auto;
+}
+
+
+/* === FORCE BLUE BACKGROUND FOR BOTH THEMES === */
+:root[data-theme="light"],
+:root[data-theme="dark"] {
+  --bg-main: linear-gradient(180deg, #0b2e52, #071a2f);
+}
+
+body {
+  background: var(--bg-main) !important;
+}
+
+/* Light mode cards stay light, background stays blue */
+:root[data-theme="light"] .card,
+:root[data-theme="light"] .section {
+  background: #ffffff;
+}
+
+
+/* === MEASUREMENT CARD BACKGROUND FIX (FORCE BLUE) === */
+body.measurement-page {
+  background: linear-gradient(180deg, #0b2e52, #071a2f) !important;
+}
+
+/* Ensure light mode does NOT override measurement page */
+body.measurement-page.light,
+body.measurement-page:not(.dark) {
+  background: linear-gradient(180deg, #0b2e52, #071a2f) !important;
+}
+
+
+/* === MEASUREMENT CARD THEME SAFETY === */
+body.dark .card,
+:root[data-theme="dark"] .card {
+  background-color: #1f1f1f;
+  color: #e6e6e6;
+}
+
+body.dark .section,
+:root[data-theme="dark"] .section {
+  background-color: #242424;
+}
+
+body.dark .row input,
+body.dark .row select,
+:root[data-theme="dark"] .row input,
+:root[data-theme="dark"] .row select {
+  background-color: #2a2a2a;
+  color: #f0f0f0;
+}
+
+/* Supporting geometry rows */
+.row.pipe-support label {
+  font-size: 0.85rem;
+  opacity: 0.75;
+}
+
+
+/* === CALC VALUE TOKEN (SEMANTIC YELLOW) === */
+.calc-value,
+.value-badge {
+  background: #ffd400 !important;
+  color: #000 !important;
+}
+
+:root[data-theme="light"] .calc-value,
+:root[data-theme="light"] .value-badge {
+  background: #ffd400 !important;
+  color: #000 !important;
+}
+
+
+/* === DISPLAY GEOMETRY (PIPE ID / WALL) === */
+.display-geometry {
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.35);
+  font-size: 0.9rem;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .display-geometry {
+  background: rgba(0,0,0,0.06);
+  border: 1px solid rgba(0,0,0,0.3);
+  color: #000;
+}
+
+
+/* === CALC (AUTO-CALCULATED) SHOULD ALWAYS BE YELLOW === */
+.calc{
+  display:inline-block;
+  background:#ffd400 !important;
+  color:#000 !important;
+}
+:root[data-theme="light"] .calc{
+  background:#ffd400 !important;
+  color:#000 !important;
+}
+
+/* When calc is empty, show a subtle dash instead of a tiny yellow speck */
+.calc:empty::before{
+  content:"—";
+  opacity:0.55;
+}
+
+:root[data-theme="light"] .display-geometry{
+  background: rgba(0,0,0,0.05);
+  border: 1px solid rgba(0,0,0,0.30);
+  color:#000;
+}
+
+
+/* === PIPE GEOMETRY PLAIN TEXT (DISPLAY ONLY) === */
+.display-geometry{
+  background: none;
+  border: none;
+  padding: 0;
+  margin-top: 4px;
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+:root[data-theme="light"] .display-geometry{
+  color: #000;
+}
+
+
+/* === MEASUREMENT CARD DARK MODE TEXT CONTRAST FIX === */
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .section,
+:root[data-theme="dark"] label {
+  color: #e8e8e8;
+}
+
+:root[data-theme="dark"] .row input,
+:root[data-theme="dark"] .row select {
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .from-bco {
+  color: #bfcad6;
+}
+
+/* Keep yellow semantic tokens untouched */
+
+
+/* === DARK MODE WARNING TEXT FIX === */
+:root[data-theme="dark"] .warning {
+  background-color: rgba(255, 193, 7, 0.18);
+  border: 1px solid #ffc107;
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .warning span,
+:root[data-theme="dark"] .warning strong {
+  color: #ffffff;
+}
+
+
+/* === HARD OVERRIDE: WARNING READABILITY (DARK MODE) === */
+:root[data-theme="dark"] .warning,
+:root[data-theme="dark"] .warning * {
+  color: #ffffff !important;
+}
+
+:root[data-theme="dark"] .warning {
+  background-color: #3a2f12 !important; /* dark amber */
+  border: 1px solid #ffc107 !important;
+}
+
+
+/* === NUCLEAR FIX: WARNING VISIBILITY (DARK MODE) === */
+:root[data-theme="dark"] .warning {
+  background-color: #1f1f1f !important;
+  border: 2px solid #ffcc00 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"] .warning,
+:root[data-theme="dark"] .warning * {
+  color: #ffffff !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  filter: none !important;
+}
+
+
+/* === REAL FIX: MT WARNING READABILITY IN DARK MODE === */
+:root[data-theme="dark"] #mtWarning,
+body.dark #mtWarning {
+  background: #3a2f12 !important; /* dark amber */
+  border: 1px solid #ffc107 !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+:root[data-theme="dark"] #mtWarning *,
+body.dark #mtWarning * {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+/* === Measurement Card Mode Switcher === */
+.operation-switcher {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0 18px;
+  flex-wrap: wrap;
+}
+
+.operation-switcher .mode-btn {
+  width: auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.08);
+  color: var(--text-main);
+  font-weight: 700;
+}
+
+.operation-switcher .mode-btn.active {
+  background: #1f6feb;
+  color: #fff;
+  border-color: #1f6feb;
+}
+
+.operation-switcher .mode-btn.disabled,
+.operation-switcher .mode-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mode-panel {
+  display: none;
+}
+
+.mode-panel.active {
+  display: block;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.row-split {
+  grid-template-columns: 150px minmax(0, 1fr) 78px;
+}
+
+.row-manual-toggle {
+  grid-template-columns: 150px auto;
+}
+
+.row .display-geometry,
+.row .calc {
+  align-self: center;
+}
+
+.check-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.check-inline input {
+  width: auto;
+  margin: 0;
+}
+
+.formula-note {
+  margin-top: 12px;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.warning-box {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  min-height: 20px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.warning-box.active {
+  background: #ffe5e5;
+  border-color: #ffb4b4;
+  color: #5f1111;
+}
+
+.warning-box.ok {
+  background: rgba(52, 168, 83, 0.12);
+  border-color: rgba(52, 168, 83, 0.35);
+}
+
+#lsLiManual[disabled] {
+  opacity: 0.6;
+}
+
+:root[data-theme="dark"] .operation-switcher .mode-btn {
+  background: rgba(255,255,255,0.08);
+  color: #e8e8e8;
+}
+
+:root[data-theme="dark"] .warning-box {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+  color: #f0f0f0;
+}
+
+:root[data-theme="dark"] .warning-box.active {
+  background: #3a2f12;
+  border-color: #ffc107;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .operation-switcher .mode-btn {
+  background: rgba(15, 23, 42, 0.06);
+  border-color: rgba(15, 23, 42, 0.15);
+}
+
+:root[data-theme="light"] .warning-box {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #111827;
+}
+
+@media (max-width: 768px) {
+  .operation-switcher {
+    gap: 8px;
+  }
+
+  .operation-switcher .mode-btn {
+    flex: 1 1 calc(50% - 8px);
+    text-align: center;
+  }
+
+  .row,
+  .row-split,
+  .row-manual-toggle {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Measurement card summary */
+.summary-section {
+  margin-top: 24px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.summary-item-wide {
+  grid-column: 1 / -1;
+}
+
+.summary-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+
+.summary-value {
+  font-size: 0.95rem;
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+:root[data-theme="light"] .summary-item {
+  background: rgba(0,0,0,0.04);
+  border-color: rgba(0,0,0,0.12);
+}
+
+@media (max-width: 700px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-item-wide {
+    grid-column: auto;
+  }
+}
+
+/* === Integrated BCO tab === */
+.button-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.button-row button {
+  flex: 1 1 180px;
+}
+
+#bcoResult {
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: #fff3a0;
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+}
+
+:root[data-theme="dark"] #bcoResult {
+  color: #111;
+}
+
+/* === Light mode active tab readability fix === */
+:root[data-theme="light"] .app-tabs .tab.active,
+body.light .app-tabs .tab.active {
+  background: #1f6feb !important;
+  color: #ffffff !important;
+  border-radius: 10px;
+  border-bottom: 2px solid #1f6feb !important;
+}
+
+:root[data-theme="light"] .app-tabs .tab.active::after,
+body.light .app-tabs .tab.active::after {
+  background: transparent !important;
+}
+
+:root[data-theme="light"] .operation-switcher .mode-btn.active,
+body.light .operation-switcher .mode-btn.active {
+  background: #1f6feb !important;
+  color: #ffffff !important;
+  border-color: #1f6feb !important;
+}
+
+
+.utility-bar {
+  display: flex;
+  gap: 10px;
+  margin: 14px 0 18px;
+  flex-wrap: wrap;
+}
+
+.secondary-btn {
+  width: auto;
+  padding: 10px 14px;
+  background: #e9eef5;
+  color: #0b3a66;
+  border: 1px solid #bfd0e2;
+  font-weight: 700;
+}
+
+.secondary-btn:hover {
+  background: #dbe6f2;
+}
+
+.danger-btn {
+  background: #f7e5e5;
+  color: #8b1e1e;
+  border-color: #e2bcbc;
+}
+
+.danger-btn:hover {
+  background: #f0d4d4;
+}
+
+.history-section {
+  margin-top: 20px;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.history-header h3 {
+  margin: 0;
+}
+
+.history-list {
+  display: grid;
+  gap: 12px;
+}
+
+.history-card {
+  border: 1px solid #d6e0ea;
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+}
+
+.history-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.history-title {
+  font-weight: 700;
+  color: #0b3a66;
+}
+
+.history-time {
+  font-size: 0.82rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+.history-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.history-btn {
+  width: auto;
+  padding: 8px 12px;
+}
+
+.history-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 10px;
+  font-size: 0.9rem;
+}
+
+body.dark .secondary-btn {
+  background: #2a3340;
+  color: #f2f4f7;
+  border-color: #45556c;
+}
+
+body.dark .secondary-btn:hover {
+  background: #334052;
+}
+
+body.dark .danger-btn {
+  background: #4a2525;
+  color: #ffe3e3;
+  border-color: #744040;
+}
+
+body.dark .danger-btn:hover {
+  background: #5a2d2d;
+}
+
+body.dark .history-card {
+  background: #1f242b;
+  border-color: #313b47;
+}
+
+body.dark .history-title {
+  color: #f2f4f7;
+}
+
+body.dark .history-time,
+body.dark .history-meta {
+  color: #cbd5e1;
+}
+
+@media (max-width: 768px) {
+  .utility-bar, .history-header, .history-card-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .history-actions {
+    justify-content: stretch;
+  }
+}
+
+
+/* Glossary */
+.glossary-section {
+  margin-top: 6px;
+}
+
+.glossary-table-wrap {
+  overflow-x: auto;
+  margin-top: 12px;
+}
+
+.glossary-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 420px;
+}
+
+.glossary-table th,
+.glossary-table td {
+  padding: 12px 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  text-align: left;
+}
+
+.glossary-table th {
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.glossary-table td:first-child {
+  font-weight: 700;
+  width: 130px;
+}
+
+:root[data-theme="light"] .glossary-table th,
+:root[data-theme="light"] .glossary-table td,
+body.light .glossary-table th,
+body.light .glossary-table td {
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="light"] .glossary-table th,
+body.light .glossary-table th {
+  background: rgba(15, 23, 42, 0.04);
+}
+
+
+/* Job info + export tools */
+.job-info-section { margin-bottom: 18px; }
+.job-info-header { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.job-tools { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.job-info-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:14px 18px; margin-top:12px; }
+.geometry-lock-toggle { font-weight:600; }
+.utility-bar { display:flex; gap:10px; flex-wrap:wrap; margin: 12px 0 18px; }
+.button-row { display:flex; gap:10px; flex-wrap:wrap; }
+.secondary-btn { width:auto; }
+.history-actions .secondary-btn, .history-actions .history-btn { width:auto; }
+@media (max-width: 768px) { .job-info-grid { grid-template-columns: 1fr; } .job-tools { width:100%; } }
+
+
+.history-drawer-toggle {
+  width: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: #eff6ff;
+  color: #0b3a66;
+  border: 1px solid #c7d7ea;
+  font-weight: 700;
+}
+
+.history-toggle-text {
+  white-space: nowrap;
+}
+
+.history-count-badge {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #1f6feb;
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.history-toggle-chevron {
+  display: inline-block;
+  transition: transform 0.18s ease;
+}
+
+.history-drawer-toggle.open .history-toggle-chevron {
+  transform: rotate(180deg);
+}
+
+.history-drawer-content[hidden] {
+  display: none !important;
+}
+
+.history-drawer-content {
+  margin-top: 12px;
+}
+
+body.dark .history-drawer-toggle {
+  background: #1e2a36;
+  color: #f2f4f7;
+  border-color: #334155;
+}
+
+
+/* Reference tools */
+.reference-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.reference-card {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+.reference-card h4,
+.reference-subheading {
+  margin: 0 0 10px;
+}
+
+.reference-copy,
+.reference-footnote {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.reference-footnote {
+  margin-top: 10px;
+  font-size: 0.86rem;
+}
+
+.converter-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.converter-block {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.converter-block .decimal-input {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.quick-decimal-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.quick-decimal-btn {
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid #c8d3e3;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.quick-decimal-btn:hover {
+  transform: translateY(-1px);
+}
+
+.converter-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.converter-result {
+  min-height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff3a0;
+  color: #111;
+  font-weight: 700;
+}
+
+.fraction-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.fraction-slash {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.converter-inline {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reference-actions {
+  margin-top: 10px;
+}
+
+.reference-link-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.modal-search-row {
+  margin: 10px 0 12px;
+}
+
+.modal-search-row input {
+  width: 100%;
+}
+
+:root[data-theme="dark"] .quick-decimal-btn,
+body.dark .quick-decimal-btn {
+  background: #1e2733;
+  border-color: #455468;
+}
+
+.modal-overlay[hidden] {
+  display: none !important;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10000;
+}
+
+.modal-card {
+  width: min(960px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 16px;
+  padding: 18px;
+  background: var(--card-bg, #ffffff);
+  color: var(--text-main);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.modal-header h3 {
+  margin: 0 0 6px;
+}
+
+.modal-subtitle {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.modal-close-btn {
+  width: auto;
+  min-width: 44px;
+  padding: 8px 12px;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.modal-table-wrap {
+  margin-top: 0;
+}
+
+body.modal-open {
+  overflow: hidden;
+}
+
+:root[data-theme="light"] .reference-card,
+body.light .reference-card {
+  background: rgba(15, 23, 42, 0.03);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+:root[data-theme="dark"] .reference-card,
+body.dark .reference-card {
+  background: rgba(255,255,255,0.05);
+  border-color: rgba(255,255,255,0.12);
+}
+
+:root[data-theme="dark"] .modal-card,
+body.dark .modal-card {
+  background: #18202a;
+  color: #f2f4f7;
+}
+
+@media (max-width: 768px) {
+  .reference-grid,
+  .converter-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-overlay {
+    padding: 12px;
+  }
+
+  .modal-card {
+    padding: 14px;
+  }
+}
+
+
+.bolting-card {
+  display: grid;
+  gap: 14px;
+}
+
+.bolting-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.bolting-selects {
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bolting-selects label {
+  font-weight: 700;
+}
+
+.bolting-selects select {
+  min-width: 120px;
+  width: auto;
+  margin: 0;
+}
+
+.bolting-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bolting-summary-item {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.14);
+  display: grid;
+  gap: 6px;
+}
+
+.bolting-summary-item .summary-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.bolting-summary-item .summary-value {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.bolting-table-wrap {
+  max-height: 420px;
+  overflow: auto;
+}
+
+.bolting-table td:first-child {
+  width: auto;
+}
+
+:root[data-theme="light"] .bolting-summary-item,
+body.light .bolting-summary-item {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+@media (max-width: 768px) {
+  .bolting-controls,
+  .bolting-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bolting-selects {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .bolting-selects select {
+    width: 100%;
+  }
+}
+
+
+/* TapCalc v24 reference tool polish */
+.converter-block input,
+.converter-block select,
+.bolting-selects select {
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.converter-block .converter-inline {
+  margin-top: 0;
+  align-items: center;
+}
+
+.reference-actions {
+  margin-top: 14px;
+}
+
+.bolting-selects {
+  align-items: flex-start;
+}
+
+.bolting-selects select {
+  width: 100%;
+  min-width: 0;
+}
+
+#boltingClassSelect,
+#boltingSizeSelect,
+#fractionPrecision {
+  color: var(--text-main) !important;
+  background: var(--input-bg) !important;
+}
+
+#boltingClassSelect option,
+#boltingSizeSelect option,
+#fractionPrecision option {
+  color: #111 !important;
+  background: #fff !important;
+}
+
+:root[data-theme="dark"] #boltingClassSelect option,
+:root[data-theme="dark"] #boltingSizeSelect option,
+:root[data-theme="dark"] #fractionPrecision option,
+body.dark #boltingClassSelect option,
+body.dark #boltingSizeSelect option,
+body.dark #fractionPrecision option {
+  color: #f4f7fb !important;
+  background: #1f2937 !important;
+}
+
+
+.tape-converter-card {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(128, 146, 176, 0.28);
+}
+
+.tape-converter-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(180px, 0.85fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+#mixedMeasurementInput {
+  margin-top: 6px;
+}
+
+#mixedMeasurementResult {
+  min-height: 52px;
+}
+
+@media (max-width: 720px) {
+  .tape-converter-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+.mixed-helper-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mixed-helper-btn {
+  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
+  color: var(--text-color);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mixed-helper-fill {
+  font-weight: 600;
+}
+
+
+.eta-note {
+  display: block;
+  margin: 0 0 14px;
+}
+
+.eta-results-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.eta-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(11, 58, 102, 0.06);
+  min-height: 88px;
+}
+
+.eta-result-card .summary-label {
+  font-size: 0.8rem;
+  color: #5f6b7a;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.eta-result-card .summary-value {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--primary);
+}
+
+:root[data-theme="dark"] .eta-result-card,
+body.dark .eta-result-card {
+  background: rgba(245, 196, 0, 0.12);
+}
+
+:root[data-theme="dark"] .eta-result-card .summary-label,
+body.dark .eta-result-card .summary-label {
+  color: #cbd5e1;
+}
+
+:root[data-theme="dark"] .eta-result-card .summary-value,
+body.dark .eta-result-card .summary-value {
+  color: #f8fafc;
+}
+
+@media (max-width: 768px) {
+  .eta-results-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* TapCalc v35 dark-mode readability polish */
+:root[data-theme="dark"] .reference-card,
+body.dark .reference-card {
+  background: #222222;
+  border-color: #3a3a3a;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+}
+
+:root[data-theme="dark"] .reference-card h4,
+:root[data-theme="dark"] .reference-subheading,
+:root[data-theme="dark"] .converter-label,
+:root[data-theme="dark"] .bolting-selects label,
+:root[data-theme="dark"] .glossary-table th,
+:root[data-theme="dark"] .glossary-table td,
+:root[data-theme="dark"] .reference-copy,
+:root[data-theme="dark"] .reference-footnote,
+:root[data-theme="dark"] .note,
+body.dark .reference-card h4,
+body.dark .reference-subheading,
+body.dark .converter-label,
+body.dark .bolting-selects label,
+body.dark .glossary-table th,
+body.dark .glossary-table td,
+body.dark .reference-copy,
+body.dark .reference-footnote,
+body.dark .note {
+  color: #f3f4f6;
+}
+
+:root[data-theme="dark"] .reference-copy,
+:root[data-theme="dark"] .reference-footnote,
+:root[data-theme="dark"] .note,
+body.dark .reference-copy,
+body.dark .reference-footnote,
+body.dark .note {
+  color: #d1d5db;
+}
+
+:root[data-theme="dark"] .glossary-table thead th,
+body.dark .glossary-table thead th {
+  background: #1b1b1b;
+  color: #ffffff;
+}
+
+:root[data-theme="dark"] .glossary-table tbody tr:nth-child(even),
+body.dark .glossary-table tbody tr:nth-child(even) {
+  background: rgba(255,255,255,0.04);
+}
+
+:root[data-theme="dark"] .glossary-table tbody tr:hover,
+body.dark .glossary-table tbody tr:hover {
+  background: rgba(59,130,246,0.12);
+}
+
+:root[data-theme="dark"] .converter-result,
+body.dark .converter-result {
+  color: #111827;
+}
+
+:root[data-theme="dark"] .mode-btn.active,
+body.dark .mode-btn.active {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #3b82f6;
+}
+
+:root[data-theme="dark"] .mode-btn:hover,
+body.dark .mode-btn:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+
+/* TapCalc v39 reference inputs match BCO dark mode */
+:root[data-theme="dark"] .converter-block input,
+:root[data-theme="dark"] .converter-block select,
+:root[data-theme="dark"] .bolting-selects select,
+:root[data-theme="dark"] .modal-search-row input,
+body.dark .converter-block input,
+body.dark .converter-block select,
+body.dark .bolting-selects select,
+body.dark .modal-search-row input {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border: 1px solid #374151 !important;
+  -webkit-text-fill-color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"] .converter-block input::placeholder,
+:root[data-theme="dark"] .modal-search-row input::placeholder,
+body.dark .converter-block input::placeholder,
+body.dark .modal-search-row input::placeholder {
+  color: #bfcad6 !important;
+  -webkit-text-fill-color: #bfcad6 !important;
+  opacity: 1 !important;
+}
+
+:root[data-theme="dark"] #boltingClassSelect,
+:root[data-theme="dark"] #boltingSizeSelect,
+:root[data-theme="dark"] #fractionPrecision,
+body.dark #boltingClassSelect,
+body.dark #boltingSizeSelect,
+body.dark #fractionPrecision {
+  background-color: #2a2a2a !important;
+  color: #ffffff !important;
+  border-color: #374151 !important;
+}
+
+:root[data-theme="dark"] #boltingClassSelect option,
+:root[data-theme="dark"] #boltingSizeSelect option,
+:root[data-theme="dark"] #fractionPrecision option,
+body.dark #boltingClassSelect option,
+body.dark #boltingSizeSelect option,
+body.dark #fractionPrecision option {
+  background: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+
+/* === TapCalc Jobs / Shared Database === */
+textarea {
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  margin-bottom: 15px;
+  border-radius: 5px;
+  border: 1px solid #ccc;
+  font: inherit;
+  resize: vertical;
+}
+
+.row textarea {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+}
+
+.job-notes-row {
+  align-items: flex-start;
+}
+
+.jobs-grid {
+  gap: 16px;
+}
+
+.jobs-panel-card {
+  min-height: 100%;
+}
+
+.jobs-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+
+.jobs-actions button {
+  width: auto;
+  min-width: 180px;
+}
+
+.jobs-status-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.jobs-search-row {
+  display: block;
+}
+
+.jobs-search-row label {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.jobs-list {
+  display: grid;
+  gap: 12px;
+}
+
+.job-record-card {
+  border: 1px solid #d7dee6;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.job-record-card summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 14px 16px;
+}
+
+.job-record-card summary::-webkit-details-marker {
+  display: none;
+}
+
+.job-record-summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.job-record-title {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.job-record-badges {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.job-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #e8eef6;
+  color: #16395f;
+}
+
+.job-source-badge.local {
+  background: #fce9b3;
+  color: #5a4200;
+}
+
+.job-source-badge.synced,
+.job-source-badge.cloud {
+  background: #d9f0dd;
+  color: #205a2a;
+}
+
+.job-source-badge.op {
+  background: #dde9f7;
+  color: #164274;
+}
+
+.job-record-meta {
+  color: #5b6572;
+  font-size: 0.9rem;
+}
+
+.job-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+body.dark textarea,
+body.dark .row textarea {
+  background: #2a2a2a;
+  color: #f0f0f0;
+  border: 1px solid #3a3a3a;
+}
+
+body.dark .job-record-card {
+  background: #242424;
+  border-color: #30363d;
+}
+
+body.dark .job-record-title {
+  color: #ffffff;
+}
+
+body.dark .job-record-meta,
+body.dark .job-detail-grid {
+  color: #e2e8f0;
+}
+
+body.dark .job-source-badge {
+  background: #304055;
+  color: #f5f7fa;
+}
+
+body.dark .job-source-badge.local {
+  background: #5b4300;
+  color: #ffe79a;
+}
+
+body.dark .job-source-badge.synced,
+body.dark .job-source-badge.cloud {
+  background: #1d4c2a;
+  color: #d8f6df;
+}
+
+body.dark .job-source-badge.op {
+  background: #1f3c63;
+  color: #d8e8ff;
+}
+
+@media (max-width: 768px) {
+  .jobs-actions button {
+    width: 100%;
+  }
+
+  .job-record-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+
+/* v42 readability patch */
+body.dark .history-card {
+  background: #1f2329;
+  border-color: #3a4350;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+}
+
+body.dark .history-card-top,
+body.dark .history-card * {
+  color: inherit;
+}
+
+body.dark .history-title {
+  color: #ffffff;
+}
+
+body.dark .history-time {
+  color: #cfd8e3;
+}
+
+body.dark .history-meta {
+  color: #eef4fb;
+  font-weight: 600;
+}
+
+body.dark .history-meta span {
+  color: #eef4fb;
+}
+
+body.dark .history-btn {
+  border-color: #456080;
+}
+
+body.dark .jobs-cloud-status,
+body.dark #jobsCloudStatus {
+  color: #f3f6fb;
+}
+
+/* v43 dark-mode readability patch for Jobs + Calculation History */
+body.dark .job-record-card,
+body.dark .job-record-card summary {
+  background: #1f242b !important;
+  border-color: #313b47 !important;
+}
+
+body.dark .job-record-card {
+  box-shadow: 0 2px 10px rgba(0,0,0,0.28);
+}
+
+body.dark .job-record-title,
+body.dark .job-record-summary,
+body.dark .job-record-summary *,
+body.dark .job-record-meta,
+body.dark .job-detail-grid,
+body.dark .job-detail-grid div,
+body.dark .job-detail-grid strong,
+body.dark .jobs-list,
+body.dark .jobs-list * {
+  color: #eef4fb !important;
+}
+
+body.dark .job-record-title,
+body.dark .job-detail-grid strong {
+  color: #ffffff !important;
+}
+
+body.dark .job-record-meta {
+  color: #d7e2ee !important;
+}
+
+body.dark .history,
+body.dark .history ul,
+body.dark .history li,
+body.dark .history-item,
+body.dark .history-item * {
+  color: #eef4fb !important;
+}
+
+body.dark .history {
+  background: #1f242b !important;
+  border-color: #313b47 !important;
+}
+
+body.dark .history li,
+body.dark .history-item {
+  background: transparent !important;
+  border-color: #3a4350 !important;
+}
+
+
+.jobs-library-meta{margin:10px 0 12px;color:var(--muted,#9fb0c2);font-size:.95rem;}
+.jobs-select{width:100%;min-height:280px;border:1px solid rgba(255,255,255,.14);background:rgba(10,16,26,.72);color:#e8eef7;border-radius:14px;padding:10px;font:inherit;}
+.jobs-select option{padding:10px 12px;border-radius:8px;}
+.jobs-select option:checked{background:#1b5fc6;color:#fff;}
+.jobs-library-details{margin-top:14px;border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:16px;background:rgba(255,255,255,.04);min-height:120px;color:#e8eef7;}
+.jobs-library-empty{color:var(--muted,#9fb0c2);}
+.job-detail-header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;}
+.job-detail-title{font-size:1.1rem;font-weight:700;color:#fff;}
+.job-detail-subtitle{color:var(--muted,#9fb0c2);font-size:.95rem;margin-top:4px;}
+.job-detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px 18px;margin-top:12px;}
+.job-detail-grid div{color:#dbe6f5;}
+
+
+/* v2.21 mobile + job library polish */
+.job-detail-actions {
+  display: flex;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+.job-detail-actions button {
+  min-height: 42px;
+}
+
+@media (max-width: 768px) {
+  .card {
+    padding: 12px;
+  }
+
+  .mode-switch,
+  .tab-row,
+  .mode-buttons {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mode-btn {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 10px 14px;
+  }
+
+  .section {
+    padding: 14px;
+  }
+
+  .row,
+  .job-info-grid,
+  .measurement-grid,
+  .summary-grid,
+  .jobs-grid,
+  .job-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .row {
+    gap: 8px;
+  }
+
+  .row label {
+    margin-bottom: 2px;
+  }
+
+  .row input,
+  .row select,
+  .row textarea,
+  button,
+  .history-btn,
+  .secondary-btn {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .jobs-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .jobs-select {
+    min-height: 220px;
+    font-size: 15px;
+  }
+
+  #jobsList {
+    margin-top: 12px;
+  }
+
+  .job-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .job-detail-actions {
+    padding: 0 0 12px;
+  }
+
+  .job-detail-actions button {
+    width: 100%;
+  }
+
+  .summary-item {
+    min-height: 72px;
+  }
+}
+
+
+/* v2.22 Job info mobile collapse */
+.job-info-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.job-info-toggle-btn {
+  width: auto;
+}
+.job-info-summary {
+  width: 100%;
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  background: rgba(15, 23, 42, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+.job-info-body {
+  margin-top: 12px;
+}
+.job-info-subtitle {
+  margin: 10px 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 700;
+}
+.job-info-section.collapsed .job-info-body {
+  display: none;
+}
+:root[data-theme="light"] .job-info-summary,
+body.light .job-info-summary {
+  color: #334155;
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.08);
+}
+@media (max-width: 768px) {
+  .job-info-header {
+    align-items: stretch;
+  }
+  .job-tools {
+    gap: 8px;
+  }
+  .job-tools .secondary-btn,
+  .job-info-toggle-btn {
+    flex: 1 1 auto;
+  }
+}
+
+
+/* v2.24 Result card refresh */
+#bcoResult {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-radius: 16px;
+  padding: 18px 18px;
+  min-height: 72px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.10);
+}
+
+.result-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 14px;
+  align-items: center;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.result-row .note {
+  grid-column: 1 / -1;
+  margin-left: 0;
+  margin-top: -2px;
+}
+
+.result-row label {
+  margin: 0;
+  font-weight: 700;
+}
+
+.calc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 116px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  line-height: 1.1;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+}
+
+.primary-result-row {
+  background: rgba(245, 196, 0, 0.14);
+  border-color: rgba(245, 196, 0, 0.30);
+}
+
+.primary-result-row .calc {
+  font-size: 1.22rem;
+  min-width: 132px;
+  min-height: 54px;
+  border: 2px solid rgba(11, 58, 102, 0.10);
+}
+
+.support-result-row {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.eta-result-card {
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.03);
+  padding: 14px 16px;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+}
+
+.eta-result-card .summary-label {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 700;
+}
+
+.eta-result-card .summary-value {
+  margin-top: 6px;
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+:root[data-theme="dark"] .result-row,
+body.light .result-row {
+}
+
+:root[data-theme="dark"] .result-row {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.08);
+}
+
+:root[data-theme="dark"] .support-result-row {
+  background: rgba(255,255,255,0.03);
+}
+
+:root[data-theme="dark"] .primary-result-row {
+  background: rgba(245, 196, 0, 0.16);
+  border-color: rgba(245, 196, 0, 0.30);
+}
+
+:root[data-theme="dark"] .eta-result-card {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(255,255,255,0.08);
+}
+
+@media (max-width: 768px) {
+  #bcoResult {
+    font-size: 1.38rem;
+    min-height: 68px;
+  }
+
+  .result-row {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .result-row label {
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #64748b;
+  }
+
+  .result-row .calc {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .primary-result-row .calc {
+    font-size: 1.3rem;
+    min-height: 58px;
+  }
+
+  .eta-result-card .summary-value {
+    font-size: 1.2rem;
+  }
+}

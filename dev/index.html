@@ -1,11 +1,21 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>TapCalc Dev</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TapCalc</title>
+  <link rel="stylesheet" href="styles.css" />
+  <meta http-equiv="refresh" content="0; url=measurement-card.html#bco">
 </head>
-<body>
-  <h1>TapCalc Dev Build</h1>
-  <p>If you can see this, the dev folder works.</p>
+<body class="measurement-page">
+  <div class="card" style="max-width:720px; text-align:center;">
+    <img src="team-logo.png" alt="TEAM Industrial Services" class="app-logo" />
+    <h1>TapCalc Moved</h1>
+    <p class="note">The standalone BCO page is being kept as a backup, but the live calculator now opens inside the Measurement Card tool.</p>
+    <p><a href="measurement-card.html#bco">Open the integrated calculator</a></p>
+  </div>
+  <script>
+    window.location.replace('measurement-card.html#bco');
+  </script>
 </body>
 </html>

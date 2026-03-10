@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#00468b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TapCalc">
+  <title>TapCalc</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body class="measurement-page">
+<div class="card">
+  <header class="app-header">
+    <div class="app-tabs">
+      <a href="measurement-card.html" class="tab active">TapCalc</a>
+      <span class="version-badge">v2.24 · 2026-03-09</span>
+    </div>
+
+    <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
+    <h1>TapCalc</h1>
+  </header>
+
+  <p id="bcoStatus" class="note"></p>
+
+  <section class="section job-info-section" id="jobInfoSection">
+    <div class="job-info-header">
+      <div class="job-info-heading">
+        <h3>Job Information</h3>
+        <button type="button" id="jobInfoToggleBtn" class="secondary-btn job-info-toggle-btn" aria-expanded="true">Collapse</button>
+      </div>
+      <div class="job-info-summary" id="jobInfoSummary">No job info yet.</div>
+      <div class="job-tools">
+        <label class="check-inline geometry-lock-toggle"><input id="geometryLockToggle" type="checkbox"> Lock Geometry</label>
+        <button type="button" id="exportPdfBtn" class="secondary-btn">Export PDF</button>
+        <button type="button" id="exportImageBtn" class="secondary-btn">Export Image</button>
+      </div>
+    </div>
+    <div class="job-info-body" id="jobInfoBody">
+      <div class="job-info-grid job-info-grid-primary">
+        <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
+        <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
+        <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
+        <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
+        <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
+        <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
+      </div>
+      <div class="job-info-subtitle">More Details</div>
+      <div class="job-info-grid job-info-grid-secondary">
+        <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
+        <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
+        <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
+        <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="3" placeholder="Notes"></textarea></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="operation-switcher" role="tablist" aria-label="Measurement card mode">
+    <button type="button" class="mode-btn active" data-mode="bco">BCO</button>
+    <button type="button" class="mode-btn" data-mode="hotTap">Hot Tap</button>
+    <button type="button" class="mode-btn" data-mode="lineStop">Line Stop</button>
+    <button type="button" class="mode-btn" data-mode="completionPlug">Completion Plug</button>
+    <button type="button" class="mode-btn" data-mode="eta">Tap ETA</button>
+    <button type="button" class="mode-btn" data-mode="glossary">Reference</button>
+    <button type="button" class="mode-btn" data-mode="jobs">Jobs</button>
+  </div>
+
+  <div class="utility-bar">
+    <button type="button" id="saveHistoryBtn" class="secondary-btn">Save Job to History</button>
+    <button type="button" id="resetJobBtn" class="secondary-btn danger-btn">Reset Current Job</button>
+  </div>
+
+  <section id="bcoPanel" class="mode-panel active">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>BCO</h3>
+
+        <div class="row"><label>Pipe Material</label>
+          <select id="bcoPipeMaterial">
+            <option value="CarbonSteel">Carbon Steel</option>
+            <option value="DuctileIron">Ductile Iron</option>
+          </select>
+        </div>
+
+        <div class="row"><label>Pipe Size</label><select id="bcoPipeOD"></select></div>
+
+        <div class="row"><label>Schedule</label>
+          <select id="bcoSchedule">
+            <option value="STD">STD</option>
+            <option value="40">40</option>
+            <option value="XS">XS</option>
+            <option value="80">80</option>
+          </select>
+        </div>
+
+        <div class="row"><label>Pipe I.D.</label><input id="bcoPipeID" type="number" step="any"></div>
+        <div class="row"><label>Cutter O.D.</label><input id="bcoCutterOD" type="number" step="any"></div>
+
+        <div class="row"><label>True O.D.</label><span id="bcoTrueODDisplay" class="calc">—</span></div>
+        <div class="row"><label>Wall Thickness</label><span id="bcoWallDisplay" class="calc">—</span></div>
+
+        <div class="button-row">
+          <button type="button" id="bcoCalcBtn">Refresh BCO</button>
+          <button type="button" id="bcoCopyBtn">Copy Result</button>
+          <button type="button" id="decimalReferenceBtn" class="secondary-btn">Decimal Chart</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Result</h3>
+        <div class="result" id="bcoResult">BCO: —</div>
+        <p id="bcoInlineStatus" class="note">BCO updates live here and carries into Hot Tap and Line Stop.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="hotTapPanel" class="mode-panel active">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Hot Tap</h3>
+
+        <div class="row"><label>MD</label><input id="md" type="number" step="any"></div>
+
+        <div class="row row-split">
+          <label>LD</label>
+          <input id="ld" type="number" step="any">
+          <select id="ldSign"><option value="+">+</option><option value="-">−</option></select>
+        </div>
+
+        <div class="row result-row primary-result-row"><label>LI</label><span id="li" class="calc"></span></div>
+
+        <div class="row"><label>PTC</label><input id="ptc" type="number" step="any"></div>
+        <div class="row"><label>POD</label><input id="pod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+
+        <div class="row result-row primary-result-row"><label>BCO</label><span id="rbco_geom" class="calc"></span><span class="note">From BCO Calculator</span></div>
+
+        <div class="row result-row primary-result-row"><label>TTD</label><span id="ttd" class="calc"></span></div>
+
+        <div class="row result-row support-result-row"><label>MCO</label><span id="mco" class="calc"></span></div>
+
+        <div class="row"><label>MT</label><input id="mt" type="number" step="any"></div>
+
+        <p id="mtWarning" class="warning-box"></p>
+      </div>
+
+      <div class="section">
+        <h3>On Rod</h3>
+
+        <div class="row"><label>Rod Start</label><input id="start" type="number" step="any"></div>
+
+        <div class="row"><label>POP (Pilot on Pipe)</label><span id="pop" class="calc"></span></div>
+
+        <div class="row result-row support-result-row"><label>COP (Cutter on Pipe)</label><span id="cop" class="calc"></span></div>
+
+        <div class="row result-row support-result-row"><label>Rod BCO</label><span id="rbco" class="calc"></span></div>
+
+        <div class="row result-row support-result-row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
+
+        <div class="row"><label>Valve Bore</label><input id="valveBore" type="number" step="any"></div>
+        <div class="row"><label>GTF</label><input id="gtf" type="number" step="any"></div>
+        <div class="row"><label>Lugs</label><select id="lugs"><option>Y</option><option>N</option></select></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="lineStopPanel" class="mode-panel">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Line Stop</h3>
+
+        <div class="row"><label>Type</label><input value="Standard Line Stop" disabled></div>
+
+        <div class="row"><label>MD</label><input id="lsMd" type="number" step="any"></div>
+
+        <div class="row row-split">
+          <label>LD</label>
+          <input id="lsLd" type="number" step="any">
+          <select id="lsLdSign"><option value="+">+</option><option value="-">−</option></select>
+        </div>
+
+        <div class="row"><label>POD</label><input id="lsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+        <div class="row"><label>Wall Thickness</label><span id="lsWallDisplay" class="display-geometry">—</span><span class="note">From BCO Calculator</span></div>
+
+        <div class="row row-manual-toggle">
+          <label>LI Override</label>
+          <label class="check-inline"><input id="lsLiManualToggle" type="checkbox"> Manual</label>
+        </div>
+
+        <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
+
+        <p class="formula-note">Auto formula: LI = MD ± LD + POD − Wall</p>
+      </div>
+
+      <div class="section">
+        <h3>Checks</h3>
+
+        <div class="row"><label>Line Stop Travel</label><input id="lsTravel" type="number" step="any"></div>
+        <div class="row"><label>Machine Travel</label><input id="lsMachineTravel" type="number" step="any"></div>
+        <div class="row result-row primary-result-row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
+
+        <div id="lsWarnings" class="warning-box"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="completionPlugPanel" class="mode-panel">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Completion Plug</h3>
+
+        <div class="row"><label>Start</label><input id="cpStart" type="number" step="any"></div>
+        <div class="row"><label>JBF</label><input id="cpJbf" type="number" step="any"></div>
+        <div class="row"><label>LD</label><input id="cpLd" type="number" step="any"></div>
+        <div class="row"><label>PT</label><input id="cpPt" type="number" step="any"></div>
+
+        <div class="row row-manual-toggle">
+          <label>LI Override</label>
+          <label class="check-inline"><input id="cpLiManualToggle" type="checkbox"> Manual</label>
+        </div>
+
+        <div class="row"><label>LI</label><input id="cpLiManual" type="number" step="any" disabled></div>
+
+        <p class="formula-note">Auto formula: LI = Start + JBF + LD + PT</p>
+      </div>
+
+      <div class="section">
+        <h3>Checks</h3>
+        <div id="cpWarnings" class="warning-box"></div>
+      </div>
+    </div>
+  </section>
+
+
+  <section id="etaPanel" class="mode-panel">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Tap ETA</h3>
+        <p class="note eta-note">Estimate from cutter touching pipe to reaching BCO. Feed rate stays fixed at 0.004 in/rev.</p>
+
+        <div class="row"><label>Machine</label>
+          <select id="etaMachine">
+            <option value="360">360 / 152</option>
+            <option value="660">660 / 760</option>
+            <option value="1200">1200-M120</option>
+          </select>
+        </div>
+
+        <div class="row"><label>Cutter Size</label>
+          <select id="etaCutterSize"></select>
+        </div>
+
+        <div class="row"><label>BCO</label><input id="etaBco" type="number" step="any" placeholder="Uses current BCO when available"></div>
+
+        <div class="row"><label>Feed Rate</label><span id="etaFeedRateDisplay" class="calc">0.0040</span></div>
+        <div class="row"><label>RPM</label><span id="etaRpmDisplay" class="calc">—</span></div>
+
+        <div class="button-row">
+          <button type="button" id="etaUseCurrentBcoBtn" class="secondary-btn">Use Current BCO</button>
+          <button type="button" id="etaRefreshBtn">Refresh ETA</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Estimate</h3>
+        <div class="eta-results-grid">
+          <div class="eta-result-card">
+            <span class="summary-label">Feed Speed</span>
+            <span id="etaFeedSpeedDisplay" class="summary-value">—</span>
+          </div>
+          <div class="eta-result-card">
+            <span class="summary-label">ETA Range</span>
+            <span id="etaRangeDisplay" class="summary-value">—</span>
+          </div>
+        </div>
+        <p id="etaInlineStatus" class="note">Select a machine and cutter size, then use your BCO to estimate cut time.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="glossaryPanel" class="mode-panel">
+    <div class="section glossary-section">
+      <h3>Reference Tools</h3>
+      <p class="note">Quick field reference for decimals, fractions, terminology, and bolting info.</p>
+
+      <div class="reference-grid">
+        <div class="reference-card">
+          <h4>Decimal / Fraction Converter</h4>
+          <div class="converter-grid">
+            <div class="converter-block">
+              <div class="converter-label">Fraction → Decimal</div>
+              <div class="fraction-input-row">
+                <input id="fractionNumerator" type="number" step="1" min="0" placeholder="Top">
+                <span class="fraction-slash">/</span>
+                <input id="fractionDenominator" type="number" step="1" min="1" placeholder="Bottom">
+              </div>
+              <div id="fractionToDecimalResult" class="converter-result">—</div>
+            </div>
+
+            <div class="converter-block">
+              <div class="converter-label">Decimal → Fraction</div>
+              <input id="decimalInput" class="decimal-input" type="number" step="any" min="0" placeholder="0.0000">
+              <div class="quick-decimal-buttons" aria-label="Quick decimal inserts">
+                <button type="button" class="quick-decimal-btn" data-decimal="0.0625">1/16</button>
+                <button type="button" class="quick-decimal-btn" data-decimal="0.1250">1/8</button>
+                <button type="button" class="quick-decimal-btn" data-decimal="0.2500">1/4</button>
+                <button type="button" class="quick-decimal-btn" data-decimal="0.3750">3/8</button>
+                <button type="button" class="quick-decimal-btn" data-decimal="0.5000">1/2</button>
+              </div>
+              <div class="converter-inline">
+                <label for="fractionPrecision">Nearest</label>
+                <select id="fractionPrecision">
+                  <option value="16">1/16</option>
+                  <option value="32">1/32</option>
+                  <option value="64" selected>1/64</option>
+                </select>
+              </div>
+              <div id="decimalToFractionResult" class="converter-result">—</div>
+            </div>
+          </div>
+          <div class="button-row reference-actions">
+            <button type="button" id="openDecimalModalBtn" class="secondary-btn">Open Full Decimal Chart</button>
+          </div>
+        </div>
+
+        <div class="reference-card bolting-card">
+          <h4>Bolting Chart</h4>
+          <p class="reference-copy">Rebuilt into TapCalc for offline use. Pick a flange class and pipe size to pull up bolt count, stud diameter, and stud length right inside the app.</p>
+
+          <div class="bolting-controls">
+            <div class="converter-inline bolting-selects">
+              <label for="boltingClassSelect">Flange Class</label>
+              <select id="boltingClassSelect">
+                <option value="150">150</option>
+                <option value="300">300</option>
+                <option value="400">400</option>
+                <option value="600">600</option>
+                <option value="900">900</option>
+                <option value="1500">1500</option>
+                <option value="2500">2500</option>
+              </select>
+            </div>
+
+            <div class="converter-inline bolting-selects">
+              <label for="boltingSizeSelect">Pipe Size</label>
+              <select id="boltingSizeSelect">
+                <option value="1/2">1/2</option>
+                <option value="3/4">3/4</option>
+                <option value="1">1</option>
+                <option value="1-1/4">1-1/4</option>
+                <option value="1-1/2">1-1/2</option>
+                <option value="2">2</option>
+                <option value="2-1/2">2-1/2</option>
+                <option value="3">3</option>
+                <option value="3-1/2">3-1/2</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="8">8</option>
+                <option value="10">10</option>
+                <option value="12">12</option>
+                <option value="14">14</option>
+                <option value="16">16</option>
+                <option value="18">18</option>
+                <option value="20">20</option>
+                <option value="24">24</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bolting-summary-grid">
+            <div class="bolting-summary-item"><span class="summary-label">Bolts / Studs</span><span id="boltingBoltCount" class="summary-value">—</span></div>
+            <div class="bolting-summary-item"><span class="summary-label">Diameter</span><span id="boltingDiameter" class="summary-value">—</span></div>
+            <div class="bolting-summary-item"><span class="summary-label">Stud Length (RF)</span><span id="boltingStudRf" class="summary-value">—</span></div>
+            <div class="bolting-summary-item" id="boltingRtjItem"><span class="summary-label">Stud Length (RTJ)</span><span id="boltingStudRtj" class="summary-value">—</span></div>
+          </div>
+
+          <div class="glossary-table-wrap bolting-table-wrap">
+            <table class="glossary-table bolting-table" id="boltingTable">
+              <thead id="boltingTableHead"></thead>
+              <tbody id="boltingTableBody"></tbody>
+            </table>
+          </div>
+
+          <p class="reference-footnote">Built from your uploaded ASME B16.5 bolt and stud dimension chart so it keeps working without opening a separate PDF.</p>
+        </div>
+      </div>
+
+      <h3 class="reference-subheading">Glossary</h3>
+      <div class="glossary-table-wrap">
+        <table class="glossary-table">
+          <thead>
+            <tr><th>Abbrev.</th><th>Meaning</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>MD</td><td>Measured Distance</td></tr>
+            <tr><td>LD</td><td>Lost Distance</td></tr>
+            <tr><td>LI</td><td>Lower In</td></tr>
+            <tr><td>PTC</td><td>Pilot To Cutter</td></tr>
+            <tr><td>BCO</td><td>Book Cut Out</td></tr>
+            <tr><td>CCO</td><td>Coupon Cut Out</td></tr>
+            <tr><td>MCO</td><td>Maximum Cut Out</td></tr>
+            <tr><td>POP</td><td>Pilot On Pipe</td></tr>
+            <tr><td>COP</td><td>Cutter On Pipe</td></tr>
+            <tr><td>TTD</td><td>Total Travel Distance</td></tr>
+            <tr><td>MT</td><td>Machine Travel</td></tr>
+            <tr><td>POD</td><td>Pipe Outside Diameter</td></tr>
+            <tr><td>VB</td><td>Valve Bore</td></tr>
+            <tr><td>GTF</td><td>Gate To Flange</td></tr>
+            <tr><td>Valve T</td><td>Valve Turns</td></tr>
+            <tr><td>Seg T</td><td>Segment Turns</td></tr>
+            <tr><td>-1 Wall</td><td>Minus One Wall Thickness</td></tr>
+            <tr><td>JBF</td><td>Jack Bolt to Flange</td></tr>
+            <tr><td>PT</td><td>Plug Thickness</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <section id="jobsPanel" class="mode-panel">
+    <div class="measurement-grid jobs-grid">
+      <div class="section jobs-panel-card">
+        <h3>Shared Jobs</h3>
+        <p class="note jobs-note">Save jobs locally like before, then sync them to the shared database when Firebase is connected.</p>
+        <div class="jobs-actions">
+          <button type="button" id="syncJobsBtn">Sync Local Jobs</button>
+          <button type="button" id="refreshCloudJobsBtn" class="secondary-btn">Refresh Shared Jobs</button>
+        </div>
+        <div class="jobs-status-grid">
+          <div class="summary-item"><span class="summary-label">Firebase</span><span id="firebaseStatus" class="summary-value">Not connected</span></div>
+          <div class="summary-item"><span class="summary-label">Unsynced Local Jobs</span><span id="unsyncedJobsCount" class="summary-value">0</span></div>
+        </div>
+        <p id="jobsCloudStatus" class="note">Connecting to shared job database...</p>
+        <div class="row jobs-search-row">
+          <label for="jobsSearchInput">Search Jobs</label>
+          <input id="jobsSearchInput" type="text" placeholder="Search customer, location, job number, pipe size, or tech">
+        </div>
+      </div>
+
+      <div class="section jobs-panel-card">
+        <h3>Shared Job Library</h3>
+        <p class="note jobs-note">Search every shared job by title, client, date, job number, location, technician, or pipe details, then open the one you need.</p>
+        <div class="jobs-library-meta" id="jobsResultsMeta">Loading jobs...</div>
+        <select id="jobsSelect" class="jobs-select" size="10" aria-label="Shared jobs results"></select>
+        <div id="jobsList" class="jobs-library-details">Select a job from the list to view its details.</div>
+      </div>
+    </div>
+</section>
+
+  <div id="decimalModal" class="modal-overlay" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="decimalModalTitle">
+      <div class="modal-header">
+        <div>
+          <h3 id="decimalModalTitle">Decimal Equivalent Chart</h3>
+          <p class="modal-subtitle">Fractions in 1/64 increments from 1/64 to 1.</p>
+        </div>
+        <button type="button" id="closeDecimalModalBtn" class="modal-close-btn" aria-label="Close decimal chart">×</button>
+      </div>
+      <div class="modal-search-row">
+        <input id="decimalChartSearch" type="text" placeholder="Search fraction or decimal (example: 3/16 or 0.1875)">
+      </div>
+      <div class="glossary-table-wrap modal-table-wrap">
+        <table class="glossary-table" id="decimalChartTable">
+          <thead>
+            <tr><th>Fraction</th><th>Decimal</th><th>Fraction</th><th>Decimal</th></tr>
+          </thead>
+          <tbody id="decimalChartBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <section class="section summary-section">
+    <h3>Job Summary</h3>
+    <div class="summary-grid">
+      <div class="summary-item"><span class="summary-label">Pipe</span><span id="summaryPipe" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Cutter</span><span id="summaryCutter" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">BCO</span><span id="summaryBco" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Hot Tap</span><span id="summaryHotTap" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Line Stop LI</span><span id="summaryLineStopLi" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Completion Plug LI</span><span id="summaryCompletionLi" class="summary-value">—</span></div>
+      <div class="summary-item summary-item-wide"><span class="summary-label">Warnings</span><span id="summaryWarnings" class="summary-value">None</span></div>
+    </div>
+  </section>
+
+  <section class="section history-section">
+    <div class="history-header">
+      <button type="button" id="historyDrawerToggle" class="history-drawer-toggle" aria-expanded="false" aria-controls="historyDrawerContent">
+        <span class="history-toggle-text">Calculation History</span>
+        <span id="historyCountBadge" class="history-count-badge">0</span>
+        <span class="history-toggle-chevron" aria-hidden="true">▾</span>
+      </button>
+      <button type="button" id="clearHistoryBtn" class="secondary-btn">Clear History</button>
+    </div>
+    <div id="historyDrawerContent" class="history-drawer-content" hidden>
+      <div id="historyList" class="history-list">No saved jobs yet.</div>
+    </div>
+  </section>
+
+</div>
+
+<script src="/firebase-config.js"></script>
+<script src="/measurement.js"></script>
+</body>
+</html>

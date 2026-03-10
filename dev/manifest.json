@@ -1,0 +1,21 @@
+{
+  "name": "TapCalc",
+  "short_name": "TapCalc",
+  "start_url": "./measurement-card.html",
+  "display": "standalone",
+  "background_color": "#00468b",
+  "theme_color": "#00468b",
+  "icons": [
+    {
+      "src": "team-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "team-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "scope": "./"
+}
