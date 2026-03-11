@@ -1573,7 +1573,7 @@ async function ensureFirebaseReady() {
 }
 
 function getJobsCollectionName() {
-  return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs_bcocalc';
+  return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 }
 
 function formatFirebaseError(error) {
