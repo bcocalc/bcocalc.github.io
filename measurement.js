@@ -615,13 +615,35 @@ function formatEtaMinutes(minutes) {
 }
 
 function populateEtaCutterSizes() {
-  if (!etaMachineEl || !etaCutterSizeEl) return;
+  if (!etaMachineEl || !etaCutterSizeEl || !etaCutterSizeListEl) return;
   const machine = etaMachineEl.value || '360';
   const sizes = Object.keys(etaRpmChart[machine] || {});
-  const previous = etaCutterSizeEl.value;
-  etaCutterSizeEl.innerHTML = sizes.map((size) => `<option value="${size}">${size}"</option>`).join('');
-  if (sizes.includes(previous)) etaCutterSizeEl.value = previous;
-  else if (sizes[0]) etaCutterSizeEl.value = sizes[0];
+  const previous = String(etaCutterSizeEl.value || '').trim();
+  etaCutterSizeListEl.innerHTML = sizes.map((size) => `<option value="${size}"></option>`).join('');
+  if (!previous && sizes[0]) etaCutterSizeEl.value = sizes[0];
+}
+
+function getEtaRpmMatch(machine, cutterSizeRaw) {
+  const machineChart = etaRpmChart?.[machine] || {};
+  const normalized = String(cutterSizeRaw || '').trim();
+  if (!normalized) return { rpmValues: [], matchedSize: null, exact: false };
+
+  if (machineChart[normalized]) {
+    return { rpmValues: machineChart[normalized], matchedSize: normalized, exact: true };
+  }
+
+  const cutterSize = parseFloat(normalized);
+  if (!Number.isFinite(cutterSize)) return { rpmValues: [], matchedSize: null, exact: false };
+
+  const available = Object.keys(machineChart)
+    .map((size) => ({ size, numeric: parseFloat(size) }))
+    .filter((item) => Number.isFinite(item.numeric));
+
+  if (!available.length) return { rpmValues: [], matchedSize: null, exact: false };
+
+  available.sort((a, b) => Math.abs(a.numeric - cutterSize) - Math.abs(b.numeric - cutterSize));
+  const nearest = available[0];
+  return { rpmValues: machineChart[nearest.size] || [], matchedSize: nearest.size, exact: false };
 }
 
 function syncBcoToEta(options = {}) {
@@ -688,6 +710,9 @@ function initEtaCalculator() {
   populateEtaCutterSizes();
   syncBcoToEta();
   updateEtaEstimate();
+  if (etaMachineEl.dataset.etaBound === 'true') return;
+  etaMachineEl.dataset.etaBound = 'true';
+
   etaMachineEl.addEventListener('change', () => {
     populateEtaCutterSizes();
     updateEtaEstimate();
