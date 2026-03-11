@@ -2916,3 +2916,35 @@ body.light .result-row {
   .jobs-view-toggle { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .jobs-view-chip { white-space: nowrap; }
 }
+
+
+/* v2.26d3 collapsible selected job details */
+.job-detail-summary-strip{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  gap:10px 14px;
+  padding:0 16px 16px;
+  color:#dbe6f5;
+}
+.job-detail-summary-strip span{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:10px 12px;
+}
+.job-detail-collapsible{
+  overflow:hidden;
+  max-height:2200px;
+  opacity:1;
+  transition:max-height .25s ease, opacity .2s ease, margin-top .2s ease;
+}
+.job-detail-collapsible.is-collapsed{
+  max-height:0;
+  opacity:0;
+  margin-top:0;
+}
+@media (max-width: 768px){
+  .job-detail-summary-strip{
+    grid-template-columns:1fr;
+  }
+}

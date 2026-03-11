@@ -1799,18 +1799,37 @@ function renderJobsList() {
     </div>
     <div class="job-detail-actions">
       <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+      <button type="button" id="jobsToggleDetailsBtn" class="secondary-btn" aria-expanded="false">Show Details</button>
     </div>
-    ${renderJobRecordDetails(record)}
-    <div class="job-detail-grid">
-      <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-      <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-      <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
-      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+    <div class="job-detail-summary-strip">
+      <span><strong>Customer:</strong> ${record?.job?.client || '—'}</span>
+      <span><strong>Location:</strong> ${record?.job?.location || '—'}</span>
+      <span><strong>Job #:</strong> ${record?.job?.jobNumber || '—'}</span>
+      <span><strong>Date:</strong> ${record?.job?.date || '—'}</span>
+    </div>
+    <div id="jobsSelectedDetailsWrap" class="job-detail-collapsible is-collapsed">
+      ${renderJobRecordDetails(record)}
+      <div class="job-detail-grid">
+        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      </div>
     </div>`;
 
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
   if (loadBtn) {
     loadBtn.addEventListener('click', () => loadRecordIntoCalculator(record));
+  }
+
+  const toggleBtn = document.getElementById('jobsToggleDetailsBtn');
+  const detailsWrap = document.getElementById('jobsSelectedDetailsWrap');
+  if (toggleBtn && detailsWrap) {
+    toggleBtn.addEventListener('click', () => {
+      const collapsed = detailsWrap.classList.toggle('is-collapsed');
+      toggleBtn.textContent = collapsed ? 'Show Details' : 'Hide Details';
+      toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    });
   }
 }
 
