@@ -1719,6 +1719,15 @@ function getMergedJobsBase() {
   return Array.from(map.values());
 }
 
+
+function updateJobsViewButtons() {
+  jobsViewChipEls.forEach((btn) => {
+    const isActive = (btn.dataset.jobsView || 'all') === jobsBrowseMode;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
 function updateJobsFilterControl() {
   if (!jobsSearchInputEl || !jobsFilterSelectEl || !jobsSearchLabelEl) return;
   const usingSearch = jobsBrowseMode === 'all';
@@ -2148,17 +2157,18 @@ if (jobsFilterSelectEl) jobsFilterSelectEl.addEventListener('change', (event) =>
 jobsViewChipEls.forEach((button) => {
   button.addEventListener('click', () => {
     jobsBrowseMode = button.dataset.jobsView || 'all';
-    jobsViewChipEls.forEach((btn) => btn.classList.toggle('active', btn === button));
     if (jobsBrowseMode === 'all') {
       jobsFilterValue = '';
     } else {
       jobsSearchTerm = '';
       if (jobsSearchInputEl) jobsSearchInputEl.value = '';
     }
+    updateJobsViewButtons();
     updateJobsFilterControl();
     renderJobsList();
   });
 });
+updateJobsViewButtons();
 if (bcoResultEl) {
   bcoResultEl.addEventListener('click', (event) => {
     if (event.target.closest('.bco-inline-copy')) copyBcoResult();

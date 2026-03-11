@@ -2967,3 +2967,19 @@ body.light .result-row {
 .jobs-view-chip.active{
   box-shadow:0 0 0 1px rgba(255,255,255,.18) inset, 0 10px 24px rgba(37,99,235,.22);
 }
+
+
+/* v2.26d5 stronger jobs filter button state */
+.jobs-view-chip{
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .12s ease;
+}
+.jobs-view-chip:active{
+  transform: translateY(1px);
+}
+.jobs-view-chip.active,
+.jobs-view-chip[aria-pressed="true"]{
+  background:#1f6feb !important;
+  color:#ffffff !important;
+  border-color:#1f6feb !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset, 0 10px 24px rgba(37,99,235,.22) !important;
+}
