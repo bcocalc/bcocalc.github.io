@@ -2820,3 +2820,99 @@ body.light .result-row {
     font-size: 1.2rem;
   }
 }
+
+
+/* v2.25 dev bco + jobs + accordion */
+.bco-result-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(15, 23, 42, 0.03);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+}
+.bco-result-card.ready {
+  background: linear-gradient(180deg, rgba(245,196,0,0.18), rgba(245,196,0,0.10));
+  border-color: rgba(245, 196, 0, 0.35);
+}
+.bco-result-card.error {
+  background: rgba(220, 38, 38, 0.08);
+  border-color: rgba(220, 38, 38, 0.22);
+}
+.bco-result-header {
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 800;
+  margin-bottom: 10px;
+}
+.bco-result-verify {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.bco-result-verify div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.95rem;
+}
+.bco-result-verify span { color: #64748b; font-weight: 600; }
+.bco-result-verify strong { font-weight: 800; }
+.bco-result-main {
+  font-size: 1.6rem;
+  font-weight: 900;
+  text-align: center;
+  padding: 12px 10px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.55);
+  margin-bottom: 12px;
+}
+.bco-result-actions {
+  display: flex;
+  justify-content: center;
+}
+.bco-result-error {
+  font-weight: 700;
+}
+.jobs-view-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+.jobs-view-chip {
+  width: auto;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(148,163,184,0.25);
+  background: rgba(15, 23, 42, 0.04);
+  color: inherit;
+  font-weight: 700;
+}
+.jobs-view-chip.active {
+  background: #1f6feb;
+  color: white;
+  border-color: #1f6feb;
+}
+.accordion-heading {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.accordion-caret {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+.section.collapsed .accordion-caret {
+  transform: rotate(-90deg);
+}
+.section.collapsed .accordion-body {
+  display: none;
+}
+@media (max-width: 768px) {
+  .bco-result-main { font-size: 1.38rem; }
+  .jobs-view-toggle { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .jobs-view-chip { white-space: nowrap; }
+}

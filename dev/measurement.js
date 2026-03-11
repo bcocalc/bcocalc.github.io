@@ -254,7 +254,7 @@ function hydrateBcoInputsFromSavedData() {
   const savedCutter = parseFloat(data?.cutterOD);
   if (Number.isFinite(savedCutter) && bcoCutterOdEl) bcoCutterOdEl.value = savedCutter;
   updateBcoDisplays();
-  if (Number.isFinite(parseFloat(data?.bco)) && bcoResultEl) bcoResultEl.textContent = `BCO: ${parseFloat(data.bco).toFixed(4)}`;
+  if (Number.isFinite(parseFloat(data?.bco))) renderBcoResult({ pipeOD: geometry.pipeOD, pipeID: geometry.pipeID, cutterOD: parseFloat(data?.cutterOD), bco: parseFloat(data.bco) });
 }
 
 function applyBcoToMeasurementCard() {
@@ -291,7 +291,7 @@ function calculateIntegratedBco(options = {}) {
   if (!Number.isFinite(pipeOD) || !Number.isFinite(pipeID) || !Number.isFinite(cutterOD)) {
     sessionStorage.removeItem('bcoCalculated');
     localStorage.removeItem('bcoData');
-    if (bcoResultEl) bcoResultEl.textContent = 'BCO: Enter Pipe I.D. and Cutter O.D.';
+    renderBcoResult({ pipeOD, pipeID, cutterOD, error: 'Enter Pipe I.D. and Cutter O.D.' });
     if (!silent && bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'Enter Pipe I.D. and Cutter O.D. to calculate BCO.';
     refreshBcoState();
     updateBcoDisplays();
@@ -305,7 +305,7 @@ function calculateIntegratedBco(options = {}) {
   if (underRoot < 0) {
     sessionStorage.removeItem('bcoCalculated');
     localStorage.removeItem('bcoData');
-    if (bcoResultEl) bcoResultEl.textContent = 'BCO: Error — Cutter O.D. cannot exceed Pipe I.D.';
+    renderBcoResult({ pipeOD, pipeID, cutterOD, error: 'Cutter O.D. cannot exceed Pipe I.D.' });
     if (!silent && bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'Check geometry: Cutter O.D. cannot exceed Pipe I.D.';
     refreshBcoState();
     updateBcoDisplays();
@@ -319,17 +319,17 @@ function calculateIntegratedBco(options = {}) {
   localStorage.setItem('pipeID', pipeID);
   localStorage.setItem('bcoData', JSON.stringify({ pipeOD, pipeID, cutterOD, bco: result }));
   sessionStorage.setItem('bcoCalculated', 'true');
-  if (bcoResultEl) bcoResultEl.textContent = `BCO: ${result.toFixed(4)}`;
+  renderBcoResult({ pipeOD, pipeID, cutterOD, bco: result });
   updateBcoDisplays();
   applyBcoToMeasurementCard();
   if (!silent && bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO updated automatically.';
 }
 
 function copyBcoResult() {
-  const text = bcoResultEl?.textContent || '';
-  if (!text || text.includes('—')) return;
-  navigator.clipboard?.writeText(text).then(() => {
-    if (bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO result copied.';
+  const value = Number.isFinite(parseFloat(data?.bco)) ? parseFloat(data.bco).toFixed(3) : '';
+  if (!value) return;
+  navigator.clipboard?.writeText(value).then(() => {
+    if (bcoInlineStatusEl) bcoInlineStatusEl.textContent = 'BCO value copied.';
   }).catch(() => {});
 }
 
@@ -722,7 +722,7 @@ quickDecimalBtnEls.forEach((button) => {
 buildDecimalChart();
 updateFractionToDecimal();
 updateDecimalToFraction();
-
+renderBcoResult({ pipeOD: geometry.pipeOD, pipeID: geometry.pipeID, cutterOD: parseFloat(data?.cutterOD), bco: parseFloat(data?.bco) });
 
 const boltingChartData = {"150":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-"},{"size":"3/4","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-"},{"size":"1","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"1-1/4","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"1-1/2","bolts":"4","diameter":"0.50","stud_rf":"3","stud_rtj":"3-1/2"},{"size":"2","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"2-1/2","bolts":"4","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4"},{"size":"3","bolts":"4","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"3-1/2","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"4","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2"},{"size":"6","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2"},{"size":"8","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"4-1/2"},{"size":"10","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4"},{"size":"12","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4"},{"size":"14","bolts":"12","diameter":"1.00","stud_rf":"5-1/4","stud_rtj":"5-3/4"},{"size":"16","bolts":"16","diameter":"1.00","stud_rf":"5-1/2","stud_rtj":"6"},{"size":"18","bolts":"16","diameter":"1.12","stud_rf":"6","stud_rtj":"6-1/2"},{"size":"20","bolts":"20","diameter":"1.12","stud_rf":"6-1/4","stud_rtj":"6-3/4"},{"size":"24","bolts":"20","diameter":"1.25","stud_rf":"7","stud_rtj":"7-1/2"}]},"300":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.62","stud_rf":"3","stud_rtj":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4"},{"size":"4","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4-3/4","stud_rtj":"5-1/2"},{"size":"6","bolts":"12","diameter":"0.75","stud_rf":"5","stud_rtj":"5-3/4"},{"size":"8","bolts":"12","diameter":"0.88","stud_rf":"5-1/2","stud_rtj":"6-1/4"},{"size":"10","bolts":"16","diameter":"1.00","stud_rf":"6-1/4","stud_rtj":"7"},{"size":"12","bolts":"16","diameter":"1.12","stud_rf":"6-3/4","stud_rtj":"7-1/2"},{"size":"14","bolts":"20","diameter":"1.12","stud_rf":"7","stud_rtj":"7-3/4"},{"size":"16","bolts":"20","diameter":"1.25","stud_rf":"7-1/2","stud_rtj":"8-1/4"},{"size":"18","bolts":"24","diameter":"1.25","stud_rf":"7-3/4","stud_rtj":"8-1/2"},{"size":"20","bolts":"24","diameter":"1.25","stud_rf":"8-1/4","stud_rtj":"9"},{"size":"24","bolts":"24","diameter":"1.50","stud_rf":"9-1/4","stud_rtj":"10-1/4"}]},"400":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"5","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"6","bolts":"12","diameter":"0.88","stud":"6"},{"size":"8","bolts":"12","diameter":"1.00","stud":"6-3/4"},{"size":"10","bolts":"16","diameter":"1.13","stud":"7-1/2"},{"size":"12","bolts":"16","diameter":"1.25","stud":"8"},{"size":"14","bolts":"20","diameter":"1.25","stud":"8-1/4"},{"size":"16","bolts":"20","diameter":"1.38","stud":"8-3/4"},{"size":"18","bolts":"24","diameter":"1.38","stud":"9"},{"size":"20","bolts":"24","diameter":"1.50","stud":"9-3/4"},{"size":"24","bolts":"24","diameter":"1.75","stud":"10-3/4"}]},"600":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"5","bolts":"8","diameter":"1.00","stud":"6-1/2"},{"size":"6","bolts":"12","diameter":"1.00","stud":"6-3/4"},{"size":"8","bolts":"12","diameter":"1.13","stud":"7-3/4"},{"size":"10","bolts":"16","diameter":"1.25","stud":"8-1/2"},{"size":"12","bolts":"20","diameter":"1.25","stud":"8-3/4"},{"size":"14","bolts":"20","diameter":"1.38","stud":"9-1/4"},{"size":"16","bolts":"20","diameter":"1.50","stud":"10"},{"size":"18","bolts":"20","diameter":"1.63","stud":"10-3/4"},{"size":"20","bolts":"24","diameter":"1.63","stud":"11-1/2"},{"size":"24","bolts":"24","diameter":"1.88","stud":"13"}]},"900":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/4","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4"},{"size":"3","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.13","stud":"6-3/4"},{"size":"5","bolts":"8","diameter":"1.25","stud":"7-1/2"},{"size":"6","bolts":"12","diameter":"1.13","stud":"7-3/4"},{"size":"8","bolts":"12","diameter":"1.38","stud":"8-3/4"},{"size":"10","bolts":"16","diameter":"1.38","stud":"9-1/4"},{"size":"12","bolts":"20","diameter":"1.38","stud":"10"},{"size":"14","bolts":"20","diameter":"1.50","stud":"10-3/4"},{"size":"16","bolts":"20","diameter":"1.63","stud":"11-1/4"},{"size":"18","bolts":"20","diameter":"1.88","stud":"13"},{"size":"20","bolts":"20","diameter":"2.00","stud":"13-3/4"},{"size":"24","bolts":"20","diameter":"2.50","stud":"17-1/4"}]},"1500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/4","bolts":"4","diameter":"-","stud":"5"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4"},{"size":"3","bolts":"8","diameter":"1.13","stud":"7"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.25","stud":"7-3/4"},{"size":"5","bolts":"8","diameter":"1.50","stud":"9-3/4"},{"size":"6","bolts":"12","diameter":"1.38","stud":"10-1/4"},{"size":"8","bolts":"12","diameter":"1.63","stud":"11-1/2"},{"size":"10","bolts":"12","diameter":"1.88","stud":"13-1/2"},{"size":"12","bolts":"12","diameter":"2.00","stud":"15"},{"size":"14","bolts":"16","diameter":"2.25","stud":"16-1/4"},{"size":"16","bolts":"16","diameter":"2.50","stud":"17-3/4"},{"size":"18","bolts":"16","diameter":"2.75","stud":"19-1/2"},{"size":"20","bolts":"16","diameter":"3.00","stud":"21-1/4"},{"size":"24","bolts":"16","diameter":"3.50","stud":"24-1/4"}]},"2500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"5"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"5"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5-1/2"},{"size":"1-1/4","bolts":"4","diameter":"1.00","stud":"6"},{"size":"1-1/2","bolts":"4","diameter":"1.13","stud":"6-3/4"},{"size":"2","bolts":"8","diameter":"1.00","stud":"7"},{"size":"2-1/2","bolts":"8","diameter":"1.13","stud":"7-3/4"},{"size":"3","bolts":"8","diameter":"1.25","stud":"8-3/4"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.50","stud":"10"},{"size":"5","bolts":"8","diameter":"1.75","stud":"11-3/4"},{"size":"6","bolts":"8","diameter":"2.00","stud":"13-3/4"},{"size":"8","bolts":"12","diameter":"2.00","stud":"15-1/4"},{"size":"10","bolts":"12","diameter":"2.50","stud":"19-1/4"},{"size":"12","bolts":"12","diameter":"2.75","stud":"21-1/4"},{"size":"14","bolts":"-","diameter":"-","stud":"-"},{"size":"16","bolts":"-","diameter":"-","stud":"-"},{"size":"18","bolts":"-","diameter":"-","stud":"-"},{"size":"20","bolts":"-","diameter":"-","stud":"-"},{"size":"24","bolts":"-","diameter":"-","stud":"-"}]}};
 
@@ -860,6 +860,7 @@ const jobsListEl = document.getElementById('jobsList');
 const jobsSelectEl = document.getElementById('jobsSelect');
 const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
 const jobsSearchInputEl = document.getElementById('jobsSearchInput');
+const jobsViewChipEls = Array.from(document.querySelectorAll('.jobs-view-chip'));
 const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
 const firebaseStatusEl = document.getElementById('firebaseStatus');
 const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
@@ -868,6 +869,70 @@ let firebaseDb = null;
 let firebaseModuleCache = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
+let jobsBrowseMode = 'all';
+
+
+
+function buildBcoResultMarkup(payload = {}) {
+  const pipeOD = Number.isFinite(payload.pipeOD) ? payload.pipeOD.toFixed(3) : '—';
+  const pipeID = Number.isFinite(payload.pipeID) ? payload.pipeID.toFixed(3) : '—';
+  const cutterOD = Number.isFinite(payload.cutterOD) ? payload.cutterOD.toFixed(3) : '—';
+  const bco = Number.isFinite(payload.bco) ? payload.bco.toFixed(3) : null;
+  const error = payload.error || '';
+  if (error) {
+    return `<div class="bco-result-card error"><div class="bco-result-header">BCO Result</div><div class="bco-result-error">${error}</div></div>`;
+  }
+  return `<div class="bco-result-card${bco ? ' ready' : ''}">
+    <div class="bco-result-header">BCO Result</div>
+    <div class="bco-result-verify">
+      <div><span>Pipe OD</span><strong>${pipeOD}</strong></div>
+      <div><span>Pipe ID</span><strong>${pipeID}</strong></div>
+      <div><span>Cutter OD</span><strong>${cutterOD}</strong></div>
+    </div>
+    <div class="bco-result-main">${bco ? `BCO = ${bco} in` : 'BCO: —'}</div>
+    <div class="bco-result-actions">
+      <button type="button" class="secondary-btn bco-inline-copy" ${bco ? '' : 'disabled'}>Copy</button>
+    </div>
+  </div>`;
+}
+
+function renderBcoResult(payload = {}) {
+  if (!bcoResultEl) return;
+  bcoResultEl.innerHTML = buildBcoResultMarkup(payload);
+}
+
+function getJobsGroupingValue(record, mode = 'all') {
+  if (mode === 'customer') return (record?.job?.client || 'No customer').trim() || 'No customer';
+  if (mode === 'location') return (record?.job?.location || 'No location').trim() || 'No location';
+  if (mode === 'date') return (record?.job?.date || record?.meta?.savedAtDisplay || 'No date').trim() || 'No date';
+  return '';
+}
+
+function initAccordionSections() {
+  const mobile = window.innerWidth <= 768;
+  document.querySelectorAll('.mode-panel .section').forEach((section, index) => {
+    if (section.classList.contains('job-info-section')) return;
+    if (section.dataset.accordionReady === 'true') return;
+    const heading = section.querySelector('h3');
+    if (!heading) return;
+    const body = document.createElement('div');
+    body.className = 'accordion-body';
+    let next = heading.nextSibling;
+    while (next) {
+      const current = next;
+      next = next.nextSibling;
+      body.appendChild(current);
+    }
+    section.appendChild(body);
+    heading.classList.add('accordion-heading');
+    heading.insertAdjacentHTML('beforeend', '<span class="accordion-caret">⌄</span>');
+    heading.addEventListener('click', () => {
+      section.classList.toggle('collapsed');
+    });
+    if (mobile && index > 0) section.classList.add('collapsed');
+    section.dataset.accordionReady = 'true';
+  });
+}
 
 
 function calcHotTap() {
@@ -1658,7 +1723,13 @@ function getCombinedJobsForDisplay() {
       return haystack.includes(term);
     });
   }
-  jobs.sort((a,b) => String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
+  if (jobsBrowseMode === 'customer') {
+    jobs.sort((a,b) => getJobsGroupingValue(a.record, 'customer').localeCompare(getJobsGroupingValue(b.record, 'customer')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
+  } else if (jobsBrowseMode === 'location') {
+    jobs.sort((a,b) => getJobsGroupingValue(a.record, 'location').localeCompare(getJobsGroupingValue(b.record, 'location')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
+  } else {
+    jobs.sort((a,b) => String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
+  }
   return jobs;
 }
 
@@ -1668,7 +1739,8 @@ function renderJobsList() {
 
   if (jobsResultsMetaEl) {
     const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
-    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}”` : countText;
+    const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
+    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
   }
 
   if (!jobs.length) {
@@ -1685,7 +1757,14 @@ function renderJobsList() {
       const op = record?.meta?.operationType || 'Job';
       const nominalSize = record?.pipe?.nominalSize || '—';
       const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
-      const label = `${date} • ${title} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
+      const groupPrefix = jobsBrowseMode === 'customer'
+        ? `Customer: ${client}`
+        : jobsBrowseMode === 'location'
+          ? `Location: ${record?.job?.location || 'No location'}`
+          : jobsBrowseMode === 'date'
+            ? `Date: ${date}`
+            : 'Search';
+      const label = `${groupPrefix} • ${title} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
       const safe = label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
       return `<option value="${id}">${safe}</option>`;
     }).join('');
@@ -1987,6 +2066,18 @@ async function testFirestoreUpload() {
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
+jobsViewChipEls.forEach((button) => {
+  button.addEventListener('click', () => {
+    jobsBrowseMode = button.dataset.jobsView || 'all';
+    jobsViewChipEls.forEach((btn) => btn.classList.toggle('active', btn === button));
+    renderJobsList();
+  });
+});
+if (bcoResultEl) {
+  bcoResultEl.addEventListener('click', (event) => {
+    if (event.target.closest('.bco-inline-copy')) copyBcoResult();
+  });
+}
 if (jobsSelectEl) jobsSelectEl.addEventListener('change', renderJobsList);
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
@@ -2016,6 +2107,7 @@ window.addEventListener('load', () => {
   updateUnsyncedCount();
   renderJobsList();
   updateJobInfoSummary();
+  initAccordionSections();
   loadCloudJobs();
 });
 
