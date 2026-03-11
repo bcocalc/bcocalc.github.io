@@ -2918,153 +2918,91 @@ body.light .result-row {
 }
 
 
-/* v2.27d4 mobile spacing cleanup */
+/* v2.27d7 horizontal overflow + jobs spacing cleanup on mobile */
+html,
+body,
+body.measurement-page {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.measurement-page .card,
+.measurement-page .section,
+.measurement-page .mode-panel,
+.measurement-page .jobs-grid,
+.measurement-page #jobsPanel,
+.measurement-page #jobsList,
+.measurement-page .job-detail-grid,
+.measurement-page .job-info-header,
+.measurement-page .job-info-summary,
+.measurement-page .summary-grid {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.measurement-page .section,
+.measurement-page .card,
+.measurement-page .row,
+.measurement-page .jobs-select,
+.measurement-page input,
+.measurement-page select,
+.measurement-page textarea,
+.measurement-page button {
+  box-sizing: border-box;
+}
+
 @media (max-width: 768px){
+  html,
+  body,
+  body.measurement-page{
+    width:100%;
+    overflow-x:hidden !important;
+  }
+
   .measurement-page .card{
-    margin: 16px 12px 28px;
-    max-width: none;
-    padding: 16px;
+    width:calc(100vw - 24px) !important;
+    max-width:calc(100vw - 24px) !important;
+    margin:16px 12px 28px !important;
+    overflow-x:hidden !important;
   }
 
-  .app-header{
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 16px;
+  .measurement-page .section,
+  .measurement-page .mode-panel.active,
+  .measurement-page #jobsPanel{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
   }
 
-  .app-logo{
-    height: 56px;
+  .measurement-page .jobs-grid,
+  .measurement-page .measurement-grid,
+  .measurement-page .summary-grid,
+  .measurement-page .job-detail-grid,
+  .measurement-page .job-info-grid{
+    width:100%;
+    max-width:100%;
+    min-width:0;
   }
 
-  .app-tabs{
-    width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    padding: 0 0 10px;
+  .measurement-page .job-detail-title,
+  .measurement-page .job-detail-subtitle,
+  .measurement-page .job-info-summary,
+  .measurement-page .jobs-select,
+  .measurement-page #jobsList{
+    max-width:100%;
+    min-width:0;
+    overflow-wrap:anywhere;
+    word-break:break-word;
   }
 
-  .app-tabs .tab{
-    flex: 0 0 auto;
-  }
-
-  .version-badge{
-    margin-left: 0;
-    width: 100%;
-    font-size: 0.8rem;
-    opacity: 0.82;
-  }
-
-  .job-info-header{
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-    align-items: stretch;
-  }
-
-  .job-info-heading{
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 10px;
-    align-items: center;
-  }
-
-  .job-info-heading h3{
-    margin: 0;
-  }
-
-  .job-info-toggle-btn{
-    width: auto;
-    min-width: 120px;
-    justify-self: end;
-  }
-
-  .job-info-summary{
-    width: 100%;
-    margin: 0;
-    line-height: 1.35;
-  }
-
-  .job-tools{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    width: 100%;
-  }
-
-  .geometry-lock-toggle{
-    grid-column: 1 / -1;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 2px 0;
-  }
-
-  .geometry-lock-toggle input{
-    transform: scale(1.1);
-  }
-
-  .job-tools .secondary-btn{
-    width: 100%;
-    margin: 0;
-  }
-
-  .operation-switcher{
-    display: grid !important;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    overflow: visible;
-    padding-bottom: 0;
-    margin: 10px 0 18px;
-  }
-
-  .operation-switcher .mode-btn{
-    width: 100%;
-    min-height: 48px;
-    padding: 12px 14px;
-  }
-
-  .utility-bar{
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin: 10px 0 18px;
-  }
-
-  .utility-bar .secondary-btn,
-  .utility-bar .danger-btn{
-    width: 100%;
-    margin: 0;
-  }
-}
-
-
-/* v2.27d5 mobile jobs-tab spacing + auto-live polish */
-@media (max-width: 768px){
-  .operation-switcher .mode-btn[data-mode="jobs"]{
-    grid-column: 1 / -1;
-  }
-
-  .operation-switcher{
-    align-items: stretch;
-  }
-
-  .operation-switcher .mode-btn.active{
-    box-shadow: 0 8px 18px rgba(31,111,235,0.18);
-  }
-}
-
-
-/* v2.27d6 jobs mobile hard layout fix */
-@media (max-width: 768px){
   .operation-switcher{
     display:grid !important;
     grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
     gap:10px !important;
     align-items:stretch !important;
+    overflow:visible !important;
   }
+
   .operation-switcher .mode-btn{
     width:100% !important;
     margin:0 !important;
@@ -3072,6 +3010,7 @@ body.light .result-row {
     align-items:center;
     justify-content:center;
   }
+
   .operation-switcher .mode-btn[data-mode="jobs"]{
     grid-column:1 / -1 !important;
     width:100% !important;
