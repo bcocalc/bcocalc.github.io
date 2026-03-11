@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tapcalc-cache-v2.26d5';
+const CACHE_NAME = 'tapcalc-cache-v2.26d6';
 const ASSETS = [
   "./",
   "./index.html",

@@ -2983,3 +2983,35 @@ body.light .result-row {
   border-color:#1f6feb !important;
   box-shadow:0 0 0 1px rgba(255,255,255,.18) inset, 0 10px 24px rgba(37,99,235,.22) !important;
 }
+
+/* v2.26d6 guaranteed visual state for job filter buttons */
+.jobs-view-chip{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.15);
+  color:#e6edf3;
+  cursor:pointer;
+}
+
+.jobs-view-chip:hover{
+  background:rgba(255,255,255,0.12);
+}
+
+.jobs-view-chip:active{
+  background:#1f6feb;
+  color:#fff;
+  border-color:#1f6feb;
+}
+
+/* JS active state */
+.jobs-view-chip.active,
+.jobs-view-chip[aria-pressed="true"]{
+  background:#1f6feb !important;
+  color:#ffffff !important;
+  border-color:#1f6feb !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset, 0 10px 24px rgba(37,99,235,.22);
+}
+
+/* focus state for keyboard/touch */
+.jobs-view-chip:focus-visible{
+  outline:2px solid #1f6feb;
+}
