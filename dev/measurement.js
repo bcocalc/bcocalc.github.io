@@ -860,8 +860,6 @@ const jobsListEl = document.getElementById('jobsList');
 const jobsSelectEl = document.getElementById('jobsSelect');
 const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
 const jobsSearchInputEl = document.getElementById('jobsSearchInput');
-const jobsSearchLabelEl = document.getElementById('jobsSearchLabel');
-const jobsFilterSelectEl = document.getElementById('jobsFilterSelect');
 const jobsViewChipEls = Array.from(document.querySelectorAll('.jobs-view-chip'));
 const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
 const firebaseStatusEl = document.getElementById('firebaseStatus');
@@ -872,7 +870,6 @@ let firebaseModuleCache = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
-let jobsFilterValue = '';
 
 
 
@@ -1706,8 +1703,7 @@ function renderJobRecordDetails(record) {
     </div>`;
 }
 
-
-function getMergedJobsBase() {
+function getCombinedJobsForDisplay() {
   const localItems = getHistory()
     .filter((item) => item && item.record)
     .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, record: item.record, savedAt: item.savedAt }));
@@ -1716,64 +1712,7 @@ function getMergedJobsBase() {
     const key = entry.id || `${entry.record?.meta?.savedAtIso}-${entry.record?.job?.jobNumber || ''}`;
     if (!map.has(key)) map.set(key, entry);
   });
-  return Array.from(map.values());
-}
-
-
-function updateJobsViewButtons() {
-  jobsViewChipEls.forEach((btn) => {
-    const isActive = (btn.dataset.jobsView || 'all') === jobsBrowseMode;
-    btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-  });
-}
-
-function updateJobsFilterControl() {
-  if (!jobsSearchInputEl || !jobsFilterSelectEl || !jobsSearchLabelEl) return;
-  const usingSearch = jobsBrowseMode === 'all';
-  jobsSearchInputEl.hidden = !usingSearch;
-  jobsFilterSelectEl.hidden = usingSearch;
-  jobsSearchLabelEl.textContent = usingSearch
-    ? 'Search Jobs'
-    : jobsBrowseMode === 'customer'
-      ? 'Filter by Customer'
-      : jobsBrowseMode === 'location'
-        ? 'Filter by Location'
-        : 'Filter by Date';
-
-  if (usingSearch) return;
-
-  const mode = jobsBrowseMode;
-  const values = Array.from(new Set(
-    getMergedJobsBase()
-      .map(({ record }) => getJobsGroupingValue(record, mode))
-      .filter(Boolean)
-  )).sort((a, b) => String(a).localeCompare(String(b)));
-
-  const placeholder = mode === 'customer'
-    ? 'All Customers'
-    : mode === 'location'
-      ? 'All Locations'
-      : 'All Dates';
-
-  jobsFilterSelectEl.innerHTML = [`<option value="">${placeholder}</option>`, ...values.map((value) => {
-    const safe = String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    return `<option value="${safe}">${safe}</option>`;
-  })].join('');
-
-  if (jobsFilterValue && values.includes(jobsFilterValue)) {
-    jobsFilterSelectEl.value = jobsFilterValue;
-  } else {
-    jobsFilterValue = '';
-    jobsFilterSelectEl.value = '';
-  }
-}
-
-function getCombinedJobsForDisplay() {
-  let jobs = getMergedJobsBase();
-  if (jobsBrowseMode !== 'all' && jobsFilterValue) {
-    jobs = jobs.filter(({ record }) => getJobsGroupingValue(record, jobsBrowseMode) === jobsFilterValue);
-  }
+  let jobs = Array.from(map.values());
   if (jobsSearchTerm) {
     const term = jobsSearchTerm.toLowerCase();
     jobs = jobs.filter(({ record }) => {
@@ -1788,8 +1727,6 @@ function getCombinedJobsForDisplay() {
     jobs.sort((a,b) => getJobsGroupingValue(a.record, 'customer').localeCompare(getJobsGroupingValue(b.record, 'customer')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
   } else if (jobsBrowseMode === 'location') {
     jobs.sort((a,b) => getJobsGroupingValue(a.record, 'location').localeCompare(getJobsGroupingValue(b.record, 'location')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
-  } else if (jobsBrowseMode === 'date') {
-    jobs.sort((a,b) => getJobsGroupingValue(a.record, 'date').localeCompare(getJobsGroupingValue(b.record, 'date')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
   } else {
     jobs.sort((a,b) => String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
   }
@@ -1798,14 +1735,12 @@ function getCombinedJobsForDisplay() {
 
 function renderJobsList() {
   if (!jobsListEl) return;
-  updateJobsFilterControl();
   const jobs = getCombinedJobsForDisplay();
 
   if (jobsResultsMetaEl) {
     const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
     const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
-    const activeFilter = jobsFilterValue ? ` • ${modeLabel}: ${jobsFilterValue}` : '';
-    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view${activeFilter}` : `${countText} • ${modeLabel} view${activeFilter}`;
+    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
   }
 
   if (!jobs.length) {
@@ -1864,37 +1799,18 @@ function renderJobsList() {
     </div>
     <div class="job-detail-actions">
       <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
-      <button type="button" id="jobsToggleDetailsBtn" class="secondary-btn" aria-expanded="false">Show Details</button>
     </div>
-    <div class="job-detail-summary-strip">
-      <span><strong>Customer:</strong> ${record?.job?.client || '—'}</span>
-      <span><strong>Location:</strong> ${record?.job?.location || '—'}</span>
-      <span><strong>Job #:</strong> ${record?.job?.jobNumber || '—'}</span>
-      <span><strong>Date:</strong> ${record?.job?.date || '—'}</span>
-    </div>
-    <div id="jobsSelectedDetailsWrap" class="job-detail-collapsible is-collapsed">
-      ${renderJobRecordDetails(record)}
-      <div class="job-detail-grid">
-        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
-        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
-      </div>
+    ${renderJobRecordDetails(record)}
+    <div class="job-detail-grid">
+      <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+      <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
+      <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
     </div>`;
 
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
   if (loadBtn) {
     loadBtn.addEventListener('click', () => loadRecordIntoCalculator(record));
-  }
-
-  const toggleBtn = document.getElementById('jobsToggleDetailsBtn');
-  const detailsWrap = document.getElementById('jobsSelectedDetailsWrap');
-  if (toggleBtn && detailsWrap) {
-    toggleBtn.addEventListener('click', () => {
-      const collapsed = detailsWrap.classList.toggle('is-collapsed');
-      toggleBtn.textContent = collapsed ? 'Show Details' : 'Hide Details';
-      toggleBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    });
   }
 }
 
@@ -2150,25 +2066,13 @@ async function testFirestoreUpload() {
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
-if (jobsFilterSelectEl) jobsFilterSelectEl.addEventListener('change', (event) => {
-  jobsFilterValue = event.target.value || '';
-  renderJobsList();
-});
 jobsViewChipEls.forEach((button) => {
   button.addEventListener('click', () => {
     jobsBrowseMode = button.dataset.jobsView || 'all';
-    if (jobsBrowseMode === 'all') {
-      jobsFilterValue = '';
-    } else {
-      jobsSearchTerm = '';
-      if (jobsSearchInputEl) jobsSearchInputEl.value = '';
-    }
-    updateJobsViewButtons();
-    updateJobsFilterControl();
+    jobsViewChipEls.forEach((btn) => btn.classList.toggle('active', btn === button));
     renderJobsList();
   });
 });
-updateJobsViewButtons();
 if (bcoResultEl) {
   bcoResultEl.addEventListener('click', (event) => {
     if (event.target.closest('.bco-inline-copy')) copyBcoResult();
