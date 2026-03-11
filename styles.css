@@ -2916,3 +2916,126 @@ body.light .result-row {
   .jobs-view-toggle { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .jobs-view-chip { white-space: nowrap; }
 }
+
+
+/* v2.27d4 mobile spacing cleanup */
+@media (max-width: 768px){
+  .measurement-page .card{
+    margin: 16px 12px 28px;
+    max-width: none;
+    padding: 16px;
+  }
+
+  .app-header{
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .app-logo{
+    height: 56px;
+  }
+
+  .app-tabs{
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0 10px;
+  }
+
+  .app-tabs .tab{
+    flex: 0 0 auto;
+  }
+
+  .version-badge{
+    margin-left: 0;
+    width: 100%;
+    font-size: 0.8rem;
+    opacity: 0.82;
+  }
+
+  .job-info-header{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .job-info-heading{
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .job-info-heading h3{
+    margin: 0;
+  }
+
+  .job-info-toggle-btn{
+    width: auto;
+    min-width: 120px;
+    justify-self: end;
+  }
+
+  .job-info-summary{
+    width: 100%;
+    margin: 0;
+    line-height: 1.35;
+  }
+
+  .job-tools{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .geometry-lock-toggle{
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 2px 0;
+  }
+
+  .geometry-lock-toggle input{
+    transform: scale(1.1);
+  }
+
+  .job-tools .secondary-btn{
+    width: 100%;
+    margin: 0;
+  }
+
+  .operation-switcher{
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    overflow: visible;
+    padding-bottom: 0;
+    margin: 10px 0 18px;
+  }
+
+  .operation-switcher .mode-btn{
+    width: 100%;
+    min-height: 48px;
+    padding: 12px 14px;
+  }
+
+  .utility-bar{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 10px 0 18px;
+  }
+
+  .utility-bar .secondary-btn,
+  .utility-bar .danger-btn{
+    width: 100%;
+    margin: 0;
+  }
+}
