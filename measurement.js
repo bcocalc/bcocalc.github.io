@@ -824,12 +824,15 @@ function updateBoltingSummary() {
     if (boltingDiameterEl) boltingDiameterEl.textContent = '—';
     if (boltingStudRfEl) boltingStudRfEl.textContent = '—';
     if (boltingStudRtjEl) boltingStudRtjEl.textContent = '—';
+    if (boltingWrenchEl) boltingWrenchEl.textContent = '—';
+    if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
     return;
   }
-  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts;
-  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter;
-  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? row.stud_rf : row.stud;
-  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? row.stud_rtj : '—';
+  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts || '—';
+  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter || '—';
+  if (boltingWrenchEl) boltingWrenchEl.textContent = row.wrench || getWrenchSizeForDiameter(row.diameter);
+  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? (row.stud_rf || '—') : (row.stud || '—');
+  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? (row.stud_rtj || '—') : '—';
   if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
 }
 
