@@ -741,6 +741,47 @@ const boltingRtjItemEl = document.getElementById('boltingRtjItem');
 const boltingTableHeadEl = document.getElementById('boltingTableHead');
 const boltingTableBodyEl = document.getElementById('boltingTableBody');
 
+function getWrenchSizeForDiameter(diameter) {
+  const dia = String(diameter ?? '').trim();
+  const wrenchMap = {
+    '0.50': '7/8',
+    '0.62': '1-1/16',
+    '0.63': '1-1/16',
+    '0.75': '1-1/4',
+    '0.88': '1-7/16',
+    '1.00': '1-5/8',
+    '1.12': '1-13/16',
+    '1.13': '1-13/16',
+    '1.25': '2',
+    '1.38': '2-3/16',
+    '1.50': '2-3/8',
+    '1.62': '2-9/16',
+    '1.63': '2-9/16',
+    '1.75': '2-3/4',
+    '1.88': '2-15/16',
+    '2.00': '3-1/8',
+    '2.12': '3-1/4',
+    '2.25': '3-1/2',
+    '2.38': '3-5/8',
+    '2.50': '3-7/8',
+    '2.62': '4',
+    '2.75': '4-1/4',
+    '2.88': '4-1/2',
+    '3.00': '4-5/8',
+    '3.12': '4-7/8',
+    '3.25': '5',
+    '3.38': '5-1/4',
+    '3.50': '5-3/8',
+    '3.62': '5-1/2',
+    '3.75': '5-3/4',
+    '3.88': '6',
+    '4.00': '6-1/8',
+    '4.12': '6-1/4'
+  };
+  return wrenchMap[dia] || '—';
+}
+
+
 function getBoltingRowsForClass(flangeClass) {
   return boltingChartData?.[flangeClass]?.rows || [];
 }
@@ -767,8 +808,8 @@ function renderBoltingTable() {
     : '<tr><th>Pipe Size</th><th>Bolts / Studs</th><th>Dia.</th><th>Wrench</th><th>Stud Length</th></tr>';
 
   boltingTableBodyEl.innerHTML = rows.map((row) => isDual
-    ? `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.wrench || '—'}</td><td>${row.stud_rf}</td><td>${row.stud_rtj}</td></tr>`
-    : `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.wrench || '—'}</td><td>${row.stud}</td></tr>`
+    ? `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.wrench || getWrenchSizeForDiameter(row.diameter)}</td><td>${row.stud_rf}</td><td>${row.stud_rtj}</td></tr>`
+    : `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.wrench || getWrenchSizeForDiameter(row.diameter)}</td><td>${row.stud}</td></tr>`
   ).join('');
 }
 
