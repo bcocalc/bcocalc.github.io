@@ -3055,3 +3055,25 @@ body.light .result-row {
     box-shadow: 0 8px 18px rgba(31,111,235,0.18);
   }
 }
+
+
+/* v2.27d6 jobs mobile hard layout fix */
+@media (max-width: 768px){
+  .operation-switcher{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:10px !important;
+    align-items:stretch !important;
+  }
+  .operation-switcher .mode-btn{
+    width:100% !important;
+    margin:0 !important;
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+  }
+  .operation-switcher .mode-btn[data-mode="jobs"]{
+    grid-column:1 / -1 !important;
+    width:100% !important;
+  }
+}

@@ -1445,10 +1445,24 @@ function loadRecordIntoCalculator(record, options = {}) {
   applyJobState(record.state);
   refreshBcoState();
   updateBcoDisplays();
+  calculateIntegratedBco({ silent: true });
   calcHotTap();
   calcLineStop();
   calcCompletionPlug();
   initEtaCalculator();
+  syncBcoToEta({ force: true });
+  updateEtaEstimate();
+  clearTimeout(window.__tapcalcLoadJobBcoTimer);
+  window.__tapcalcLoadJobBcoTimer = setTimeout(() => {
+    refreshBcoState();
+    updateBcoDisplays();
+    calculateIntegratedBco({ silent: true });
+    calcHotTap();
+    calcLineStop();
+    calcCompletionPlug();
+    syncBcoToEta({ force: true });
+    updateEtaEstimate();
+  }, 80);
   persistCurrentJob();
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
