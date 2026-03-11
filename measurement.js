@@ -626,24 +626,65 @@ function populateEtaCutterSizes() {
 function getEtaRpmMatch(machine, cutterSizeRaw) {
   const machineChart = etaRpmChart?.[machine] || {};
   const normalized = String(cutterSizeRaw || '').trim();
-  if (!normalized) return { rpmValues: [], matchedSize: null, exact: false };
+  if (!normalized) return { rpmValues: [], matchedSize: null, exact: false, interpolated: false };
 
   if (machineChart[normalized]) {
-    return { rpmValues: machineChart[normalized], matchedSize: normalized, exact: true };
+    return { rpmValues: machineChart[normalized], matchedSize: normalized, exact: true, interpolated: false };
   }
 
   const cutterSize = parseFloat(normalized);
-  if (!Number.isFinite(cutterSize)) return { rpmValues: [], matchedSize: null, exact: false };
+  if (!Number.isFinite(cutterSize)) return { rpmValues: [], matchedSize: null, exact: false, interpolated: false };
 
   const available = Object.keys(machineChart)
-    .map((size) => ({ size, numeric: parseFloat(size) }))
-    .filter((item) => Number.isFinite(item.numeric));
+    .map((size) => ({ size, numeric: parseFloat(size), rpmValues: machineChart[size] || [] }))
+    .filter((item) => Number.isFinite(item.numeric))
+    .sort((a, b) => a.numeric - b.numeric);
 
-  if (!available.length) return { rpmValues: [], matchedSize: null, exact: false };
+  if (!available.length) return { rpmValues: [], matchedSize: null, exact: false, interpolated: false };
 
-  available.sort((a, b) => Math.abs(a.numeric - cutterSize) - Math.abs(b.numeric - cutterSize));
-  const nearest = available[0];
-  return { rpmValues: machineChart[nearest.size] || [], matchedSize: nearest.size, exact: false };
+  if (cutterSize <= available[0].numeric) {
+    return { rpmValues: available[0].rpmValues, matchedSize: available[0].size, exact: false, interpolated: false };
+  }
+
+  if (cutterSize >= available[available.length - 1].numeric) {
+    return { rpmValues: available[available.length - 1].rpmValues, matchedSize: available[available.length - 1].size, exact: false, interpolated: false };
+  }
+
+  let lower = available[0];
+  let upper = available[available.length - 1];
+
+  for (let i = 0; i < available.length - 1; i += 1) {
+    const current = available[i];
+    const next = available[i + 1];
+    if (cutterSize >= current.numeric && cutterSize <= next.numeric) {
+      lower = current;
+      upper = next;
+      break;
+    }
+  }
+
+  const ratio = (cutterSize - lower.numeric) / (upper.numeric - lower.numeric || 1);
+  const count = Math.max(lower.rpmValues.length, upper.rpmValues.length);
+  const interpolated = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const lowerVal = lower.rpmValues[i] ?? lower.rpmValues[lower.rpmValues.length - 1];
+    const upperVal = upper.rpmValues[i] ?? upper.rpmValues[upper.rpmValues.length - 1];
+    if (Number.isFinite(lowerVal) && Number.isFinite(upperVal)) {
+      interpolated.push(Number((lowerVal + ((upperVal - lowerVal) * ratio)).toFixed(2)));
+    } else if (Number.isFinite(lowerVal)) {
+      interpolated.push(Number(lowerVal));
+    } else if (Number.isFinite(upperVal)) {
+      interpolated.push(Number(upperVal));
+    }
+  }
+
+  return {
+    rpmValues: interpolated,
+    matchedSize: `${lower.size}-${upper.size}`,
+    exact: false,
+    interpolated: true
+  };
 }
 
 function syncBcoToEta(options = {}) {
@@ -663,7 +704,7 @@ function updateEtaEstimate() {
   if (etaFeedRateDisplayEl) etaFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
   const machine = etaMachineEl.value || '360';
   const cutterSize = etaCutterSizeEl.value;
-  const { rpmValues, matchedSize, exact } = getEtaRpmMatch(machine, cutterSize);
+  const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, cutterSize);
   const bco = getMeasurementValue(etaBcoEl);
 
   if (etaRpmDisplayEl) {
@@ -699,9 +740,13 @@ function updateEtaEstimate() {
   const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
   if (etaInlineStatusEl) {
     const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
-    etaInlineStatusEl.textContent = exact
-      ? `Estimate shown using ${rpmText} for the ${machineLabel}.`
-      : `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) at ${rpmText} for the ${machineLabel}.`;
+    if (exact) {
+      etaInlineStatusEl.textContent = `Estimate shown using ${rpmText} for the ${machineLabel}.`;
+    } else if (typeof interpolated !== 'undefined' && interpolated) {
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
+    } else {
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) at ${rpmText} for the ${machineLabel}.`;
+    }
   }
 }
 
