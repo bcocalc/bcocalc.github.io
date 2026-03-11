@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.26d1">
 </head>
 <body class="measurement-page">
 <div class="card">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">v2.23 · 2026-03-09</span>
+      <span class="version-badge">TapCalc Dev v2.26d1 · 2026-03-10</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -128,16 +128,16 @@
           <select id="ldSign"><option value="+">+</option><option value="-">−</option></select>
         </div>
 
-        <div class="row"><label>LI</label><span id="li" class="calc"></span></div>
+        <div class="row result-row primary-result-row"><label>LI</label><span id="li" class="calc"></span></div>
 
         <div class="row"><label>PTC</label><input id="ptc" type="number" step="any"></div>
         <div class="row"><label>POD</label><input id="pod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
 
-        <div class="row"><label>BCO</label><span id="rbco_geom" class="calc"></span><span class="note">From BCO Calculator</span></div>
+        <div class="row result-row primary-result-row"><label>BCO</label><span id="rbco_geom" class="calc"></span><span class="note">From BCO Calculator</span></div>
 
-        <div class="row"><label>TTD</label><span id="ttd" class="calc"></span></div>
+        <div class="row result-row primary-result-row"><label>TTD</label><span id="ttd" class="calc"></span></div>
 
-        <div class="row"><label>MCO</label><span id="mco" class="calc"></span></div>
+        <div class="row result-row support-result-row"><label>MCO</label><span id="mco" class="calc"></span></div>
 
         <div class="row"><label>MT</label><input id="mt" type="number" step="any"></div>
 
@@ -151,11 +151,11 @@
 
         <div class="row"><label>POP (Pilot on Pipe)</label><span id="pop" class="calc"></span></div>
 
-        <div class="row"><label>COP (Cutter on Pipe)</label><span id="cop" class="calc"></span></div>
+        <div class="row result-row support-result-row"><label>COP (Cutter on Pipe)</label><span id="cop" class="calc"></span></div>
 
-        <div class="row"><label>Rod BCO</label><span id="rbco" class="calc"></span></div>
+        <div class="row result-row support-result-row"><label>Rod BCO</label><span id="rbco" class="calc"></span></div>
 
-        <div class="row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
+        <div class="row result-row support-result-row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
 
         <div class="row"><label>Valve Bore</label><input id="valveBore" type="number" step="any"></div>
         <div class="row"><label>GTF</label><input id="gtf" type="number" step="any"></div>
@@ -197,7 +197,7 @@
 
         <div class="row"><label>Line Stop Travel</label><input id="lsTravel" type="number" step="any"></div>
         <div class="row"><label>Machine Travel</label><input id="lsMachineTravel" type="number" step="any"></div>
-        <div class="row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
+        <div class="row result-row primary-result-row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
 
         <div id="lsWarnings" class="warning-box"></div>
       </div>
@@ -432,6 +432,7 @@
           <div class="summary-item"><span class="summary-label">Unsynced Local Jobs</span><span id="unsyncedJobsCount" class="summary-value">0</span></div>
         </div>
         <p id="jobsCloudStatus" class="note">Connecting to shared job database...</p>
+        <div class="jobs-view-toggle"><button type="button" class="jobs-view-chip active" data-jobs-view="all">🔎 Search Jobs</button><button type="button" class="jobs-view-chip" data-jobs-view="customer">📁 Customer</button><button type="button" class="jobs-view-chip" data-jobs-view="location">📁 Location</button><button type="button" class="jobs-view-chip" data-jobs-view="date">📁 Date</button></div>
         <div class="row jobs-search-row">
           <label for="jobsSearchInput">Search Jobs</label>
           <input id="jobsSearchInput" type="text" placeholder="Search customer, location, job number, pipe size, or tech">
@@ -500,7 +501,7 @@
 
 </div>
 
-<script src="/firebase-config.js"></script>
-<script src="/measurement.js"></script>
+<script src="firebase-config.js?v=2.26d1"></script>
+<script src="measurement.js?v=2.26d1"></script>
 </body>
 </html>
