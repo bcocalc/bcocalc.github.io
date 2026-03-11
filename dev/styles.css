@@ -2948,3 +2948,22 @@ body.light .result-row {
     grid-template-columns:1fr;
   }
 }
+
+
+/* v2.26d4 real jobs filter controls */
+.jobs-filter-select{
+  width:100%;
+  min-height:44px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,.16);
+  background:rgba(255,255,255,.05);
+  color:#fff;
+  padding:10px 12px;
+  font:inherit;
+}
+.jobs-filter-select option{
+  color:#111;
+}
+.jobs-view-chip.active{
+  box-shadow:0 0 0 1px rgba(255,255,255,.18) inset, 0 10px 24px rgba(37,99,235,.22);
+}

@@ -860,6 +860,8 @@ const jobsListEl = document.getElementById('jobsList');
 const jobsSelectEl = document.getElementById('jobsSelect');
 const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
 const jobsSearchInputEl = document.getElementById('jobsSearchInput');
+const jobsSearchLabelEl = document.getElementById('jobsSearchLabel');
+const jobsFilterSelectEl = document.getElementById('jobsFilterSelect');
 const jobsViewChipEls = Array.from(document.querySelectorAll('.jobs-view-chip'));
 const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
 const firebaseStatusEl = document.getElementById('firebaseStatus');
@@ -870,6 +872,7 @@ let firebaseModuleCache = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
+let jobsFilterValue = '';
 
 
 
@@ -1703,7 +1706,8 @@ function renderJobRecordDetails(record) {
     </div>`;
 }
 
-function getCombinedJobsForDisplay() {
+
+function getMergedJobsBase() {
   const localItems = getHistory()
     .filter((item) => item && item.record)
     .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, record: item.record, savedAt: item.savedAt }));
@@ -1712,7 +1716,55 @@ function getCombinedJobsForDisplay() {
     const key = entry.id || `${entry.record?.meta?.savedAtIso}-${entry.record?.job?.jobNumber || ''}`;
     if (!map.has(key)) map.set(key, entry);
   });
-  let jobs = Array.from(map.values());
+  return Array.from(map.values());
+}
+
+function updateJobsFilterControl() {
+  if (!jobsSearchInputEl || !jobsFilterSelectEl || !jobsSearchLabelEl) return;
+  const usingSearch = jobsBrowseMode === 'all';
+  jobsSearchInputEl.hidden = !usingSearch;
+  jobsFilterSelectEl.hidden = usingSearch;
+  jobsSearchLabelEl.textContent = usingSearch
+    ? 'Search Jobs'
+    : jobsBrowseMode === 'customer'
+      ? 'Filter by Customer'
+      : jobsBrowseMode === 'location'
+        ? 'Filter by Location'
+        : 'Filter by Date';
+
+  if (usingSearch) return;
+
+  const mode = jobsBrowseMode;
+  const values = Array.from(new Set(
+    getMergedJobsBase()
+      .map(({ record }) => getJobsGroupingValue(record, mode))
+      .filter(Boolean)
+  )).sort((a, b) => String(a).localeCompare(String(b)));
+
+  const placeholder = mode === 'customer'
+    ? 'All Customers'
+    : mode === 'location'
+      ? 'All Locations'
+      : 'All Dates';
+
+  jobsFilterSelectEl.innerHTML = [`<option value="">${placeholder}</option>`, ...values.map((value) => {
+    const safe = String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    return `<option value="${safe}">${safe}</option>`;
+  })].join('');
+
+  if (jobsFilterValue && values.includes(jobsFilterValue)) {
+    jobsFilterSelectEl.value = jobsFilterValue;
+  } else {
+    jobsFilterValue = '';
+    jobsFilterSelectEl.value = '';
+  }
+}
+
+function getCombinedJobsForDisplay() {
+  let jobs = getMergedJobsBase();
+  if (jobsBrowseMode !== 'all' && jobsFilterValue) {
+    jobs = jobs.filter(({ record }) => getJobsGroupingValue(record, jobsBrowseMode) === jobsFilterValue);
+  }
   if (jobsSearchTerm) {
     const term = jobsSearchTerm.toLowerCase();
     jobs = jobs.filter(({ record }) => {
@@ -1727,6 +1779,8 @@ function getCombinedJobsForDisplay() {
     jobs.sort((a,b) => getJobsGroupingValue(a.record, 'customer').localeCompare(getJobsGroupingValue(b.record, 'customer')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
   } else if (jobsBrowseMode === 'location') {
     jobs.sort((a,b) => getJobsGroupingValue(a.record, 'location').localeCompare(getJobsGroupingValue(b.record, 'location')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
+  } else if (jobsBrowseMode === 'date') {
+    jobs.sort((a,b) => getJobsGroupingValue(a.record, 'date').localeCompare(getJobsGroupingValue(b.record, 'date')) || String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
   } else {
     jobs.sort((a,b) => String(b.record?.meta?.savedAtIso || '').localeCompare(String(a.record?.meta?.savedAtIso || '')));
   }
@@ -1735,12 +1789,14 @@ function getCombinedJobsForDisplay() {
 
 function renderJobsList() {
   if (!jobsListEl) return;
+  updateJobsFilterControl();
   const jobs = getCombinedJobsForDisplay();
 
   if (jobsResultsMetaEl) {
     const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
     const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
-    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+    const activeFilter = jobsFilterValue ? ` • ${modeLabel}: ${jobsFilterValue}` : '';
+    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view${activeFilter}` : `${countText} • ${modeLabel} view${activeFilter}`;
   }
 
   if (!jobs.length) {
@@ -2085,10 +2141,21 @@ async function testFirestoreUpload() {
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
+if (jobsFilterSelectEl) jobsFilterSelectEl.addEventListener('change', (event) => {
+  jobsFilterValue = event.target.value || '';
+  renderJobsList();
+});
 jobsViewChipEls.forEach((button) => {
   button.addEventListener('click', () => {
     jobsBrowseMode = button.dataset.jobsView || 'all';
     jobsViewChipEls.forEach((btn) => btn.classList.toggle('active', btn === button));
+    if (jobsBrowseMode === 'all') {
+      jobsFilterValue = '';
+    } else {
+      jobsSearchTerm = '';
+      if (jobsSearchInputEl) jobsSearchInputEl.value = '';
+    }
+    updateJobsFilterControl();
     renderJobsList();
   });
 });

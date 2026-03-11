@@ -15,7 +15,7 @@
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">v2.26d3 · 2026-03-10</span>
+      <span class="version-badge">v2.26d4 · 2026-03-10</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -434,8 +434,9 @@
         <p id="jobsCloudStatus" class="note">Connecting to shared job database...</p>
         <div class="jobs-view-toggle"><button type="button" class="jobs-view-chip active" data-jobs-view="all">🔎 Search Jobs</button><button type="button" class="jobs-view-chip" data-jobs-view="customer">📁 Customer</button><button type="button" class="jobs-view-chip" data-jobs-view="location">📁 Location</button><button type="button" class="jobs-view-chip" data-jobs-view="date">📁 Date</button></div>
         <div class="row jobs-search-row">
-          <label for="jobsSearchInput">Search Jobs</label>
+          <label for="jobsSearchInput" id="jobsSearchLabel">Search Jobs</label>
           <input id="jobsSearchInput" type="text" placeholder="Search customer, location, job number, pipe size, or tech">
+          <select id="jobsFilterSelect" class="jobs-filter-select" hidden aria-label="Browse jobs filter"></select>
         </div>
       </div>
 
