@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=2.26d1">
+  <link rel="stylesheet" href="styles.css?v=2.27d1">
 </head>
 <body class="measurement-page">
 <div class="card">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">TapCalc Dev v2.26d1 · 2026-03-10</span>
+      <span class="version-badge">TapCalc Dev v2.27d1 · 2026-03-10</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -247,7 +247,8 @@
         </div>
 
         <div class="row"><label>Cutter Size</label>
-          <select id="etaCutterSize"></select>
+          <input id="etaCutterSize" type="number" step="any" list="etaCutterSizeList" placeholder="Type cutter size or pick suggested size">
+          <datalist id="etaCutterSizeList"></datalist>
         </div>
 
         <div class="row"><label>BCO</label><input id="etaBco" type="number" step="any" placeholder="Uses current BCO when available"></div>
@@ -273,7 +274,7 @@
             <span id="etaRangeDisplay" class="summary-value">—</span>
           </div>
         </div>
-        <p id="etaInlineStatus" class="note">Select a machine and cutter size, then use your BCO to estimate cut time.</p>
+        <p id="etaInlineStatus" class="note">Type a cutter size or pick a suggested size, then use your BCO to estimate cut time.</p>
       </div>
     </div>
   </section>
@@ -325,7 +326,7 @@
 
         <div class="reference-card bolting-card">
           <h4>Bolting Chart</h4>
-          <p class="reference-copy">Rebuilt into TapCalc for offline use. Pick a flange class and pipe size to pull up bolt count, stud diameter, and stud length right inside the app.</p>
+          <p class="reference-copy">Rebuilt into TapCalc for offline use. Pick a flange class and pipe size to pull up bolt count, stud diameter, stud length, and wrench size right inside the app.</p>
 
           <div class="bolting-controls">
             <div class="converter-inline bolting-selects">
@@ -372,6 +373,7 @@
             <div class="bolting-summary-item"><span class="summary-label">Bolts / Studs</span><span id="boltingBoltCount" class="summary-value">—</span></div>
             <div class="bolting-summary-item"><span class="summary-label">Diameter</span><span id="boltingDiameter" class="summary-value">—</span></div>
             <div class="bolting-summary-item"><span class="summary-label">Stud Length (RF)</span><span id="boltingStudRf" class="summary-value">—</span></div>
+            <div class="bolting-summary-item"><span class="summary-label">Wrench Size</span><span id="boltingWrench" class="summary-value">—</span></div>
             <div class="bolting-summary-item" id="boltingRtjItem"><span class="summary-label">Stud Length (RTJ)</span><span id="boltingStudRtj" class="summary-value">—</span></div>
           </div>
 
