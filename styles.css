@@ -3039,3 +3039,19 @@ body.light .result-row {
     margin: 0;
   }
 }
+
+
+/* v2.27d5 mobile jobs-tab spacing + auto-live polish */
+@media (max-width: 768px){
+  .operation-switcher .mode-btn[data-mode="jobs"]{
+    grid-column: 1 / -1;
+  }
+
+  .operation-switcher{
+    align-items: stretch;
+  }
+
+  .operation-switcher .mode-btn.active{
+    box-shadow: 0 8px 18px rgba(31,111,235,0.18);
+  }
+}

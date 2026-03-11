@@ -360,6 +360,15 @@ if (bcoCutterOdEl) bcoCutterOdEl.addEventListener('input', () => {
 });
 if (bcoCalcBtnEl) bcoCalcBtnEl.addEventListener('click', () => calculateIntegratedBco({ silent: false }));
 if (bcoCopyBtnEl) bcoCopyBtnEl.addEventListener('click', copyBcoResult);
+
+['input','change'].forEach((eventName) => {
+  bcoMaterialEl?.addEventListener(eventName, triggerLiveBcoCalculation);
+  bcoPipeOdEl?.addEventListener(eventName, triggerLiveBcoCalculation);
+  bcoScheduleEl?.addEventListener(eventName, triggerLiveBcoCalculation);
+  bcoPipeIdEl?.addEventListener(eventName, triggerLiveBcoCalculation);
+  bcoCutterOdEl?.addEventListener(eventName, triggerLiveBcoCalculation);
+});
+
 const decimalReferenceBtnEl = document.getElementById('decimalReferenceBtn');
 const openDecimalModalBtnEl = document.getElementById('openDecimalModalBtn');
 const closeDecimalModalBtnEl = document.getElementById('closeDecimalModalBtn');
