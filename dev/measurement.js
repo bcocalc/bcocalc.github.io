@@ -66,6 +66,7 @@ const modeButtons = Array.from(document.querySelectorAll('.mode-btn[data-mode]')
 const panels = {
   bco: document.getElementById('bcoPanel'),
   hotTap: document.getElementById('hotTapPanel'),
+  htp: document.getElementById('htpPanel'),
   lineStop: document.getElementById('lineStopPanel'),
   completionPlug: document.getElementById('completionPlugPanel'),
   eta: document.getElementById('etaPanel'),
@@ -270,6 +271,7 @@ function applyBcoToMeasurementCard() {
   if (wallThk) wallThk.textContent = wall;
   if (lsWallDisplay) lsWallDisplay.textContent = wall;
   calcHotTap();
+  calcHtp();
   calcLineStop();
   syncBcoToEta({ force: true });
   updateEtaEstimate();
@@ -296,6 +298,7 @@ function calculateIntegratedBco(options = {}) {
     refreshBcoState();
     updateBcoDisplays();
     calcHotTap();
+    calcHtp();
     calcLineStop();
     updateSummary();
     return;
@@ -310,6 +313,7 @@ function calculateIntegratedBco(options = {}) {
     refreshBcoState();
     updateBcoDisplays();
     calcHotTap();
+    calcHtp();
     calcLineStop();
     updateSummary();
     return;
@@ -566,10 +570,64 @@ function parseMixedMeasurement(rawValue) {
 
 if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openDecimalModal);
 
+const referenceViewSelectEl = document.getElementById('referenceViewSelect');
+const referenceViewEls = Array.from(document.querySelectorAll('.reference-view[data-reference-view]'));
+
+function setReferenceView(view) {
+  const nextView = view || referenceViewSelectEl?.value || 'converter';
+  referenceViewEls.forEach((panel) => {
+    panel.classList.toggle('active', panel.dataset.referenceView === nextView);
+  });
+  if (referenceViewSelectEl && referenceViewSelectEl.value !== nextView) referenceViewSelectEl.value = nextView;
+  try { localStorage.setItem('tapcalcReferenceViewV1', nextView); } catch {}
+}
+
+if (referenceViewSelectEl) {
+  referenceViewSelectEl.addEventListener('change', () => setReferenceView(referenceViewSelectEl.value));
+  try {
+    setReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl.value || 'converter');
+  } catch {
+    setReferenceView(referenceViewSelectEl.value || 'converter');
+  }
+}
+
+const htpChartData = {
+  '3': { branch: '6"', head: '3" – 4"', cutter: 5.500, bco: 3.000 },
+  '4': { branch: '6" – 8"', head: '4" – 6"', cutter: 7.468, bco: 4.000 },
+  '6': { branch: '8" – 12"', head: '6" – 8"', cutter: 9.968, bco: 6.000 },
+  '8': { branch: '12"', head: '6" – 8"', cutter: 9.968, bco: 8.000 },
+  '10': { branch: '16"', head: '10" – 12"', cutter: 14.468, bco: 10.000 },
+  '12': { branch: '16"', head: '10" – 12"', cutter: 14.468, bco: 12.000 },
+  '14': { branch: '20"', head: '14" – 16"', cutter: 18.468, bco: 14.000 },
+  '16': { branch: '20"', head: '14" – 16"', cutter: 18.468, bco: 16.000 }
+};
+
+const plant150Data = [
+  ['3"','3/16"','5/8"','4'], ['4"','3/16"','5/8"','4'], ['6"','1/4"','3/4"','4'], ['8"','5/16"','7/8"','4'],
+  ['10"','5/16"','7/8"','6'], ['12"','7/16"','1 1/16"','6'], ['14"','7/16"','1 1/4"','6'], ['16"','7/16"','1 1/4"','8'],
+  ['18"','7/16"','1 1/4"','8'], ['20"','7/16"','1 1/4"','10'], ['24"','7/16"','1 1/4"','10'], ['30"','7/16"','1 3/8"','14'], ['36"','7/16"','1 3/8"','16']
+];
+const plant600Data = [
+  ['3"','3/8"','1 1/16"','4'], ['4"','3/8"','1 1/4"','4'], ['6"','3/8"','1 1/4"','6'], ['8"','9/16"','1 5/8"','6'],
+  ['10"','9/16"','1 5/8"','8'], ['12"','9/16"','1 5/8"','10'], ['14"','5/8"','1 5/8"','10'], ['16"','11/16"','1 13/16"','10'],
+  ['18"','13/16"','1 13/16"','10'], ['20"','13/16"','1 13/16"','12'], ['24"','1"','2 1/8"','12'], ['30"','1 1/16"','2 1/4"','14'], ['36"','1 1/16"','2 1/2"','14']
+];
+
+function renderSimpleTableRows(targetId, rows) {
+  const body = document.getElementById(targetId);
+  if (!body) return;
+  body.innerHTML = rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('');
+}
+
+renderSimpleTableRows('htpReferenceBody', Object.entries(htpChartData).map(([size, item]) => [size + '"', item.branch, item.head, Number(item.cutter).toFixed(3) + '"']));
+renderSimpleTableRows('plant150Body', plant150Data);
+renderSimpleTableRows('plant600Body', plant600Data);
+
 
 const ETA_FEED_RATE = 0.004;
 const etaMachineEl = document.getElementById('etaMachine');
 const etaCutterSizeEl = document.getElementById('etaCutterSize');
+const etaCutterSizeListEl = document.getElementById('etaCutterSizeList');
 const etaBcoEl = document.getElementById('etaBco');
 const etaFeedRateDisplayEl = document.getElementById('etaFeedRateDisplay');
 const etaRpmDisplayEl = document.getElementById('etaRpmDisplay');
@@ -614,13 +672,76 @@ function formatEtaMinutes(minutes) {
 }
 
 function populateEtaCutterSizes() {
-  if (!etaMachineEl || !etaCutterSizeEl) return;
+  if (!etaMachineEl || !etaCutterSizeEl || !etaCutterSizeListEl) return;
   const machine = etaMachineEl.value || '360';
   const sizes = Object.keys(etaRpmChart[machine] || {});
-  const previous = etaCutterSizeEl.value;
-  etaCutterSizeEl.innerHTML = sizes.map((size) => `<option value="${size}">${size}"</option>`).join('');
-  if (sizes.includes(previous)) etaCutterSizeEl.value = previous;
-  else if (sizes[0]) etaCutterSizeEl.value = sizes[0];
+  const previous = String(etaCutterSizeEl.value || '').trim();
+  etaCutterSizeListEl.innerHTML = sizes.map((size) => `<option value="${size}"></option>`).join('');
+  if (!previous && sizes[0]) etaCutterSizeEl.value = sizes[0];
+}
+
+function getEtaRpmMatch(machine, cutterSizeRaw) {
+  const machineChart = etaRpmChart?.[machine] || {};
+  const normalized = String(cutterSizeRaw || '').trim();
+  if (!normalized) return { rpmValues: [], matchedSize: null, exact: false, interpolated: false };
+
+  if (machineChart[normalized]) {
+    return { rpmValues: machineChart[normalized], matchedSize: normalized, exact: true, interpolated: false };
+  }
+
+  const cutterSize = parseFloat(normalized);
+  if (!Number.isFinite(cutterSize)) return { rpmValues: [], matchedSize: null, exact: false, interpolated: false };
+
+  const available = Object.keys(machineChart)
+    .map((size) => ({ size, numeric: parseFloat(size), rpmValues: machineChart[size] || [] }))
+    .filter((item) => Number.isFinite(item.numeric))
+    .sort((a, b) => a.numeric - b.numeric);
+
+  if (!available.length) return { rpmValues: [], matchedSize: null, exact: false, interpolated: false };
+
+  if (cutterSize <= available[0].numeric) {
+    return { rpmValues: available[0].rpmValues, matchedSize: available[0].size, exact: false, interpolated: false };
+  }
+
+  if (cutterSize >= available[available.length - 1].numeric) {
+    return { rpmValues: available[available.length - 1].rpmValues, matchedSize: available[available.length - 1].size, exact: false, interpolated: false };
+  }
+
+  let lower = available[0];
+  let upper = available[available.length - 1];
+
+  for (let i = 0; i < available.length - 1; i += 1) {
+    const current = available[i];
+    const next = available[i + 1];
+    if (cutterSize >= current.numeric && cutterSize <= next.numeric) {
+      lower = current;
+      upper = next;
+      break;
+    }
+  }
+
+  const ratio = (cutterSize - lower.numeric) / (upper.numeric - lower.numeric || 1);
+  const count = Math.max(lower.rpmValues.length, upper.rpmValues.length);
+  const interpolated = [];
+
+  for (let i = 0; i < count; i += 1) {
+    const lowerVal = lower.rpmValues[i] ?? lower.rpmValues[lower.rpmValues.length - 1];
+    const upperVal = upper.rpmValues[i] ?? upper.rpmValues[upper.rpmValues.length - 1];
+    if (Number.isFinite(lowerVal) && Number.isFinite(upperVal)) {
+      interpolated.push(Number((lowerVal + ((upperVal - lowerVal) * ratio)).toFixed(2)));
+    } else if (Number.isFinite(lowerVal)) {
+      interpolated.push(Number(lowerVal));
+    } else if (Number.isFinite(upperVal)) {
+      interpolated.push(Number(upperVal));
+    }
+  }
+
+  return {
+    rpmValues: interpolated,
+    matchedSize: `${lower.size}-${upper.size}`,
+    exact: false,
+    interpolated: true
+  };
 }
 
 function syncBcoToEta(options = {}) {
@@ -640,7 +761,7 @@ function updateEtaEstimate() {
   if (etaFeedRateDisplayEl) etaFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
   const machine = etaMachineEl.value || '360';
   const cutterSize = etaCutterSizeEl.value;
-  const rpmValues = etaRpmChart?.[machine]?.[cutterSize] || [];
+  const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, cutterSize);
   const bco = getMeasurementValue(etaBcoEl);
 
   if (etaRpmDisplayEl) {
@@ -652,7 +773,7 @@ function updateEtaEstimate() {
   if (!rpmValues.length || !Number.isFinite(bco) || bco <= 0) {
     if (etaFeedSpeedDisplayEl) etaFeedSpeedDisplayEl.textContent = '—';
     if (etaRangeDisplayEl) etaRangeDisplayEl.textContent = '—';
-    if (etaInlineStatusEl) etaInlineStatusEl.textContent = 'Enter a valid BCO to calculate estimated time to BCO.';
+    if (etaInlineStatusEl) etaInlineStatusEl.textContent = 'Enter a valid BCO and cutter size to calculate estimated time to BCO.';
     return;
   }
 
@@ -673,10 +794,16 @@ function updateEtaEstimate() {
       ? formatEtaMinutes(lowEta)
       : `${formatEtaMinutes(lowEta)} to ${formatEtaMinutes(highEta)}`;
   }
+  const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
   if (etaInlineStatusEl) {
-    etaInlineStatusEl.textContent = rpmValues.length > 1
-      ? `Estimate shown as a range using ${minRpm}-${maxRpm} RPM for the ${machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152')}.`
-      : `Estimate shown using ${rpmValues[0]} RPM for the ${machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152')}.`;
+    const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
+    if (exact) {
+      etaInlineStatusEl.textContent = `Estimate shown using ${rpmText} for the ${machineLabel}.`;
+    } else if (typeof interpolated !== 'undefined' && interpolated) {
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
+    } else {
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) at ${rpmText} for the ${machineLabel}.`;
+    }
   }
 }
 
@@ -685,10 +812,14 @@ function initEtaCalculator() {
   populateEtaCutterSizes();
   syncBcoToEta();
   updateEtaEstimate();
+  if (etaMachineEl.dataset.etaBound === 'true') return;
+  etaMachineEl.dataset.etaBound = 'true';
+
   etaMachineEl.addEventListener('change', () => {
     populateEtaCutterSizes();
     updateEtaEstimate();
   });
+  etaCutterSizeEl.addEventListener('input', updateEtaEstimate);
   etaCutterSizeEl.addEventListener('change', updateEtaEstimate);
   etaBcoEl?.addEventListener('input', updateEtaEstimate);
   etaBcoEl?.addEventListener('change', updateEtaEstimate);
@@ -724,7 +855,7 @@ updateFractionToDecimal();
 updateDecimalToFraction();
 renderBcoResult({ pipeOD: geometry.pipeOD, pipeID: geometry.pipeID, cutterOD: parseFloat(data?.cutterOD), bco: parseFloat(data?.bco) });
 
-const boltingChartData = {"150":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-"},{"size":"3/4","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-"},{"size":"1","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"1-1/4","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"1-1/2","bolts":"4","diameter":"0.50","stud_rf":"3","stud_rtj":"3-1/2"},{"size":"2","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"2-1/2","bolts":"4","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4"},{"size":"3","bolts":"4","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"3-1/2","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"4","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2"},{"size":"6","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2"},{"size":"8","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"4-1/2"},{"size":"10","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4"},{"size":"12","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4"},{"size":"14","bolts":"12","diameter":"1.00","stud_rf":"5-1/4","stud_rtj":"5-3/4"},{"size":"16","bolts":"16","diameter":"1.00","stud_rf":"5-1/2","stud_rtj":"6"},{"size":"18","bolts":"16","diameter":"1.12","stud_rf":"6","stud_rtj":"6-1/2"},{"size":"20","bolts":"20","diameter":"1.12","stud_rf":"6-1/4","stud_rtj":"6-3/4"},{"size":"24","bolts":"20","diameter":"1.25","stud_rf":"7","stud_rtj":"7-1/2"}]},"300":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.62","stud_rf":"3","stud_rtj":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud_rf":"3-3/4","stud_rtj":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4"},{"size":"4","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4-3/4","stud_rtj":"5-1/2"},{"size":"6","bolts":"12","diameter":"0.75","stud_rf":"5","stud_rtj":"5-3/4"},{"size":"8","bolts":"12","diameter":"0.88","stud_rf":"5-1/2","stud_rtj":"6-1/4"},{"size":"10","bolts":"16","diameter":"1.00","stud_rf":"6-1/4","stud_rtj":"7"},{"size":"12","bolts":"16","diameter":"1.12","stud_rf":"6-3/4","stud_rtj":"7-1/2"},{"size":"14","bolts":"20","diameter":"1.12","stud_rf":"7","stud_rtj":"7-3/4"},{"size":"16","bolts":"20","diameter":"1.25","stud_rf":"7-1/2","stud_rtj":"8-1/4"},{"size":"18","bolts":"24","diameter":"1.25","stud_rf":"7-3/4","stud_rtj":"8-1/2"},{"size":"20","bolts":"24","diameter":"1.25","stud_rf":"8-1/4","stud_rtj":"9"},{"size":"24","bolts":"24","diameter":"1.50","stud_rf":"9-1/4","stud_rtj":"10-1/4"}]},"400":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"5","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"6","bolts":"12","diameter":"0.88","stud":"6"},{"size":"8","bolts":"12","diameter":"1.00","stud":"6-3/4"},{"size":"10","bolts":"16","diameter":"1.13","stud":"7-1/2"},{"size":"12","bolts":"16","diameter":"1.25","stud":"8"},{"size":"14","bolts":"20","diameter":"1.25","stud":"8-1/4"},{"size":"16","bolts":"20","diameter":"1.38","stud":"8-3/4"},{"size":"18","bolts":"24","diameter":"1.38","stud":"9"},{"size":"20","bolts":"24","diameter":"1.50","stud":"9-3/4"},{"size":"24","bolts":"24","diameter":"1.75","stud":"10-3/4"}]},"600":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"5","bolts":"8","diameter":"1.00","stud":"6-1/2"},{"size":"6","bolts":"12","diameter":"1.00","stud":"6-3/4"},{"size":"8","bolts":"12","diameter":"1.13","stud":"7-3/4"},{"size":"10","bolts":"16","diameter":"1.25","stud":"8-1/2"},{"size":"12","bolts":"20","diameter":"1.25","stud":"8-3/4"},{"size":"14","bolts":"20","diameter":"1.38","stud":"9-1/4"},{"size":"16","bolts":"20","diameter":"1.50","stud":"10"},{"size":"18","bolts":"20","diameter":"1.63","stud":"10-3/4"},{"size":"20","bolts":"24","diameter":"1.63","stud":"11-1/2"},{"size":"24","bolts":"24","diameter":"1.88","stud":"13"}]},"900":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/4","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4"},{"size":"3","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.13","stud":"6-3/4"},{"size":"5","bolts":"8","diameter":"1.25","stud":"7-1/2"},{"size":"6","bolts":"12","diameter":"1.13","stud":"7-3/4"},{"size":"8","bolts":"12","diameter":"1.38","stud":"8-3/4"},{"size":"10","bolts":"16","diameter":"1.38","stud":"9-1/4"},{"size":"12","bolts":"20","diameter":"1.38","stud":"10"},{"size":"14","bolts":"20","diameter":"1.50","stud":"10-3/4"},{"size":"16","bolts":"20","diameter":"1.63","stud":"11-1/4"},{"size":"18","bolts":"20","diameter":"1.88","stud":"13"},{"size":"20","bolts":"20","diameter":"2.00","stud":"13-3/4"},{"size":"24","bolts":"20","diameter":"2.50","stud":"17-1/4"}]},"1500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5"},{"size":"1-1/4","bolts":"4","diameter":"-","stud":"5"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4"},{"size":"3","bolts":"8","diameter":"1.13","stud":"7"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.25","stud":"7-3/4"},{"size":"5","bolts":"8","diameter":"1.50","stud":"9-3/4"},{"size":"6","bolts":"12","diameter":"1.38","stud":"10-1/4"},{"size":"8","bolts":"12","diameter":"1.63","stud":"11-1/2"},{"size":"10","bolts":"12","diameter":"1.88","stud":"13-1/2"},{"size":"12","bolts":"12","diameter":"2.00","stud":"15"},{"size":"14","bolts":"16","diameter":"2.25","stud":"16-1/4"},{"size":"16","bolts":"16","diameter":"2.50","stud":"17-3/4"},{"size":"18","bolts":"16","diameter":"2.75","stud":"19-1/2"},{"size":"20","bolts":"16","diameter":"3.00","stud":"21-1/4"},{"size":"24","bolts":"16","diameter":"3.50","stud":"24-1/4"}]},"2500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"5"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"5"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5-1/2"},{"size":"1-1/4","bolts":"4","diameter":"1.00","stud":"6"},{"size":"1-1/2","bolts":"4","diameter":"1.13","stud":"6-3/4"},{"size":"2","bolts":"8","diameter":"1.00","stud":"7"},{"size":"2-1/2","bolts":"8","diameter":"1.13","stud":"7-3/4"},{"size":"3","bolts":"8","diameter":"1.25","stud":"8-3/4"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-"},{"size":"4","bolts":"8","diameter":"1.50","stud":"10"},{"size":"5","bolts":"8","diameter":"1.75","stud":"11-3/4"},{"size":"6","bolts":"8","diameter":"2.00","stud":"13-3/4"},{"size":"8","bolts":"12","diameter":"2.00","stud":"15-1/4"},{"size":"10","bolts":"12","diameter":"2.50","stud":"19-1/4"},{"size":"12","bolts":"12","diameter":"2.75","stud":"21-1/4"},{"size":"14","bolts":"-","diameter":"-","stud":"-"},{"size":"16","bolts":"-","diameter":"-","stud":"-"},{"size":"18","bolts":"-","diameter":"-","stud":"-"},{"size":"20","bolts":"-","diameter":"-","stud":"-"},{"size":"24","bolts":"-","diameter":"-","stud":"-"}]}};
+const boltingChartData = {"150":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-","wrench":"7/8"},{"size":"3/4","bolts":"4","diameter":"0.50","stud_rf":"2-1/2","stud_rtj":"-","wrench":"7/8"},{"size":"1","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4","wrench":"7/8"},{"size":"1-1/4","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4","wrench":"7/8"},{"size":"1-1/2","bolts":"4","diameter":"0.50","stud_rf":"3","stud_rtj":"3-1/2","wrench":"7/8"},{"size":"2","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4","wrench":"1-1/16"},{"size":"2-1/2","bolts":"4","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4","wrench":"1-1/16"},{"size":"3","bolts":"4","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4","wrench":"1-1/16"},{"size":"3-1/2","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4","wrench":"1-1/16"},{"size":"4","bolts":"8","diameter":"0.62","stud_rf":"3-3/4","stud_rtj":"4-1/4","wrench":"1-1/16"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2","wrench":"1-1/4"},{"size":"6","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-1/2","wrench":"1-1/4"},{"size":"8","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"4-1/2","wrench":"1-1/4"},{"size":"10","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4","wrench":"1-7/16"},{"size":"12","bolts":"12","diameter":"0.88","stud_rf":"4-3/4","stud_rtj":"5-1/4","wrench":"1-7/16"},{"size":"14","bolts":"12","diameter":"1.00","stud_rf":"5-1/4","stud_rtj":"5-3/4","wrench":"1-5/8"},{"size":"16","bolts":"16","diameter":"1.00","stud_rf":"5-1/2","stud_rtj":"6","wrench":"1-5/8"},{"size":"18","bolts":"16","diameter":"1.12","stud_rf":"6","stud_rtj":"6-1/2","wrench":"1-13/16"},{"size":"20","bolts":"20","diameter":"1.12","stud_rf":"6-1/4","stud_rtj":"6-3/4","wrench":"1-13/16"},{"size":"24","bolts":"20","diameter":"1.25","stud_rf":"7","stud_rtj":"7-1/2","wrench":"2"},{"size":"26","bolts":"24","diameter":"1.38","stud_rf":"8-3/4","stud_rtj":"-","wrench":"2-3/16"},{"size":"28","bolts":"28","diameter":"1.38","stud_rf":"9","stud_rtj":"-","wrench":"2-3/16"},{"size":"30","bolts":"28","diameter":"1.38","stud_rf":"9-1/4","stud_rtj":"-","wrench":"2-3/16"},{"size":"32","bolts":"28","diameter":"1.62","stud_rf":"10-1/2","stud_rtj":"-","wrench":"2-9/16"},{"size":"34","bolts":"32","diameter":"1.62","stud_rf":"10-1/2","stud_rtj":"-","wrench":"2-9/16"},{"size":"36","bolts":"32","diameter":"1.62","stud_rf":"11","stud_rtj":"-","wrench":"2-9/16"},{"size":"38","bolts":"32","diameter":"1.62","stud_rf":"11","stud_rtj":"-","wrench":"2-9/16"},{"size":"40","bolts":"36","diameter":"1.62","stud_rf":"11","stud_rtj":"-","wrench":"2-9/16"},{"size":"42","bolts":"36","diameter":"1.62","stud_rf":"11-1/2","stud_rtj":"-","wrench":"2-9/16"},{"size":"44","bolts":"40","diameter":"1.62","stud_rf":"12","stud_rtj":"-","wrench":"2-9/16"},{"size":"46","bolts":"40","diameter":"1.62","stud_rf":"12","stud_rtj":"-","wrench":"2-9/16"},{"size":"48","bolts":"44","diameter":"1.62","stud_rf":"12-1/2","stud_rtj":"-","wrench":"2-9/16"}]},"300":{"type":"dual","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud_rf":"2-3/4","stud_rtj":"3-1/4","wrench":"7/8"},{"size":"3/4","bolts":"4","diameter":"0.62","stud_rf":"3","stud_rtj":"3-1/2","wrench":"1-1/16"},{"size":"1","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4","wrench":"1-1/16"},{"size":"1-1/4","bolts":"4","diameter":"0.62","stud_rf":"3-1/4","stud_rtj":"3-3/4","wrench":"1-1/16"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud_rf":"3-3/4","stud_rtj":"4-1/4","wrench":"1-1/4"},{"size":"2","bolts":"8","diameter":"0.62","stud_rf":"3-1/2","stud_rtj":"4-1/4","wrench":"1-1/16"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud_rf":"4","stud_rtj":"4-3/4","wrench":"1-1/4"},{"size":"3","bolts":"8","diameter":"0.75","stud_rf":"4-1/4","stud_rtj":"5","wrench":"1-1/4"},{"size":"3-1/2","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4","wrench":"1-1/4"},{"size":"4","bolts":"8","diameter":"0.75","stud_rf":"4-1/2","stud_rtj":"5-1/4","wrench":"1-1/4"},{"size":"5","bolts":"8","diameter":"0.75","stud_rf":"4-3/4","stud_rtj":"5-1/2","wrench":"1-1/4"},{"size":"6","bolts":"12","diameter":"0.75","stud_rf":"5","stud_rtj":"5-3/4","wrench":"1-1/4"},{"size":"8","bolts":"12","diameter":"0.88","stud_rf":"5-1/2","stud_rtj":"6-1/4","wrench":"1-7/16"},{"size":"10","bolts":"16","diameter":"1.00","stud_rf":"6-1/4","stud_rtj":"7","wrench":"1-5/8"},{"size":"12","bolts":"16","diameter":"1.12","stud_rf":"6-3/4","stud_rtj":"7-1/2","wrench":"1-13/16"},{"size":"14","bolts":"20","diameter":"1.12","stud_rf":"7","stud_rtj":"7-3/4","wrench":"1-13/16"},{"size":"16","bolts":"20","diameter":"1.25","stud_rf":"7-1/2","stud_rtj":"8-1/4","wrench":"2"},{"size":"18","bolts":"24","diameter":"1.25","stud_rf":"7-3/4","stud_rtj":"8-1/2","wrench":"2"},{"size":"20","bolts":"24","diameter":"1.25","stud_rf":"8-1/4","stud_rtj":"9","wrench":"2"},{"size":"24","bolts":"24","diameter":"1.50","stud_rf":"9-1/4","stud_rtj":"10-1/4","wrench":"2-3/8"},{"size":"26","bolts":"28","diameter":"1.75","stud_rf":"10-3/4","stud_rtj":"-","wrench":"2-3/4"},{"size":"28","bolts":"28","diameter":"1.75","stud_rf":"11-1/4","stud_rtj":"-","wrench":"2-3/4"},{"size":"30","bolts":"28","diameter":"1.88","stud_rf":"12","stud_rtj":"-","wrench":"2-15/16"},{"size":"32","bolts":"28","diameter":"2.00","stud_rf":"12-1/2","stud_rtj":"-","wrench":"3-1/8"},{"size":"34","bolts":"28","diameter":"2.00","stud_rf":"13","stud_rtj":"-","wrench":"3-1/8"},{"size":"36","bolts":"32","diameter":"2.12","stud_rf":"13-1/2","stud_rtj":"-","wrench":"3-1/4"},{"size":"38","bolts":"32","diameter":"1.62","stud_rf":"12-1/2","stud_rtj":"-","wrench":"2-9/16"},{"size":"40","bolts":"32","diameter":"1.75","stud_rf":"13-1/4","stud_rtj":"-","wrench":"2-3/4"},{"size":"42","bolts":"32","diameter":"1.75","stud_rf":"13-3/4","stud_rtj":"-","wrench":"2-3/4"},{"size":"44","bolts":"32","diameter":"1.88","stud_rf":"14-1/4","stud_rtj":"-","wrench":"2-15/16"},{"size":"46","bolts":"28","diameter":"2.00","stud_rf":"15","stud_rtj":"-","wrench":"3-1/8"},{"size":"48","bolts":"32","diameter":"2.00","stud_rf":"15-1/4","stud_rtj":"-","wrench":"3-1/8"}]},"400":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4","wrench":"7/8"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2","wrench":"1-1/16"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4","wrench":"1-1/16"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4","wrench":"1-1/16"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4","wrench":"1-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4","wrench":"1-1/16"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4","wrench":"1-1/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5","wrench":"1-1/4"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2","wrench":"1-7/16"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-1/2","wrench":"1-7/16"},{"size":"5","bolts":"8","diameter":"0.88","stud":"5-3/4","wrench":"1-7/16"},{"size":"6","bolts":"12","diameter":"0.88","stud":"6","wrench":"1-7/16"},{"size":"8","bolts":"12","diameter":"1.00","stud":"6-3/4","wrench":"1-5/8"},{"size":"10","bolts":"16","diameter":"1.13","stud":"7-1/2","wrench":"1-13/16"},{"size":"12","bolts":"16","diameter":"1.25","stud":"8","wrench":"2"},{"size":"14","bolts":"20","diameter":"1.25","stud":"8-1/4","wrench":"2"},{"size":"16","bolts":"20","diameter":"1.38","stud":"8-3/4","wrench":"2-3/16"},{"size":"18","bolts":"24","diameter":"1.38","stud":"9","wrench":"2-3/16"},{"size":"20","bolts":"24","diameter":"1.50","stud":"9-3/4","wrench":"2-3/8"},{"size":"24","bolts":"24","diameter":"1.75","stud":"10-3/4","wrench":"2-3/4"},{"size":"26","bolts":"28","diameter":"1.88","stud":"12-1/2","wrench":"2-15/16"},{"size":"28","bolts":"28","diameter":"2.00","stud":"13-1/4","wrench":"3-1/8"},{"size":"30","bolts":"28","diameter":"2.12","stud":"14","wrench":"3-1/4"},{"size":"32","bolts":"28","diameter":"2.12","stud":"14-1/4","wrench":"3-1/4"},{"size":"34","bolts":"28","diameter":"2.12","stud":"14-3/4","wrench":"3-1/4"},{"size":"36","bolts":"32","diameter":"2.12","stud":"15","wrench":"3-1/4"},{"size":"38","bolts":"32","diameter":"1.88","stud":"14-3/4","wrench":"2-15/16"},{"size":"40","bolts":"32","diameter":"2.00","stud":"15-1/2","wrench":"3-1/8"},{"size":"42","bolts":"32","diameter":"2.00","stud":"15-3/4","wrench":"3-1/8"},{"size":"44","bolts":"32","diameter":"2.12","stud":"16-1/2","wrench":"3-1/4"},{"size":"46","bolts":"36","diameter":"2.12","stud":"17","wrench":"3-1/4"},{"size":"48","bolts":"28","diameter":"2.38","stud":"18","wrench":"3-5/8"}]},"600":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.50","stud":"3-1/4","wrench":"7/8"},{"size":"3/4","bolts":"4","diameter":"0.63","stud":"3-1/2","wrench":"1-1/16"},{"size":"1","bolts":"4","diameter":"0.63","stud":"3-3/4","wrench":"1-1/16"},{"size":"1-1/4","bolts":"4","diameter":"0.63","stud":"4","wrench":"1-1/16"},{"size":"1-1/2","bolts":"4","diameter":"0.75","stud":"4-1/4","wrench":"1-1/4"},{"size":"2","bolts":"8","diameter":"0.63","stud":"4-1/4","wrench":"1-1/16"},{"size":"2-1/2","bolts":"8","diameter":"0.75","stud":"4-3/4","wrench":"1-1/4"},{"size":"3","bolts":"8","diameter":"0.75","stud":"5","wrench":"1-1/4"},{"size":"3-1/2","bolts":"8","diameter":"0.88","stud":"5-1/2","wrench":"1-7/16"},{"size":"4","bolts":"8","diameter":"0.88","stud":"5-3/4","wrench":"1-7/16"},{"size":"5","bolts":"8","diameter":"1.00","stud":"6-1/2","wrench":"1-5/8"},{"size":"6","bolts":"12","diameter":"1.00","stud":"6-3/4","wrench":"1-5/8"},{"size":"8","bolts":"12","diameter":"1.13","stud":"7-3/4","wrench":"1-13/16"},{"size":"10","bolts":"16","diameter":"1.25","stud":"8-1/2","wrench":"2"},{"size":"12","bolts":"20","diameter":"1.25","stud":"8-3/4","wrench":"2"},{"size":"14","bolts":"20","diameter":"1.38","stud":"9-1/4","wrench":"2-3/16"},{"size":"16","bolts":"20","diameter":"1.50","stud":"10","wrench":"2-3/8"},{"size":"18","bolts":"20","diameter":"1.63","stud":"10-3/4","wrench":"2-9/16"},{"size":"20","bolts":"24","diameter":"1.63","stud":"11-1/2","wrench":"2-9/16"},{"size":"24","bolts":"24","diameter":"1.88","stud":"13","wrench":"2-15/16"},{"size":"26","bolts":"28","diameter":"2.00","stud":"14-1/2","wrench":"3-1/8"},{"size":"28","bolts":"28","diameter":"2.12","stud":"15","wrench":"3-1/4"},{"size":"30","bolts":"28","diameter":"2.12","stud":"15-1/2","wrench":"3-1/4"},{"size":"32","bolts":"28","diameter":"2.38","stud":"16-1/2","wrench":"3-5/8"},{"size":"34","bolts":"28","diameter":"2.38","stud":"16-3/4","wrench":"3-5/8"},{"size":"36","bolts":"28","diameter":"2.62","stud":"17-3/4","wrench":"4"},{"size":"38","bolts":"28","diameter":"2.38","stud":"18-1/4","wrench":"3-5/8"},{"size":"40","bolts":"32","diameter":"2.38","stud":"18-3/4","wrench":"3-5/8"},{"size":"42","bolts":"28","diameter":"2.62","stud":"19-3/4","wrench":"4"},{"size":"44","bolts":"32","diameter":"2.62","stud":"20-1/4","wrench":"4"},{"size":"46","bolts":"32","diameter":"2.62","stud":"20-3/4","wrench":"4"},{"size":"48","bolts":"32","diameter":"2.88","stud":"22-1/4","wrench":"\u2014"}]},"900":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4","wrench":"1-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2","wrench":"1-1/4"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5","wrench":"1-7/16"},{"size":"1-1/4","bolts":"4","diameter":"0.88","stud":"5","wrench":"1-7/16"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2","wrench":"1-5/8"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4","wrench":"1-7/16"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4","wrench":"1-5/8"},{"size":"3","bolts":"8","diameter":"0.88","stud":"5-3/4","wrench":"1-7/16"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"4","bolts":"8","diameter":"1.13","stud":"6-3/4","wrench":"1-13/16"},{"size":"5","bolts":"8","diameter":"1.25","stud":"7-1/2","wrench":"2"},{"size":"6","bolts":"12","diameter":"1.13","stud":"7-3/4","wrench":"1-13/16"},{"size":"8","bolts":"12","diameter":"1.38","stud":"8-3/4","wrench":"2-3/16"},{"size":"10","bolts":"16","diameter":"1.38","stud":"9-1/4","wrench":"2-3/16"},{"size":"12","bolts":"20","diameter":"1.38","stud":"10","wrench":"2-3/16"},{"size":"14","bolts":"20","diameter":"1.50","stud":"10-3/4","wrench":"2-3/8"},{"size":"16","bolts":"20","diameter":"1.63","stud":"11-1/4","wrench":"2-9/16"},{"size":"18","bolts":"20","diameter":"1.88","stud":"13","wrench":"2-15/16"},{"size":"20","bolts":"20","diameter":"2.00","stud":"13-3/4","wrench":"3-1/8"},{"size":"24","bolts":"20","diameter":"2.50","stud":"17-1/4","wrench":"3-7/8"},{"size":"26","bolts":"20","diameter":"2.88","stud":"18-3/4","wrench":"\u2014"},{"size":"28","bolts":"20","diameter":"3.12","stud":"19-3/4","wrench":"4-7/8"},{"size":"30","bolts":"20","diameter":"3.12","stud":"20-1/2","wrench":"4-7/8"},{"size":"32","bolts":"20","diameter":"3.38","stud":"22","wrench":"\u2014"},{"size":"34","bolts":"20","diameter":"3.62","stud":"23","wrench":"5-1/2"},{"size":"36","bolts":"20","diameter":"3.62","stud":"23-3/4","wrench":"5-1/2"},{"size":"38","bolts":"20","diameter":"3.62","stud":"24-1/2","wrench":"5-1/2"},{"size":"40","bolts":"24","diameter":"3.62","stud":"25","wrench":"5-1/2"},{"size":"42","bolts":"24","diameter":"3.62","stud":"25-3/4","wrench":"5-1/2"},{"size":"44","bolts":"24","diameter":"3.88","stud":"27","wrench":"\u2014"},{"size":"46","bolts":"24","diameter":"4.12","stud":"28-1/2","wrench":"6-1/4"},{"size":"48","bolts":"24","diameter":"4.12","stud":"29","wrench":"6-1/4"}]},"1500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"4-1/4","wrench":"1-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"4-1/2","wrench":"1-1/4"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5","wrench":"1-7/16"},{"size":"1-1/4","bolts":"4","diameter":"-","stud":"5","wrench":"\u2014"},{"size":"1-1/2","bolts":"4","diameter":"1.00","stud":"5-1/2","wrench":"1-5/8"},{"size":"2","bolts":"8","diameter":"0.88","stud":"5-3/4","wrench":"1-7/16"},{"size":"2-1/2","bolts":"8","diameter":"1.00","stud":"6-1/4","wrench":"1-5/8"},{"size":"3","bolts":"8","diameter":"1.13","stud":"7","wrench":"1-13/16"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"4","bolts":"8","diameter":"1.25","stud":"7-3/4","wrench":"2"},{"size":"5","bolts":"8","diameter":"1.50","stud":"9-3/4","wrench":"2-3/8"},{"size":"6","bolts":"12","diameter":"1.38","stud":"10-1/4","wrench":"2-3/16"},{"size":"8","bolts":"12","diameter":"1.63","stud":"11-1/2","wrench":"2-9/16"},{"size":"10","bolts":"12","diameter":"1.88","stud":"13-1/2","wrench":"2-15/16"},{"size":"12","bolts":"12","diameter":"2.00","stud":"15","wrench":"3-1/8"},{"size":"14","bolts":"16","diameter":"2.25","stud":"16-1/4","wrench":"3-1/2"},{"size":"16","bolts":"16","diameter":"2.50","stud":"17-3/4","wrench":"3-7/8"},{"size":"18","bolts":"16","diameter":"2.75","stud":"19-1/2","wrench":"4-1/4"},{"size":"20","bolts":"16","diameter":"3.00","stud":"21-1/4","wrench":"4-5/8"},{"size":"24","bolts":"16","diameter":"3.50","stud":"24-1/4","wrench":"5-3/8"},{"size":"26","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"28","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"30","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"32","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"34","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"36","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"38","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"40","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"42","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"44","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"46","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"48","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"}]},"2500":{"type":"single","rows":[{"size":"1/2","bolts":"4","diameter":"0.75","stud":"5","wrench":"1-1/4"},{"size":"3/4","bolts":"4","diameter":"0.75","stud":"5","wrench":"1-1/4"},{"size":"1","bolts":"4","diameter":"0.88","stud":"5-1/2","wrench":"1-7/16"},{"size":"1-1/4","bolts":"4","diameter":"1.00","stud":"6","wrench":"1-5/8"},{"size":"1-1/2","bolts":"4","diameter":"1.13","stud":"6-3/4","wrench":"1-13/16"},{"size":"2","bolts":"8","diameter":"1.00","stud":"7","wrench":"1-5/8"},{"size":"2-1/2","bolts":"8","diameter":"1.13","stud":"7-3/4","wrench":"1-13/16"},{"size":"3","bolts":"8","diameter":"1.25","stud":"8-3/4","wrench":"2"},{"size":"3-1/2","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"4","bolts":"8","diameter":"1.50","stud":"10","wrench":"2-3/8"},{"size":"5","bolts":"8","diameter":"1.75","stud":"11-3/4","wrench":"2-3/4"},{"size":"6","bolts":"8","diameter":"2.00","stud":"13-3/4","wrench":"3-1/8"},{"size":"8","bolts":"12","diameter":"2.00","stud":"15-1/4","wrench":"3-1/8"},{"size":"10","bolts":"12","diameter":"2.50","stud":"19-1/4","wrench":"3-7/8"},{"size":"12","bolts":"12","diameter":"2.75","stud":"21-1/4","wrench":"4-1/4"},{"size":"14","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"16","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"18","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"20","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"24","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"26","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"28","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"30","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"32","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"34","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"36","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"38","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"40","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"42","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"44","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"46","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"},{"size":"48","bolts":"-","diameter":"-","stud":"-","wrench":"\u2014"}]}};
 
 const boltingClassSelectEl = document.getElementById('boltingClassSelect');
 const boltingSizeSelectEl = document.getElementById('boltingSizeSelect');
@@ -732,9 +863,51 @@ const boltingBoltCountEl = document.getElementById('boltingBoltCount');
 const boltingDiameterEl = document.getElementById('boltingDiameter');
 const boltingStudRfEl = document.getElementById('boltingStudRf');
 const boltingStudRtjEl = document.getElementById('boltingStudRtj');
+const boltingWrenchEl = document.getElementById('boltingWrench');
 const boltingRtjItemEl = document.getElementById('boltingRtjItem');
 const boltingTableHeadEl = document.getElementById('boltingTableHead');
 const boltingTableBodyEl = document.getElementById('boltingTableBody');
+
+function getWrenchSizeForDiameter(diameter) {
+  const dia = String(diameter ?? '').trim();
+  const wrenchMap = {
+    '0.50': '7/8',
+    '0.62': '1-1/16',
+    '0.63': '1-1/16',
+    '0.75': '1-1/4',
+    '0.88': '1-7/16',
+    '1.00': '1-5/8',
+    '1.12': '1-13/16',
+    '1.13': '1-13/16',
+    '1.25': '2',
+    '1.38': '2-3/16',
+    '1.50': '2-3/8',
+    '1.62': '2-9/16',
+    '1.63': '2-9/16',
+    '1.75': '2-3/4',
+    '1.88': '2-15/16',
+    '2.00': '3-1/8',
+    '2.12': '3-1/4',
+    '2.25': '3-1/2',
+    '2.38': '3-5/8',
+    '2.50': '3-7/8',
+    '2.62': '4',
+    '2.75': '4-1/4',
+    '2.88': '4-1/2',
+    '3.00': '4-5/8',
+    '3.12': '4-7/8',
+    '3.25': '5',
+    '3.38': '5-1/4',
+    '3.50': '5-3/8',
+    '3.62': '5-1/2',
+    '3.75': '5-3/4',
+    '3.88': '6',
+    '4.00': '6-1/8',
+    '4.12': '6-1/4'
+  };
+  return wrenchMap[dia] || '—';
+}
+
 
 function getBoltingRowsForClass(flangeClass) {
   return boltingChartData?.[flangeClass]?.rows || [];
@@ -758,12 +931,12 @@ function renderBoltingTable() {
   const isDual = config?.type === 'dual';
 
   boltingTableHeadEl.innerHTML = isDual
-    ? '<tr><th>Pipe Size</th><th>Bolts / Studs</th><th>Dia.</th><th>Stud RF</th><th>Stud RTJ</th></tr>'
-    : '<tr><th>Pipe Size</th><th>Bolts / Studs</th><th>Dia.</th><th>Stud Length</th></tr>';
+    ? '<tr><th>Pipe Size</th><th>Bolts / Studs</th><th>Dia.</th><th>Wrench</th><th>Stud RF</th><th>Stud RTJ</th></tr>'
+    : '<tr><th>Pipe Size</th><th>Bolts / Studs</th><th>Dia.</th><th>Wrench</th><th>Stud Length</th></tr>';
 
   boltingTableBodyEl.innerHTML = rows.map((row) => isDual
-    ? `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.stud_rf}</td><td>${row.stud_rtj}</td></tr>`
-    : `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.stud}</td></tr>`
+    ? `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.wrench || getWrenchSizeForDiameter(row.diameter)}</td><td>${row.stud_rf}</td><td>${row.stud_rtj}</td></tr>`
+    : `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.diameter}</td><td>${row.wrench || getWrenchSizeForDiameter(row.diameter)}</td><td>${row.stud}</td></tr>`
   ).join('');
 }
 
@@ -778,12 +951,15 @@ function updateBoltingSummary() {
     if (boltingDiameterEl) boltingDiameterEl.textContent = '—';
     if (boltingStudRfEl) boltingStudRfEl.textContent = '—';
     if (boltingStudRtjEl) boltingStudRtjEl.textContent = '—';
+    if (boltingWrenchEl) boltingWrenchEl.textContent = '—';
+    if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
     return;
   }
-  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts;
-  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter;
-  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? row.stud_rf : row.stud;
-  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? row.stud_rtj : '—';
+  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts || '—';
+  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter || '—';
+  if (boltingWrenchEl) boltingWrenchEl.textContent = row.wrench || getWrenchSizeForDiameter(row.diameter);
+  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? (row.stud_rf || '—') : (row.stud || '—');
+  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? (row.stud_rtj || '—') : '—';
   if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
 }
 
@@ -807,6 +983,90 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
   });
 }
+
+// ===== HTP HOT TAP =====
+const htpPipeSizeEl = document.getElementById('htpPipeSize');
+const htpBranchSizeEl = document.getElementById('htpBranchSize');
+const htpHeadEl = document.getElementById('htpHead');
+const htpCutterSizeEl = document.getElementById('htpCutterSize');
+const htpBcoEl = document.getElementById('htpBco');
+const htpMdEl = document.getElementById('htpMd');
+const htpLdEl = document.getElementById('htpLd');
+const htpLdSignEl = document.getElementById('htpLdSign');
+const htpPtcEl = document.getElementById('htpPtc');
+const htpTcoEl = document.getElementById('htpTco');
+const htpMachineEl = document.getElementById('htpMachine');
+const htpFeedRateDisplayEl = document.getElementById('htpFeedRateDisplay');
+const htpEtaRpmEl = document.getElementById('htpEtaRpm');
+const htpEtaFeedSpeedEl = document.getElementById('htpEtaFeedSpeed');
+const htpEtaRangeEl = document.getElementById('htpEtaRange');
+const htpStatusEl = document.getElementById('htpStatus');
+let lastHtp = { tco: NaN, eta: '—', cutter: NaN, bco: NaN, warnings: [] };
+
+function calcHtp() {
+  if (!htpPipeSizeEl) return;
+  const config = htpChartData[String(htpPipeSizeEl.value || '')];
+  if (!config) return;
+
+  if (htpBranchSizeEl) htpBranchSizeEl.textContent = config.branch;
+  if (htpHeadEl) htpHeadEl.textContent = config.head;
+  if (htpCutterSizeEl) htpCutterSizeEl.textContent = Number(config.cutter).toFixed(3);
+  if (htpBcoEl) htpBcoEl.textContent = Number(config.bco).toFixed(3);
+  if (htpFeedRateDisplayEl) htpFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
+
+  const md = getMeasurementValue(htpMdEl) || 0;
+  const ldRaw = getMeasurementValue(htpLdEl) || 0;
+  const ld = (htpLdSignEl?.value || '+') === '-' ? -ldRaw : ldRaw;
+  const ptc = getMeasurementValue(htpPtcEl) || 0;
+  const bco = Number(config.bco) || 0;
+  const tco = md + ld + ptc + bco;
+
+  if (htpTcoEl) htpTcoEl.textContent = Number.isFinite(tco) ? tco.toFixed(4) : '—';
+
+  const machine = htpMachineEl?.value || '360';
+  const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, config.cutter);
+
+  if (htpEtaRpmEl) {
+    htpEtaRpmEl.textContent = rpmValues.length > 1 ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}` : (rpmValues[0] ? `${rpmValues[0]}` : '—');
+  }
+
+  if (!rpmValues.length || !bco) {
+    if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = '—';
+    if (htpEtaRangeEl) htpEtaRangeEl.textContent = '—';
+    if (htpStatusEl) htpStatusEl.textContent = 'HTP ETA is waiting on chart data.';
+    lastHtp = { tco, eta: '—', cutter: config.cutter, bco, warnings: [] };
+    updateSummary();
+    return;
+  }
+
+  const minRpm = Math.min(...rpmValues);
+  const maxRpm = Math.max(...rpmValues);
+  const slowFeed = minRpm * ETA_FEED_RATE;
+  const fastFeed = maxRpm * ETA_FEED_RATE;
+  const lowEta = bco / fastFeed;
+  const highEta = bco / slowFeed;
+  const etaText = lowEta === highEta ? formatEtaMinutes(lowEta) : `${formatEtaMinutes(lowEta)} to ${formatEtaMinutes(highEta)}`;
+
+  if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = slowFeed === fastFeed ? `${slowFeed.toFixed(3)} in/min` : `${slowFeed.toFixed(3)}-${fastFeed.toFixed(3)} in/min`;
+  if (htpEtaRangeEl) htpEtaRangeEl.textContent = etaText;
+
+  const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
+  const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
+  if (htpStatusEl) {
+    if (exact) htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using cutter ${Number(config.cutter).toFixed(3)} with ${rpmText} on the ${machineLabel}.`;
+    else if (interpolated) htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} on the ${machineLabel}.`;
+    else htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using nearest chart size ${matchedSize} at ${rpmText} on the ${machineLabel}.`;
+  }
+
+  lastHtp = { tco, eta: etaText, cutter: config.cutter, bco, warnings: [] };
+  updateSummary();
+}
+
+[htpPipeSizeEl, htpMdEl, htpLdEl, htpLdSignEl, htpPtcEl, htpMachineEl].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', calcHtp);
+  el.addEventListener('change', calcHtp);
+});
 
 // ===== HOT TAP =====
 const mdEl = document.getElementById("md");
@@ -1157,9 +1417,16 @@ function updateSummary() {
     const md = getMeasurementValue(mdEl);
     const li = lastHotTap.li;
     const ttd = lastHotTap.ttd;
-    summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
-      ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
-      : '—';
+    if (document.querySelector('.mode-btn.active')?.dataset.mode === 'htp' || Number.isFinite(lastHtp.tco)) {
+      const htpPipe = htpPipeSizeEl?.value ? `${htpPipeSizeEl.value}"` : '—';
+      summaryEls.hotTap.textContent = Number.isFinite(lastHtp.tco)
+        ? `HTP ${htpPipe} • TCO ${formatValue(lastHtp.tco)} • ETA ${lastHtp.eta || '—'}`
+        : '—';
+    } else {
+      summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
+        ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
+        : '—';
+    }
   }
 
   if (summaryEls.lineStopLi) {
@@ -1331,6 +1598,7 @@ function getStateFields() {
     'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
+    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
     'etaMachine','etaCutterSize','etaBco'
@@ -1387,10 +1655,26 @@ function loadRecordIntoCalculator(record, options = {}) {
   applyJobState(record.state);
   refreshBcoState();
   updateBcoDisplays();
+  calculateIntegratedBco({ silent: true });
   calcHotTap();
+  calcHtp();
   calcLineStop();
   calcCompletionPlug();
   initEtaCalculator();
+  syncBcoToEta({ force: true });
+  updateEtaEstimate();
+  clearTimeout(window.__tapcalcLoadJobBcoTimer);
+  window.__tapcalcLoadJobBcoTimer = setTimeout(() => {
+    refreshBcoState();
+    updateBcoDisplays();
+    calculateIntegratedBco({ silent: true });
+    calcHotTap();
+    calcHtp();
+    calcLineStop();
+    calcCompletionPlug();
+    syncBcoToEta({ force: true });
+    updateEtaEstimate();
+  }, 80);
   persistCurrentJob();
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
@@ -1422,11 +1706,14 @@ function inferOperationType(state = collectJobState()) {
   const activeMode = state.activeMode || document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
   if (activeMode === 'lineStop') return 'Line Stop';
   if (activeMode === 'completionPlug') return 'Completion Plug';
+  if (activeMode === 'htp') return 'HTP Hot Tap';
   if (activeMode === 'hotTap' || activeMode === 'eta') return 'Hot Tap';
   const hasLineStop = ['lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel'].some((key) => String(state[key] || '').trim() !== '');
   if (hasLineStop) return 'Line Stop';
   const hasCompletion = ['cpStart','cpJbf','cpLd','cpPt','cpLiManual'].some((key) => String(state[key] || '').trim() !== '');
   if (hasCompletion) return 'Completion Plug';
+  const hasHtp = ['htpMd','htpLd','htpPtc'].some((key) => String(state[key] || '').trim() !== '');
+  if (hasHtp) return 'HTP Hot Tap';
   const hasHotTap = ['md','ld','ptc','start','mt'].some((key) => String(state[key] || '').trim() !== '');
   if (hasHotTap) return 'Hot Tap';
   return 'BCO / Geometry';
@@ -1455,7 +1742,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.21'
+      version: 'v2.28b1'
     },
     job: {
       client: state.jobClient || '',
@@ -1483,12 +1770,15 @@ function buildJobRecord(state = collectJobState()) {
       rpm: etaRpm,
       feedRate: ETA_FEED_RATE.toFixed(4),
       etaRange,
-      feedSpeed: etaFeedSpeed
+      feedSpeed: etaFeedSpeed,
+      htpMachine: htpMachineEl?.selectedOptions?.[0]?.textContent || state.htpMachine || '',
+      htpEtaRange: lastHtp.eta || '—'
     },
     calculations: {
       bco: formatValue(parseFloat(data?.bco)),
       hotTapLi: formatValue(lastHotTap.li),
       hotTapTtd: formatValue(lastHotTap.ttd),
+      htpTco: formatValue(lastHtp.tco),
       lineStopLi: formatValue(lastLineStop.li),
       completionPlugLi: formatValue(lastCompletionPlug.li)
     },
@@ -1499,6 +1789,12 @@ function buildJobRecord(state = collectJobState()) {
         mco: mcoEl?.textContent?.trim() || '', mt: state.mt || '', rodStart: state.start || '',
         pop: popEl?.textContent?.trim() || '', cop: copEl?.textContent?.trim() || '',
         rodBco: rbcoEl?.textContent?.trim() || '', rodMco: rmcoEl?.textContent?.trim() || ''
+      },
+      htp: {
+        pipeSize: state.htpPipeSize || '', branchSize: htpBranchSizeEl?.textContent?.trim() || '',
+        head: htpHeadEl?.textContent?.trim() || '', cutterSize: htpCutterSizeEl?.textContent?.trim() || '',
+        bco: htpBcoEl?.textContent?.trim() || '', md: state.htpMd || '', ld: state.htpLd || '',
+        ldSign: state.htpLdSign || '+', ptc: state.htpPtc || '', tco: formatValue(lastHtp.tco), eta: lastHtp.eta || '—'
       },
       lineStop: {
         md: state.lsMd || '', ld: state.lsLd || '', ldSign: state.lsLdSign || '+',
@@ -1692,6 +1988,7 @@ function renderJobRecordDetails(record) {
       <div><strong>Machine:</strong> ${record?.machine?.machine || '—'}</div>
       <div><strong>BCO:</strong> ${record?.calculations?.bco || '—'}</div>
       <div><strong>ETA:</strong> ${record?.machine?.etaRange || '—'}</div>
+      <div><strong>HTP TCO:</strong> ${record?.calculations?.htpTco || '—'}</div>
       <div><strong>Operation:</strong> ${record?.meta?.operationType || '—'}</div>
       <div><strong>Notes:</strong> ${record?.job?.notes || '—'}</div>
     </div>
@@ -2099,6 +2396,7 @@ window.addEventListener('load', () => {
   updateBcoDisplays();
   applyBcoToMeasurementCard();
   calcHotTap();
+  calcHtp();
   calcLineStop();
   calcCompletionPlug();
   initEtaCalculator();

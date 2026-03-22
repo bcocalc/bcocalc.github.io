@@ -2916,3 +2916,118 @@ body.light .result-row {
   .jobs-view-toggle { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .jobs-view-chip { white-space: nowrap; }
 }
+
+
+/* v2.27d7 horizontal overflow + jobs spacing cleanup on mobile */
+html,
+body,
+body.measurement-page {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.measurement-page .card,
+.measurement-page .section,
+.measurement-page .mode-panel,
+.measurement-page .jobs-grid,
+.measurement-page #jobsPanel,
+.measurement-page #jobsList,
+.measurement-page .job-detail-grid,
+.measurement-page .job-info-header,
+.measurement-page .job-info-summary,
+.measurement-page .summary-grid {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.measurement-page .section,
+.measurement-page .card,
+.measurement-page .row,
+.measurement-page .jobs-select,
+.measurement-page input,
+.measurement-page select,
+.measurement-page textarea,
+.measurement-page button {
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px){
+  html,
+  body,
+  body.measurement-page{
+    width:100%;
+    overflow-x:hidden !important;
+  }
+
+  .measurement-page .card{
+    width:calc(100vw - 24px) !important;
+    max-width:calc(100vw - 24px) !important;
+    margin:16px 12px 28px !important;
+    overflow-x:hidden !important;
+  }
+
+  .measurement-page .section,
+  .measurement-page .mode-panel.active,
+  .measurement-page #jobsPanel{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+  }
+
+  .measurement-page .jobs-grid,
+  .measurement-page .measurement-grid,
+  .measurement-page .summary-grid,
+  .measurement-page .job-detail-grid,
+  .measurement-page .job-info-grid{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+  }
+
+  .measurement-page .job-detail-title,
+  .measurement-page .job-detail-subtitle,
+  .measurement-page .job-info-summary,
+  .measurement-page .jobs-select,
+  .measurement-page #jobsList{
+    max-width:100%;
+    min-width:0;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+
+  .operation-switcher{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:10px !important;
+    align-items:stretch !important;
+    overflow:visible !important;
+  }
+
+  .operation-switcher .mode-btn{
+    width:100% !important;
+    margin:0 !important;
+    display:flex !important;
+    align-items:center;
+    justify-content:center;
+  }
+
+  .operation-switcher .mode-btn[data-mode="jobs"]{
+    grid-column:1 / -1 !important;
+    width:100% !important;
+  }
+}
+
+
+.reference-picker-row {
+  max-width: 420px;
+  margin-bottom: 18px;
+}
+.reference-view {
+  display: none;
+}
+.reference-view.active {
+  display: block;
+}
+.htp-reference-summary {
+  margin-bottom: 12px;
+}
