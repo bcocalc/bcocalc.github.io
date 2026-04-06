@@ -992,7 +992,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha12', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha13', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1123,7 +1123,7 @@ const jobInfoBodyEl = document.getElementById('jobInfoBody');
 const jobInfoSummaryEl = document.getElementById('jobInfoSummary');
 const jobInfoToggleBtnEl = document.getElementById('jobInfoToggleBtn');
 const JOB_INFO_COLLAPSED_KEY = 'measurementCardJobInfoCollapsedV1';
-const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes'];
+const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType'];
 const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD'];
 const syncJobsBtnEl = document.getElementById('syncJobsBtn');
 const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
@@ -1619,7 +1619,7 @@ function exportJobImage() {
 
 function getStateFields() {
   return [
-    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','geometryLockToggle',
+    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
@@ -2474,11 +2474,68 @@ window.addEventListener('load', () => {
   window.setMode = function(mode){ oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); };
   syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
   initAlpha8WorkspaceActions();
+
+  function getText(id){ return document.getElementById(id)?.textContent?.trim() || '—'; }
+  function hasValue(id){ const v=document.getElementById(id)?.value; return !!String(v ?? '').trim(); }
+
+  function updateCurrentWorkspaceLive(){
+    const client=document.getElementById('jobClient')?.value?.trim() || '';
+    const location=document.getElementById('jobLocation')?.value?.trim() || '';
+    const description=document.getElementById('jobDescription')?.value?.trim() || '';
+    const machine=document.getElementById('machineType')?.value?.trim() || '—';
+    const operation=document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
+    const pipe=getText('summaryPipe');
+    const cutter=getText('summaryCutter');
+    const bco=getText('summaryBco');
+    const titleEl=document.getElementById('currentSnapshotTitle');
+    if(titleEl) titleEl.textContent=client || description || 'No active job';
+    const metaEl=document.getElementById('currentSnapshotMeta');
+    if(metaEl) metaEl.textContent=(location || machine !== '—') ? [location, machine !== '—' ? machine : ''].filter(Boolean).join(' • ') : 'Start with customer and location, then add machine and pipe setup.';
+    const ids={currentMachineStat:machine,currentOperationStat:operation,currentPipeStat:pipe,currentBcoStat:bco,currentPipeSetup:pipe,currentCutterSetup:cutter};
+    Object.entries(ids).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.textContent=val || '—'; });
+  }
+
+  function updateCardStageChecks(){
+    const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
+    const geometryReady=getText('summaryBco') !== '—' && getText('summaryPipe') !== '—';
+    const checks={ geometry: geometryReady, inputs:false, output:false, ready:false };
+    if(activeMode==='hotTap'){
+      checks.inputs = hasValue('md') && hasValue('ptc') && hasValue('mt');
+      checks.output = getText('ttd') !== '—';
+    } else if(activeMode==='htp'){
+      checks.inputs = hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc');
+      checks.output = getText('htpTco') !== '—';
+    } else if(activeMode==='lineStop'){
+      checks.inputs = hasValue('lsMd') && hasValue('lsTravel') && hasValue('lsMachineTravel');
+      checks.output = getText('ls_li') !== '—';
+    } else if(activeMode==='completionPlug'){
+      checks.inputs = hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt');
+      checks.output = getText('cp_li') !== '—';
+    }
+    checks.ready = checks.geometry && checks.inputs && checks.output;
+    const labelMap = {
+      cardCheckGeometry: checks.geometry ? 'Ready' : 'Waiting',
+      cardCheckInputs: checks.inputs ? 'Ready' : 'Waiting',
+      cardCheckOutput: checks.output ? 'Ready' : 'Waiting',
+      cardCheckReady: checks.ready ? 'Ready' : 'Not Ready'
+    };
+    Object.entries(labelMap).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) { el.textContent=val; el.dataset.state=val.toLowerCase().replace(/\s+/g,'-'); } });
+
+    const stageReadyMap = {
+      workflowStatusHotTap: activeMode==='hotTap' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('ttd') !== '—' ? 'Built' : 'Not Ready'),
+      workflowStatusHtp: activeMode==='htp' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('htpTco') !== '—' ? 'Built' : 'Not Ready'),
+      workflowStatusLineStop: activeMode==='lineStop' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('ls_li') !== '—' ? 'Built' : 'Not Ready'),
+      workflowStatusCompletionPlug: activeMode==='completionPlug' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('cp_li') !== '—' ? 'Built' : 'Not Ready')
+    };
+    Object.entries(stageReadyMap).forEach(([id,val])=>{ const el=document.getElementById(id); if(el){ el.textContent=val; el.dataset.state=val.toLowerCase().replace(/\s+/g,'-'); } });
+  }
+
   function updateCurrentJobLabel(){
     const client=document.getElementById('jobClient')?.value?.trim() || '';
     const location=document.getElementById('jobLocation')?.value?.trim() || '';
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
     const machine=document.getElementById('machineType')?.value?.trim() || '';
+    const operation=document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
     const pipeLabel=document.getElementById('summaryPipe')?.textContent?.trim() || '—';
     const bcoLabel=document.getElementById('summaryBco')?.textContent?.trim() || '—';
     const parts=[client, location].filter(Boolean);
@@ -2511,7 +2568,7 @@ window.addEventListener('load', () => {
     const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
     const activeLabel=document.querySelector('.submode-btn.active[data-mode]')?.textContent?.trim() || 'Hot Tap';
     const stage=document.getElementById('cardStageStat');
-    if(stage) stage.textContent=activeLabel;
+    if(stage) stage.textContent=operation === 'Hot Tap' ? activeLabel : operation;
     const focusStage=document.getElementById('cardFocusStage');
     if(focusStage) focusStage.textContent=activeLabel;
     const focusMachine=document.getElementById('cardFocusMachine');
@@ -2540,6 +2597,8 @@ window.addEventListener('load', () => {
       if(focusTitle) focusTitle.textContent=copy[0];
       if(focusDesc) focusDesc.textContent=copy[1];
     }
+    updateCurrentWorkspaceLive();
+    updateCardStageChecks();
     syncJobsWorkspace();
   }
 
@@ -2577,9 +2636,10 @@ window.addEventListener('load', () => {
     const jobsHistoryDrawer=document.getElementById('historyDrawerContent'); if (jobsHistoryDrawer) jobsHistoryDrawer.hidden=false;
     document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.addEventListener('click', ()=>window.setMode(card.dataset.workflowTarget)));
   }
-  ['jobClient','jobLocation','jobDescription','machineType'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
+  ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','cpStart','cpJbf','cpPt'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
   updateCurrentJobLabel();
   window.addEventListener('load', updateCurrentJobLabel);
+  document.querySelectorAll('select').forEach(el=>el.addEventListener('change', updateCurrentJobLabel));
   window.addEventListener('load', syncJobsWorkspace);
   const mirrorTargets=['firebaseStatus','jobsCloudStatus','unsyncedJobsCount']; mirrorTargets.forEach(id=>new MutationObserver(syncJobsWorkspace).observe(document.getElementById(id) || document.body,{childList:true,subtree:id==='jobsCloudStatus',characterData:true}));
 })();

@@ -3745,3 +3745,28 @@ body.measurement-page {
   .card-focus-stats{grid-template-columns:1fr 1fr}
   #cardScreen .mode-panel{padding:12px 12px 4px}
 }
+
+
+/* ===== 3.0.0-alpha13 current + card functional pass ===== */
+.current-live-shell{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin:12px 0 14px;}
+.current-live-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;}
+.current-live-card h4{margin:4px 0 6px;font-size:1.05rem;}
+.current-live-card p{margin:0;color:var(--muted-text,#aab7c8);font-size:.92rem;}
+.current-live-grid,.current-setup-grid,.card-checklist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px;}
+.current-live-stat,.card-check-item{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;}
+.current-live-stat span,.card-check-item span{font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;opacity:.72;}
+.current-live-stat strong,.card-check-item strong{font-size:.96rem;}
+.current-setup-grid .row{margin:0;}
+.workflow-card{justify-content:space-between;align-items:center;gap:10px;}
+.workflow-status{font-size:.72rem;font-weight:700;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.08);white-space:nowrap;}
+.workflow-status[data-state='ready'], .card-check-item strong[data-state='ready']{color:#7fe0a7;}
+.workflow-status[data-state='in-progress']{color:#ffd27a;}
+.workflow-status[data-state='built']{color:#8fc7ff;}
+.workflow-status[data-state='not-ready'], .card-check-item strong[data-state='not-ready'], .card-check-item strong[data-state='waiting']{color:#ffb0a8;}
+.card-check-item strong[data-state='ready']{color:#7fe0a7;}
+.card-check-item strong[data-state='waiting']{color:#ffd27a;}
+@media (max-width: 768px){
+  .current-live-shell,.current-live-grid,.current-setup-grid,.card-checklist{grid-template-columns:1fr;}
+  .workflow-card{align-items:flex-start;}
+  .workflow-status{align-self:flex-start;}
+}

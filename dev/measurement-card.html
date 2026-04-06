@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha12">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha13">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha12 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha13 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha12 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha13 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -119,6 +119,36 @@
         <strong>Calc → Card</strong>
         <span>Use BCO / ETA, then finish the measurement card.</span>
       </div>
+    </section>
+
+    <section class="current-live-shell">
+      <article class="current-live-card">
+        <div class="hero-eyebrow">Current Snapshot</div>
+        <h4 id="currentSnapshotTitle">No active job</h4>
+        <p id="currentSnapshotMeta">Start with customer and location, then add machine and pipe setup.</p>
+        <div class="current-live-grid">
+          <div class="current-live-stat"><span>Machine</span><strong id="currentMachineStat">—</strong></div>
+          <div class="current-live-stat"><span>Operation</span><strong id="currentOperationStat">Hot Tap</strong></div>
+          <div class="current-live-stat"><span>Pipe</span><strong id="currentPipeStat">—</strong></div>
+          <div class="current-live-stat"><span>BCO</span><strong id="currentBcoStat">—</strong></div>
+        </div>
+      </article>
+      <article class="current-live-card current-live-card-secondary">
+        <div class="hero-eyebrow">Field Setup</div>
+        <div class="current-setup-grid">
+          <div class="row"><label>Machine</label><input id="machineType" type="text" placeholder="Machine type"></div>
+          <div class="row"><label>Operation</label>
+            <select id="operationType">
+              <option value="Hot Tap">Hot Tap</option>
+              <option value="HTP">HTP</option>
+              <option value="Line Stop">Line Stop</option>
+              <option value="Completion Plug">Completion Plug</option>
+            </select>
+          </div>
+          <div class="row"><label>Pipe Setup</label><span id="currentPipeSetup" class="calc">—</span></div>
+          <div class="row"><label>Cutter</label><span id="currentCutterSetup" class="calc">—</span></div>
+        </div>
+      </article>
     </section>
 
   <section class="section job-info-section" id="jobInfoSection">
@@ -258,19 +288,19 @@
   <section class="workflow-strip card-workflow-strip">
     <article class="workflow-card active" data-workflow-target="hotTap">
       <span class="workflow-step">1</span>
-      <div><strong>Hot Tap</strong><span>Start the cut and rod math here.</span></div>
+      <div><strong>Hot Tap</strong><span>Start the cut and rod math here.</span></div><span class="workflow-status" id="workflowStatusHotTap">Not Ready</span>
     </article>
     <article class="workflow-card" data-workflow-target="htp">
       <span class="workflow-step">2</span>
-      <div><strong>HTP</strong><span>Auto-size branch, head, cutter, and ETA.</span></div>
+      <div><strong>HTP</strong><span>Auto-size branch, head, cutter, and ETA.</span></div><span class="workflow-status" id="workflowStatusHtp">Not Ready</span>
     </article>
     <article class="workflow-card" data-workflow-target="lineStop">
       <span class="workflow-step">3</span>
-      <div><strong>Line Stop</strong><span>Lower-in, turns, and valve positioning.</span></div>
+      <div><strong>Line Stop</strong><span>Lower-in, turns, and valve positioning.</span></div><span class="workflow-status" id="workflowStatusLineStop">Not Ready</span>
     </article>
     <article class="workflow-card" data-workflow-target="completionPlug">
       <span class="workflow-step">4</span>
-      <div><strong>Completion Plug</strong><span>Finish-out dimensions and checks.</span></div>
+      <div><strong>Completion Plug</strong><span>Finish-out dimensions and checks.</span></div><span class="workflow-status" id="workflowStatusCompletionPlug">Not Ready</span>
     </article>
   </section>
   <div class="card-subnav">
@@ -297,6 +327,12 @@
       <div class="card-focus-stat"><span>Machine</span><strong id="cardFocusMachine">—</strong></div>
       <div class="card-focus-stat"><span>Current BCO</span><strong id="cardFocusBco">—</strong></div>
       <div class="card-focus-stat"><span>Hot Tap Output</span><strong id="cardFocusOutput">—</strong></div>
+    </div>
+    <div class="card-checklist">
+      <div class="card-check-item"><span>Geometry</span><strong id="cardCheckGeometry">Waiting</strong></div>
+      <div class="card-check-item"><span>Inputs</span><strong id="cardCheckInputs">Waiting</strong></div>
+      <div class="card-check-item"><span>Output</span><strong id="cardCheckOutput">Waiting</strong></div>
+      <div class="card-check-item"><span>Stage Ready</span><strong id="cardCheckReady">Not Ready</strong></div>
     </div>
   </section>
   <section id="hotTapPanel" class="mode-panel active">
@@ -829,8 +865,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha12"></script>
-<script src="measurement.js?v=3.0.0-alpha12"></script>
+<script src="firebase-config.js?v=3.0.0-alpha13"></script>
+<script src="measurement.js?v=3.0.0-alpha13"></script>
   </section>
 </body>
 </html>
