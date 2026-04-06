@@ -2216,7 +2216,12 @@ if (bcoResultEl) {
     if (event.target.closest('.bco-inline-copy')) copyBcoResult();
   });
 }
-if (jobsSelectEl) jobsSelectEl.addEventListener('change', renderJobsList);
+if (jobsSelectEl) {
+  jobsSelectEl.addEventListener('change', renderJobsList);
+  jobsSelectEl.addEventListener('click', renderJobsList);
+  jobsSelectEl.addEventListener('keyup', renderJobsList);
+}
+
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
   setHistoryDrawerOpen(!isOpen);
