@@ -2448,10 +2448,33 @@ window.addEventListener('load', () => {
   subBtns.forEach(b=>b.addEventListener('click',()=>window.setMode(b.dataset.mode)));
   syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
   function updateCurrentJobLabel(){
-    const label=document.getElementById('topCurrentJobLabel'); if(!label) return;
-    const parts=[document.getElementById('jobClient')?.value, document.getElementById('jobLocation')?.value].filter(Boolean);
-    label.textContent=parts.length?parts.join(' • '):'No current job';
+    const client=document.getElementById('jobClient')?.value?.trim() || '';
+    const location=document.getElementById('jobLocation')?.value?.trim() || '';
+    const description=document.getElementById('jobDescription')?.value?.trim() || '';
+    const machine=document.getElementById('machineType')?.value?.trim() || '';
+    const pipeLabel=document.getElementById('summaryPipe')?.textContent?.trim() || '—';
+    const bcoLabel=document.getElementById('summaryBco')?.textContent?.trim() || '—';
+    const parts=[client, location].filter(Boolean);
+    const topLabel=document.getElementById('topCurrentJobLabel');
+    if(topLabel) topLabel.textContent=parts.length?parts.join(' • '):'No current job';
+    const homeTitle=document.getElementById('homeCurrentJobTitle');
+    if(homeTitle) homeTitle.textContent=client || description || 'No active job yet';
+    const homeSubtitle=document.getElementById('homeCurrentJobSubtitle');
+    if(homeSubtitle) homeSubtitle.textContent=location ? `${location}${description ? ' • ' + description : ''}` : (description || 'Set up a customer and location to get rolling.');
+    const jobOverviewName=document.getElementById('jobOverviewName');
+    if(jobOverviewName) jobOverviewName.textContent=client || description || 'No active job';
+    const jobOverviewMeta=document.getElementById('jobOverviewMeta');
+    if(jobOverviewMeta) jobOverviewMeta.textContent=location ? `${location}${description ? ' • ' + description : ''}` : 'Add customer and location details to start.';
+    const homePipe=document.getElementById('homePipeStat');
+    if(homePipe) homePipe.textContent=pipeLabel || '—';
+    const homeMachine=document.getElementById('homeMachineStat');
+    if(homeMachine) homeMachine.textContent=machine || '—';
+    const homeBco=document.getElementById('homeBcoStat');
+    if(homeBco) homeBco.textContent=bcoLabel || '—';
+    const homeStatus=document.getElementById('homeStatusStat');
+    if(homeStatus) homeStatus.textContent=client || location ? 'In Progress' : 'Draft';
   }
-  ['jobClient','jobLocation'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
+  ['jobClient','jobLocation','jobDescription','machineType'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
   updateCurrentJobLabel();
+  window.addEventListener('load', updateCurrentJobLabel);
 })();

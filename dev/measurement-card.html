@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha3">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha5">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha3 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha5 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha4 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha5 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -44,30 +44,82 @@
   </nav>
 
   <section id="homeScreen" class="screen-view active">
-    <div class="dashboard-hero">
+    <div class="dashboard-hero dashboard-hero-rich">
       <div>
         <div class="hero-eyebrow">Field Operations Dashboard</div>
-        <h2>TapCalc v3 Shell</h2>
-        <p>A true app-style layout for dev. Use the navigation to move between Home, Job, Calc, Card, Jobs, and Ref.</p>
+        <h2>TapCalc v3</h2>
+        <p>Start from the current job, jump into quick tools, or head straight to references and shared jobs.</p>
       </div>
       <div class="hero-actions">
-        <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
-        <button type="button" class="secondary-btn" data-go-screen="calc">Open Calc</button>
+        <button type="button" class="secondary-btn" data-go-screen="job">New / Edit Job</button>
+        <button type="button" class="secondary-btn" data-go-screen="card">Open Card</button>
       </div>
     </div>
 
-    <div class="dashboard-grid">
+    <section class="home-current-job-card">
+      <div class="home-current-job-top">
+        <div>
+          <div class="hero-eyebrow">Current Job</div>
+          <h3 id="homeCurrentJobTitle">No active job yet</h3>
+          <p id="homeCurrentJobSubtitle">Set up a customer and location to get rolling.</p>
+        </div>
+        <div class="home-current-job-actions">
+          <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
+          <button type="button" class="secondary-btn" data-go-screen="jobs">Open Jobs</button>
+        </div>
+      </div>
+      <div class="home-stat-grid">
+        <div class="home-stat"><span class="home-stat-label">Pipe</span><strong id="homePipeStat">—</strong></div>
+        <div class="home-stat"><span class="home-stat-label">Machine</span><strong id="homeMachineStat">—</strong></div>
+        <div class="home-stat"><span class="home-stat-label">BCO</span><strong id="homeBcoStat">—</strong></div>
+        <div class="home-stat"><span class="home-stat-label">Status</span><strong id="homeStatusStat">Draft</strong></div>
+      </div>
+    </section>
+
+    <div class="home-section-heading">
+      <h3>Quick Access</h3>
+      <span>Jump where you need to go</span>
+    </div>
+    <div class="dashboard-grid quick-grid">
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="calc"><strong>Quick BCO</strong><span>Pipe geometry and cutter setup</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="calc"><strong>Tap ETA</strong><span>Travel, RPM, feed rate, and time</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="card"><strong>Measurement Card</strong><span>Hot Tap first, then line stop and plug</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="jobs"><strong>Shared Jobs</strong><span>Search, open, and sync field work</span></button>
+    </div>
+
+    <div class="home-section-heading">
+      <h3>App Sections</h3>
+      <span>The new shell with clear lanes</span>
+    </div>
+    <div class="dashboard-grid app-sections-grid">
       <button type="button" class="dash-card" data-go-screen="job"><strong>Job</strong><span>Customer, location, machine, pipe setup</span></button>
       <button type="button" class="dash-card" data-go-screen="calc"><strong>Calc</strong><span>BCO and ETA tools</span></button>
       <button type="button" class="dash-card" data-go-screen="card"><strong>Card</strong><span>Hot Tap, HTP, Line Stop, Completion Plug</span></button>
       <button type="button" class="dash-card" data-go-screen="jobs"><strong>Jobs</strong><span>Local and shared job management</span></button>
       <button type="button" class="dash-card" data-go-screen="ref"><strong>Ref</strong><span>Charts, glossary, lookup tools</span></button>
-      <button type="button" class="dash-card" data-go-screen="job"><strong>Current Job</strong><span>Continue editing the active job</span></button>
+      <button type="button" class="dash-card" data-go-screen="job"><strong>Continue Job</strong><span>Pick up where you left off</span></button>
     </div>
   </section>
 
   <section id="jobScreen" class="screen-view">
 
+    <section class="job-overview-shell">
+      <div class="job-overview-card job-overview-primary">
+        <div class="hero-eyebrow">Job Workspace</div>
+        <h3>Build the job first</h3>
+        <p>Lock in the customer, location, pipe setup, and machine details here so Calc and Card have a clean foundation.</p>
+      </div>
+      <div class="job-overview-card">
+        <span class="job-overview-label">Current Job</span>
+        <strong id="jobOverviewName">No active job</strong>
+        <span id="jobOverviewMeta">Add customer and location details to start.</span>
+      </div>
+      <div class="job-overview-card">
+        <span class="job-overview-label">Next Up</span>
+        <strong>Calc → Card</strong>
+        <span>Use BCO / ETA, then finish the measurement card.</span>
+      </div>
+    </section>
 
   <section class="section job-info-section" id="jobInfoSection">
     <div class="job-info-header">
@@ -83,20 +135,37 @@
       </div>
     </div>
     <div class="job-info-body" id="jobInfoBody">
-      <div class="job-info-grid job-info-grid-primary">
-        <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
-        <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
-        <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
-        <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
-        <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
-        <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
-      </div>
-      <div class="job-info-subtitle">More Details</div>
-      <div class="job-info-grid job-info-grid-secondary">
-        <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
-        <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
-        <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
-        <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="3" placeholder="Notes"></textarea></div>
+      <div class="job-form-shell">
+        <section class="job-form-card">
+          <div class="job-form-card-head">
+            <h4>Job Basics</h4>
+            <span>Who, where, and what</span>
+          </div>
+          <div class="job-info-grid job-info-grid-primary">
+            <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
+            <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
+            <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
+            <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
+            <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
+            <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
+          </div>
+        </section>
+        <section class="job-form-card job-form-card-secondary">
+          <div class="job-form-card-head">
+            <h4>Field Details</h4>
+            <span>Conditions and notes</span>
+          </div>
+          <div class="job-info-grid job-info-grid-secondary">
+            <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
+            <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
+            <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
+            <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="4" placeholder="Notes"></textarea></div>
+          </div>
+          <div class="job-jump-actions">
+            <button type="button" class="secondary-btn" data-go-screen="calc">Go to Calc</button>
+            <button type="button" class="secondary-btn" data-go-screen="card">Go to Card</button>
+          </div>
+        </section>
       </div>
     </div>
   </section>
@@ -678,8 +747,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=2.28b1"></script>
-<script src="measurement.js?v=2.28b1"></script>
+<script src="firebase-config.js?v=3.0.0-alpha5"></script>
+<script src="measurement.js?v=3.0.0-alpha5"></script>
   </section>
 </body>
 </html>
