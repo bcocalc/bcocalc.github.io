@@ -2270,7 +2270,7 @@ async function saveCurrentJobToHistory() {
     }
   } catch (error) {
     console.error('TapCalc auto-sync failed', error);
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally only. Cloud upload was not verified. Retry from the Jobs tab. ${formatFirebaseError(error)}`;
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally only. Cloud upload was not verified. Retry from the Library tab. ${formatFirebaseError(error)}`;
   }
 }
 
@@ -2494,7 +2494,7 @@ window.addEventListener('load', () => {
     const location=document.getElementById('jobLocation')?.value?.trim() || '';
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
     const title = client || description || 'No active job yet';
-    const meta = location ? `${location}${description ? ' • ' + description : ''}` : 'Start a job in the Job screen, then save locally or sync to shared.';
+    const meta = location ? `${location}${description ? ' • ' + description : ''}` : 'Start a job in the Current screen, then save locally or sync to shared.';
     const currentTitle=document.getElementById('jobsCurrentTitle');
     if(currentTitle) currentTitle.textContent=title;
     const currentMeta=document.getElementById('jobsCurrentMeta');

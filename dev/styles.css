@@ -3635,7 +3635,7 @@ body.measurement-page {
 }
 
 
-/* ===== 3.0.0-alpha9 jobs/card/cache pass ===== */
+/* ===== 3.0.0-alpha10 jobs/card/cache pass ===== */
 .top-app-title,.version-badge{letter-spacing:.01em;}
 .workflow-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 14px;}
 .workflow-card{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#dce7f4;}
@@ -3665,7 +3665,7 @@ body.measurement-page {
 }
 
 
-/* ===== 3.0.0-alpha9 jobs functional pass ===== */
+/* ===== 3.0.0-alpha10 jobs functional pass ===== */
 .jobs-screen-topbar{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px 16px;margin-bottom:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:18px;}
 .jobs-screen-topbar h3{margin:4px 0 6px;color:#fff;}
 .jobs-screen-topbar p{margin:0;color:#bcd0e6;max-width:560px;font-size:.92rem;line-height:1.45;}

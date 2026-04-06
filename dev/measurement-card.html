@@ -15,7 +15,7 @@
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha9 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha10 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha9 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha10 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -36,10 +36,10 @@
 
   <nav class="screen-nav" aria-label="Primary">
     <button type="button" class="screen-tab active" data-screen="home">Home</button>
-    <button type="button" class="screen-tab" data-screen="job">Job</button>
+    <button type="button" class="screen-tab" data-screen="job">Current</button>
     <button type="button" class="screen-tab" data-screen="calc">Calc</button>
     <button type="button" class="screen-tab" data-screen="card">Card</button>
-    <button type="button" class="screen-tab" data-screen="jobs">Jobs</button>
+    <button type="button" class="screen-tab" data-screen="jobs">Library</button>
     <button type="button" class="screen-tab" data-screen="ref">Ref</button>
   </nav>
 
@@ -64,8 +64,8 @@
           <p id="homeCurrentJobSubtitle">Set up a customer and location to get rolling.</p>
         </div>
         <div class="home-current-job-actions">
-          <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
-          <button type="button" class="secondary-btn" data-go-screen="jobs">Open Jobs</button>
+          <button type="button" class="secondary-btn" data-go-screen="job">Open Current</button>
+          <button type="button" class="secondary-btn" data-go-screen="jobs">Open Currents</button>
         </div>
       </div>
       <div class="home-stat-grid">
@@ -92,10 +92,10 @@
       <span>The new shell with clear lanes</span>
     </div>
     <div class="dashboard-grid app-sections-grid">
-      <button type="button" class="dash-card" data-go-screen="job"><strong>Job</strong><span>Customer, location, machine, pipe setup</span></button>
+      <button type="button" class="dash-card" data-go-screen="job"><strong>Current</strong><span>Customer, location, machine, pipe setup</span></button>
       <button type="button" class="dash-card" data-go-screen="calc"><strong>Calc</strong><span>BCO and ETA tools</span></button>
       <button type="button" class="dash-card" data-go-screen="card"><strong>Card</strong><span>Hot Tap, HTP, Line Stop, Completion Plug</span></button>
-      <button type="button" class="dash-card" data-go-screen="jobs"><strong>Jobs</strong><span>Local and shared job management</span></button>
+      <button type="button" class="dash-card" data-go-screen="jobs"><strong>Library</strong><span>Local and shared job management</span></button>
       <button type="button" class="dash-card" data-go-screen="ref"><strong>Ref</strong><span>Charts, glossary, lookup tools</span></button>
       <button type="button" class="dash-card" data-go-screen="job"><strong>Continue Job</strong><span>Pick up where you left off</span></button>
     </div>
@@ -105,12 +105,12 @@
 
     <section class="job-overview-shell">
       <div class="job-overview-card job-overview-primary">
-        <div class="hero-eyebrow">Job Workspace</div>
+        <div class="hero-eyebrow">Current Workspace</div>
         <h3>Build the job first</h3>
         <p>Lock in the customer, location, pipe setup, and machine details here so Calc and Card have a clean foundation.</p>
       </div>
       <div class="job-overview-card">
-        <span class="job-overview-label">Current Job</span>
+        <span class="job-overview-label">Current Work</span>
         <strong id="jobOverviewName">No active job</strong>
         <span id="jobOverviewMeta">Add customer and location details to start.</span>
       </div>
@@ -124,7 +124,7 @@
   <section class="section job-info-section" id="jobInfoSection">
     <div class="job-info-header">
       <div class="job-info-heading">
-        <h3>Job Information</h3>
+        <h3>Current Job Setup</h3>
         <button type="button" id="jobInfoToggleBtn" class="secondary-btn job-info-toggle-btn" aria-expanded="true">Collapse</button>
       </div>
       <div class="job-info-summary" id="jobInfoSummary">No job info yet.</div>
@@ -707,7 +707,7 @@
   <section id="jobsScreen" class="screen-view">
   <section class="jobs-screen-topbar">
     <div>
-      <div class="hero-eyebrow">Jobs Workspace</div>
+      <div class="hero-eyebrow">Library Workspace</div>
       <h3>Manage local and shared jobs</h3>
       <p>Open what you need fast, keep the current job visible, and stop wasting space on explanation cards.</p>
     </div>
@@ -722,9 +722,9 @@
     <article class="jobs-status-card jobs-status-main">
       <span class="jobs-mini-label">Current Job</span>
       <strong id="jobsCurrentTitle">No active job yet</strong>
-      <span id="jobsCurrentMeta" class="jobs-mini-note">Start a job in the Job screen, then save locally or sync to shared.</span>
+      <span id="jobsCurrentMeta" class="jobs-mini-note">Start a job in the Current screen, then save locally or sync to shared.</span>
       <div class="jobs-current-actions">
-        <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
+        <button type="button" class="secondary-btn" data-go-screen="job">Open Current</button>
         <button type="button" class="secondary-btn" data-go-screen="card">Open Card</button>
         <button type="button" id="syncJobsBtnClone">Sync Shared</button>
       </div>
@@ -756,7 +756,7 @@
 
         <div class="jobs-actions jobs-actions-compact">
           <button type="button" id="saveHistoryBtnClone" class="secondary-btn">Save Current</button>
-          <button type="button" class="secondary-btn" data-go-screen="job">Edit Job</button>
+          <button type="button" class="secondary-btn" data-go-screen="job">Edit Current</button>
           <button type="button" class="secondary-btn" data-go-screen="calc">Go to Calc</button>
         </div>
 
