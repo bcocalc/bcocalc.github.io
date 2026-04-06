@@ -1742,7 +1742,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.28b1'
+      version: 'v2.28b2'
     },
     job: {
       client: state.jobClient || '',
@@ -1851,11 +1851,16 @@ async function ensureFirebaseReady() {
     return { enabled: false };
   }
   try {
-    const [appModule, firestoreModule] = await Promise.all([
+    const [appModule, firestoreModule, authModule] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
     ]);
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
+    const auth = authModule.getAuth(app);
+    if (!auth.currentUser) {
+      await authModule.signInAnonymously(auth);
+    }
     firebaseDb = firestoreModule.getFirestore(app);
     firebaseModuleCache = firestoreModule;
     if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
@@ -2046,8 +2051,10 @@ function renderJobsList() {
     return;
   }
 
+  const previousSelectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : '';
+
   if (jobsSelectEl) {
-    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+    const optionsHtml = jobs.map(({ source, id, record }) => {
       const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
@@ -2063,11 +2070,15 @@ function renderJobsList() {
             : 'Search';
       const label = `${groupPrefix} • ${title} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
       const safe = label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-      return `<option value="${id}">${safe}</option>`;
+      const optionId = String(id);
+      const selectedAttr = optionId === previousSelectedId ? ' selected' : '';
+      return `<option value="${optionId}"${selectedAttr}>${safe}</option>`;
     }).join('');
 
-    const selectedStillExists = jobs.some((job) => String(job.id) === String(jobsSelectEl.value));
-    if (!selectedStillExists) jobsSelectEl.value = String(jobs[0].id);
+    jobsSelectEl.innerHTML = optionsHtml;
+
+    const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
+    jobsSelectEl.value = selectedStillExists ? previousSelectedId : String(jobs[0].id);
   }
 
   const selectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : String(jobs[0].id);
@@ -2375,7 +2386,12 @@ if (bcoResultEl) {
     if (event.target.closest('.bco-inline-copy')) copyBcoResult();
   });
 }
-if (jobsSelectEl) jobsSelectEl.addEventListener('change', renderJobsList);
+if (jobsSelectEl) {
+  jobsSelectEl.addEventListener('change', renderJobsList);
+  jobsSelectEl.addEventListener('click', renderJobsList);
+  jobsSelectEl.addEventListener('keyup', renderJobsList);
+  jobsSelectEl.addEventListener('mouseup', () => setTimeout(renderJobsList, 0));
+}
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
   setHistoryDrawerOpen(!isOpen);

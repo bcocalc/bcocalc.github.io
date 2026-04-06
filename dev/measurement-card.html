@@ -14,8 +14,8 @@
 <div class="card">
   <header class="app-header">
     <div class="app-tabs">
-      <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">TapCalc Dev v2.28b1 · 2026-03-22</span>
+      <a href="measurement-card.html" class="tab active">TapCalc v3</a>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha1 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -56,14 +56,35 @@
     </div>
   </section>
 
-  <div class="operation-switcher" role="tablist" aria-label="Measurement card mode">
-    <button type="button" class="mode-btn active" data-mode="bco">BCO</button>
-    <button type="button" class="mode-btn" data-mode="hotTap">Hot Tap</button>
-    <button type="button" class="mode-btn" data-mode="htp">HTP</button>
-    <button type="button" class="mode-btn" data-mode="lineStop">Line Stop</button>
-    <button type="button" class="mode-btn" data-mode="completionPlug">Completion Plug</button>
-    <button type="button" class="mode-btn" data-mode="eta">Tap ETA</button>
-    <button type="button" class="mode-btn" data-mode="glossary">Reference</button>
+  <section class="v3-home-strip">
+    <div class="v3-home-card">
+      <div class="v3-home-eyebrow">TapCalc v3 Dev</div>
+      <h2>Field Operations Dashboard</h2>
+      <p>Rebuild shell in progress. Use the sections below as the new app structure while we rebuild module by module in dev.</p>
+      <div class="v3-quick-actions">
+        <button type="button" class="v3-quick-btn active">Continue Current Job</button>
+        <button type="button" class="v3-quick-btn">New Job</button>
+        <button type="button" class="v3-quick-btn">Open Shared Jobs</button>
+      </div>
+    </div>
+    <div class="v3-home-grid">
+      <div class="v3-mini-card"><strong>Home</strong><span>Dashboard and quick actions</span></div>
+      <div class="v3-mini-card"><strong>Job</strong><span>Customer, pipe, machine, operation</span></div>
+      <div class="v3-mini-card"><strong>Calc</strong><span>BCO, ETA, quick tools</span></div>
+      <div class="v3-mini-card"><strong>Card</strong><span>Hot Tap, Line Stop, Completion Plug</span></div>
+      <div class="v3-mini-card"><strong>Jobs</strong><span>Local and shared job management</span></div>
+      <div class="v3-mini-card"><strong>Ref</strong><span>Charts, pipe data, machine references</span></div>
+    </div>
+  </section>
+
+  <div class="operation-switcher v3-shell-nav" role="tablist" aria-label="Measurement card mode">
+    <button type="button" class="mode-btn active" data-mode="bco">Calc</button>
+    <button type="button" class="mode-btn" data-mode="hotTap">Card · Hot Tap</button>
+    <button type="button" class="mode-btn" data-mode="htp">Card · HTP</button>
+    <button type="button" class="mode-btn" data-mode="lineStop">Card · Line Stop</button>
+    <button type="button" class="mode-btn" data-mode="completionPlug">Card · Completion Plug</button>
+    <button type="button" class="mode-btn" data-mode="eta">Calc · ETA</button>
+    <button type="button" class="mode-btn" data-mode="glossary">Ref</button>
     <button type="button" class="mode-btn" data-mode="jobs">Jobs</button>
   </div>
 
