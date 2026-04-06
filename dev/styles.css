@@ -3854,3 +3854,19 @@ body.measurement-page {
     grid-template-columns:1fr;
   }
 }
+
+
+/* alpha18 broad functional pass */
+.current-action-strip{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding:16px 18px;margin:16px 0 18px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(10,25,52,.85);}
+.current-action-copy{display:flex;flex-direction:column;gap:4px;max-width:560px;}
+.current-action-copy strong{font-size:1rem;color:#fff;}
+.current-action-copy span:last-child{color:#a8c1ee;font-size:.92rem;}
+.current-action-buttons{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end;}
+.current-action-buttons .secondary-btn{min-width:140px;}
+.job-info-summary{display:block;overflow-wrap:anywhere;}
+.job-tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;}
+.job-form-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;}
+.job-form-card .row{display:grid;grid-template-columns:1fr;gap:8px;align-items:start;}
+.job-form-card .row input,.job-form-card .row select,.job-form-card .row textarea{width:100%;min-width:0;}
+.job-form-card .job-notes-row textarea{min-height:112px;resize:vertical;}
+@media (max-width: 980px){.job-form-shell{grid-template-columns:1fr}.current-action-strip{flex-direction:column}.current-action-buttons{justify-content:flex-start}}

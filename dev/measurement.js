@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha17';
+const BUILD_VERSION = '3.0.0-alpha18';
 
 (function(){
 
@@ -2478,6 +2478,7 @@ window.addEventListener('load', () => {
   window.setMode = function(mode){ oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); };
   syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
   initAlpha8WorkspaceActions();
+  initAlpha18CoreActions();
 
   function getText(id){ return document.getElementById(id)?.textContent?.trim() || '—'; }
   function hasValue(id){ const v=document.getElementById(id)?.value; return !!String(v ?? '').trim(); }
@@ -2549,7 +2550,7 @@ window.addEventListener('load', () => {
     const bcoLabel=document.getElementById('summaryBco')?.textContent?.trim() || '—';
     const parts=[client, location].filter(Boolean);
     const topLabel=document.getElementById('topCurrentJobLabel');
-    if(topLabel) topLabel.textContent=parts.length?parts.join(' • '):'No current job';
+    if(topLabel) topLabel.textContent=parts.length?parts.join(' • '):(description || 'No current job');
     const homeTitle=document.getElementById('homeCurrentJobTitle');
     if(homeTitle) homeTitle.textContent=client || description || 'No active job yet';
     const homeSubtitle=document.getElementById('homeCurrentJobSubtitle');
@@ -2629,7 +2630,7 @@ window.addEventListener('load', () => {
     const unsyncedStat=document.getElementById('jobsUnsyncedStat');
     if(unsyncedStat) unsyncedStat.textContent=unsynced;
     try {
-      const history = JSON.parse(localStorage.getItem('tapcalc_history_v2') || '[]');
+      const history = JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]');
       const localSaved=document.getElementById('jobsLocalSavedCount');
       if(localSaved) localSaved.textContent=String(history.length || 0);
     } catch {}
@@ -2646,6 +2647,12 @@ window.addEventListener('load', () => {
     document.getElementById('syncJobsBtnClone')?.addEventListener('click', ()=>document.getElementById('syncJobsBtn')?.click());
     const jobsHistoryDrawer=document.getElementById('historyDrawerContent'); if (jobsHistoryDrawer) jobsHistoryDrawer.hidden=false;
     document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.addEventListener('click', ()=>window.setMode(card.dataset.workflowTarget)));
+  }
+
+  function initAlpha18CoreActions(){
+    document.getElementById('currentSaveLocalBtn')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
+    document.getElementById('currentSyncSharedBtn')?.addEventListener('click', ()=>document.getElementById('syncJobsBtn')?.click());
+    document.getElementById('currentResetBtn')?.addEventListener('click', ()=>document.getElementById('resetJobBtn')?.click());
   }
   function syncOperationSelection(){
     const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
