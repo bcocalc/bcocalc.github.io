@@ -590,6 +590,18 @@ if (referenceViewSelectEl) {
     setReferenceView(referenceViewSelectEl.value || 'converter');
   }
 }
+const referenceShortcutEls = Array.from(document.querySelectorAll('[data-reference-target]'));
+function syncReferenceShortcutState(view) {
+  referenceShortcutEls.forEach((el) => el.classList.toggle('active', el.dataset.referenceTarget === view));
+}
+referenceShortcutEls.forEach((el) => {
+  el.addEventListener('click', () => {
+    const view = el.dataset.referenceTarget || 'converter';
+    setReferenceView(view);
+    syncReferenceShortcutState(view);
+  });
+});
+syncReferenceShortcutState(referenceViewSelectEl?.value || 'converter');
 
 const htpChartData = {
   '3': { branch: '6"', head: '3" – 4"', cutter: 5.500, bco: 3.000 },
@@ -980,7 +992,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha9', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha11', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1121,6 +1133,8 @@ const jobsSelectEl = document.getElementById('jobsSelect');
 const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
 const jobsSearchInputEl = document.getElementById('jobsSearchInput');
 const jobsViewChipEls = Array.from(document.querySelectorAll('.jobs-view-chip'));
+const libraryLaneBtnEls = Array.from(document.querySelectorAll('.library-lane-btn'));
+const libraryLanePanelEls = Array.from(document.querySelectorAll('[data-library-lane-panel]'));
 const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
 const firebaseStatusEl = document.getElementById('firebaseStatus');
 const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
@@ -1160,6 +1174,16 @@ function renderBcoResult(payload = {}) {
   if (!bcoResultEl) return;
   bcoResultEl.innerHTML = buildBcoResultMarkup(payload);
 }
+
+function setLibraryLane(lane) {
+  const next = lane === 'shared' ? 'shared' : 'local';
+  libraryLaneBtnEls.forEach((btn) => btn.classList.toggle('active', btn.dataset.libraryLane === next));
+  libraryLanePanelEls.forEach((panel) => panel.classList.toggle('active', panel.dataset.libraryLanePanel === next));
+  try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
+}
+
+libraryLaneBtnEls.forEach((btn) => btn.addEventListener('click', () => setLibraryLane(btn.dataset.libraryLane)));
+try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch { setLibraryLane('local'); }
 
 function getJobsGroupingValue(record, mode = 'all') {
   if (mode === 'customer') return (record?.job?.client || 'No customer').trim() || 'No customer';

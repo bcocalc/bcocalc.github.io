@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha9">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha11">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha10 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha11 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha10 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha11 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -65,7 +65,7 @@
         </div>
         <div class="home-current-job-actions">
           <button type="button" class="secondary-btn" data-go-screen="job">Open Current</button>
-          <button type="button" class="secondary-btn" data-go-screen="jobs">Open Currents</button>
+          <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
         </div>
       </div>
       <div class="home-stat-grid">
@@ -502,21 +502,45 @@
   </section>
 
   <section id="refScreen" class="screen-view">
-  <section id="glossaryPanel" class="mode-panel">
-    <div class="section glossary-section">
-      <h3>Reference Tools</h3>
-      <p class="note">Pick the reference you want instead of digging through a pile of tables like a raccoon in a toolbox.</p>
+  <section class="ref-screen-topbar">
+    <div>
+      <div class="hero-eyebrow">Reference Workspace</div>
+      <h3>Lookup charts and field helpers fast</h3>
+      <p>Pick a category and keep the right chart in front of you instead of hunting through a long page.</p>
+    </div>
+    <div class="ref-top-actions">
+      <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="converter">Decimal / Fraction</button>
+      <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="bolting">Bolting</button>
+    </div>
+  </section>
 
-      <div class="row reference-picker-row">
-        <label for="referenceViewSelect">Reference</label>
-        <select id="referenceViewSelect">
-          <option value="converter">Decimal / Fraction</option>
-          <option value="bolting">Bolting Chart</option>
-          <option value="glossary">Glossary</option>
-          <option value="htpCutter">HTP Cutter Chart</option>
-          <option value="plant150">150# Plant Series</option>
-          <option value="plant600">600# Plant Series</option>
-        </select>
+  <section class="ref-category-strip">
+    <button type="button" class="ref-category-card active" data-reference-target="converter"><strong>Decimal / Fraction</strong><span>Quick conversion and full chart</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="bolting"><strong>Bolting Chart</strong><span>Flange class, stud, wrench, counts</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="glossary"><strong>Glossary</strong><span>Abbreviations and field meanings</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="htpCutter"><strong>HTP Cutter</strong><span>Pipe size, branch, head, cutter</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="plant150"><strong>150# Plant</strong><span>Jack-bolt and packing wrench info</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="plant600"><strong>600# Plant</strong><span>Higher class flange reference</span></button>
+  </section>
+
+  <section id="glossaryPanel" class="mode-panel active">
+    <div class="section glossary-section reference-workspace-card">
+      <div class="reference-screen-head">
+        <div>
+          <h3>Reference Tools</h3>
+          <p class="note">Use the category cards or the selector below to jump straight to the tool you need.</p>
+        </div>
+        <div class="row reference-picker-row compact-reference-picker">
+          <label for="referenceViewSelect">Category</label>
+          <select id="referenceViewSelect">
+            <option value="converter">Decimal / Fraction</option>
+            <option value="bolting">Bolting Chart</option>
+            <option value="glossary">Glossary</option>
+            <option value="htpCutter">HTP Cutter Chart</option>
+            <option value="plant150">150# Plant Series</option>
+            <option value="plant600">600# Plant Series</option>
+          </select>
+        </div>
       </div>
 
       <div class="reference-view active" data-reference-view="converter">
@@ -567,7 +591,7 @@
         <div class="reference-grid">
           <div class="reference-card bolting-card">
             <h4>Bolting Chart</h4>
-            <p class="reference-copy">Rebuilt into TapCalc for offline use. Pick a flange class and pipe size to pull up bolt count, stud diameter, stud length, and wrench size right inside the app.</p>
+            <p class="reference-copy">Pick a flange class and pipe size to pull bolt count, stud diameter, stud length, and wrench size right inside the app.</p>
 
             <div class="bolting-controls">
               <div class="converter-inline bolting-selects">
@@ -586,26 +610,7 @@
               <div class="converter-inline bolting-selects">
                 <label for="boltingSizeSelect">Pipe Size</label>
                 <select id="boltingSizeSelect">
-                  <option value="1/2">1/2</option>
-                  <option value="3/4">3/4</option>
-                  <option value="1">1</option>
-                  <option value="1-1/4">1-1/4</option>
-                  <option value="1-1/2">1-1/2</option>
-                  <option value="2">2</option>
-                  <option value="2-1/2">2-1/2</option>
-                  <option value="3">3</option>
-                  <option value="3-1/2">3-1/2</option>
-                  <option value="4">4</option>
-                  <option value="5">5</option>
-                  <option value="6">6</option>
-                  <option value="8">8</option>
-                  <option value="10">10</option>
-                  <option value="12">12</option>
-                  <option value="14">14</option>
-                  <option value="16">16</option>
-                  <option value="18">18</option>
-                  <option value="20">20</option>
-                  <option value="24">24</option>
+                  <option value="1/2">1/2</option><option value="3/4">3/4</option><option value="1">1</option><option value="1-1/4">1-1/4</option><option value="1-1/2">1-1/2</option><option value="2">2</option><option value="2-1/2">2-1/2</option><option value="3">3</option><option value="3-1/2">3-1/2</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="24">24</option>
                 </select>
               </div>
             </div>
@@ -634,30 +639,9 @@
         <h3 class="reference-subheading">Glossary</h3>
         <div class="glossary-table-wrap">
           <table class="glossary-table">
-            <thead>
-              <tr><th>Abbrev.</th><th>Meaning</th></tr>
-            </thead>
+            <thead><tr><th>Abbrev.</th><th>Meaning</th></tr></thead>
             <tbody>
-              <tr><td>MD</td><td>Measured Distance</td></tr>
-              <tr><td>LD</td><td>Lost Distance</td></tr>
-              <tr><td>LI</td><td>Lower In</td></tr>
-              <tr><td>PTC</td><td>Pilot To Cutter</td></tr>
-              <tr><td>BCO</td><td>Book Cut Out</td></tr>
-              <tr><td>CCO</td><td>Coupon Cut Out</td></tr>
-              <tr><td>MCO</td><td>Maximum Cut Out</td></tr>
-              <tr><td>POP</td><td>Pilot On Pipe</td></tr>
-              <tr><td>COP</td><td>Cutter On Pipe</td></tr>
-              <tr><td>TTD</td><td>Total Travel Distance</td></tr>
-              <tr><td>TCO</td><td>Total Cutout</td></tr>
-              <tr><td>MT</td><td>Machine Travel</td></tr>
-              <tr><td>POD</td><td>Pipe Outside Diameter</td></tr>
-              <tr><td>VB</td><td>Valve Bore</td></tr>
-              <tr><td>GTF</td><td>Gate To Flange</td></tr>
-              <tr><td>Valve T</td><td>Valve Turns</td></tr>
-              <tr><td>Seg T</td><td>Segment Turns</td></tr>
-              <tr><td>-1 Wall</td><td>Minus One Wall Thickness</td></tr>
-              <tr><td>JBF</td><td>Jack Bolt to Flange</td></tr>
-              <tr><td>PT</td><td>Plug Thickness</td></tr>
+              <tr><td>MD</td><td>Measured Distance</td></tr><tr><td>LD</td><td>Lost Distance</td></tr><tr><td>LI</td><td>Lower In</td></tr><tr><td>PTC</td><td>Pilot To Cutter</td></tr><tr><td>BCO</td><td>Book Cut Out</td></tr><tr><td>CCO</td><td>Coupon Cut Out</td></tr><tr><td>MCO</td><td>Maximum Cut Out</td></tr><tr><td>POP</td><td>Pilot On Pipe</td></tr><tr><td>COP</td><td>Cutter On Pipe</td></tr><tr><td>TTD</td><td>Total Travel Distance</td></tr><tr><td>TCO</td><td>Total Cutout</td></tr><tr><td>MT</td><td>Machine Travel</td></tr><tr><td>POD</td><td>Pipe Outside Diameter</td></tr><tr><td>VB</td><td>Valve Bore</td></tr><tr><td>GTF</td><td>Gate To Flange</td></tr><tr><td>Valve T</td><td>Valve Turns</td></tr><tr><td>Seg T</td><td>Segment Turns</td></tr><tr><td>-1 Wall</td><td>Minus One Wall Thickness</td></tr><tr><td>JBF</td><td>Jack Bolt to Flange</td></tr><tr><td>PT</td><td>Plug Thickness</td></tr>
             </tbody>
           </table>
         </div>
@@ -666,50 +650,29 @@
       <div class="reference-view" data-reference-view="htpCutter">
         <h3 class="reference-subheading">HTP Cutter Chart</h3>
         <p class="note">Full auto lookup used by the HTP panel.</p>
-        <div class="glossary-table-wrap">
-          <table class="glossary-table">
-            <thead>
-              <tr><th>Pipe Size</th><th>Branch Size</th><th>HTP Head</th><th>Cutter Size</th></tr>
-            </thead>
-            <tbody id="htpReferenceBody"></tbody>
-          </table>
-        </div>
+        <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Pipe Size</th><th>Branch Size</th><th>HTP Head</th><th>Cutter Size</th></tr></thead><tbody id="htpReferenceBody"></tbody></table></div>
       </div>
 
       <div class="reference-view" data-reference-view="plant150">
         <h3 class="reference-subheading">150# Plant Series Flange Information</h3>
-        <div class="glossary-table-wrap">
-          <table class="glossary-table">
-            <thead>
-              <tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr>
-            </thead>
-            <tbody id="plant150Body"></tbody>
-          </table>
-        </div>
+        <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant150Body"></tbody></table></div>
       </div>
 
       <div class="reference-view" data-reference-view="plant600">
         <h3 class="reference-subheading">600# Plant Series Flange Information</h3>
-        <div class="glossary-table-wrap">
-          <table class="glossary-table">
-            <thead>
-              <tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr>
-            </thead>
-            <tbody id="plant600Body"></tbody>
-          </table>
-        </div>
+        <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant600Body"></tbody></table></div>
       </div>
     </div>
   </section>
 
   </section>
 
-  <section id="jobsScreen" class="screen-view">
+<section id="jobsScreen" class="screen-view">
   <section class="jobs-screen-topbar">
     <div>
       <div class="hero-eyebrow">Library Workspace</div>
-      <h3>Manage local and shared jobs</h3>
-      <p>Open what you need fast, keep the current job visible, and stop wasting space on explanation cards.</p>
+      <h3>Manage saved and shared work</h3>
+      <p>Keep the current job in view, then jump between local saves and shared results without a long scroll.</p>
     </div>
     <div class="jobs-top-actions">
       <button type="button" id="saveHistoryBtnJobs">Save Local</button>
@@ -743,9 +706,14 @@
     </article>
   </section>
 
+  <section class="library-lane-switch" aria-label="Library view switch">
+    <button type="button" class="library-lane-btn active" data-library-lane="local">Local</button>
+    <button type="button" class="library-lane-btn" data-library-lane="shared">Shared</button>
+  </section>
+
   <section id="jobsPanel" class="mode-panel active jobs-workspace-panel">
     <div class="jobs-workspace-grid">
-      <div class="section jobs-panel-card jobs-panel-manage jobs-panel-local">
+      <div class="section jobs-panel-card jobs-panel-manage jobs-panel-local library-lane active" data-library-lane-panel="local">
         <div class="jobs-section-head">
           <div>
             <h3>Local Jobs</h3>
@@ -777,7 +745,7 @@
         </div>
       </div>
 
-      <div class="section jobs-panel-card jobs-panel-library jobs-panel-shared">
+      <div class="section jobs-panel-card jobs-panel-library jobs-panel-shared library-lane" data-library-lane-panel="shared">
         <div class="jobs-section-head">
           <div>
             <h3>Shared Jobs</h3>
@@ -841,8 +809,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha9"></script>
-<script src="measurement.js?v=3.0.0-alpha9"></script>
+<script src="firebase-config.js?v=3.0.0-alpha11"></script>
+<script src="measurement.js?v=3.0.0-alpha11"></script>
   </section>
 </body>
 </html>
