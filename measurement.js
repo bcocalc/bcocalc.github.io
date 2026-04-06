@@ -1887,8 +1887,10 @@ function renderJobsList() {
     return;
   }
 
+  const previousSelectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : '';
+
   if (jobsSelectEl) {
-    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+    const optionsHtml = jobs.map(({ source, id, record }) => {
       const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
@@ -1904,11 +1906,15 @@ function renderJobsList() {
             : 'Search';
       const label = `${groupPrefix} • ${title} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
       const safe = label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-      return `<option value="${id}">${safe}</option>`;
+      const optionId = String(id);
+      const selectedAttr = optionId === previousSelectedId ? ' selected' : '';
+      return `<option value="${optionId}"${selectedAttr}>${safe}</option>`;
     }).join('');
 
-    const selectedStillExists = jobs.some((job) => String(job.id) === String(jobsSelectEl.value));
-    if (!selectedStillExists) jobsSelectEl.value = String(jobs[0].id);
+    jobsSelectEl.innerHTML = optionsHtml;
+
+    const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
+    jobsSelectEl.value = selectedStillExists ? previousSelectedId : String(jobs[0].id);
   }
 
   const selectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : String(jobs[0].id);
