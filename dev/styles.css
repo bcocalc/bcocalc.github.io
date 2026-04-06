@@ -3714,3 +3714,34 @@ body.measurement-page {
 @media (min-width:901px){.jobs-workspace-grid{grid-template-columns:1fr;}.library-lane-switch{max-width:320px;}}
 @media (max-width:900px){.ref-screen-topbar{flex-direction:column;}.ref-top-actions{width:100%;}.ref-top-actions button{flex:1;min-width:0;}.ref-category-strip{grid-template-columns:1fr 1fr;}}
 @media (max-width:700px){.ref-category-strip{grid-template-columns:1fr;}.reference-screen-head{align-items:flex-start;}.compact-reference-picker{min-width:0;max-width:none;width:100%;}.library-lane-switch{position:sticky;top:58px;z-index:35;background:#081a30;padding:8px 0 4px;}}
+
+
+/* ===== 3.0.0-alpha12 card workflow pass ===== */
+.card-focus-shell{background:linear-gradient(180deg,#122849,#0e1e34);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 16px;margin:0 0 14px;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.card-focus-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;margin-bottom:12px}
+.card-focus-head h3{margin:4px 0 8px;color:#fff;font-size:1.08rem}
+.card-focus-head p{margin:0;color:#c1d1ea;max-width:620px;font-size:.92rem;line-height:1.45}
+.card-focus-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.card-focus-actions .secondary-btn{width:auto;min-width:118px}
+.card-focus-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.card-focus-stat{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:5px}
+.card-focus-stat span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8ea8d1}
+.card-focus-stat strong{color:#fff;font-size:1rem}
+#cardScreen .mode-panel{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:14px 14px 6px;margin-bottom:14px}
+#cardScreen .mode-panel .section{background:rgba(255,255,255,.045)!important;border:1px solid rgba(255,255,255,.08)!important;border-radius:16px!important}
+#cardScreen .mode-panel .section h3{display:flex;align-items:center;justify-content:space-between}
+#cardScreen .mode-panel .section h3::after{content:'Stage Inputs';font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:#8ea8d1;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);padding:4px 8px;border-radius:999px}
+#hotTapPanel .section:last-child h3::after{content:'On Rod'}
+#htpPanel .section:first-child h3::after{content:'Auto Setup'}
+#htpPanel .section:last-child h3::after{content:'ETA'}
+#lineStopPanel .section:first-child h3::after{content:'Line Stop'}
+#lineStopPanel .section:last-child h3::after{content:'Turns / Checks'}
+#completionPlugPanel .section:first-child h3::after{content:'Completion Plug'}
+#completionPlugPanel .section:last-child h3::after{content:'Checks'}
+@media (max-width: 768px){
+  .card-focus-head{flex-direction:column}
+  .card-focus-actions{width:100%;justify-content:flex-start}
+  .card-focus-actions .secondary-btn{flex:1;min-width:0}
+  .card-focus-stats{grid-template-columns:1fr 1fr}
+  #cardScreen .mode-panel{padding:12px 12px 4px}
+}

@@ -992,7 +992,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha11', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha12', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2508,8 +2508,38 @@ window.addEventListener('load', () => {
     if(cardJob) cardJob.textContent=client || description || 'No active job';
     const cardPipe=document.getElementById('cardCurrentPipe');
     if(cardPipe) cardPipe.textContent=pipeLabel || '—';
+    const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
+    const activeLabel=document.querySelector('.submode-btn.active[data-mode]')?.textContent?.trim() || 'Hot Tap';
     const stage=document.getElementById('cardStageStat');
-    if(stage) { const active=document.querySelector('.submode-btn.active[data-mode]')?.textContent?.trim() || 'Hot Tap'; stage.textContent=active; }
+    if(stage) stage.textContent=activeLabel;
+    const focusStage=document.getElementById('cardFocusStage');
+    if(focusStage) focusStage.textContent=activeLabel;
+    const focusMachine=document.getElementById('cardFocusMachine');
+    if(focusMachine) focusMachine.textContent=machine || '—';
+    const focusBco=document.getElementById('cardFocusBco');
+    if(focusBco) focusBco.textContent=bcoLabel || '—';
+    const focusOutput=document.getElementById('cardFocusOutput');
+    const hotTapTtd=document.getElementById('ttd')?.textContent?.trim() || '—';
+    const htpTco=document.getElementById('htpTco')?.textContent?.trim() || '—';
+    const lsLi=document.getElementById('ls_li')?.textContent?.trim() || '—';
+    const cpLi=document.getElementById('cp_li')?.textContent?.trim() || '—';
+    if(focusOutput){
+      const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '—', htp: htpTco !== '' ? htpTco : '—', lineStop: lsLi !== '' ? lsLi : '—', completionPlug: cpLi !== '' ? cpLi : '—'};
+      focusOutput.textContent = map[activeMode] || '—';
+    }
+    const focusTitle=document.getElementById('cardFocusTitle');
+    const focusDesc=document.getElementById('cardFocusDesc');
+    if(focusTitle || focusDesc){
+      const modeCopy={
+        hotTap:['Hot Tap workflow','Set MD, LD, and PTC first, then verify LI, BCO, and on-rod values before moving forward.'],
+        htp:['HTP workflow','Use pipe size to drive branch, head, cutter, and ETA automatically before confirming the cut math.'],
+        lineStop:['Line Stop workflow','Use the stop-stage fields to confirm lower-in, turns, and valve positioning before setting the stop.'],
+        completionPlug:['Completion Plug workflow','Finish the operation by confirming plug dimensions, lower-in, and final checks.']
+      };
+      const copy=modeCopy[activeMode] || modeCopy.hotTap;
+      if(focusTitle) focusTitle.textContent=copy[0];
+      if(focusDesc) focusDesc.textContent=copy[1];
+    }
     syncJobsWorkspace();
   }
 

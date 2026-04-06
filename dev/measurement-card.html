@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha11">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha12">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha11 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha12 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha11 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha12 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -279,6 +279,26 @@
     <button type="button" class="submode-btn" data-mode="lineStop">Line Stop</button>
     <button type="button" class="submode-btn" data-mode="completionPlug">Completion Plug</button>
   </div>
+  <section class="card-focus-shell">
+    <div class="card-focus-head">
+      <div>
+        <div class="hero-eyebrow">Active Stage</div>
+        <h3 id="cardFocusTitle">Hot Tap workflow</h3>
+        <p id="cardFocusDesc">Set MD, LD, and PTC first, then verify LI, BCO, and on-rod values before moving forward.</p>
+      </div>
+      <div class="card-focus-actions">
+        <button type="button" class="secondary-btn" data-go-screen="calc">Open Calc</button>
+        <button type="button" class="secondary-btn" data-go-screen="job">Open Current</button>
+        <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
+      </div>
+    </div>
+    <div class="card-focus-stats">
+      <div class="card-focus-stat"><span>Stage</span><strong id="cardFocusStage">Hot Tap</strong></div>
+      <div class="card-focus-stat"><span>Machine</span><strong id="cardFocusMachine">—</strong></div>
+      <div class="card-focus-stat"><span>Current BCO</span><strong id="cardFocusBco">—</strong></div>
+      <div class="card-focus-stat"><span>Hot Tap Output</span><strong id="cardFocusOutput">—</strong></div>
+    </div>
+  </section>
   <section id="hotTapPanel" class="mode-panel active">
     <div class="measurement-grid">
       <div class="section">
@@ -809,8 +829,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha11"></script>
-<script src="measurement.js?v=3.0.0-alpha11"></script>
+<script src="firebase-config.js?v=3.0.0-alpha12"></script>
+<script src="measurement.js?v=3.0.0-alpha12"></script>
   </section>
 </body>
 </html>
