@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha14';
+const BUILD_VERSION = '3.0.0-alpha15';
 
 (function(){
 
@@ -993,7 +993,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha14', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha15', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
