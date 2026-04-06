@@ -986,7 +986,6 @@ const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
 const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
 let firebaseModuleCache = null;
-let firebaseAuthCache = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
@@ -1682,7 +1681,7 @@ function buildHistorySnapshot() {
 }
 
 async function ensureFirebaseReady() {
-  if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache, auth: firebaseAuthCache };
+  if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
   const config = window.TAPCALC_FIREBASE_CONFIG;
   if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
@@ -1701,9 +1700,8 @@ async function ensureFirebaseReady() {
     }
     firebaseDb = firestoreModule.getFirestore(app);
     firebaseModuleCache = firestoreModule;
-    firebaseAuthCache = auth;
     if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
-    return { enabled: true, db: firebaseDb, modules: firestoreModule, auth };
+    return { enabled: true, db: firebaseDb, modules: firestoreModule };
   } catch (error) {
     console.error('Firebase init failed', error);
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
