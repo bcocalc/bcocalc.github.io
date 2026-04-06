@@ -3540,7 +3540,19 @@ body.measurement-page {
 @media (max-width:700px){.home-current-job-card{padding:16px}.home-current-job-actions{width:100%}.home-current-job-actions .secondary-btn{flex:1}.home-section-heading{align-items:flex-start;flex-direction:column}.job-overview-card,.job-form-card,.job-info-header,.utility-bar{border-radius:16px}}
 
 
-/* === alpha6 compact result pass === */
+/* === alpha7 calc + card pass === */
+.screen-intro-card{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;background:#101a2a;border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;margin-bottom:12px}
+.screen-intro-card h3{margin:4px 0 8px;color:#fff}
+.screen-intro-card p{margin:0;color:#b8c8e6}
+.screen-intro-stats{display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:10px;min-width:min(100%,280px)}
+.screen-intro-stat{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.screen-intro-stat span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8ea8d1}
+.screen-intro-stat strong{color:#fff;font-size:.98rem}
+.calc-screen-intro{background:linear-gradient(180deg,#122746,#0f1f35)}
+.card-screen-intro{background:linear-gradient(180deg,#10243f,#0d1c30)}
+@media (max-width:700px){.screen-intro-card{flex-direction:column}.screen-intro-stats{width:100%;grid-template-columns:1fr 1fr}}
+
+/* === alpha7 result tone polish === */
 #bcoResult {
   background: transparent !important;
   border-radius: 0 !important;
@@ -3557,11 +3569,13 @@ body.measurement-page {
   box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
 }
 .bco-result-card.ready {
-  background: linear-gradient(180deg, rgba(245,196,0,0.14), rgba(245,196,0,0.08));
+  background: linear-gradient(180deg, rgba(255,246,189,0.96), rgba(255,239,164,0.90));
+  border: 1px solid rgba(226, 198, 86, 0.55);
 }
 .bco-result-header {
   font-size: 0.76rem;
   margin-bottom: 8px;
+  color: #6f5600;
 }
 .bco-result-verify {
   gap: 6px;
@@ -3570,9 +3584,13 @@ body.measurement-page {
 .bco-result-verify div {
   font-size: 0.9rem;
   gap: 10px;
+  color: #3d3722;
 }
 .bco-result-main {
   display: inline-flex;
+  background: rgba(255, 252, 234, 0.95);
+  border: 1px solid rgba(226, 198, 86, 0.45);
+  color: #151515;
   width: auto;
   max-width: 100%;
   text-align: left;
@@ -3595,6 +3613,9 @@ body.measurement-page {
 #bcoPanel #bcoInlineStatus {
   margin-top: 8px;
 }
+.bco-result-verify span{color:#6a5f3a}
+.bco-result-verify strong{color:#181818}
+
 @media (max-width: 768px) {
   .bco-result-card {
     max-width: 100%;

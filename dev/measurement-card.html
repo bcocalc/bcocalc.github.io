@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha6">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha7">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha6 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha7 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha6 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha7 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -181,6 +181,17 @@
   </section>
 
   <section id="calcScreen" class="screen-view">
+  <section class="screen-intro-card calc-screen-intro">
+    <div>
+      <div class="hero-eyebrow">Calc Workspace</div>
+      <h3>Quick tools for field math</h3>
+      <p>Keep BCO and ETA compact here so you can punch numbers fast without digging through the measurement card.</p>
+    </div>
+    <div class="screen-intro-stats">
+      <div class="screen-intro-stat"><span>Current BCO</span><strong id="calcCurrentBco">—</strong></div>
+      <div class="screen-intro-stat"><span>Machine</span><strong id="calcCurrentMachine">—</strong></div>
+    </div>
+  </section>
   <div class="card-subnav">
     <button type="button" class="submode-btn active" data-mode="bco">BCO</button>
     <button type="button" class="submode-btn" data-mode="eta">ETA</button>
@@ -232,6 +243,17 @@
   </section>
 
   <section id="cardScreen" class="screen-view">
+  <section class="screen-intro-card card-screen-intro">
+    <div>
+      <div class="hero-eyebrow">Measurement Card</div>
+      <h3>Run the operation in order</h3>
+      <p>Start with Hot Tap, then move into HTP, Line Stop, or Completion Plug as needed. The card should feel like the field worksheet, not the whole app.</p>
+    </div>
+    <div class="screen-intro-stats">
+      <div class="screen-intro-stat"><span>Current Job</span><strong id="cardCurrentJob">No active job</strong></div>
+      <div class="screen-intro-stat"><span>Pipe</span><strong id="cardCurrentPipe">—</strong></div>
+    </div>
+  </section>
   <div class="card-subnav">
     <button type="button" class="submode-btn active" data-mode="hotTap">Hot Tap</button>
     <button type="button" class="submode-btn" data-mode="htp">HTP</button>
@@ -747,8 +769,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha6"></script>
-<script src="measurement.js?v=3.0.0-alpha6"></script>
+<script src="firebase-config.js?v=3.0.0-alpha7"></script>
+<script src="measurement.js?v=3.0.0-alpha7"></script>
   </section>
 </body>
 </html>

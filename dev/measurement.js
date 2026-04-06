@@ -2473,6 +2473,14 @@ window.addEventListener('load', () => {
     if(homeBco) homeBco.textContent=bcoLabel || '—';
     const homeStatus=document.getElementById('homeStatusStat');
     if(homeStatus) homeStatus.textContent=client || location ? 'In Progress' : 'Draft';
+    const calcBco=document.getElementById('calcCurrentBco');
+    if(calcBco) calcBco.textContent=bcoLabel || '—';
+    const calcMachine=document.getElementById('calcCurrentMachine');
+    if(calcMachine) calcMachine.textContent=machine || '—';
+    const cardJob=document.getElementById('cardCurrentJob');
+    if(cardJob) cardJob.textContent=client || description || 'No active job';
+    const cardPipe=document.getElementById('cardCurrentPipe');
+    if(cardPipe) cardPipe.textContent=pipeLabel || '—';
   }
   ['jobClient','jobLocation','jobDescription','machineType'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
   updateCurrentJobLabel();
