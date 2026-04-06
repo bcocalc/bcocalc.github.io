@@ -3151,3 +3151,178 @@ body.dark .v3-mini-card span {
     width: 100%;
   }
 }
+
+
+/* === v3 alpha2 mobile-first pass === */
+body.measurement-page {
+  background: #e9eef5;
+}
+
+.measurement-page .card {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 14px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.measurement-page .app-header {
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.measurement-page .app-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.measurement-page .version-badge {
+  font-size: 0.72rem;
+  opacity: 0.9;
+}
+
+.measurement-page .section {
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+.measurement-page .section h3 {
+  font-size: 1.02rem;
+  margin: 0 0 10px;
+  padding-bottom: 4px;
+}
+
+.measurement-page .row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+.measurement-page .row label {
+  font-size: 0.9rem;
+}
+
+.measurement-page .row input,
+.measurement-page .row select,
+.measurement-page textarea {
+  font-size: 0.95rem;
+  padding: 9px 10px;
+  margin: 0;
+  min-height: 40px;
+  box-sizing: border-box;
+}
+
+.measurement-page .calc {
+  font-size: 0.88rem;
+  padding: 3px 8px;
+  min-width: 68px;
+  min-height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+}
+
+.measurement-page .note {
+  font-size: 0.7rem;
+  margin-left: 0;
+}
+
+.measurement-page .button-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.measurement-page .button-row button,
+.measurement-page .utility-bar button,
+.measurement-page .v3-quick-btn {
+  min-height: 42px;
+}
+
+.measurement-page .utility-bar,
+.measurement-page .job-tools,
+.measurement-page .v3-quick-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.measurement-page .v3-home-strip {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.measurement-page .v3-home-card {
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.measurement-page .v3-home-card h2 {
+  font-size: 1.15rem;
+  margin: 4px 0 8px;
+}
+
+.measurement-page .v3-home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.measurement-page .v3-mini-card {
+  padding: 10px;
+  min-height: 74px;
+}
+
+.measurement-page .operation-switcher {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.measurement-page .mode-btn {
+  min-height: 42px;
+  padding: 8px 10px;
+  font-size: 0.88rem;
+}
+
+.measurement-page .measurement-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .measurement-page .card {
+    padding: 10px;
+  }
+
+  .measurement-page .app-logo {
+    height: 32px;
+  }
+
+  .measurement-page .row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .measurement-page .row-split {
+    grid-template-columns: 1fr;
+  }
+
+  .measurement-page .v3-home-grid,
+  .measurement-page .operation-switcher {
+    grid-template-columns: 1fr;
+  }
+
+  .measurement-page .calc {
+    justify-self: start;
+  }
+}
