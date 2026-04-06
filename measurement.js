@@ -986,6 +986,7 @@ const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
 const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
 let firebaseModuleCache = null;
+let firebaseAuthCache = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
@@ -1681,22 +1682,28 @@ function buildHistorySnapshot() {
 }
 
 async function ensureFirebaseReady() {
-  if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+  if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache, auth: firebaseAuthCache };
   const config = window.TAPCALC_FIREBASE_CONFIG;
   if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
     return { enabled: false };
   }
   try {
-    const [appModule, firestoreModule] = await Promise.all([
+    const [appModule, firestoreModule, authModule] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js')
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
     ]);
     const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
+    const auth = authModule.getAuth(app);
+    if (!auth.currentUser) {
+      await authModule.signInAnonymously(auth);
+    }
     firebaseDb = firestoreModule.getFirestore(app);
     firebaseModuleCache = firestoreModule;
+    firebaseAuthCache = auth;
     if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
-    return { enabled: true, db: firebaseDb, modules: firestoreModule };
+    return { enabled: true, db: firebaseDb, modules: firestoreModule, auth };
   } catch (error) {
     console.error('Firebase init failed', error);
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
