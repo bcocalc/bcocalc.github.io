@@ -3633,3 +3633,33 @@ body.measurement-page {
     padding: 7px 10px !important;
   }
 }
+
+
+/* ===== 3.0.0-alpha8 jobs/card/cache pass ===== */
+.top-app-title,.version-badge{letter-spacing:.01em;}
+.workflow-strip{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0 14px;}
+.workflow-card{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);color:#dce7f4;}
+.workflow-card strong{display:block;font-size:.95rem;color:#fff;}
+.workflow-card span{font-size:.78rem;color:#bcd0e6;}
+.workflow-card.active{background:rgba(255,255,255,.12);border-color:rgba(245,196,0,.42);box-shadow:0 6px 18px rgba(0,0,0,.16);}
+.workflow-step{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:999px;background:#f5c400;color:#1f2b3a;font-weight:800;flex:0 0 auto;}
+.jobs-screen-intro .screen-intro-stats{grid-template-columns:repeat(3,minmax(0,1fr));}
+.jobs-current-strip{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:12px;margin:12px 0 16px;}
+.jobs-current-card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:16px;color:#dce7f4;display:flex;flex-direction:column;gap:8px;}
+.jobs-current-primary h3{margin:0;color:#fff;font-size:1.1rem;}
+.jobs-current-primary p,.jobs-mini-note{margin:0;color:#bcd0e6;font-size:.86rem;line-height:1.4;}
+.jobs-current-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px;}
+.jobs-current-actions button{width:auto;min-width:140px;}
+.jobs-mini-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;color:#8fb1d3;}
+.jobs-grid-v3{align-items:start;}
+.jobs-panel-manage .jobs-actions-stack{display:grid;grid-template-columns:1fr;gap:10px;}
+.jobs-panel-library .jobs-select{min-height:260px;}
+#bcoResult{background:#fff7bf;border:1px solid #f4df7b;color:#423500;}
+.result{background:#fff7bf;}
+@media (max-width: 768px){
+  .workflow-strip{grid-template-columns:1fr;}
+  .jobs-current-strip{grid-template-columns:1fr;}
+  .jobs-screen-intro .screen-intro-stats{grid-template-columns:1fr;}
+  .jobs-current-actions{flex-direction:column;}
+  .jobs-current-actions button{width:100%;min-width:0;}
+}

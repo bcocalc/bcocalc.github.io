@@ -980,7 +980,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha8', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2446,7 +2446,10 @@ window.addEventListener('load', () => {
   function syncSub(mode){subBtns.forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));}
   window.setMode=function(mode){ oldSetMode(mode); syncSub(mode); };
   subBtns.forEach(b=>b.addEventListener('click',()=>window.setMode(b.dataset.mode)));
+  const oldWindowSetMode = window.setMode;
+  window.setMode = function(mode){ oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); };
   syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
+  initAlpha8WorkspaceActions();
   function updateCurrentJobLabel(){
     const client=document.getElementById('jobClient')?.value?.trim() || '';
     const location=document.getElementById('jobLocation')?.value?.trim() || '';
@@ -2481,8 +2484,47 @@ window.addEventListener('load', () => {
     if(cardJob) cardJob.textContent=client || description || 'No active job';
     const cardPipe=document.getElementById('cardCurrentPipe');
     if(cardPipe) cardPipe.textContent=pipeLabel || '—';
+    const stage=document.getElementById('cardStageStat');
+    if(stage) { const active=document.querySelector('.submode-btn.active[data-mode]')?.textContent?.trim() || 'Hot Tap'; stage.textContent=active; }
+    syncJobsWorkspace();
+  }
+
+  function syncJobsWorkspace() {
+    const client=document.getElementById('jobClient')?.value?.trim() || '';
+    const location=document.getElementById('jobLocation')?.value?.trim() || '';
+    const description=document.getElementById('jobDescription')?.value?.trim() || '';
+    const title = client || description || 'No active job yet';
+    const meta = location ? `${location}${description ? ' • ' + description : ''}` : 'Start a job in the Job screen, then save locally or sync to shared.';
+    const currentTitle=document.getElementById('jobsCurrentTitle');
+    if(currentTitle) currentTitle.textContent=title;
+    const currentMeta=document.getElementById('jobsCurrentMeta');
+    if(currentMeta) currentMeta.textContent=meta;
+    const currentName=document.getElementById('jobsCurrentJobName');
+    if(currentName) currentName.textContent=title;
+    const unsynced=document.getElementById('unsyncedJobsCount')?.textContent?.trim() || '0';
+    const unsyncedStat=document.getElementById('jobsUnsyncedStat');
+    if(unsyncedStat) unsyncedStat.textContent=unsynced;
+    try {
+      const history = JSON.parse(localStorage.getItem('tapcalc_history_v2') || '[]');
+      const localSaved=document.getElementById('jobsLocalSavedCount');
+      if(localSaved) localSaved.textContent=String(history.length || 0);
+    } catch {}
+    const firebase=document.getElementById('firebaseStatus')?.textContent?.trim() || 'Not connected';
+    const firebaseMirror=document.getElementById('firebaseStatusMirror');
+    if(firebaseMirror) firebaseMirror.textContent=firebase;
+    const cloud=document.getElementById('jobsCloudStatus')?.textContent?.trim() || 'Connecting to shared job database...';
+    const cloudMirror=document.getElementById('jobsCloudStatusMirror');
+    if(cloudMirror) cloudMirror.textContent=cloud;
+  }
+  function initAlpha8WorkspaceActions(){
+    document.getElementById('saveHistoryBtnClone')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
+    document.getElementById('saveHistoryBtnJobs')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
+    document.getElementById('syncJobsBtnClone')?.addEventListener('click', ()=>document.getElementById('syncJobsBtn')?.click());
+    document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.addEventListener('click', ()=>window.setMode(card.dataset.workflowTarget)));
   }
   ['jobClient','jobLocation','jobDescription','machineType'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
   updateCurrentJobLabel();
   window.addEventListener('load', updateCurrentJobLabel);
+  window.addEventListener('load', syncJobsWorkspace);
+  const mirrorTargets=['firebaseStatus','jobsCloudStatus','unsyncedJobsCount']; mirrorTargets.forEach(id=>new MutationObserver(syncJobsWorkspace).observe(document.getElementById(id) || document.body,{childList:true,subtree:id==='jobsCloudStatus',characterData:true}));
 })();
