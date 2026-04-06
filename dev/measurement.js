@@ -1,3 +1,4 @@
+const BUILD_VERSION = '3.0.0-alpha14';
 
 (function(){
 
@@ -992,7 +993,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha13', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha14', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1637,7 +1638,7 @@ function collectJobState() {
     if (el.type === 'checkbox') state[id] = el.checked;
     else state[id] = el.value;
   });
-  state.activeMode = document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
+  state.activeMode = document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || localStorage.getItem(ACTIVE_MODE_KEY) || 'hotTap';
   state.lineStopMdUserEdited = lsMdEl?.dataset.userEdited === 'true';
   return state;
 }
@@ -1664,6 +1665,7 @@ function applyJobState(state) {
     setMode(state.activeMode);
   }
   updateJobInfoSummary();
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
 }
 
 function restoreCurrentJob() {
@@ -1671,6 +1673,7 @@ function restoreCurrentJob() {
     const raw = localStorage.getItem(JOB_STATE_KEY);
     if (!raw) return;
     applyJobState(JSON.parse(raw));
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   } catch {}
 }
 
@@ -1700,6 +1703,7 @@ function loadRecordIntoCalculator(record, options = {}) {
     updateEtaEstimate();
   }, 80);
   persistCurrentJob();
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
   }
@@ -1766,7 +1770,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.28b2'
+      version: `v${BUILD_VERSION}`
     },
     job: {
       client: state.jobClient || '',
@@ -2484,14 +2488,16 @@ window.addEventListener('load', () => {
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
     const machine=document.getElementById('machineType')?.value?.trim() || '—';
     const operation=document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
+    const jobNumber=document.getElementById('jobNumber')?.value?.trim() || '—';
+    const technician=document.getElementById('jobTechnician')?.value?.trim() || '—';
     const pipe=getText('summaryPipe');
     const cutter=getText('summaryCutter');
     const bco=getText('summaryBco');
     const titleEl=document.getElementById('currentSnapshotTitle');
     if(titleEl) titleEl.textContent=client || description || 'No active job';
     const metaEl=document.getElementById('currentSnapshotMeta');
-    if(metaEl) metaEl.textContent=(location || machine !== '—') ? [location, machine !== '—' ? machine : ''].filter(Boolean).join(' • ') : 'Start with customer and location, then add machine and pipe setup.';
-    const ids={currentMachineStat:machine,currentOperationStat:operation,currentPipeStat:pipe,currentBcoStat:bco,currentPipeSetup:pipe,currentCutterSetup:cutter};
+    if(metaEl) metaEl.textContent=[location, machine !== '—' ? machine : '', description].filter(Boolean).join(' • ') || 'Start with customer and location, then add machine and pipe setup.';
+    const ids={currentMachineStat:machine,currentOperationStat:operation,currentPipeStat:pipe,currentBcoStat:bco,currentPipeSetup:pipe,currentCutterSetup:cutter,currentClientStat:client || '—',currentLocationStat:location || '—',currentJobNumberStat:jobNumber,currentTechStat:technician};
     Object.entries(ids).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.textContent=val || '—'; });
   }
 
@@ -2536,6 +2542,9 @@ window.addEventListener('load', () => {
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
     const machine=document.getElementById('machineType')?.value?.trim() || '';
     const operation=document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
+    const technician=document.getElementById('jobTechnician')?.value?.trim() || '';
+    const jobNumber=document.getElementById('jobNumber')?.value?.trim() || '';
+    const date=document.getElementById('jobDate')?.value?.trim() || '';
     const pipeLabel=document.getElementById('summaryPipe')?.textContent?.trim() || '—';
     const bcoLabel=document.getElementById('summaryBco')?.textContent?.trim() || '—';
     const parts=[client, location].filter(Boolean);
@@ -2544,7 +2553,7 @@ window.addEventListener('load', () => {
     const homeTitle=document.getElementById('homeCurrentJobTitle');
     if(homeTitle) homeTitle.textContent=client || description || 'No active job yet';
     const homeSubtitle=document.getElementById('homeCurrentJobSubtitle');
-    if(homeSubtitle) homeSubtitle.textContent=location ? `${location}${description ? ' • ' + description : ''}` : (description || 'Set up a customer and location to get rolling.');
+    if(homeSubtitle) homeSubtitle.textContent=[location, jobNumber ? 'Job ' + jobNumber : '', technician ? 'Tech ' + technician : ''].filter(Boolean).join(' • ') || (description || 'Set up a customer and location to get rolling.');
     const jobOverviewName=document.getElementById('jobOverviewName');
     if(jobOverviewName) jobOverviewName.textContent=client || description || 'No active job';
     const jobOverviewMeta=document.getElementById('jobOverviewMeta');
@@ -2565,6 +2574,8 @@ window.addEventListener('load', () => {
     if(cardJob) cardJob.textContent=client || description || 'No active job';
     const cardPipe=document.getElementById('cardCurrentPipe');
     if(cardPipe) cardPipe.textContent=pipeLabel || '—';
+    const cardMeta=document.getElementById('cardCurrentMeta');
+    if(cardMeta) cardMeta.textContent=[location, date, technician].filter(Boolean).join(' • ') || 'Fill out the Current screen to drive the card workflow.';
     const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
     const activeLabel=document.querySelector('.submode-btn.active[data-mode]')?.textContent?.trim() || 'Hot Tap';
     const stage=document.getElementById('cardStageStat');
@@ -2636,9 +2647,18 @@ window.addEventListener('load', () => {
     const jobsHistoryDrawer=document.getElementById('historyDrawerContent'); if (jobsHistoryDrawer) jobsHistoryDrawer.hidden=false;
     document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.addEventListener('click', ()=>window.setMode(card.dataset.workflowTarget)));
   }
+  function syncOperationSelection(){
+    const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
+    const map={'Hot Tap':'hotTap','HTP':'htp','Line Stop':'lineStop','Completion Plug':'completionPlug'};
+    const target=map[operation] || 'hotTap';
+    const active=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode;
+    if(active !== target) window.setMode(target);
+  }
+  document.getElementById('operationType')?.addEventListener('change', syncOperationSelection);
   ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','cpStart','cpJbf','cpPt'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
+  syncOperationSelection();
   updateCurrentJobLabel();
-  window.addEventListener('load', updateCurrentJobLabel);
+  window.addEventListener('load', () => { syncOperationSelection(); updateCurrentJobLabel(); });
   document.querySelectorAll('select').forEach(el=>el.addEventListener('change', updateCurrentJobLabel));
   window.addEventListener('load', syncJobsWorkspace);
   const mirrorTargets=['firebaseStatus','jobsCloudStatus','unsyncedJobsCount']; mirrorTargets.forEach(id=>new MutationObserver(syncJobsWorkspace).observe(document.getElementById(id) || document.body,{childList:true,subtree:id==='jobsCloudStatus',characterData:true}));

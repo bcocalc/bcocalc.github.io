@@ -3747,7 +3747,7 @@ body.measurement-page {
 }
 
 
-/* ===== 3.0.0-alpha13 current + card functional pass ===== */
+/* ===== 3.0.0-alpha14 current + card functional pass ===== */
 .current-live-shell{display:grid;grid-template-columns:1.2fr 1fr;gap:12px;margin:12px 0 14px;}
 .current-live-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;}
 .current-live-card h4{margin:4px 0 6px;font-size:1.05rem;}
@@ -3770,3 +3770,6 @@ body.measurement-page {
   .workflow-card{align-items:flex-start;}
   .workflow-status{align-self:flex-start;}
 }
+
+
+.screen-intro-meta{margin:.65rem 0 0;color:var(--text-muted,#6b7280);font-size:.92rem;line-height:1.35;}

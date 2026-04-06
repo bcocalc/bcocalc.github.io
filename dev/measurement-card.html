@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha13">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha14">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha13 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha14 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha13 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha14 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -131,6 +131,10 @@
           <div class="current-live-stat"><span>Operation</span><strong id="currentOperationStat">Hot Tap</strong></div>
           <div class="current-live-stat"><span>Pipe</span><strong id="currentPipeStat">—</strong></div>
           <div class="current-live-stat"><span>BCO</span><strong id="currentBcoStat">—</strong></div>
+          <div class="current-live-stat"><span>Client</span><strong id="currentClientStat">—</strong></div>
+          <div class="current-live-stat"><span>Location</span><strong id="currentLocationStat">—</strong></div>
+          <div class="current-live-stat"><span>Job #</span><strong id="currentJobNumberStat">—</strong></div>
+          <div class="current-live-stat"><span>Tech</span><strong id="currentTechStat">—</strong></div>
         </div>
       </article>
       <article class="current-live-card current-live-card-secondary">
@@ -284,6 +288,7 @@
       <div class="screen-intro-stat"><span>Pipe</span><strong id="cardCurrentPipe">—</strong></div>
       <div class="screen-intro-stat"><span>Stage</span><strong id="cardStageStat">Hot Tap</strong></div>
     </div>
+    <p id="cardCurrentMeta" class="screen-intro-meta">Fill out the Current screen to drive the card workflow.</p>
   </section>
   <section class="workflow-strip card-workflow-strip">
     <article class="workflow-card active" data-workflow-target="hotTap">
@@ -865,8 +870,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha13"></script>
-<script src="measurement.js?v=3.0.0-alpha13"></script>
+<script src="firebase-config.js?v=3.0.0-alpha14"></script>
+<script src="measurement.js?v=3.0.0-alpha14"></script>
   </section>
 </body>
 </html>
