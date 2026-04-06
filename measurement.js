@@ -1588,7 +1588,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.21'
+      version: 'v2.28b2'
     },
     job: {
       client: state.jobClient || '',
@@ -2220,8 +2220,8 @@ if (jobsSelectEl) {
   jobsSelectEl.addEventListener('change', renderJobsList);
   jobsSelectEl.addEventListener('click', renderJobsList);
   jobsSelectEl.addEventListener('keyup', renderJobsList);
+  jobsSelectEl.addEventListener('mouseup', () => setTimeout(renderJobsList, 0));
 }
-
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
   setHistoryDrawerOpen(!isOpen);
