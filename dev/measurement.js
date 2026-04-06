@@ -980,7 +980,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha8', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha9', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2520,6 +2520,7 @@ window.addEventListener('load', () => {
     document.getElementById('saveHistoryBtnClone')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
     document.getElementById('saveHistoryBtnJobs')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
     document.getElementById('syncJobsBtnClone')?.addEventListener('click', ()=>document.getElementById('syncJobsBtn')?.click());
+    const jobsHistoryDrawer=document.getElementById('historyDrawerContent'); if (jobsHistoryDrawer) jobsHistoryDrawer.hidden=false;
     document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.addEventListener('click', ()=>window.setMode(card.dataset.workflowTarget)));
   }
   ['jobClient','jobLocation','jobDescription','machineType'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
