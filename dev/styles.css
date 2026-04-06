@@ -3363,7 +3363,9 @@ body.measurement-page {
 .tab.active { color:#fff; text-decoration:none; font-weight:800; letter-spacing:.02em; }
 .version-badge { color:#8ea3c7; font-size:.78rem; }
 
-#jobInfoSection, .utility-bar { display:none; }
+/* v3 alpha16: keep Current inputs visible */
+#jobInfoSection { display:block; }
+.utility-bar { display:flex; }
 
 .v3-overhaul-home {
   display:block;
