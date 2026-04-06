@@ -66,6 +66,7 @@ const modeButtons = Array.from(document.querySelectorAll('.mode-btn[data-mode]')
 const panels = {
   bco: document.getElementById('bcoPanel'),
   hotTap: document.getElementById('hotTapPanel'),
+  htp: document.getElementById('htpPanel'),
   lineStop: document.getElementById('lineStopPanel'),
   completionPlug: document.getElementById('completionPlugPanel'),
   eta: document.getElementById('etaPanel'),
@@ -270,6 +271,7 @@ function applyBcoToMeasurementCard() {
   if (wallThk) wallThk.textContent = wall;
   if (lsWallDisplay) lsWallDisplay.textContent = wall;
   calcHotTap();
+  calcHtp();
   calcLineStop();
   syncBcoToEta({ force: true });
   updateEtaEstimate();
@@ -296,6 +298,7 @@ function calculateIntegratedBco(options = {}) {
     refreshBcoState();
     updateBcoDisplays();
     calcHotTap();
+    calcHtp();
     calcLineStop();
     updateSummary();
     return;
@@ -310,6 +313,7 @@ function calculateIntegratedBco(options = {}) {
     refreshBcoState();
     updateBcoDisplays();
     calcHotTap();
+    calcHtp();
     calcLineStop();
     updateSummary();
     return;
@@ -565,6 +569,59 @@ function parseMixedMeasurement(rawValue) {
 
 
 if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openDecimalModal);
+
+const referenceViewSelectEl = document.getElementById('referenceViewSelect');
+const referenceViewEls = Array.from(document.querySelectorAll('.reference-view[data-reference-view]'));
+
+function setReferenceView(view) {
+  const nextView = view || referenceViewSelectEl?.value || 'converter';
+  referenceViewEls.forEach((panel) => {
+    panel.classList.toggle('active', panel.dataset.referenceView === nextView);
+  });
+  if (referenceViewSelectEl && referenceViewSelectEl.value !== nextView) referenceViewSelectEl.value = nextView;
+  try { localStorage.setItem('tapcalcReferenceViewV1', nextView); } catch {}
+}
+
+if (referenceViewSelectEl) {
+  referenceViewSelectEl.addEventListener('change', () => setReferenceView(referenceViewSelectEl.value));
+  try {
+    setReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl.value || 'converter');
+  } catch {
+    setReferenceView(referenceViewSelectEl.value || 'converter');
+  }
+}
+
+const htpChartData = {
+  '3': { branch: '6"', head: '3" – 4"', cutter: 5.500, bco: 3.000 },
+  '4': { branch: '6" – 8"', head: '4" – 6"', cutter: 7.468, bco: 4.000 },
+  '6': { branch: '8" – 12"', head: '6" – 8"', cutter: 9.968, bco: 6.000 },
+  '8': { branch: '12"', head: '6" – 8"', cutter: 9.968, bco: 8.000 },
+  '10': { branch: '16"', head: '10" – 12"', cutter: 14.468, bco: 10.000 },
+  '12': { branch: '16"', head: '10" – 12"', cutter: 14.468, bco: 12.000 },
+  '14': { branch: '20"', head: '14" – 16"', cutter: 18.468, bco: 14.000 },
+  '16': { branch: '20"', head: '14" – 16"', cutter: 18.468, bco: 16.000 }
+};
+
+const plant150Data = [
+  ['3"','3/16"','5/8"','4'], ['4"','3/16"','5/8"','4'], ['6"','1/4"','3/4"','4'], ['8"','5/16"','7/8"','4'],
+  ['10"','5/16"','7/8"','6'], ['12"','7/16"','1 1/16"','6'], ['14"','7/16"','1 1/4"','6'], ['16"','7/16"','1 1/4"','8'],
+  ['18"','7/16"','1 1/4"','8'], ['20"','7/16"','1 1/4"','10'], ['24"','7/16"','1 1/4"','10'], ['30"','7/16"','1 3/8"','14'], ['36"','7/16"','1 3/8"','16']
+];
+const plant600Data = [
+  ['3"','3/8"','1 1/16"','4'], ['4"','3/8"','1 1/4"','4'], ['6"','3/8"','1 1/4"','6'], ['8"','9/16"','1 5/8"','6'],
+  ['10"','9/16"','1 5/8"','8'], ['12"','9/16"','1 5/8"','10'], ['14"','5/8"','1 5/8"','10'], ['16"','11/16"','1 13/16"','10'],
+  ['18"','13/16"','1 13/16"','10'], ['20"','13/16"','1 13/16"','12'], ['24"','1"','2 1/8"','12'], ['30"','1 1/16"','2 1/4"','14'], ['36"','1 1/16"','2 1/2"','14']
+];
+
+function renderSimpleTableRows(targetId, rows) {
+  const body = document.getElementById(targetId);
+  if (!body) return;
+  body.innerHTML = rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('');
+}
+
+renderSimpleTableRows('htpReferenceBody', Object.entries(htpChartData).map(([size, item]) => [size + '"', item.branch, item.head, Number(item.cutter).toFixed(3) + '"']));
+renderSimpleTableRows('plant150Body', plant150Data);
+renderSimpleTableRows('plant600Body', plant600Data);
 
 
 const ETA_FEED_RATE = 0.004;
@@ -927,6 +984,90 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// ===== HTP HOT TAP =====
+const htpPipeSizeEl = document.getElementById('htpPipeSize');
+const htpBranchSizeEl = document.getElementById('htpBranchSize');
+const htpHeadEl = document.getElementById('htpHead');
+const htpCutterSizeEl = document.getElementById('htpCutterSize');
+const htpBcoEl = document.getElementById('htpBco');
+const htpMdEl = document.getElementById('htpMd');
+const htpLdEl = document.getElementById('htpLd');
+const htpLdSignEl = document.getElementById('htpLdSign');
+const htpPtcEl = document.getElementById('htpPtc');
+const htpTcoEl = document.getElementById('htpTco');
+const htpMachineEl = document.getElementById('htpMachine');
+const htpFeedRateDisplayEl = document.getElementById('htpFeedRateDisplay');
+const htpEtaRpmEl = document.getElementById('htpEtaRpm');
+const htpEtaFeedSpeedEl = document.getElementById('htpEtaFeedSpeed');
+const htpEtaRangeEl = document.getElementById('htpEtaRange');
+const htpStatusEl = document.getElementById('htpStatus');
+let lastHtp = { tco: NaN, eta: '—', cutter: NaN, bco: NaN, warnings: [] };
+
+function calcHtp() {
+  if (!htpPipeSizeEl) return;
+  const config = htpChartData[String(htpPipeSizeEl.value || '')];
+  if (!config) return;
+
+  if (htpBranchSizeEl) htpBranchSizeEl.textContent = config.branch;
+  if (htpHeadEl) htpHeadEl.textContent = config.head;
+  if (htpCutterSizeEl) htpCutterSizeEl.textContent = Number(config.cutter).toFixed(3);
+  if (htpBcoEl) htpBcoEl.textContent = Number(config.bco).toFixed(3);
+  if (htpFeedRateDisplayEl) htpFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
+
+  const md = getMeasurementValue(htpMdEl) || 0;
+  const ldRaw = getMeasurementValue(htpLdEl) || 0;
+  const ld = (htpLdSignEl?.value || '+') === '-' ? -ldRaw : ldRaw;
+  const ptc = getMeasurementValue(htpPtcEl) || 0;
+  const bco = Number(config.bco) || 0;
+  const tco = md + ld + ptc + bco;
+
+  if (htpTcoEl) htpTcoEl.textContent = Number.isFinite(tco) ? tco.toFixed(4) : '—';
+
+  const machine = htpMachineEl?.value || '360';
+  const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, config.cutter);
+
+  if (htpEtaRpmEl) {
+    htpEtaRpmEl.textContent = rpmValues.length > 1 ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}` : (rpmValues[0] ? `${rpmValues[0]}` : '—');
+  }
+
+  if (!rpmValues.length || !bco) {
+    if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = '—';
+    if (htpEtaRangeEl) htpEtaRangeEl.textContent = '—';
+    if (htpStatusEl) htpStatusEl.textContent = 'HTP ETA is waiting on chart data.';
+    lastHtp = { tco, eta: '—', cutter: config.cutter, bco, warnings: [] };
+    updateSummary();
+    return;
+  }
+
+  const minRpm = Math.min(...rpmValues);
+  const maxRpm = Math.max(...rpmValues);
+  const slowFeed = minRpm * ETA_FEED_RATE;
+  const fastFeed = maxRpm * ETA_FEED_RATE;
+  const lowEta = bco / fastFeed;
+  const highEta = bco / slowFeed;
+  const etaText = lowEta === highEta ? formatEtaMinutes(lowEta) : `${formatEtaMinutes(lowEta)} to ${formatEtaMinutes(highEta)}`;
+
+  if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = slowFeed === fastFeed ? `${slowFeed.toFixed(3)} in/min` : `${slowFeed.toFixed(3)}-${fastFeed.toFixed(3)} in/min`;
+  if (htpEtaRangeEl) htpEtaRangeEl.textContent = etaText;
+
+  const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
+  const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
+  if (htpStatusEl) {
+    if (exact) htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using cutter ${Number(config.cutter).toFixed(3)} with ${rpmText} on the ${machineLabel}.`;
+    else if (interpolated) htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} on the ${machineLabel}.`;
+    else htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using nearest chart size ${matchedSize} at ${rpmText} on the ${machineLabel}.`;
+  }
+
+  lastHtp = { tco, eta: etaText, cutter: config.cutter, bco, warnings: [] };
+  updateSummary();
+}
+
+[htpPipeSizeEl, htpMdEl, htpLdEl, htpLdSignEl, htpPtcEl, htpMachineEl].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', calcHtp);
+  el.addEventListener('change', calcHtp);
+});
+
 // ===== HOT TAP =====
 const mdEl = document.getElementById("md");
 const ldEl = document.getElementById("ld");
@@ -1276,9 +1417,16 @@ function updateSummary() {
     const md = getMeasurementValue(mdEl);
     const li = lastHotTap.li;
     const ttd = lastHotTap.ttd;
-    summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
-      ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
-      : '—';
+    if (document.querySelector('.mode-btn.active')?.dataset.mode === 'htp' || Number.isFinite(lastHtp.tco)) {
+      const htpPipe = htpPipeSizeEl?.value ? `${htpPipeSizeEl.value}"` : '—';
+      summaryEls.hotTap.textContent = Number.isFinite(lastHtp.tco)
+        ? `HTP ${htpPipe} • TCO ${formatValue(lastHtp.tco)} • ETA ${lastHtp.eta || '—'}`
+        : '—';
+    } else {
+      summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
+        ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
+        : '—';
+    }
   }
 
   if (summaryEls.lineStopLi) {
@@ -1450,6 +1598,7 @@ function getStateFields() {
     'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
+    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
     'etaMachine','etaCutterSize','etaBco'
@@ -1508,6 +1657,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   updateBcoDisplays();
   calculateIntegratedBco({ silent: true });
   calcHotTap();
+  calcHtp();
   calcLineStop();
   calcCompletionPlug();
   initEtaCalculator();
@@ -1519,6 +1669,7 @@ function loadRecordIntoCalculator(record, options = {}) {
     updateBcoDisplays();
     calculateIntegratedBco({ silent: true });
     calcHotTap();
+    calcHtp();
     calcLineStop();
     calcCompletionPlug();
     syncBcoToEta({ force: true });
@@ -1555,11 +1706,14 @@ function inferOperationType(state = collectJobState()) {
   const activeMode = state.activeMode || document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
   if (activeMode === 'lineStop') return 'Line Stop';
   if (activeMode === 'completionPlug') return 'Completion Plug';
+  if (activeMode === 'htp') return 'HTP Hot Tap';
   if (activeMode === 'hotTap' || activeMode === 'eta') return 'Hot Tap';
   const hasLineStop = ['lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel'].some((key) => String(state[key] || '').trim() !== '');
   if (hasLineStop) return 'Line Stop';
   const hasCompletion = ['cpStart','cpJbf','cpLd','cpPt','cpLiManual'].some((key) => String(state[key] || '').trim() !== '');
   if (hasCompletion) return 'Completion Plug';
+  const hasHtp = ['htpMd','htpLd','htpPtc'].some((key) => String(state[key] || '').trim() !== '');
+  if (hasHtp) return 'HTP Hot Tap';
   const hasHotTap = ['md','ld','ptc','start','mt'].some((key) => String(state[key] || '').trim() !== '');
   if (hasHotTap) return 'Hot Tap';
   return 'BCO / Geometry';
@@ -1616,12 +1770,15 @@ function buildJobRecord(state = collectJobState()) {
       rpm: etaRpm,
       feedRate: ETA_FEED_RATE.toFixed(4),
       etaRange,
-      feedSpeed: etaFeedSpeed
+      feedSpeed: etaFeedSpeed,
+      htpMachine: htpMachineEl?.selectedOptions?.[0]?.textContent || state.htpMachine || '',
+      htpEtaRange: lastHtp.eta || '—'
     },
     calculations: {
       bco: formatValue(parseFloat(data?.bco)),
       hotTapLi: formatValue(lastHotTap.li),
       hotTapTtd: formatValue(lastHotTap.ttd),
+      htpTco: formatValue(lastHtp.tco),
       lineStopLi: formatValue(lastLineStop.li),
       completionPlugLi: formatValue(lastCompletionPlug.li)
     },
@@ -1632,6 +1789,12 @@ function buildJobRecord(state = collectJobState()) {
         mco: mcoEl?.textContent?.trim() || '', mt: state.mt || '', rodStart: state.start || '',
         pop: popEl?.textContent?.trim() || '', cop: copEl?.textContent?.trim() || '',
         rodBco: rbcoEl?.textContent?.trim() || '', rodMco: rmcoEl?.textContent?.trim() || ''
+      },
+      htp: {
+        pipeSize: state.htpPipeSize || '', branchSize: htpBranchSizeEl?.textContent?.trim() || '',
+        head: htpHeadEl?.textContent?.trim() || '', cutterSize: htpCutterSizeEl?.textContent?.trim() || '',
+        bco: htpBcoEl?.textContent?.trim() || '', md: state.htpMd || '', ld: state.htpLd || '',
+        ldSign: state.htpLdSign || '+', ptc: state.htpPtc || '', tco: formatValue(lastHtp.tco), eta: lastHtp.eta || '—'
       },
       lineStop: {
         md: state.lsMd || '', ld: state.lsLd || '', ldSign: state.lsLdSign || '+',
@@ -1830,6 +1993,7 @@ function renderJobRecordDetails(record) {
       <div><strong>Machine:</strong> ${record?.machine?.machine || '—'}</div>
       <div><strong>BCO:</strong> ${record?.calculations?.bco || '—'}</div>
       <div><strong>ETA:</strong> ${record?.machine?.etaRange || '—'}</div>
+      <div><strong>HTP TCO:</strong> ${record?.calculations?.htpTco || '—'}</div>
       <div><strong>Operation:</strong> ${record?.meta?.operationType || '—'}</div>
       <div><strong>Notes:</strong> ${record?.job?.notes || '—'}</div>
     </div>
@@ -2248,6 +2412,7 @@ window.addEventListener('load', () => {
   updateBcoDisplays();
   applyBcoToMeasurementCard();
   calcHotTap();
+  calcHtp();
   calcLineStop();
   calcCompletionPlug();
   initEtaCalculator();
@@ -2260,4 +2425,33 @@ window.addEventListener('load', () => {
   loadCloudJobs();
 });
 
+})();
+
+
+// alpha4 app shell navigation
+(function(){
+  const tabs=[...document.querySelectorAll('.screen-tab')];
+  const views={home:document.getElementById('homeScreen'),job:document.getElementById('jobScreen'),calc:document.getElementById('calcScreen'),card:document.getElementById('cardScreen'),jobs:document.getElementById('jobsScreen'),ref:document.getElementById('refScreen')};
+  function setScreen(name){
+    tabs.forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
+    Object.entries(views).forEach(([k,v])=>{ if(v) v.classList.toggle('active', k===name); });
+    try{ localStorage.setItem('tapcalcV3Screen', name);}catch{}
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>setScreen(t.dataset.screen)));
+  document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>setScreen(b.dataset.goScreen)));
+  const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
+  setScreen(views[saved]?saved:'home');
+  const subBtns=[...document.querySelectorAll('.submode-btn[data-mode]')];
+  const oldSetMode=setMode;
+  function syncSub(mode){subBtns.forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));}
+  window.setMode=function(mode){ oldSetMode(mode); syncSub(mode); };
+  subBtns.forEach(b=>b.addEventListener('click',()=>window.setMode(b.dataset.mode)));
+  syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
+  function updateCurrentJobLabel(){
+    const label=document.getElementById('topCurrentJobLabel'); if(!label) return;
+    const parts=[document.getElementById('jobClient')?.value, document.getElementById('jobLocation')?.value].filter(Boolean);
+    label.textContent=parts.length?parts.join(' • '):'No current job';
+  }
+  ['jobClient','jobLocation'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
+  updateCurrentJobLabel();
 })();

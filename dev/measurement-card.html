@@ -24,6 +24,51 @@
 
   <p id="bcoStatus" class="note"></p>
 
+  <header class="top-app-bar">
+    <div class="top-app-left">
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha4 · 2026-04-06</div>
+      <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
+    </div>
+    <div class="top-app-right">
+      <span class="sync-pill">DEV</span>
+    </div>
+  </header>
+
+  <nav class="screen-nav" aria-label="Primary">
+    <button type="button" class="screen-tab active" data-screen="home">Home</button>
+    <button type="button" class="screen-tab" data-screen="job">Job</button>
+    <button type="button" class="screen-tab" data-screen="calc">Calc</button>
+    <button type="button" class="screen-tab" data-screen="card">Card</button>
+    <button type="button" class="screen-tab" data-screen="jobs">Jobs</button>
+    <button type="button" class="screen-tab" data-screen="ref">Ref</button>
+  </nav>
+
+  <section id="homeScreen" class="screen-view active">
+    <div class="dashboard-hero">
+      <div>
+        <div class="hero-eyebrow">Field Operations Dashboard</div>
+        <h2>TapCalc v3 Shell</h2>
+        <p>A true app-style layout for dev. Use the navigation to move between Home, Job, Calc, Card, Jobs, and Ref.</p>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
+        <button type="button" class="secondary-btn" data-go-screen="calc">Open Calc</button>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <button type="button" class="dash-card" data-go-screen="job"><strong>Job</strong><span>Customer, location, machine, pipe setup</span></button>
+      <button type="button" class="dash-card" data-go-screen="calc"><strong>Calc</strong><span>BCO and ETA tools</span></button>
+      <button type="button" class="dash-card" data-go-screen="card"><strong>Card</strong><span>Hot Tap, HTP, Line Stop, Completion Plug</span></button>
+      <button type="button" class="dash-card" data-go-screen="jobs"><strong>Jobs</strong><span>Local and shared job management</span></button>
+      <button type="button" class="dash-card" data-go-screen="ref"><strong>Ref</strong><span>Charts, glossary, lookup tools</span></button>
+      <button type="button" class="dash-card" data-go-screen="job"><strong>Current Job</strong><span>Continue editing the active job</span></button>
+    </div>
+  </section>
+
+  <section id="jobScreen" class="screen-view">
+
+
   <section class="section job-info-section" id="jobInfoSection">
     <div class="job-info-header">
       <div class="job-info-heading">
@@ -56,43 +101,21 @@
     </div>
   </section>
 
-  <section class="v3-home-strip v3-overhaul-home">
-    <div class="v3-home-card">
-      <div class="v3-home-eyebrow">TapCalc v3 Dev</div>
-      <h2>Field Operations Dashboard</h2>
-      <p>Rebuild shell in progress. Use the sections below as the new app structure while we rebuild module by module in dev.</p>
-      <div class="v3-quick-actions">
-        <button type="button" class="v3-quick-btn active">Continue Current Job</button>
-        <button type="button" class="v3-quick-btn">New Job</button>
-        <button type="button" class="v3-quick-btn">Open Shared Jobs</button>
-      </div>
-    </div>
-    <div class="v3-home-grid">
-      <div class="v3-mini-card"><strong>Home</strong><span>Dashboard and quick actions</span></div>
-      <div class="v3-mini-card"><strong>Job</strong><span>Customer, pipe, machine, operation</span></div>
-      <div class="v3-mini-card"><strong>Calc</strong><span>BCO, ETA, quick tools</span></div>
-      <div class="v3-mini-card"><strong>Card</strong><span>Hot Tap, Line Stop, Completion Plug</span></div>
-      <div class="v3-mini-card"><strong>Jobs</strong><span>Local and shared job management</span></div>
-      <div class="v3-mini-card"><strong>Ref</strong><span>Charts, pipe data, machine references</span></div>
-    </div>
-  </section>
+    <main class="app-main-shell">
 
-  <div class="operation-switcher v3-shell-nav" role="tablist" aria-label="Measurement card mode">
-    <button type="button" class="mode-btn active" data-mode="bco">Calc</button>
-    <button type="button" class="mode-btn" data-mode="hotTap">Card · Hot Tap</button>
-    <button type="button" class="mode-btn" data-mode="htp">Card · HTP</button>
-    <button type="button" class="mode-btn" data-mode="lineStop">Card · Line Stop</button>
-    <button type="button" class="mode-btn" data-mode="completionPlug">Card · Completion Plug</button>
-    <button type="button" class="mode-btn" data-mode="eta">Calc · ETA</button>
-    <button type="button" class="mode-btn" data-mode="glossary">Ref</button>
-    <button type="button" class="mode-btn" data-mode="jobs">Jobs</button>
-  </div>
 
   <div class="utility-bar">
     <button type="button" id="saveHistoryBtn" class="secondary-btn">Save Job to History</button>
     <button type="button" id="resetJobBtn" class="secondary-btn danger-btn">Reset Current Job</button>
   </div>
 
+  </section>
+
+  <section id="calcScreen" class="screen-view">
+  <div class="card-subnav">
+    <button type="button" class="submode-btn active" data-mode="bco">BCO</button>
+    <button type="button" class="submode-btn" data-mode="eta">ETA</button>
+  </div>
   <section id="bcoPanel" class="mode-panel active">
     <div class="measurement-grid">
       <div class="section">
@@ -137,6 +160,15 @@
     </div>
   </section>
 
+  </section>
+
+  <section id="cardScreen" class="screen-view">
+  <div class="card-subnav">
+    <button type="button" class="submode-btn active" data-mode="hotTap">Hot Tap</button>
+    <button type="button" class="submode-btn" data-mode="htp">HTP</button>
+    <button type="button" class="submode-btn" data-mode="lineStop">Line Stop</button>
+    <button type="button" class="submode-btn" data-mode="completionPlug">Completion Plug</button>
+  </div>
   <section id="hotTapPanel" class="mode-panel active">
     <div class="measurement-grid">
       <div class="section">
@@ -357,6 +389,9 @@
     </div>
   </section>
 
+  </section>
+
+  <section id="refScreen" class="screen-view">
   <section id="glossaryPanel" class="mode-panel">
     <div class="section glossary-section">
       <h3>Reference Tools</h3>
@@ -557,6 +592,9 @@
     </div>
   </section>
 
+  </section>
+
+  <section id="jobsScreen" class="screen-view">
   <section id="jobsPanel" class="mode-panel">
     <div class="measurement-grid jobs-grid">
       <div class="section jobs-panel-card">
@@ -642,5 +680,6 @@
 
 <script src="firebase-config.js?v=2.28b1"></script>
 <script src="measurement.js?v=2.28b1"></script>
+  </section>
 </body>
 </html>
