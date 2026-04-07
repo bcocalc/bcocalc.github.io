@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha38';
+const BUILD_VERSION = '3.0.0-alpha39';
 
 (function(){
 
@@ -2286,6 +2286,29 @@ function setSelectedJobEntry(entry) {
   updateJobsListSelectionUI();
 }
 
+function selectLibraryJobByIndex(index) {
+  const idx = Number(index);
+  const selected = Number.isInteger(idx) ? renderedLibraryJobs[idx] || null : null;
+  if (!selected) return false;
+  setSelectedJobEntry(selected);
+  renderSelectedJobDetails(renderedLibraryJobs);
+  return true;
+}
+
+function loadSelectedLibraryJob() {
+  const selected = selectedJobEntry || getSelectedCombinedJob(renderedLibraryJobs);
+  if (!selected || !selected.record) {
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Select a job first.';
+    return false;
+  }
+  loadRecordIntoCalculator(selected.record);
+  try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+  return true;
+}
+
+window.selectLibraryJobByIndex = selectLibraryJobByIndex;
+window.loadSelectedLibraryJob = loadSelectedLibraryJob;
+
 function dispatchFieldUpdate(id) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -2337,9 +2360,11 @@ function renderSelectedJobDetails(jobs = null) {
     </div>`;
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
   if (loadBtn) loadBtn.addEventListener('click', () => {
-    const selected = selectedJobEntry || getSelectedCombinedJob(list) || { record };
-    loadRecordIntoCalculator(selected.record || record);
-    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    if (!loadSelectedLibraryJob()) {
+      const fallback = selectedJobEntry || getSelectedCombinedJob(list) || { record };
+      loadRecordIntoCalculator(fallback.record || record);
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    }
   });
 }
 
@@ -2385,22 +2410,11 @@ function renderJobsList() {
       const safeTitle = String(title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const safeMeta = String(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       return `
-        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" data-job-index="${index}" aria-pressed="${isActive ? 'true' : 'false'}">
+        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" data-job-index="${index}" aria-pressed="${isActive ? 'true' : 'false'}" onclick="window.selectLibraryJobByIndex(${index})">
           <span class="jobs-list-title">${safeTitle}</span>
           <span class="jobs-list-meta">${safeMeta}</span>
         </button>`;
     }).join('');
-    jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-index]').forEach((item) => {
-      const selectFromItem = () => {
-        const idx = Number(item.dataset.jobIndex);
-        const selected = Number.isInteger(idx) ? renderedLibraryJobs[idx] || null : null;
-        if (!selected) return;
-        setSelectedJobEntry(selected);
-        renderSelectedJobDetails(renderedLibraryJobs);
-      };
-      item.addEventListener('mousedown', (event) => { event.preventDefault(); selectFromItem(); });
-      item.addEventListener('click', (event) => { event.preventDefault(); selectFromItem(); });
-    });
     jobsSelectEl.scrollTop = previousScrollTop;
   }
 
@@ -2680,11 +2694,12 @@ if (jobsSelectEl) {
   jobsSelectEl.addEventListener('click', (event) => {
     const item = event.target.closest('.jobs-list-item[data-job-index]');
     if (!item) return;
-    const idx = Number(item.dataset.jobIndex);
-    const selected = Number.isInteger(idx) ? renderedLibraryJobs[idx] || null : null;
-    if (!selected) return;
-    setSelectedJobEntry(selected);
-    renderSelectedJobDetails(renderedLibraryJobs);
+    window.selectLibraryJobByIndex(item.dataset.jobIndex);
+  });
+  jobsSelectEl.addEventListener('pointerup', (event) => {
+    const item = event.target.closest('.jobs-list-item[data-job-index]');
+    if (!item) return;
+    window.selectLibraryJobByIndex(item.dataset.jobIndex);
   });
   jobsSelectEl.addEventListener('keydown', (event) => {
     const jobs = renderedLibraryJobs.length ? renderedLibraryJobs : getCombinedJobsForDisplay();
@@ -2695,7 +2710,11 @@ if (jobsSelectEl) {
     else if (event.key === 'ArrowUp') index = Math.max(0, index - 1);
     else if (event.key === 'Home') index = 0;
     else if (event.key === 'End') index = jobs.length - 1;
-    else return;
+    else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      window.loadSelectedLibraryJob();
+      return;
+    } else return;
     event.preventDefault();
     setSelectedJobEntry(jobs[index]);
     renderSelectedJobDetails(jobs);
