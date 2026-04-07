@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha45';
+const BUILD_VERSION = '3.0.0-alpha46';
 
 (function(){
 
@@ -2992,4 +2992,145 @@ window.addEventListener('load', async () => {
   document.querySelectorAll('select').forEach(el=>el.addEventListener('change', updateCurrentJobLabel));
   window.addEventListener('load', syncJobsWorkspace);
   const mirrorTargets=['firebaseStatus','jobsCloudStatus','unsyncedJobsCount']; mirrorTargets.forEach(id=>new MutationObserver(syncJobsWorkspace).observe(document.getElementById(id) || document.body,{childList:true,subtree:id==='jobsCloudStatus',characterData:true}));
+})();
+
+
+/* ===== 3.0.0-alpha46 library picker rebuild ===== */
+(function(){
+  function alpha46GetJobs() {
+    try { return getCombinedJobsForDisplay(); } catch (error) { console.error('Library jobs build failed', error); return []; }
+  }
+
+  function alpha46Escape(value) {
+    return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function alpha46SelectJob(jobId, jobs) {
+    const list = jobs || alpha46GetJobs();
+    if (!list.length) {
+      selectedJobId = '';
+      updateJobsListSelectionUI();
+      if (jobsListEl) jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const exists = list.some((job) => String(job.id) === String(jobId || ''));
+    selectedJobId = exists ? String(jobId) : String(list[0].id);
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails(list);
+  }
+
+  updateJobsListSelectionUI = function updateJobsListSelectionUIAlpha46() {
+    if (!jobsSelectEl) return;
+    jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+      const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  };
+
+  renderSelectedJobDetails = function renderSelectedJobDetailsAlpha46(jobs) {
+    const list = jobs || alpha46GetJobs();
+    if (!jobsListEl) return;
+    if (!list.length) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    let selected = list.find((job) => String(job.id) === String(selectedJobId || ''));
+    if (!selected) {
+      selected = list[0];
+      selectedJobId = String(selected.id);
+    }
+    updateJobsListSelectionUI();
+    const record = selected.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || selected.savedAt || '—';
+    jobsListEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${alpha46Escape(title)}</div>
+          <div class="job-detail-subtitle">${alpha46Escape(savedAtDisplay)} • ${alpha46Escape(record?.meta?.operationType || 'Job')} • ${alpha46Escape(sourceLabel)}</div>
+        </div>
+        <div class="job-record-badges"><span class="job-source-badge ${alpha46Escape(selected.source)}">${alpha46Escape(sourceLabel)}</span></div>
+      </div>
+      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button></div>
+      ${renderJobRecordDetails(record)}
+    `;
+    const loadBtn = document.getElementById('jobsLoadSelectedBtn');
+    if (loadBtn) {
+      loadBtn.addEventListener('click', () => {
+        try {
+          loadRecordIntoCalculator(record);
+          document.querySelector('.screen-tab[data-screen="job"]')?.click();
+        } catch (error) {
+          console.error('Load Job failed', error);
+        }
+      });
+    }
+  };
+
+  renderJobsList = function renderJobsListAlpha46() {
+    if (!jobsSelectEl || !jobsListEl) return;
+    const jobs = alpha46GetJobs();
+    if (jobsResultsMetaEl) {
+      const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
+      const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+    }
+    if (!jobs.length) {
+      jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      selectedJobId = '';
+      return;
+    }
+    const previousScrollTop = jobsSelectEl.scrollTop;
+    if (!jobs.some((job) => String(job.id) === String(selectedJobId || ''))) {
+      selectedJobId = String(jobs[0].id);
+    }
+    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+      const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+      const client = record?.job?.client || 'No customer';
+      const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+      const op = record?.meta?.operationType || 'Job';
+      const nominalSize = record?.pipe?.nominalSize || '—';
+      const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+      const groupPrefix = jobsBrowseMode === 'customer'
+        ? `Customer: ${client}`
+        : jobsBrowseMode === 'location'
+          ? `Location: ${record?.job?.location || 'No location'}`
+          : jobsBrowseMode === 'date'
+            ? `Date: ${date}`
+            : 'Search';
+      const active = String(id) === String(selectedJobId);
+      return `
+        <button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${alpha46Escape(id)}" aria-pressed="${active ? 'true' : 'false'}" aria-selected="${active ? 'true' : 'false'}">
+          <span class="jobs-list-title">${alpha46Escape(title)}</span>
+          <span class="jobs-list-meta">${alpha46Escape(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`)}</span>
+        </button>`;
+    }).join('');
+    jobsSelectEl.scrollTop = previousScrollTop;
+    jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+      const activate = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        alpha46SelectJob(item.dataset.jobId, jobs);
+      };
+      item.addEventListener('click', activate);
+      item.addEventListener('pointerup', activate);
+      item.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') activate(event);
+      });
+    });
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails(jobs);
+  };
+
+  if (jobsSelectEl) {
+    jobsSelectEl.addEventListener('click', (event) => {
+      const item = event.target.closest('.jobs-list-item[data-job-id]');
+      if (!item) return;
+      alpha46SelectJob(item.dataset.jobId);
+    }, true);
+  }
 })();
