@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha49';
+const BUILD_VERSION = '3.0.0-alpha51';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha35', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha51', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1759,6 +1759,17 @@ function getStateFields() {
   ];
 }
 
+
+function setFieldValueAndNotify(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return false;
+  if (el.type === 'checkbox') el.checked = !!value;
+  else el.value = value == null ? '' : String(value);
+  try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+  try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  return true;
+}
+
 function collectJobState() {
   const state = {};
   getStateFields().forEach(id => {
@@ -1809,7 +1820,14 @@ function restoreCurrentJob() {
 function loadRecordIntoCalculator(record, options = {}) {
   const state = buildStateFromRecord(record);
   if (!state || !Object.keys(state).length) return;
+
+  // Apply state first so internal calculator logic has the right values.
   applyJobState(state);
+
+  // Then push values directly into the visible fields to make the Current/Calc/Card screens refresh.
+  getStateFields().forEach((id) => {
+    if (id in state) setFieldValueAndNotify(id, state[id]);
+  });
 
   const directMap = {
     jobClient: record?.job?.client,
@@ -1831,15 +1849,32 @@ function loadRecordIntoCalculator(record, options = {}) {
     bcoCutterOD: state.bcoCutterOD,
     etaMachine: state.etaMachine,
     etaCutterSize: state.etaCutterSize,
-    etaBco: state.etaBco
+    etaBco: state.etaBco,
+    md: state.md,
+    ld: state.ld,
+    ldSign: state.ldSign,
+    ptc: state.ptc,
+    pod: state.pod,
+    mt: state.mt,
+    start: state.start,
+    htpMd: state.htpMd,
+    htpLd: state.htpLd,
+    htpLdSign: state.htpLdSign,
+    htpPtc: state.htpPtc,
+    htpPipeSize: state.htpPipeSize,
+    lsMd: state.lsMd,
+    lsLd: state.lsLd,
+    lsLdSign: state.lsLdSign,
+    lsPod: state.lsPod,
+    lsTravel: state.lsTravel,
+    lsMachineTravel: state.lsMachineTravel,
+    cpStart: state.cpStart,
+    cpJbf: state.cpJbf,
+    cpLd: state.cpLd,
+    cpPt: state.cpPt
   };
   Object.entries(directMap).forEach(([id, value]) => {
-    const el = document.getElementById(id);
-    if (el && value != null && value !== '') {
-      el.value = value;
-      try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
-      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
-    }
+    if (value != null && value !== '') setFieldValueAndNotify(id, value);
   });
 
   try {
@@ -1871,7 +1906,7 @@ function loadRecordIntoCalculator(record, options = {}) {
     updateEtaEstimate();
     updateJobInfoSummary();
     if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
-  }, 80);
+  }, 100);
 
   persistCurrentJob();
   updateJobInfoSummary();
@@ -1882,8 +1917,8 @@ function loadRecordIntoCalculator(record, options = {}) {
   const targetMode = state?.activeMode || 'hotTap';
   if (targetMode) setMode(targetMode);
   try {
-    const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
-    jobTab?.click();
+    const currentTab = document.querySelector('.screen-tab[data-screen="job"]');
+    currentTab?.click();
   } catch {}
 }
 
@@ -2293,6 +2328,7 @@ function renderSelectedJobDetails(jobs = null) {
   selectedJobId = String(selectedJob.id);
   updateJobsListSelectionUI();
   const record = selectedJob.record;
+  window.__tapcalcSelectedLibraryRecord = record || null;
   const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
   const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
   const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
@@ -2324,7 +2360,8 @@ function renderSelectedJobDetails(jobs = null) {
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
   if (loadBtn) loadBtn.addEventListener('click', () => {
     const selected = getSelectedCombinedJob(list) || { record };
-    loadRecordIntoCalculator(selected.record || record);
+    const selectedRecord = selected.record || window.__tapcalcSelectedLibraryRecord || record;
+    loadRecordIntoCalculator(selectedRecord || {});
     try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
   });
 }
@@ -3070,9 +3107,10 @@ window.addEventListener('load', async () => {
   window.alpha47LoadSelectedLibraryJob = function() {
     const list = alpha47GetJobs();
     const selected = list.find((job) => String(job.id) === String(selectedJobId || '')) || list[0];
-    if (!selected) return;
+    const selectedRecord = selected?.record || window.__tapcalcSelectedLibraryRecord || {};
+    if (!selectedRecord || !Object.keys(selectedRecord).length) return;
     try {
-      loadRecordIntoCalculator(selected.record || {});
+      loadRecordIntoCalculator(selectedRecord);
       document.querySelector('.screen-tab[data-screen="job"]')?.click();
     } catch (error) {
       console.error('Load Job failed', error);
