@@ -15,7 +15,7 @@
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha24 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha25 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha24 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha25 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -83,9 +83,9 @@
     </div>
     <div class="dashboard-grid quick-grid">
       <button type="button" class="dash-card dash-card-feature" data-go-screen="calc"><strong>Quick BCO</strong><span>Pipe geometry and cutter setup</span></button>
-      <button type="button" class="dash-card dash-card-feature" data-go-screen="calc"><strong>Tap ETA</strong><span>Travel, RPM, feed rate, and time</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="calc" data-go-mode="eta"><strong>Tap ETA</strong><span>Travel, RPM, feed rate, and time</span></button>
       <button type="button" class="dash-card dash-card-feature" data-go-screen="card"><strong>Measurement Card</strong><span>Hot Tap first, then line stop and plug</span></button>
-      <button type="button" class="dash-card dash-card-feature" data-go-screen="jobs"><strong>Shared Jobs</strong><span>Search, open, and sync field work</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="jobs" data-library-lane-target="shared"><strong>Shared Jobs</strong><span>Search, open, and sync field work</span></button>
     </div>
 
     <div class="home-section-heading">
@@ -297,7 +297,7 @@
       <div class="screen-intro-stat"><span>Pipe</span><strong id="cardCurrentPipe">—</strong></div>
       <div class="screen-intro-stat"><span>Stage</span><strong id="cardStageStat">Hot Tap</strong></div>
     </div>
-    <p id="cardCurrentMeta" class="screen-intro-meta">Fill out the Current screen to drive the card workflow.</p>
+    <p id="cardCurrentMeta" class="screen-intro-meta">Fill out Current, then use Calc → BCO. The checklist below will call out what is still missing.</p>
   </section>
   <section class="workflow-strip card-workflow-strip">
     <article class="workflow-card active" data-workflow-target="hotTap">
@@ -821,7 +821,7 @@
         <div class="jobs-section-head">
           <div>
             <h3>Shared Jobs</h3>
-            <p class="note jobs-note">Search every shared job by title, client, date, job number, location, technician, or pipe details, then open the one you need.</p>
+            <p class="note jobs-note">Search every shared job by title, client, date, job number, location, technician, or pipe details, then open the one you need. If you do not see anything, tap Shared above to switch lanes.</p>
           </div>
         </div>
         <div class="jobs-status-grid">

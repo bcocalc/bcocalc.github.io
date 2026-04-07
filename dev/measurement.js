@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha24';
+const BUILD_VERSION = '3.0.0-alpha25';
 
 (function(){
 
@@ -995,7 +995,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha24', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha25', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1186,8 +1186,20 @@ function setLibraryLane(lane) {
   try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
 }
 
-libraryLaneBtnEls.forEach((btn) => btn.addEventListener('click', () => setLibraryLane(btn.dataset.libraryLane)));
+libraryLaneBtnEls.forEach((btn) => btn.addEventListener('click', () => {
+  setLibraryLane(btn.dataset.libraryLane);
+  if (btn.dataset.libraryLane === 'shared') {
+    try { renderJobsList(); } catch {}
+    try { loadCloudJobs(); } catch {}
+  }
+}));
 try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch { setLibraryLane('local'); }
+
+function openSharedLibraryLane() {
+  setLibraryLane('shared');
+  try { renderJobsList(); } catch {}
+  try { loadCloudJobs(); } catch {}
+}
 
 function getJobsGroupingValue(record, mode = 'all') {
   if (mode === 'customer') return (record?.job?.client || 'No customer').trim() || 'No customer';
@@ -2219,6 +2231,7 @@ async function loadCloudJobs() {
     }));
 
     renderJobsList();
+    if (cloudJobsCache.length) openSharedLibraryLane();
 
     if (jobsCloudStatusEl) {
       jobsCloudStatusEl.textContent =
@@ -2505,7 +2518,12 @@ window.addEventListener('load', async () => {
     }, 80);
   }
   tabs.forEach(t=>t.addEventListener('click',()=>{ setScreen(t.dataset.screen); if(t.dataset.screen==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); } }));
-  document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>setScreen(b.dataset.goScreen)));
+  document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>{
+    const screen=b.dataset.goScreen;
+    setScreen(screen);
+    if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>openSharedLibraryLane(), 80);
+    if (b.dataset.goMode) setTimeout(()=>window.setMode(b.dataset.goMode), 80);
+  }));
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
   setScreen(views[saved]?saved:'home');
   if((views[saved]?saved:'home')==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); }
@@ -2580,13 +2598,24 @@ window.addEventListener('load', async () => {
     }
 
     const current = describeStage(activeMode);
+    const missingSetup = [];
+    if (!hasJobInfo) missingSetup.push('job');
+    if (!hasMachine) missingSetup.push('machine');
+    if (getText('summaryPipe') === '—') missingSetup.push('pipe');
+    if (getText('summaryCutter') === '—') missingSetup.push('cutter');
+    if (getText('summaryBco') === '—') missingSetup.push('BCO');
+
+    const geometryLabel = current.geometry
+      ? 'Ready'
+      : (missingSetup.length ? `Need ${missingSetup.join(', ')}` : 'Waiting');
+
     const labelMap = {
-      cardCheckGeometry: current.geometry ? 'Ready' : (baseReady ? 'Waiting' : 'Setup Needed'),
-      cardCheckInputs: current.inputs ? 'Ready' : (current.started ? 'In Progress' : 'Waiting'),
-      cardCheckOutput: current.output ? 'Ready' : 'Waiting',
+      cardCheckGeometry: geometryLabel,
+      cardCheckInputs: current.inputs ? 'Ready' : (current.started ? 'In Progress' : 'Waiting on stage fields'),
+      cardCheckOutput: current.output ? 'Ready' : 'Waiting on output',
       cardCheckReady: current.ready ? 'Ready' : (current.started || current.geometry ? 'In Progress' : 'Not Ready')
     };
-    Object.entries(labelMap).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) { el.textContent=val; el.dataset.state=val.toLowerCase().replace(/\s+/g,'-'); } });
+    Object.entries(labelMap).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) { el.textContent=val; el.dataset.state=(val === 'Ready' ? 'ready' : val.startsWith('Need') ? 'needs-setup' : val.toLowerCase().replace(/\s+/g,'-')); } });
 
     const stageReadyMap = {
       workflowStatusHotTap: describeStage('hotTap'),
