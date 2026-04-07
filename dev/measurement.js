@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha33';
+const BUILD_VERSION = '3.0.0-alpha34';
 
 (function(){
 
@@ -1806,13 +1806,42 @@ function restoreCurrentJob() {
 }
 
 function loadRecordIntoCalculator(record, options = {}) {
-  const state = record?.state || buildStateFromRecord(record);
+  const state = buildStateFromRecord(record);
   if (!state || !Object.keys(state).length) return;
   applyJobState(state);
+
+  const directMap = {
+    jobClient: record?.job?.client,
+    jobDescription: record?.job?.description,
+    jobNumber: record?.job?.jobNumber,
+    jobPressure: record?.job?.pressure,
+    jobTemperature: record?.job?.temperature,
+    jobDate: record?.job?.date,
+    jobProduct: record?.job?.product,
+    jobLocation: record?.job?.location,
+    jobTechnician: record?.job?.technician,
+    jobNotes: record?.job?.notes,
+    machineType: state.machineType || record?.machine?.machine,
+    operationType: state.operationType,
+    bcoPipeMaterial: state.bcoPipeMaterial,
+    bcoPipeOD: state.bcoPipeOD,
+    bcoSchedule: state.bcoSchedule,
+    bcoPipeID: state.bcoPipeID,
+    bcoCutterOD: state.bcoCutterOD,
+    etaMachine: state.etaMachine,
+    etaCutterSize: state.etaCutterSize,
+    etaBco: state.etaBco
+  };
+  Object.entries(directMap).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el && value != null && value !== '') el.value = value;
+  });
+
   try {
     const currentJobNameEl = document.getElementById('jobsCurrentJobName');
     if (currentJobNameEl) currentJobNameEl.textContent = state.jobDescription || state.jobNumber || state.jobClient || 'Loaded Job';
   } catch {}
+
   refreshBcoState();
   updateBcoDisplays();
   calculateIntegratedBco({ silent: true });
@@ -1823,6 +1852,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   initEtaCalculator();
   syncBcoToEta({ force: true });
   updateEtaEstimate();
+
   clearTimeout(window.__tapcalcLoadJobBcoTimer);
   window.__tapcalcLoadJobBcoTimer = setTimeout(() => {
     refreshBcoState();
@@ -1834,21 +1864,21 @@ function loadRecordIntoCalculator(record, options = {}) {
     calcCompletionPlug();
     syncBcoToEta({ force: true });
     updateEtaEstimate();
+    updateJobInfoSummary();
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   }, 80);
+
   persistCurrentJob();
+  updateJobInfoSummary();
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
   }
-  const targetMode = state?.activeMode || record?.state?.activeMode || 'bco';
+  const targetMode = state?.activeMode || 'hotTap';
   if (targetMode) setMode(targetMode);
   try {
-    const savedScreen = localStorage.getItem('tapcalcV3Screen') || 'job';
-    const tab = document.querySelector(`.screen-tab[data-screen="${savedScreen}"]`) || document.querySelector('.screen-tab[data-screen="job"]');
-    tab?.click();
-  } catch {}
-  try {
-    document.getElementById('jobScreen')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
+    jobTab?.click();
   } catch {}
 }
 
@@ -2590,29 +2620,14 @@ if (bcoResultEl) {
   });
 }
 if (jobsSelectEl) {
-  let jobsSelectLastScrollTop = 0;
   jobsSelectEl.addEventListener('change', () => {
-    jobsSelectLastScrollTop = jobsSelectEl.scrollTop;
     renderSelectedJobDetails();
-    requestAnimationFrame(() => { jobsSelectEl.scrollTop = jobsSelectLastScrollTop; });
   });
   jobsSelectEl.addEventListener('keyup', (event) => {
     if (['ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(event.key)) {
-      jobsSelectLastScrollTop = jobsSelectEl.scrollTop;
       renderSelectedJobDetails();
-      requestAnimationFrame(() => { jobsSelectEl.scrollTop = jobsSelectLastScrollTop; });
     }
   });
-  jobsSelectEl.addEventListener('mousedown', () => { jobsSelectLastScrollTop = jobsSelectEl.scrollTop; });
-  jobsSelectEl.addEventListener('click', () => {
-    requestAnimationFrame(() => { jobsSelectEl.scrollTop = jobsSelectLastScrollTop; });
-  });
-  jobsSelectEl.addEventListener('wheel', (event) => {
-    event.preventDefault();
-    const nextTop = jobsSelectEl.scrollTop + event.deltaY;
-    jobsSelectEl.scrollTop = nextTop;
-    jobsSelectLastScrollTop = jobsSelectEl.scrollTop;
-  }, { passive: false });
 }
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
