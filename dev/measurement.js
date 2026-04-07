@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha51';
+const BUILD_VERSION = '3.0.0-alpha52';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha51', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha52', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1821,101 +1821,99 @@ function loadRecordIntoCalculator(record, options = {}) {
   const state = buildStateFromRecord(record);
   if (!state || !Object.keys(state).length) return;
 
-  // Apply state first so internal calculator logic has the right values.
-  applyJobState(state);
-
-  // Then push values directly into the visible fields to make the Current/Calc/Card screens refresh.
-  getStateFields().forEach((id) => {
-    if (id in state) setFieldValueAndNotify(id, state[id]);
-  });
-
-  const directMap = {
-    jobClient: record?.job?.client,
-    jobDescription: record?.job?.description,
-    jobNumber: record?.job?.jobNumber,
-    jobPressure: record?.job?.pressure,
-    jobTemperature: record?.job?.temperature,
-    jobDate: record?.job?.date,
-    jobProduct: record?.job?.product,
-    jobLocation: record?.job?.location,
-    jobTechnician: record?.job?.technician,
-    jobNotes: record?.job?.notes,
-    machineType: state.machineType || record?.machine?.machine,
-    operationType: state.operationType,
-    bcoPipeMaterial: state.bcoPipeMaterial,
-    bcoPipeOD: state.bcoPipeOD,
-    bcoSchedule: state.bcoSchedule,
-    bcoPipeID: state.bcoPipeID,
-    bcoCutterOD: state.bcoCutterOD,
-    etaMachine: state.etaMachine,
-    etaCutterSize: state.etaCutterSize,
-    etaBco: state.etaBco,
-    md: state.md,
-    ld: state.ld,
-    ldSign: state.ldSign,
-    ptc: state.ptc,
-    pod: state.pod,
-    mt: state.mt,
-    start: state.start,
-    htpMd: state.htpMd,
-    htpLd: state.htpLd,
-    htpLdSign: state.htpLdSign,
-    htpPtc: state.htpPtc,
-    htpPipeSize: state.htpPipeSize,
-    lsMd: state.lsMd,
-    lsLd: state.lsLd,
-    lsLdSign: state.lsLdSign,
-    lsPod: state.lsPod,
-    lsTravel: state.lsTravel,
-    lsMachineTravel: state.lsMachineTravel,
-    cpStart: state.cpStart,
-    cpJbf: state.cpJbf,
-    cpLd: state.cpLd,
-    cpPt: state.cpPt
+  const writeMap = {
+    jobClient: state.jobClient || record?.job?.client || '',
+    jobDescription: state.jobDescription || record?.job?.description || '',
+    jobNumber: state.jobNumber || record?.job?.jobNumber || '',
+    jobPressure: state.jobPressure || record?.job?.pressure || '',
+    jobTemperature: state.jobTemperature || record?.job?.temperature || '',
+    jobDate: state.jobDate || record?.job?.date || '',
+    jobProduct: state.jobProduct || record?.job?.product || '',
+    jobLocation: state.jobLocation || record?.job?.location || '',
+    jobTechnician: state.jobTechnician || record?.job?.technician || '',
+    jobNotes: state.jobNotes || record?.job?.notes || '',
+    machineType: state.machineType || record?.machine?.machine || '',
+    operationType: state.operationType || '',
+    bcoPipeMaterial: state.bcoPipeMaterial || record?.pipe?.material || '',
+    bcoPipeOD: state.bcoPipeOD || record?.pipe?.nominalSize || '',
+    bcoSchedule: state.bcoSchedule || record?.pipe?.schedule || '',
+    bcoPipeID: state.bcoPipeID || record?.pipe?.pipeId || '',
+    bcoCutterOD: state.bcoCutterOD || record?.machine?.cutterOd || '',
+    etaMachine: state.etaMachine || '',
+    etaCutterSize: state.etaCutterSize || record?.machine?.cutterOd || '',
+    etaBco: state.etaBco || record?.calculations?.bco || '',
+    md: state.md || record?.measurements?.hotTap?.md || '',
+    ld: state.ld || record?.measurements?.hotTap?.ld || '',
+    ldSign: state.ldSign || record?.measurements?.hotTap?.ldSign || '',
+    ptc: state.ptc || record?.measurements?.hotTap?.ptc || '',
+    pod: state.pod || record?.measurements?.hotTap?.pod || '',
+    mt: state.mt || record?.measurements?.hotTap?.mt || '',
+    start: state.start || record?.measurements?.hotTap?.rodStart || '',
+    htpMd: state.htpMd || record?.measurements?.htp?.md || '',
+    htpLd: state.htpLd || record?.measurements?.htp?.ld || '',
+    htpLdSign: state.htpLdSign || record?.measurements?.htp?.ldSign || '',
+    htpPtc: state.htpPtc || record?.measurements?.htp?.ptc || '',
+    htpPipeSize: state.htpPipeSize || record?.measurements?.htp?.pipeSize || '',
+    lsMd: state.lsMd || record?.measurements?.lineStop?.md || '',
+    lsLd: state.lsLd || record?.measurements?.lineStop?.ld || '',
+    lsLdSign: state.lsLdSign || record?.measurements?.lineStop?.ldSign || '',
+    lsPod: state.lsPod || record?.measurements?.lineStop?.pod || '',
+    lsTravel: state.lsTravel || record?.measurements?.lineStop?.travel || '',
+    lsMachineTravel: state.lsMachineTravel || record?.measurements?.lineStop?.machineTravel || '',
+    cpStart: state.cpStart || record?.measurements?.completionPlug?.start || '',
+    cpJbf: state.cpJbf || record?.measurements?.completionPlug?.jbf || '',
+    cpLd: state.cpLd || record?.measurements?.completionPlug?.ld || '',
+    cpPt: state.cpPt || record?.measurements?.completionPlug?.pt || ''
   };
-  Object.entries(directMap).forEach(([id, value]) => {
-    if (value != null && value !== '') setFieldValueAndNotify(id, value);
+
+  // Apply once to internal state.
+  applyJobState({ ...state, ...writeMap });
+
+  // Then force values into the visible fields.
+  Object.entries(writeMap).forEach(([id, value]) => {
+    if (value !== undefined) setFieldValueAndNotify(id, value);
   });
+
+  const hydrateVisibleFields = () => {
+    Object.entries(writeMap).forEach(([id, value]) => {
+      if (value !== undefined) setFieldValueAndNotify(id, value);
+    });
+    try {
+      if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary();
+      if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+      if (typeof syncOperationSelection === 'function') syncOperationSelection();
+    } catch {}
+    try {
+      refreshBcoState();
+      updateBcoDisplays();
+      calculateIntegratedBco({ silent: true });
+      calcHotTap();
+      calcHtp();
+      calcLineStop();
+      calcCompletionPlug();
+      initEtaCalculator();
+      syncBcoToEta({ force: true });
+      updateEtaEstimate();
+    } catch (error) {
+      console.error('TapCalc hydrate recalculation failed', error);
+    }
+  };
+
+  hydrateVisibleFields();
+  clearTimeout(window.__tapcalcHydrateTimerA);
+  clearTimeout(window.__tapcalcHydrateTimerB);
+  window.__tapcalcHydrateTimerA = setTimeout(hydrateVisibleFields, 50);
+  window.__tapcalcHydrateTimerB = setTimeout(hydrateVisibleFields, 250);
 
   try {
-    const currentJobNameEl = document.getElementById('jobsCurrentJobName');
-    if (currentJobNameEl) currentJobNameEl.textContent = state.jobDescription || state.jobNumber || state.jobClient || 'Loaded Job';
+    localStorage.setItem(JOB_STATE_KEY, JSON.stringify({ ...state, ...writeMap }));
   } catch {}
-
-  refreshBcoState();
-  updateBcoDisplays();
-  calculateIntegratedBco({ silent: true });
-  calcHotTap();
-  calcHtp();
-  calcLineStop();
-  calcCompletionPlug();
-  initEtaCalculator();
-  syncBcoToEta({ force: true });
-  updateEtaEstimate();
-
-  clearTimeout(window.__tapcalcLoadJobBcoTimer);
-  window.__tapcalcLoadJobBcoTimer = setTimeout(() => {
-    refreshBcoState();
-    updateBcoDisplays();
-    calculateIntegratedBco({ silent: true });
-    calcHotTap();
-    calcHtp();
-    calcLineStop();
-    calcCompletionPlug();
-    syncBcoToEta({ force: true });
-    updateEtaEstimate();
-    updateJobInfoSummary();
-    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
-  }, 100);
-
   persistCurrentJob();
-  updateJobInfoSummary();
-  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   if (jobsCloudStatusEl && options.message !== false) {
-    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
+    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || writeMap.jobDescription || writeMap.jobNumber || 'saved job'} into TapCalc.`;
   }
   const targetMode = state?.activeMode || 'hotTap';
-  if (targetMode) setMode(targetMode);
+  try { if (targetMode) setMode(targetMode); } catch {}
   try {
     const currentTab = document.querySelector('.screen-tab[data-screen="job"]');
     currentTab?.click();
