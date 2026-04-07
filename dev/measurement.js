@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha37';
+const BUILD_VERSION = '3.0.0-alpha38';
 
 (function(){
 
@@ -1155,6 +1155,7 @@ let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
 let selectedJobId = '';
 let selectedJobEntry = null;
+let renderedLibraryJobs = [];
 
 
 
@@ -2365,7 +2366,8 @@ function renderJobsList() {
 
   if (jobsSelectEl) {
     const previousScrollTop = jobsSelectEl.scrollTop;
-    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+    renderedLibraryJobs = jobs.slice();
+    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }, index) => {
       const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
@@ -2383,11 +2385,22 @@ function renderJobsList() {
       const safeTitle = String(title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const safeMeta = String(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       return `
-        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" aria-pressed="${isActive ? 'true' : 'false'}">
+        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" data-job-index="${index}" aria-pressed="${isActive ? 'true' : 'false'}">
           <span class="jobs-list-title">${safeTitle}</span>
           <span class="jobs-list-meta">${safeMeta}</span>
         </button>`;
     }).join('');
+    jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-index]').forEach((item) => {
+      const selectFromItem = () => {
+        const idx = Number(item.dataset.jobIndex);
+        const selected = Number.isInteger(idx) ? renderedLibraryJobs[idx] || null : null;
+        if (!selected) return;
+        setSelectedJobEntry(selected);
+        renderSelectedJobDetails(renderedLibraryJobs);
+      };
+      item.addEventListener('mousedown', (event) => { event.preventDefault(); selectFromItem(); });
+      item.addEventListener('click', (event) => { event.preventDefault(); selectFromItem(); });
+    });
     jobsSelectEl.scrollTop = previousScrollTop;
   }
 
@@ -2665,15 +2678,16 @@ if (bcoResultEl) {
 }
 if (jobsSelectEl) {
   jobsSelectEl.addEventListener('click', (event) => {
-    const item = event.target.closest('.jobs-list-item[data-job-id]');
+    const item = event.target.closest('.jobs-list-item[data-job-index]');
     if (!item) return;
-    const jobs = getCombinedJobsForDisplay();
-    const selected = jobs.find((job) => String(job.id) === String(item.dataset.jobId || '')) || null;
+    const idx = Number(item.dataset.jobIndex);
+    const selected = Number.isInteger(idx) ? renderedLibraryJobs[idx] || null : null;
+    if (!selected) return;
     setSelectedJobEntry(selected);
-    renderSelectedJobDetails(jobs);
+    renderSelectedJobDetails(renderedLibraryJobs);
   });
   jobsSelectEl.addEventListener('keydown', (event) => {
-    const jobs = getCombinedJobsForDisplay();
+    const jobs = renderedLibraryJobs.length ? renderedLibraryJobs : getCombinedJobsForDisplay();
     if (!jobs.length) return;
     let index = jobs.findIndex((job) => String(job.id) === String(selectedJobId));
     if (index < 0) index = 0;
