@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha18';
+const BUILD_VERSION = '3.0.0-alpha20';
 
 (function(){
 
@@ -992,8 +992,8 @@ function initBoltingReference() {
 initBoltingReference();
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha17', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+  window.addEventListener('load', async () => {
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha20', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2443,7 +2443,7 @@ if (geometryLockToggleEl) geometryLockToggleEl.addEventListener('change', () => 
 if (exportPdfBtnEl) exportPdfBtnEl.addEventListener('click', exportJobPdf);
 if (exportImageBtnEl) exportImageBtnEl.addEventListener('click', exportJobImage);
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   enableMixedMeasurementInputs();
   hydrateBcoInputsFromSavedData();
   restoreCurrentJob();
@@ -2682,7 +2682,7 @@ window.addEventListener('load', () => {
   ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','cpStart','cpJbf','cpPt'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
   syncOperationSelection();
   updateCurrentJobLabel();
-  window.addEventListener('load', () => { syncOperationSelection(); updateCurrentJobLabel(); });
+  window.addEventListener('load', async () => { syncOperationSelection(); updateCurrentJobLabel(); });
   document.querySelectorAll('select').forEach(el=>el.addEventListener('change', updateCurrentJobLabel));
   window.addEventListener('load', syncJobsWorkspace);
   const mirrorTargets=['firebaseStatus','jobsCloudStatus','unsyncedJobsCount']; mirrorTargets.forEach(id=>new MutationObserver(syncJobsWorkspace).observe(document.getElementById(id) || document.body,{childList:true,subtree:id==='jobsCloudStatus',characterData:true}));
