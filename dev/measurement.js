@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha34';
+const BUILD_VERSION = '3.0.0-alpha35';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha28', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha35', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1153,6 +1153,7 @@ let firebaseInitPromise = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
+let selectedJobId = '';
 
 
 
@@ -2264,9 +2265,9 @@ function renderSelectedJobDetails(jobs = null) {
     jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     return;
   }
-  const selectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : String(list[0].id);
+  const selectedId = selectedJobId ? String(selectedJobId) : String(list[0].id);
   const selectedJob = list.find((job) => String(job.id) === selectedId) || list[0];
-  if (jobsSelectEl && selectedJob) jobsSelectEl.value = String(selectedJob.id);
+  selectedJobId = String(selectedJob.id);
   const record = selectedJob.record;
   const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
   const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
@@ -2297,7 +2298,10 @@ function renderSelectedJobDetails(jobs = null) {
       <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
     </div>`;
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
-  if (loadBtn) loadBtn.addEventListener('click', () => loadRecordIntoCalculator(record));
+  if (loadBtn) loadBtn.addEventListener('click', () => {
+    loadRecordIntoCalculator(record);
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+  });
 }
 
 function renderJobsList() {
@@ -2316,11 +2320,13 @@ function renderJobsList() {
     return;
   }
 
-  const previousSelectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : '';
+  const previousSelectedId = selectedJobId ? String(selectedJobId) : '';
+  const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
+  selectedJobId = selectedStillExists ? previousSelectedId : String(jobs[0].id);
 
   if (jobsSelectEl) {
-    const optionsHtml = jobs.map(({ source, id, record }) => {
-      const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+      const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
       const op = record?.meta?.operationType || 'Job';
@@ -2333,22 +2339,18 @@ function renderJobsList() {
           : jobsBrowseMode === 'date'
             ? `Date: ${date}`
             : 'Search';
-      const label = `${groupPrefix} • ${title} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
-      const safe = label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-      const optionId = String(id);
-      const selectedAttr = optionId === previousSelectedId ? ' selected' : '';
-      return `<option value="${optionId}"${selectedAttr}>${safe}</option>`;
+      const isActive = String(id) === selectedJobId;
+      const safeTitle = String(title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const safeMeta = String(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return `
+        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" aria-pressed="${isActive ? 'true' : 'false'}">
+          <span class="jobs-list-title">${safeTitle}</span>
+          <span class="jobs-list-meta">${safeMeta}</span>
+        </button>`;
     }).join('');
-
-    jobsSelectEl.innerHTML = optionsHtml;
-
-    const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
-    jobsSelectEl.value = selectedStillExists ? previousSelectedId : String(jobs[0].id);
   }
 
-  const listScrollTop = jobsSelectEl ? jobsSelectEl.scrollTop : 0;
   renderSelectedJobDetails(jobs);
-  if (jobsSelectEl) jobsSelectEl.scrollTop = listScrollTop;
 }
 
 async function loadCloudJobs() {
@@ -2620,13 +2622,27 @@ if (bcoResultEl) {
   });
 }
 if (jobsSelectEl) {
-  jobsSelectEl.addEventListener('change', () => {
-    renderSelectedJobDetails();
+  jobsSelectEl.addEventListener('click', (event) => {
+    const item = event.target.closest('.jobs-list-item[data-job-id]');
+    if (!item) return;
+    selectedJobId = String(item.dataset.jobId || '');
+    renderJobsList();
   });
-  jobsSelectEl.addEventListener('keyup', (event) => {
-    if (['ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(event.key)) {
-      renderSelectedJobDetails();
-    }
+  jobsSelectEl.addEventListener('keydown', (event) => {
+    const jobs = getCombinedJobsForDisplay();
+    if (!jobs.length) return;
+    let index = jobs.findIndex((job) => String(job.id) === String(selectedJobId));
+    if (index < 0) index = 0;
+    if (event.key === 'ArrowDown') index = Math.min(jobs.length - 1, index + 1);
+    else if (event.key === 'ArrowUp') index = Math.max(0, index - 1);
+    else if (event.key === 'Home') index = 0;
+    else if (event.key === 'End') index = jobs.length - 1;
+    else return;
+    event.preventDefault();
+    selectedJobId = String(jobs[index].id);
+    renderJobsList();
+    const activeItem = jobsSelectEl.querySelector('.jobs-list-item.active');
+    activeItem?.scrollIntoView({ block: 'nearest' });
   });
 }
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {

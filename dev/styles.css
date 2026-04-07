@@ -4059,3 +4059,13 @@ body.measurement-page * {
   background:#edf4ff !important;
   border-color:#bfd4ff !important;
 }
+
+.jobs-listbox{display:flex;flex-direction:column;gap:8px;overflow:auto;padding:8px;}
+.jobs-list-item{display:flex;flex-direction:column;align-items:flex-start;gap:4px;width:100%;text-align:left;padding:12px 14px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:inherit;cursor:pointer;}
+.jobs-list-item:hover{border-color:rgba(95,143,230,.45);background:rgba(95,143,230,.08);}
+.jobs-list-item.active{background:#1b5fc6;color:#fff;border-color:rgba(255,255,255,.2);}
+.jobs-list-title{font-weight:700;line-height:1.3;}
+.jobs-list-meta{font-size:.88rem;opacity:.82;line-height:1.3;}
+:root[data-theme="light"] .jobs-list-item{background:#f8fbff;border-color:rgba(15,42,79,.12);color:#16233a;}
+:root[data-theme="light"] .jobs-list-item:hover{background:#eef4ff;border-color:rgba(47,105,225,.32);}
+:root[data-theme="light"] .jobs-list-item.active{background:#2f69e1;color:#fff;border-color:#2f69e1;}

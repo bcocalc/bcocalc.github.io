@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha34">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha35">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha34 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha35 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha34 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha35 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -836,7 +836,7 @@
         </div>
         <div id="sharedJobsAnchor" class="jobs-shared-anchor"><strong>Shared jobs</strong><span>Loaded jobs will appear right here. Tap one to view and open it.</span></div>
         <div class="jobs-library-meta" id="jobsResultsMeta">Loading jobs...</div>
-        <select id="jobsSelect" class="jobs-select" size="10" aria-label="Shared jobs results"></select>
+        <div id="jobsSelect" class="jobs-select jobs-listbox" role="listbox" aria-label="Shared jobs results" tabindex="0"></div>
         <div id="jobsList" class="jobs-library-details">Select a job from the list to view its details.</div>
       </div>
     </div>
@@ -882,8 +882,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha34"></script>
-<script src="measurement.js?v=3.0.0-alpha34"></script>
+<script src="firebase-config.js?v=3.0.0-alpha35"></script>
+<script src="measurement.js?v=3.0.0-alpha35"></script>
   </section>
 </body>
 </html>
