@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha25';
+const BUILD_VERSION = '3.0.0-alpha26';
 
 (function(){
 
@@ -18,12 +18,18 @@ const BUILD_VERSION = '3.0.0-alpha25';
 
   document.body.appendChild(btn);
 
+  function syncThemeState(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.toggle('dark', theme === 'dark');
+    document.body.classList.toggle('light', theme === 'light');
+  }
+
   const current = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', current);
+  syncThemeState(current);
 
   btn.addEventListener('click', () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', t);
+    syncThemeState(t);
     localStorage.setItem('theme', t);
   });
 })();
@@ -995,7 +1001,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha25', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha26', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1181,9 +1187,18 @@ function renderBcoResult(payload = {}) {
 
 function setLibraryLane(lane) {
   const next = lane === 'shared' ? 'shared' : 'local';
+  const jobsScreen = document.getElementById('jobsScreen');
   libraryLaneBtnEls.forEach((btn) => btn.classList.toggle('active', btn.dataset.libraryLane === next));
   libraryLanePanelEls.forEach((panel) => panel.classList.toggle('active', panel.dataset.libraryLanePanel === next));
+  if (jobsScreen) jobsScreen.dataset.activeLane = next;
   try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
+  if (next === 'shared') {
+    setTimeout(() => {
+      const anchor = document.getElementById('sharedJobsAnchor') || document.getElementById('jobsSelect');
+      try { anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
+      try { jobsSelectEl?.focus({ preventScroll: true }); } catch {}
+    }, 120);
+  }
 }
 
 libraryLaneBtnEls.forEach((btn) => btn.addEventListener('click', () => {
@@ -2504,6 +2519,7 @@ window.addEventListener('load', async () => {
   function setScreen(name){
     tabs.forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
     Object.entries(views).forEach(([k,v])=>{ if(v) v.classList.toggle('active', k===name); });
+    document.body.classList.toggle('show-library-screen', name === 'jobs');
     try{ localStorage.setItem('tapcalcV3Screen', name);}catch{}
   }
 
@@ -2521,7 +2537,7 @@ window.addEventListener('load', async () => {
   document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>{
     const screen=b.dataset.goScreen;
     setScreen(screen);
-    if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>openSharedLibraryLane(), 80);
+    if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>{ openSharedLibraryLane(); try { document.getElementById('sharedJobsAnchor')?.scrollIntoView({behavior:'smooth', block:'start'}); } catch {} }, 80);
     if (b.dataset.goMode) setTimeout(()=>window.setMode(b.dataset.goMode), 80);
   }));
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
