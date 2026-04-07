@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha48';
+const BUILD_VERSION = '3.0.0-alpha49';
 
 (function(){
 
@@ -2325,6 +2325,7 @@ function renderSelectedJobDetails(jobs = null) {
   });
 }
 
+
 function renderJobsList() {
   if (!jobsListEl) return;
   const jobs = getCombinedJobsForDisplay();
@@ -2336,7 +2337,7 @@ function renderJobsList() {
   }
 
   if (!jobs.length) {
-    if (jobsSelectEl) jobsSelectEl.innerHTML = '';
+    if (jobsSelectEl) jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     return;
   }
@@ -2347,7 +2348,9 @@ function renderJobsList() {
 
   if (jobsSelectEl) {
     const previousScrollTop = jobsSelectEl.scrollTop;
-    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+    jobsSelectEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    jobs.forEach(({ source, id, record }) => {
       const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
@@ -2362,14 +2365,29 @@ function renderJobsList() {
             ? `Date: ${date}`
             : 'Search';
       const isActive = String(id) === selectedJobId;
-      const safeTitle = String(title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const safeMeta = String(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      return `
-        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" aria-pressed="${isActive ? 'true' : 'false'}">
-          <span class="jobs-list-title">${safeTitle}</span>
-          <span class="jobs-list-meta">${safeMeta}</span>
-        </button>`;
-    }).join('');
+      const item = document.createElement('div');
+      item.className = `jobs-list-item${isActive ? ' active' : ''}`;
+      item.dataset.jobId = String(id);
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
+      item.querySelector('.jobs-list-title').textContent = title;
+      item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
+      const selectThis = (event) => {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        selectedJobId = String(id);
+        updateJobsListSelectionUI();
+        renderSelectedJobDetails(jobs);
+      };
+      item.addEventListener('click', selectThis);
+      item.addEventListener('pointerup', selectThis);
+      item.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') selectThis(event);
+      });
+      frag.appendChild(item);
+    });
+    jobsSelectEl.appendChild(frag);
     jobsSelectEl.scrollTop = previousScrollTop;
   }
 
@@ -2378,6 +2396,7 @@ function renderJobsList() {
 }
 
 async function loadCloudJobs() {
+
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) {
     cloudJobsCache = [];
@@ -3025,10 +3044,12 @@ window.addEventListener('load', async () => {
   }
 
   window.alpha47SelectJobById = function(jobId) {
-    alpha47SelectJob(jobId);
+    selectedJobId = String(jobId || '');
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails();
   };
 
-  window.selectLibraryJobByIndex = function(index){ const jobs=alpha47GetJobs(); const entry=jobs[index]; if(entry) alpha47SelectJob(entry.id, jobs); };
+  window.selectLibraryJobByIndex = function(index){ const jobs=alpha47GetJobs(); const entry=jobs[index]; if(entry){ selectedJobId = String(entry.id); updateJobsListSelectionUI(); renderSelectedJobDetails(jobs); } };
   window.loadSelectedLibraryJob = window.alpha47LoadSelectedLibraryJob;
 
   updateJobsListSelectionUI = function updateJobsListSelectionUIAlpha47() {
