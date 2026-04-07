@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha39';
+const BUILD_VERSION = '3.0.0-alpha40';
 
 (function(){
 
@@ -2276,7 +2276,7 @@ function updateJobsListSelectionUI() {
   jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
     const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
     item.classList.toggle('active', active);
-    item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    item.setAttribute('aria-selected', active ? 'true' : 'false');
   });
 }
 
@@ -2390,105 +2390,37 @@ function renderJobsList() {
   selectedJobEntry = jobs.find((job) => String(job.id) === String(selectedJobId)) || jobs[0] || null;
 
   if (jobsSelectEl) {
-    const previousScrollTop = jobsSelectEl.scrollTop;
-    renderedLibraryJobs = jobs.slice();
-    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }, index) => {
-      const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
-      const client = record?.job?.client || 'No customer';
-      const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
-      const op = record?.meta?.operationType || 'Job';
-      const nominalSize = record?.pipe?.nominalSize || '—';
-      const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
-      const groupPrefix = jobsBrowseMode === 'customer'
-        ? `Customer: ${client}`
-        : jobsBrowseMode === 'location'
-          ? `Location: ${record?.job?.location || 'No location'}`
-          : jobsBrowseMode === 'date'
-            ? `Date: ${date}`
-            : 'Search';
-      const isActive = String(id) === selectedJobId;
-      const safeTitle = String(title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      const safeMeta = String(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      return `
-        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" data-job-index="${index}" aria-pressed="${isActive ? 'true' : 'false'}" onclick="window.selectLibraryJobByIndex(${index})">
-          <span class="jobs-list-title">${safeTitle}</span>
-          <span class="jobs-list-meta">${safeMeta}</span>
-        </button>`;
-    }).join('');
-    jobsSelectEl.scrollTop = previousScrollTop;
-  }
-
-  updateJobsListSelectionUI();
-  renderSelectedJobDetails(jobs);
+  const selectFromEvent = (event) => {
+    const item = event.target.closest('.jobs-list-item[data-job-index]');
+    if (!item || !jobsSelectEl.contains(item)) return false;
+    event.preventDefault();
+    event.stopPropagation();
+    const ok = selectLibraryJobByIndex(item.dataset.jobIndex);
+    return ok;
+  };
+  jobsSelectEl.addEventListener('pointerdown', selectFromEvent, true);
+  jobsSelectEl.addEventListener('click', selectFromEvent, true);
+  jobsSelectEl.addEventListener('keydown', (event) => {
+    const jobs = renderedLibraryJobs.length ? renderedLibraryJobs : getCombinedJobsForDisplay();
+    if (!jobs.length) return;
+    const activeEl = event.target.closest('.jobs-list-item[data-job-index]');
+    let index = activeEl ? Number(activeEl.dataset.jobIndex) : jobs.findIndex((job) => String(job.id) === String(selectedJobId));
+    if (!Number.isInteger(index) || index < 0) index = 0;
+    if (event.key === 'ArrowDown') index = Math.min(jobs.length - 1, index + 1);
+    else if (event.key === 'ArrowUp') index = Math.max(0, index - 1);
+    else if (event.key === 'Home') index = 0;
+    else if (event.key === 'End') index = jobs.length - 1;
+    else if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      loadSelectedLibraryJob();
+      return;
+    } else return;
+    event.preventDefault();
+    selectLibraryJobByIndex(index);
+    jobsSelectEl.querySelector(`.jobs-list-item[data-job-index="${index}"]`)?.scrollIntoView({ block: 'nearest' });
+  });
 }
-
-async function loadCloudJobs() {
-  const ready = await ensureFirebaseReady();
-  if (!ready.enabled) {
-    cloudJobsCache = [];
-    renderJobsList();
-    updateUnsyncedCount();
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
-    return;
-  }
-
-  if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
-
-  try {
-    const { collection, getDocs, getDocsFromServer } = ready.modules;
-    const colRef = collection(ready.db, getJobsCollectionName());
-
-    const withTimeout = (promise, label) =>
-      Promise.race([
-        promise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`${label} timeout after 10000ms`)), 10000)
-        )
-      ]);
-
-    let snapshot;
-    try {
-      snapshot = getDocsFromServer
-        ? await withTimeout(getDocsFromServer(colRef), 'Firestore server read')
-        : await withTimeout(getDocs(colRef), 'Firestore read');
-    } catch (serverError) {
-      console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
-      snapshot = await withTimeout(getDocs(colRef), 'Firestore fallback read');
-    }
-
-    cloudJobsCache = snapshot.docs.map((docSnap) => ({
-      source: 'cloud',
-      id: docSnap.id,
-      record: docSnap.data() || {}
-    }));
-
-    renderJobsList();
-    if (cloudJobsCache.length) openSharedLibraryLane();
-
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent =
-        `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}).`;
-    }
-  } catch (error) {
-    console.error('Cloud jobs load failed', error);
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
-    }
-  } finally {
-    if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
-  }
-
-  updateUnsyncedCount();
-}
-function updateUnsyncedCount() {
-  if (!unsyncedJobsCountEl) return;
-  const unsynced = getHistory().filter((item) => !item.cloudId).length;
-  unsyncedJobsCountEl.textContent = String(unsynced);
-}
-
-function setHistoryDrawerOpen(isOpen) {
-  if (historyDrawerContentEl) historyDrawerContentEl.hidden = !isOpen;
-  if (historyDrawerToggleEl) {
+if (historyDrawerToggleEl) {
     historyDrawerToggleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     historyDrawerToggleEl.classList.toggle('open', isOpen);
   }

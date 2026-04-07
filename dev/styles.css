@@ -4074,3 +4074,7 @@ body.measurement-page * {
 .jobs-list-title{font-size:.95rem;}
 .jobs-list-meta{font-size:.8rem;}
 .jobs-panel-shared .jobs-select{height:220px;max-height:220px;}
+
+.jobs-select.jobs-listbox{position:relative;z-index:2;overflow:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;}
+.jobs-list-item{position:relative;z-index:3;pointer-events:auto;}
+.jobs-list-item *{pointer-events:none;}
