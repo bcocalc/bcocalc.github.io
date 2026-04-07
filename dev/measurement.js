@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha22';
+const BUILD_VERSION = '3.0.0-alpha23';
 
 (function(){
 
@@ -993,7 +993,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha22', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha23', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1880,11 +1880,16 @@ function withTimeout(promise, ms, label) {
 }
 
 async function ensureFirebaseReady(options = {}) {
-  if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
-  if (firebaseInitPromise && !options.forceRetry) return firebaseInitPromise;
+  if (firebaseDb && !options.forceRetry) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+  if (options.forceRetry) {
+    firebaseDb = null;
+    firebaseModuleCache = null;
+    firebaseInitPromise = null;
+  }
+  if (firebaseInitPromise) return firebaseInitPromise;
   const config = window.TAPCALC_FIREBASE_CONFIG;
   if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
-    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not configured';
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase config is missing in this build.';
     return { enabled: false };
   }
@@ -1892,23 +1897,16 @@ async function ensureFirebaseReady(options = {}) {
   if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Connecting to shared job database...';
   firebaseInitPromise = (async () => {
     try {
-      const [appModule, firestoreModule, authModule] = await withTimeout(
-        Promise.all([
-          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
-          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
-        ]),
-        12000,
-        'Firebase module load'
-      );
-
+      const [appModule, firestoreModule, authModule] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
+      ]);
       const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
       const auth = authModule.getAuth(app);
-
       if (!auth.currentUser) {
-        await withTimeout(authModule.signInAnonymously(auth), 12000, 'Anonymous sign-in');
+        await authModule.signInAnonymously(auth);
       }
-
       firebaseDb = firestoreModule.getFirestore(app);
       firebaseModuleCache = firestoreModule;
       if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
@@ -2478,8 +2476,7 @@ window.addEventListener('load', async () => {
   renderJobsList();
   updateJobInfoSummary();
   initAccordionSections();
-  await ensureFirebaseReady();
-  await loadCloudJobs();
+  ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
 });
 
 })();
@@ -2505,10 +2502,11 @@ window.addEventListener('load', async () => {
       try { firstInput?.focus({preventScroll:true}); } catch {}
     }, 80);
   }
-  tabs.forEach(t=>t.addEventListener('click',()=>setScreen(t.dataset.screen)));
+  tabs.forEach(t=>t.addEventListener('click',()=>{ setScreen(t.dataset.screen); if(t.dataset.screen==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); } }));
   document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>setScreen(b.dataset.goScreen)));
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
   setScreen(views[saved]?saved:'home');
+  if((views[saved]?saved:'home')==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); }
   const subBtns=[...document.querySelectorAll('.submode-btn[data-mode]')];
   const oldSetMode=setMode;
   function syncSub(mode){subBtns.forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));}
@@ -2728,6 +2726,7 @@ window.addEventListener('load', async () => {
     document.getElementById('currentSyncSharedBtn')?.addEventListener('click', async ()=>{ await saveCurrentJobToHistory(); document.getElementById('syncJobsBtn')?.click(); });
     document.getElementById('currentResetBtn')?.addEventListener('click', ()=>document.getElementById('resetJobBtn')?.click());
     document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async ()=>{ await ensureFirebaseReady({ forceRetry:true }); await loadCloudJobs(); });
+    document.getElementById('cardJumpToInputsBtn')?.addEventListener('click', ()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'));
   }
   function syncOperationSelection(){
     const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
