@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha47';
+const BUILD_VERSION = '3.0.0-alpha48';
 
 (function(){
 
@@ -2228,7 +2228,7 @@ function renderJobRecordDetails(record) {
     </div>`;
 }
 
-function getCombinedJobsForDisplay() {
+window.getCombinedJobsForDisplay = function getCombinedJobsForDisplay() {
   const localItems = getHistory()
     .filter((item) => item && item.record)
     .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, record: item.record, savedAt: item.savedAt }));
@@ -2995,14 +2995,14 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha47 library picker rebuild ===== */
+/* ===== 3.0.0-alpha48 library picker rebuild ===== */
 (function(){
   const getJobsSelectEl = () => document.getElementById('jobsSelect');
   const getJobsListEl = () => document.getElementById('jobsList');
   const getJobsResultsMetaEl = () => document.getElementById('jobsResultsMeta');
 
   function alpha47GetJobs() {
-    try { return getCombinedJobsForDisplay(); } catch (error) { console.error('Library jobs build failed', error); return []; }
+    try { return (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []); } catch (error) { console.error('Library jobs build failed', error); return []; }
   }
 
   function alpha47Escape(value) {
@@ -3027,6 +3027,9 @@ window.addEventListener('load', async () => {
   window.alpha47SelectJobById = function(jobId) {
     alpha47SelectJob(jobId);
   };
+
+  window.selectLibraryJobByIndex = function(index){ const jobs=alpha47GetJobs(); const entry=jobs[index]; if(entry) alpha47SelectJob(entry.id, jobs); };
+  window.loadSelectedLibraryJob = window.alpha47LoadSelectedLibraryJob;
 
   updateJobsListSelectionUI = function updateJobsListSelectionUIAlpha47() {
     const jobsSelectEl = getJobsSelectEl();
