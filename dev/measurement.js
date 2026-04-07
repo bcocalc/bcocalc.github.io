@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha27';
+const BUILD_VERSION = '3.0.0-alpha28';
 
 (function(){
 
@@ -1001,7 +1001,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha27', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha28', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1188,7 +1188,7 @@ function renderBcoResult(payload = {}) {
 function setLibraryLane(lane) {
   const next = lane === 'shared' ? 'shared' : 'local';
   const jobsScreen = document.getElementById('jobsScreen');
-  libraryLaneBtnEls.forEach((btn) => btn.classList.toggle('active', btn.dataset.libraryLane === next));
+  libraryLaneBtnEls.forEach((btn) => { const active = btn.dataset.libraryLane === next; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', active ? 'true' : 'false'); });
   libraryLanePanelEls.forEach((panel) => {
     const isActive = panel.dataset.libraryLanePanel === next;
     panel.classList.toggle('active', isActive);
@@ -1208,13 +1208,35 @@ function setLibraryLane(lane) {
   }
 }
 
-libraryLaneBtnEls.forEach((btn) => btn.addEventListener('click', () => {
-  setLibraryLane(btn.dataset.libraryLane);
-  if (btn.dataset.libraryLane === 'shared') {
+libraryLaneBtnEls.forEach((btn) => btn.addEventListener('click', (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  const lane = btn.dataset.libraryLane === 'shared' ? 'shared' : 'local';
+  setLibraryLane(lane);
+  if (lane === 'shared') {
+    try { renderJobsList(); } catch {}
+    try { loadCloudJobs(); } catch {}
+    const panel = document.querySelector('[data-library-lane-panel="shared"]');
+    if (panel) {
+      panel.hidden = false;
+      panel.classList.add('active');
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.style.opacity = '1';
+    }
+  }
+}));
+document.addEventListener('click', (event) => {
+  const laneBtn = event.target.closest('.library-lane-btn[data-library-lane]');
+  if (!laneBtn) return;
+  event.preventDefault();
+  const lane = laneBtn.dataset.libraryLane === 'shared' ? 'shared' : 'local';
+  setLibraryLane(lane);
+  if (lane === 'shared') {
     try { renderJobsList(); } catch {}
     try { loadCloudJobs(); } catch {}
   }
-}));
+});
 try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch { setLibraryLane('local'); }
 
 function openSharedLibraryLane() {
@@ -2417,6 +2439,7 @@ if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
   el.addEventListener('input', persistCurrentJob);
   el.addEventListener('change', persistCurrentJob);
 });
+window.saveCurrentJobToHistory = saveCurrentJobToHistory;
 if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobToHistory);
 if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
