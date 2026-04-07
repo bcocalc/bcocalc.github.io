@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha21';
+const BUILD_VERSION = '3.0.0-alpha22';
 
 (function(){
 
@@ -993,7 +993,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha22', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1872,6 +1872,13 @@ function buildHistorySnapshot() {
   };
 }
 
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms))
+  ]);
+}
+
 async function ensureFirebaseReady(options = {}) {
   if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
   if (firebaseInitPromise && !options.forceRetry) return firebaseInitPromise;
@@ -1885,19 +1892,23 @@ async function ensureFirebaseReady(options = {}) {
   if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Connecting to shared job database...';
   firebaseInitPromise = (async () => {
     try {
-      const [appModule, firestoreModule, authModule] = await Promise.all([
-        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
-        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
-      ]);
+      const [appModule, firestoreModule, authModule] = await withTimeout(
+        Promise.all([
+          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
+        ]),
+        12000,
+        'Firebase module load'
+      );
+
       const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
       const auth = authModule.getAuth(app);
+
       if (!auth.currentUser) {
-        await authModule.signInAnonymously(auth);
+        await withTimeout(authModule.signInAnonymously(auth), 12000, 'Anonymous sign-in');
       }
-      if (typeof auth.authStateReady === 'function') {
-        await auth.authStateReady();
-      }
+
       firebaseDb = firestoreModule.getFirestore(app);
       firebaseModuleCache = firestoreModule;
       if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
@@ -1905,6 +1916,8 @@ async function ensureFirebaseReady(options = {}) {
       return { enabled: true, db: firebaseDb, modules: firestoreModule };
     } catch (error) {
       console.error('Firebase init failed', error);
+      firebaseDb = null;
+      firebaseModuleCache = null;
       if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
       return { enabled: false, error };
@@ -2481,6 +2494,17 @@ window.addEventListener('load', async () => {
     Object.entries(views).forEach(([k,v])=>{ if(v) v.classList.toggle('active', k===name); });
     try{ localStorage.setItem('tapcalcV3Screen', name);}catch{}
   }
+
+  function focusActiveCardPanel(mode){
+    const panelMap={hotTap:'hotTapPanel',htp:'htpPanel',lineStop:'lineStopPanel',completionPlug:'completionPlugPanel'};
+    const panel=document.getElementById(panelMap[mode]);
+    if(!panel) return;
+    setTimeout(()=>{
+      try { panel.scrollIntoView({behavior:'smooth', block:'start'}); } catch {}
+      const firstInput=panel.querySelector('input, select, textarea, button');
+      try { firstInput?.focus({preventScroll:true}); } catch {}
+    }, 80);
+  }
   tabs.forEach(t=>t.addEventListener('click',()=>setScreen(t.dataset.screen)));
   document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>setScreen(b.dataset.goScreen)));
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
@@ -2491,7 +2515,7 @@ window.addEventListener('load', async () => {
   window.setMode=function(mode){ oldSetMode(mode); syncSub(mode); };
   subBtns.forEach(b=>b.addEventListener('click',()=>window.setMode(b.dataset.mode)));
   const oldWindowSetMode = window.setMode;
-  window.setMode = function(mode){ oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); };
+  window.setMode = function(mode){ oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); if(['hotTap','htp','lineStop','completionPlug'].includes(mode)){ focusActiveCardPanel(mode); } };
   syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
   initAlpha8WorkspaceActions();
   initAlpha18CoreActions();
@@ -2618,7 +2642,15 @@ window.addEventListener('load', async () => {
     const cardPipe=document.getElementById('cardCurrentPipe');
     if(cardPipe) cardPipe.textContent=pipeLabel || '—';
     const cardMeta=document.getElementById('cardCurrentMeta');
-    if(cardMeta) cardMeta.textContent=[location, date, technician].filter(Boolean).join(' • ') || 'Fill out the Current screen to drive the card workflow.';
+    if(cardMeta) {
+      const missing=[];
+      if(!(client || description)) missing.push('job');
+      if(!machine) missing.push('machine');
+      if(pipeLabel === '—') missing.push('pipe');
+      if(bcoLabel === '—') missing.push('BCO');
+      const context=[location, date, technician].filter(Boolean).join(' • ');
+      cardMeta.textContent = missing.length ? `Missing ${missing.join(', ')}. Fill out Current and Calc → BCO to unlock the card workflow.` : (context || 'Card workflow is ready for stage inputs.');
+    }
     const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
     const activeLabel=document.querySelector('.submode-btn.active[data-mode]')?.textContent?.trim() || 'Hot Tap';
     const stage=document.getElementById('cardStageStat');

@@ -3875,3 +3875,7 @@ body.measurement-page {
 #firebaseReconnectBtn{min-width:110px;}
 .jobs-top-actions{flex-wrap:wrap;}
 .jobs-status-card strong[data-error], .jobs-status-card .status-error{color:#ffb4b4;}
+
+.card-focus-shell + .mode-panel.active { scroll-margin-top: 92px; }
+.mode-panel.active { animation: fadeStageIn .18s ease-out; }
+@keyframes fadeStageIn { from { opacity:.7; transform: translateY(4px);} to { opacity:1; transform: translateY(0);} }
