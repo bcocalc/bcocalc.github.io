@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha44';
+const BUILD_VERSION = '3.0.0-alpha45';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha44', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha35', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1154,8 +1154,6 @@ let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
 let selectedJobId = '';
-let selectedJobEntry = null;
-let renderedLibraryJobs = [];
 
 
 
@@ -1795,7 +1793,6 @@ function applyJobState(state) {
   if (state.activeMode) {
     setMode(state.activeMode);
   }
-  getStateFields().forEach((id) => dispatchFieldUpdate(id));
   updateJobInfoSummary();
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
 }
@@ -1838,9 +1835,8 @@ function loadRecordIntoCalculator(record, options = {}) {
   };
   Object.entries(directMap).forEach(([id, value]) => {
     const el = document.getElementById(id);
-    if (el && value != null) el.value = value;
+    if (el && value != null && value !== '') el.value = value;
   });
-  Object.keys(directMap).forEach((id) => dispatchFieldUpdate(id));
 
   try {
     const currentJobNameEl = document.getElementById('jobsCurrentJobName');
@@ -2266,9 +2262,7 @@ function getSelectedCombinedJob(jobs = null) {
   const list = jobs || getCombinedJobsForDisplay();
   if (!list.length) return null;
   const selectedId = selectedJobId ? String(selectedJobId) : '';
-  const found = list.find((job) => String(job.id) === selectedId) || list[0] || null;
-  if (found) selectedJobEntry = found;
-  return found;
+  return list.find((job) => String(job.id) === selectedId) || list[0] || null;
 }
 
 function updateJobsListSelectionUI() {
@@ -2276,44 +2270,8 @@ function updateJobsListSelectionUI() {
   jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
     const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
     item.classList.toggle('active', active);
-    item.setAttribute('aria-selected', active ? 'true' : 'false');
+    item.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
-}
-
-function setSelectedJobEntry(entry) {
-  selectedJobEntry = entry || null;
-  selectedJobId = entry ? String(entry.id) : '';
-  updateJobsListSelectionUI();
-}
-
-function selectLibraryJobByIndex(index) {
-  const idx = Number(index);
-  const selected = Number.isInteger(idx) ? renderedLibraryJobs[idx] || null : null;
-  if (!selected) return false;
-  setSelectedJobEntry(selected);
-  renderSelectedJobDetails(renderedLibraryJobs);
-  return true;
-}
-
-function loadSelectedLibraryJob() {
-  const selected = selectedJobEntry || getSelectedCombinedJob(renderedLibraryJobs);
-  if (!selected || !selected.record) {
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Select a job first.';
-    return false;
-  }
-  loadRecordIntoCalculator(selected.record);
-  try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
-  return true;
-}
-
-window.selectLibraryJobByIndex = selectLibraryJobByIndex;
-window.loadSelectedLibraryJob = loadSelectedLibraryJob;
-
-function dispatchFieldUpdate(id) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
-  try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
 }
 
 function renderSelectedJobDetails(jobs = null) {
@@ -2328,7 +2286,8 @@ function renderSelectedJobDetails(jobs = null) {
     jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     return;
   }
-  setSelectedJobEntry(selectedJob);
+  selectedJobId = String(selectedJob.id);
+  updateJobsListSelectionUI();
   const record = selectedJob.record;
   const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
   const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
@@ -2360,11 +2319,9 @@ function renderSelectedJobDetails(jobs = null) {
     </div>`;
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
   if (loadBtn) loadBtn.addEventListener('click', () => {
-    if (!loadSelectedLibraryJob()) {
-      const fallback = selectedJobEntry || getSelectedCombinedJob(list) || { record };
-      loadRecordIntoCalculator(fallback.record || record);
-      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
-    }
+    const selected = getSelectedCombinedJob(list) || { record };
+    loadRecordIntoCalculator(selected.record || record);
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
   });
 }
 
@@ -2387,40 +2344,97 @@ function renderJobsList() {
   const previousSelectedId = selectedJobId ? String(selectedJobId) : '';
   const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
   selectedJobId = selectedStillExists ? previousSelectedId : String(jobs[0].id);
-  selectedJobEntry = jobs.find((job) => String(job.id) === String(selectedJobId)) || jobs[0] || null;
 
   if (jobsSelectEl) {
-  const selectFromEvent = (event) => {
-    const item = event.target.closest('.jobs-list-item[data-job-index]');
-    if (!item || !jobsSelectEl.contains(item)) return false;
-    event.preventDefault();
-    event.stopPropagation();
-    const ok = selectLibraryJobByIndex(item.dataset.jobIndex);
-    return ok;
-  };
-  jobsSelectEl.addEventListener('pointerdown', selectFromEvent, true);
-  jobsSelectEl.addEventListener('click', selectFromEvent, true);
-  jobsSelectEl.addEventListener('keydown', (event) => {
-    const jobs = renderedLibraryJobs.length ? renderedLibraryJobs : getCombinedJobsForDisplay();
-    if (!jobs.length) return;
-    const activeEl = event.target.closest('.jobs-list-item[data-job-index]');
-    let index = activeEl ? Number(activeEl.dataset.jobIndex) : jobs.findIndex((job) => String(job.id) === String(selectedJobId));
-    if (!Number.isInteger(index) || index < 0) index = 0;
-    if (event.key === 'ArrowDown') index = Math.min(jobs.length - 1, index + 1);
-    else if (event.key === 'ArrowUp') index = Math.max(0, index - 1);
-    else if (event.key === 'Home') index = 0;
-    else if (event.key === 'End') index = jobs.length - 1;
-    else if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      loadSelectedLibraryJob();
-      return;
-    } else return;
-    event.preventDefault();
-    selectLibraryJobByIndex(index);
-    jobsSelectEl.querySelector(`.jobs-list-item[data-job-index="${index}"]`)?.scrollIntoView({ block: 'nearest' });
-  });
+    const previousScrollTop = jobsSelectEl.scrollTop;
+    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+      const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+      const client = record?.job?.client || 'No customer';
+      const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+      const op = record?.meta?.operationType || 'Job';
+      const nominalSize = record?.pipe?.nominalSize || '—';
+      const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+      const groupPrefix = jobsBrowseMode === 'customer'
+        ? `Customer: ${client}`
+        : jobsBrowseMode === 'location'
+          ? `Location: ${record?.job?.location || 'No location'}`
+          : jobsBrowseMode === 'date'
+            ? `Date: ${date}`
+            : 'Search';
+      const isActive = String(id) === selectedJobId;
+      const safeTitle = String(title).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const safeMeta = String(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return `
+        <button type="button" class="jobs-list-item${isActive ? ' active' : ''}" data-job-id="${String(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}" aria-pressed="${isActive ? 'true' : 'false'}">
+          <span class="jobs-list-title">${safeTitle}</span>
+          <span class="jobs-list-meta">${safeMeta}</span>
+        </button>`;
+    }).join('');
+    jobsSelectEl.scrollTop = previousScrollTop;
+  }
+
+  updateJobsListSelectionUI();
+  renderSelectedJobDetails(jobs);
 }
 
+async function loadCloudJobs() {
+  const ready = await ensureFirebaseReady();
+  if (!ready.enabled) {
+    cloudJobsCache = [];
+    renderJobsList();
+    updateUnsyncedCount();
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
+    return;
+  }
+
+  if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
+
+  try {
+    const { collection, getDocs, getDocsFromServer } = ready.modules;
+    const colRef = collection(ready.db, getJobsCollectionName());
+
+    const withTimeout = (promise, label) =>
+      Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timeout after 10000ms`)), 10000)
+        )
+      ]);
+
+    let snapshot;
+    try {
+      snapshot = getDocsFromServer
+        ? await withTimeout(getDocsFromServer(colRef), 'Firestore server read')
+        : await withTimeout(getDocs(colRef), 'Firestore read');
+    } catch (serverError) {
+      console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
+      snapshot = await withTimeout(getDocs(colRef), 'Firestore fallback read');
+    }
+
+    cloudJobsCache = snapshot.docs.map((docSnap) => ({
+      source: 'cloud',
+      id: docSnap.id,
+      record: docSnap.data() || {}
+    }));
+
+    renderJobsList();
+    if (cloudJobsCache.length) openSharedLibraryLane();
+
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent =
+        `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}).`;
+    }
+  } catch (error) {
+    console.error('Cloud jobs load failed', error);
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
+    }
+  } finally {
+    if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
+  }
+
+  updateUnsyncedCount();
+}
 function updateUnsyncedCount() {
   if (!unsyncedJobsCountEl) return;
   const unsynced = getHistory().filter((item) => !item.cloudId).length;
@@ -2569,65 +2583,6 @@ if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
   el.addEventListener('input', persistCurrentJob);
   el.addEventListener('change', persistCurrentJob);
 });
-async function loadCloudJobs() {
-  const ready = await ensureFirebaseReady();
-  if (!ready.enabled) {
-    cloudJobsCache = [];
-    renderJobsList();
-    updateUnsyncedCount();
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
-    return;
-  }
-
-  if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
-
-  try {
-    const { collection, getDocs, getDocsFromServer } = ready.modules;
-    const colRef = collection(ready.db, getJobsCollectionName());
-
-    const withTimeout = (promise, label) =>
-      Promise.race([
-        promise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`${label} timeout after 10000ms`)), 10000)
-        )
-      ]);
-
-    let snapshot;
-    try {
-      snapshot = getDocsFromServer
-        ? await withTimeout(getDocsFromServer(colRef), 'Firestore server read')
-        : await withTimeout(getDocs(colRef), 'Firestore read');
-    } catch (serverError) {
-      console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
-      snapshot = await withTimeout(getDocs(colRef), 'Firestore fallback read');
-    }
-
-    cloudJobsCache = snapshot.docs.map((docSnap) => ({
-      source: 'cloud',
-      id: docSnap.id,
-      record: docSnap.data() || {}
-    }));
-
-    renderJobsList();
-    if (cloudJobsCache.length) openSharedLibraryLane();
-
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent =
-        `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}).`;
-    }
-  } catch (error) {
-    console.error('Cloud jobs load failed', error);
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
-    }
-  } finally {
-    if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
-  }
-
-  updateUnsyncedCount();
-}
-
 window.saveCurrentJobToHistory = saveCurrentJobToHistory;
 window.loadCloudJobs = loadCloudJobs;
 if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobToHistory);
@@ -2692,17 +2647,14 @@ if (bcoResultEl) {
 }
 if (jobsSelectEl) {
   jobsSelectEl.addEventListener('click', (event) => {
-    const item = event.target.closest('.jobs-list-item[data-job-index]');
+    const item = event.target.closest('.jobs-list-item[data-job-id]');
     if (!item) return;
-    window.selectLibraryJobByIndex(item.dataset.jobIndex);
-  });
-  jobsSelectEl.addEventListener('pointerup', (event) => {
-    const item = event.target.closest('.jobs-list-item[data-job-index]');
-    if (!item) return;
-    window.selectLibraryJobByIndex(item.dataset.jobIndex);
+    selectedJobId = String(item.dataset.jobId || '');
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails();
   });
   jobsSelectEl.addEventListener('keydown', (event) => {
-    const jobs = renderedLibraryJobs.length ? renderedLibraryJobs : getCombinedJobsForDisplay();
+    const jobs = getCombinedJobsForDisplay();
     if (!jobs.length) return;
     let index = jobs.findIndex((job) => String(job.id) === String(selectedJobId));
     if (index < 0) index = 0;
@@ -2710,13 +2662,10 @@ if (jobsSelectEl) {
     else if (event.key === 'ArrowUp') index = Math.max(0, index - 1);
     else if (event.key === 'Home') index = 0;
     else if (event.key === 'End') index = jobs.length - 1;
-    else if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      window.loadSelectedLibraryJob();
-      return;
-    } else return;
+    else return;
     event.preventDefault();
-    setSelectedJobEntry(jobs[index]);
+    selectedJobId = String(jobs[index].id);
+    updateJobsListSelectionUI();
     renderSelectedJobDetails(jobs);
     const activeItem = jobsSelectEl.querySelector('.jobs-list-item.active');
     activeItem?.scrollIntoView({ block: 'nearest' });
@@ -2754,6 +2703,9 @@ window.addEventListener('load', async () => {
   initAccordionSections();
   ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
 });
+
+})();
+
 
 // alpha4 app shell navigation
 (function(){
