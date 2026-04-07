@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha32';
+const BUILD_VERSION = '3.0.0-alpha33';
 
 (function(){
 
@@ -1186,7 +1186,8 @@ function renderBcoResult(payload = {}) {
 
 function buildStateFromRecord(record = {}) {
   const state = { ...(record.state || {}) };
-  const op = String(record?.meta?.operationType || '').toLowerCase();
+  const opRaw = String(record?.meta?.operationType || '').trim();
+  const op = opRaw.toLowerCase();
   if (!state.jobClient) state.jobClient = record?.job?.client || '';
   if (!state.jobDescription) state.jobDescription = record?.job?.description || '';
   if (!state.jobNumber) state.jobNumber = record?.job?.jobNumber || '';
@@ -1200,8 +1201,19 @@ function buildStateFromRecord(record = {}) {
   if (!state.bcoPipeMaterial) state.bcoPipeMaterial = record?.pipe?.material || '';
   if (!state.bcoPipeOD) state.bcoPipeOD = record?.pipe?.nominalSize || '';
   if (!state.bcoSchedule) state.bcoSchedule = record?.pipe?.schedule || '';
+  if (!state.bcoPipeID) state.bcoPipeID = record?.pipe?.pipeId || '';
   if (!state.bcoCutterOD) state.bcoCutterOD = record?.machine?.cutterOd || '';
   const machine = String(record?.machine?.machine || '');
+  if (!state.machineType && machine) state.machineType = machine;
+  if (!state.operationType) {
+    if (op.includes('completion')) state.operationType = 'Completion Plug';
+    else if (op.includes('line stop')) state.operationType = 'Line Stop';
+    else if (op.includes('htp')) state.operationType = 'HTP';
+    else if (op.includes('hot tap')) state.operationType = 'Hot Tap';
+    else state.operationType = 'Hot Tap';
+  }
+  if (!state.etaCutterSize && record?.machine?.cutterOd) state.etaCutterSize = record.machine.cutterOd;
+  if (!state.etaBco && record?.calculations?.bco) state.etaBco = record.calculations.bco;
   if (!state.etaMachine && machine) {
     if (machine.includes('360')) state.etaMachine = '360';
     else if (machine.includes('660') || machine.includes('760')) state.etaMachine = '660';
@@ -1797,6 +1809,10 @@ function loadRecordIntoCalculator(record, options = {}) {
   const state = record?.state || buildStateFromRecord(record);
   if (!state || !Object.keys(state).length) return;
   applyJobState(state);
+  try {
+    const currentJobNameEl = document.getElementById('jobsCurrentJobName');
+    if (currentJobNameEl) currentJobNameEl.textContent = state.jobDescription || state.jobNumber || state.jobClient || 'Loaded Job';
+  } catch {}
   refreshBcoState();
   updateBcoDisplays();
   calculateIntegratedBco({ silent: true });
@@ -1822,12 +1838,17 @@ function loadRecordIntoCalculator(record, options = {}) {
   persistCurrentJob();
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   if (jobsCloudStatusEl && options.message !== false) {
-    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
+    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
   }
   const targetMode = state?.activeMode || record?.state?.activeMode || 'bco';
   if (targetMode) setMode(targetMode);
   try {
-    document.getElementById('bcoPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const savedScreen = localStorage.getItem('tapcalcV3Screen') || 'job';
+    const tab = document.querySelector(`.screen-tab[data-screen="${savedScreen}"]`) || document.querySelector('.screen-tab[data-screen="job"]');
+    tab?.click();
+  } catch {}
+  try {
+    document.getElementById('jobScreen')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch {}
 }
 
@@ -2569,8 +2590,29 @@ if (bcoResultEl) {
   });
 }
 if (jobsSelectEl) {
-  jobsSelectEl.addEventListener('change', () => renderSelectedJobDetails());
-  jobsSelectEl.addEventListener('keyup', (event) => { if (['ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(event.key)) renderSelectedJobDetails(); });
+  let jobsSelectLastScrollTop = 0;
+  jobsSelectEl.addEventListener('change', () => {
+    jobsSelectLastScrollTop = jobsSelectEl.scrollTop;
+    renderSelectedJobDetails();
+    requestAnimationFrame(() => { jobsSelectEl.scrollTop = jobsSelectLastScrollTop; });
+  });
+  jobsSelectEl.addEventListener('keyup', (event) => {
+    if (['ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(event.key)) {
+      jobsSelectLastScrollTop = jobsSelectEl.scrollTop;
+      renderSelectedJobDetails();
+      requestAnimationFrame(() => { jobsSelectEl.scrollTop = jobsSelectLastScrollTop; });
+    }
+  });
+  jobsSelectEl.addEventListener('mousedown', () => { jobsSelectLastScrollTop = jobsSelectEl.scrollTop; });
+  jobsSelectEl.addEventListener('click', () => {
+    requestAnimationFrame(() => { jobsSelectEl.scrollTop = jobsSelectLastScrollTop; });
+  });
+  jobsSelectEl.addEventListener('wheel', (event) => {
+    event.preventDefault();
+    const nextTop = jobsSelectEl.scrollTop + event.deltaY;
+    jobsSelectEl.scrollTop = nextTop;
+    jobsSelectLastScrollTop = jobsSelectEl.scrollTop;
+  }, { passive: false });
 }
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
