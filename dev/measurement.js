@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha40';
+const BUILD_VERSION = '3.0.0-alpha41';
 
 (function(){
 
@@ -2560,6 +2560,65 @@ if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
   el.addEventListener('input', persistCurrentJob);
   el.addEventListener('change', persistCurrentJob);
 });
+async function loadCloudJobs() {
+  const ready = await ensureFirebaseReady();
+  if (!ready.enabled) {
+    cloudJobsCache = [];
+    renderJobsList();
+    updateUnsyncedCount();
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
+    return;
+  }
+
+  if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
+
+  try {
+    const { collection, getDocs, getDocsFromServer } = ready.modules;
+    const colRef = collection(ready.db, getJobsCollectionName());
+
+    const withTimeout = (promise, label) =>
+      Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`${label} timeout after 10000ms`)), 10000)
+        )
+      ]);
+
+    let snapshot;
+    try {
+      snapshot = getDocsFromServer
+        ? await withTimeout(getDocsFromServer(colRef), 'Firestore server read')
+        : await withTimeout(getDocs(colRef), 'Firestore read');
+    } catch (serverError) {
+      console.warn('Server fetch failed, falling back to cached/default Firestore read.', serverError);
+      snapshot = await withTimeout(getDocs(colRef), 'Firestore fallback read');
+    }
+
+    cloudJobsCache = snapshot.docs.map((docSnap) => ({
+      source: 'cloud',
+      id: docSnap.id,
+      record: docSnap.data() || {}
+    }));
+
+    renderJobsList();
+    if (cloudJobsCache.length) openSharedLibraryLane();
+
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent =
+        `Loaded ${cloudJobsCache.length} shared job${cloudJobsCache.length === 1 ? '' : 's'} from ${getJobsCollectionName()} (${window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project'}).`;
+    }
+  } catch (error) {
+    console.error('Cloud jobs load failed', error);
+    if (jobsCloudStatusEl) {
+      jobsCloudStatusEl.textContent = `Could not load shared jobs. ${formatFirebaseError(error)}`;
+    }
+  } finally {
+    if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
+  }
+
+  updateUnsyncedCount();
+}
+
 window.saveCurrentJobToHistory = saveCurrentJobToHistory;
 window.loadCloudJobs = loadCloudJobs;
 if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobToHistory);
