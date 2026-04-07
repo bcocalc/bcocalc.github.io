@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha42';
+const BUILD_VERSION = '3.0.0-alpha43';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha42', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha43', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2420,7 +2420,16 @@ function renderJobsList() {
     jobsSelectEl.querySelector(`.jobs-list-item[data-job-index="${index}"]`)?.scrollIntoView({ block: 'nearest' });
   });
 }
-if (historyDrawerToggleEl) {
+
+function updateUnsyncedCount() {
+  if (!unsyncedJobsCountEl) return;
+  const unsynced = getHistory().filter((item) => !item.cloudId).length;
+  unsyncedJobsCountEl.textContent = String(unsynced);
+}
+
+function setHistoryDrawerOpen(isOpen) {
+  if (historyDrawerContentEl) historyDrawerContentEl.hidden = !isOpen;
+  if (historyDrawerToggleEl) {
     historyDrawerToggleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     historyDrawerToggleEl.classList.toggle('open', isOpen);
   }
