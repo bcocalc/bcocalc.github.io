@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha52';
+const BUILD_VERSION = '3.0.0-alpha53';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha52', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha53', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3108,8 +3108,41 @@ window.addEventListener('load', async () => {
     const selectedRecord = selected?.record || window.__tapcalcSelectedLibraryRecord || {};
     if (!selectedRecord || !Object.keys(selectedRecord).length) return;
     try {
-      loadRecordIntoCalculator(selectedRecord);
-      document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      const rebuiltState = buildStateFromRecord(selectedRecord);
+      const mergedState = {
+        ...rebuiltState,
+        jobClient: rebuiltState.jobClient || selectedRecord?.job?.client || '',
+        jobDescription: rebuiltState.jobDescription || selectedRecord?.job?.description || '',
+        jobNumber: rebuiltState.jobNumber || selectedRecord?.job?.jobNumber || '',
+        jobDate: rebuiltState.jobDate || selectedRecord?.job?.date || '',
+        jobLocation: rebuiltState.jobLocation || selectedRecord?.job?.location || '',
+        jobTechnician: rebuiltState.jobTechnician || selectedRecord?.job?.technician || '',
+        machineType: rebuiltState.machineType || selectedRecord?.machine?.machine || '',
+        operationType: rebuiltState.operationType || selectedRecord?.meta?.operationType || 'Hot Tap',
+        bcoPipeMaterial: rebuiltState.bcoPipeMaterial || selectedRecord?.pipe?.material || '',
+        bcoPipeOD: rebuiltState.bcoPipeOD || selectedRecord?.pipe?.nominalSize || '',
+        bcoSchedule: rebuiltState.bcoSchedule || selectedRecord?.pipe?.schedule || '',
+        bcoPipeID: rebuiltState.bcoPipeID || selectedRecord?.pipe?.pipeId || '',
+        bcoCutterOD: rebuiltState.bcoCutterOD || selectedRecord?.machine?.cutterOd || '',
+        etaBco: rebuiltState.etaBco || selectedRecord?.calculations?.bco || '',
+        etaCutterSize: rebuiltState.etaCutterSize || selectedRecord?.machine?.cutterOd || ''
+      };
+      if (mergedState.jobDate) {
+        const m = String(mergedState.jobDate).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+        if (m) mergedState.jobDate = `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+      }
+      localStorage.setItem(JOB_STATE_KEY, JSON.stringify(mergedState));
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      try { applyJobState(mergedState); } catch {}
+      Object.entries(mergedState).forEach(([id, value]) => {
+        try { setFieldValueAndNotify(id, value); } catch {}
+      });
+      try { updateJobInfoSummary(); } catch {}
+      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+      try { refreshBcoState(); updateBcoDisplays(); calculateIntegratedBco({ silent: true }); } catch {}
+      try { calcHotTap(); calcHtp(); calcLineStop(); calcCompletionPlug(); initEtaCalculator(); syncBcoToEta({ force: true }); updateEtaEstimate(); } catch {}
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${selectedRecord?.meta?.title || mergedState.jobDescription || mergedState.jobNumber || 'saved job'} into TapCalc.`;
     } catch (error) {
       console.error('Load Job failed', error);
     }
