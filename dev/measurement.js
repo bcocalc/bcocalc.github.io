@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha29';
+const BUILD_VERSION = '3.0.0-alpha30';
 
 (function(){
 
@@ -77,8 +77,7 @@ const panels = {
   lineStop: document.getElementById('lineStopPanel'),
   completionPlug: document.getElementById('completionPlugPanel'),
   eta: document.getElementById('etaPanel'),
-  glossary: document.getElementById('glossaryPanel'),
-  jobs: document.getElementById('jobsPanel')
+  glossary: document.getElementById('glossaryPanel')
 };
 
 function setMode(mode) {
@@ -2553,6 +2552,13 @@ window.addEventListener('load', async () => {
     tabs.forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
     Object.entries(views).forEach(([k,v])=>{ if(v) v.classList.toggle('active', k===name); });
     document.body.classList.toggle('show-library-screen', name === 'jobs');
+    const jobsPanelEl = document.getElementById('jobsPanel');
+    if (jobsPanelEl) jobsPanelEl.classList.add('active');
+    if (name === 'jobs') {
+      try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch {}
+      try { renderJobsList(); } catch {}
+      try { loadCloudJobs(); } catch {}
+    }
     try{ localStorage.setItem('tapcalcV3Screen', name);}catch{}
   }
 
