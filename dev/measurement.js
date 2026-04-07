@@ -1200,9 +1200,6 @@ function setLibraryLane(lane) {
   if (next === 'shared') {
     setTimeout(() => {
       try { renderJobsList(); } catch {}
-      const anchor = document.getElementById('sharedJobsAnchor') || document.getElementById('jobsSelect');
-      try { anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
-      try { jobsSelectEl?.focus({ preventScroll: true }); } catch {}
     }, 120);
   }
 }
@@ -2365,7 +2362,6 @@ async function saveCurrentJobToHistory() {
   updateUnsyncedCount();
   renderJobsList();
   setHistoryDrawerOpen(true);
-  if (historyListEl) historyListEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   if (window.innerWidth <= 768) setJobInfoCollapsed(true);
   try {
     const cloudId = await uploadHistoryItemToCloud(snapshot);
@@ -2576,7 +2572,7 @@ window.addEventListener('load', async () => {
   document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>{
     const screen=b.dataset.goScreen;
     setScreen(screen);
-    if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>{ openSharedLibraryLane(); try { document.getElementById('sharedJobsAnchor')?.scrollIntoView({behavior:'smooth', block:'start'}); } catch {} }, 80);
+    if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>{ openSharedLibraryLane(); }, 80);
     if (b.dataset.goMode) setTimeout(()=>window.setMode(b.dataset.goMode), 80);
   }));
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
