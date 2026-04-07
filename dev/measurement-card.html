@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha26">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha27">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha26 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha27 · 2026-04-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha26 · 2026-04-06</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha27 · 2026-04-06</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -785,7 +785,7 @@
 
   <section id="jobsPanel" class="mode-panel active jobs-workspace-panel">
     <div class="jobs-workspace-grid">
-      <div class="section jobs-panel-card jobs-panel-manage jobs-panel-local library-lane active" data-library-lane-panel="local">
+      <div class="section jobs-panel-card jobs-panel-manage jobs-panel-local library-lane active" data-library-lane-panel="local" aria-hidden="false">
         <div class="jobs-section-head">
           <div>
             <h3>Local Jobs</h3>
@@ -817,7 +817,7 @@
         </div>
       </div>
 
-      <div class="section jobs-panel-card jobs-panel-library jobs-panel-shared library-lane" data-library-lane-panel="shared">
+      <div class="section jobs-panel-card jobs-panel-library jobs-panel-shared library-lane" data-library-lane-panel="shared" hidden aria-hidden="true">
         <div class="jobs-section-head">
           <div>
             <h3>Shared Jobs</h3>
@@ -882,8 +882,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha26"></script>
-<script src="measurement.js?v=3.0.0-alpha26"></script>
+<script src="firebase-config.js?v=3.0.0-alpha27"></script>
+<script src="measurement.js?v=3.0.0-alpha27"></script>
   </section>
 </body>
 </html>

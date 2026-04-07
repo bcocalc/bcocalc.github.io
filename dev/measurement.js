@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha26';
+const BUILD_VERSION = '3.0.0-alpha27';
 
 (function(){
 
@@ -1001,7 +1001,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha26', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha27', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1189,11 +1189,18 @@ function setLibraryLane(lane) {
   const next = lane === 'shared' ? 'shared' : 'local';
   const jobsScreen = document.getElementById('jobsScreen');
   libraryLaneBtnEls.forEach((btn) => btn.classList.toggle('active', btn.dataset.libraryLane === next));
-  libraryLanePanelEls.forEach((panel) => panel.classList.toggle('active', panel.dataset.libraryLanePanel === next));
+  libraryLanePanelEls.forEach((panel) => {
+    const isActive = panel.dataset.libraryLanePanel === next;
+    panel.classList.toggle('active', isActive);
+    panel.hidden = !isActive;
+    panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+    panel.style.display = isActive ? 'block' : 'none';
+  });
   if (jobsScreen) jobsScreen.dataset.activeLane = next;
   try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
   if (next === 'shared') {
     setTimeout(() => {
+      try { renderJobsList(); } catch {}
       const anchor = document.getElementById('sharedJobsAnchor') || document.getElementById('jobsSelect');
       try { anchor?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
       try { jobsSelectEl?.focus({ preventScroll: true }); } catch {}
