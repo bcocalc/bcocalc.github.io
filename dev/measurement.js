@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha20';
+const BUILD_VERSION = '3.0.0-alpha21';
 
 (function(){
 
@@ -993,7 +993,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha20', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2520,37 +2520,63 @@ window.addEventListener('load', async () => {
 
   function updateCardStageChecks(){
     const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
-    const geometryReady=getText('summaryBco') !== '—' && getText('summaryPipe') !== '—';
-    const checks={ geometry: geometryReady, inputs:false, output:false, ready:false };
-    if(activeMode==='hotTap'){
-      checks.inputs = hasValue('md') && hasValue('ptc') && hasValue('mt');
-      checks.output = getText('ttd') !== '—';
-    } else if(activeMode==='htp'){
-      checks.inputs = hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc');
-      checks.output = getText('htpTco') !== '—';
-    } else if(activeMode==='lineStop'){
-      checks.inputs = hasValue('lsMd') && hasValue('lsTravel') && hasValue('lsMachineTravel');
-      checks.output = getText('ls_li') !== '—';
-    } else if(activeMode==='completionPlug'){
-      checks.inputs = hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt');
-      checks.output = getText('cp_li') !== '—';
+    const hasJobInfo = ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician'].some(id => hasValue(id));
+    const hasMachine = hasValue('machineType');
+    const geometryReady = getText('summaryBco') !== '—' && getText('summaryPipe') !== '—' && getText('summaryCutter') !== '—';
+    const baseReady = hasJobInfo && hasMachine;
+
+    const stageChecks = {
+      hotTap: {
+        geometry: baseReady && geometryReady,
+        inputs: hasValue('md') && hasValue('ptc') && hasValue('mt'),
+        output: getText('ttd') !== '—'
+      },
+      htp: {
+        geometry: baseReady && geometryReady,
+        inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
+        output: getText('htpTco') !== '—'
+      },
+      lineStop: {
+        geometry: baseReady && geometryReady,
+        inputs: hasValue('lsMd') && hasValue('lsTravel') && hasValue('lsMachineTravel'),
+        output: getText('ls_li') !== '—'
+      },
+      completionPlug: {
+        geometry: baseReady && geometryReady,
+        inputs: hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt'),
+        output: getText('cp_li') !== '—'
+      }
+    };
+
+    function describeStage(stage){
+      const checks = stageChecks[stage];
+      const started = checks.inputs || checks.output;
+      const ready = checks.geometry && checks.inputs && checks.output;
+      return { ...checks, started, ready };
     }
-    checks.ready = checks.geometry && checks.inputs && checks.output;
+
+    const current = describeStage(activeMode);
     const labelMap = {
-      cardCheckGeometry: checks.geometry ? 'Ready' : 'Waiting',
-      cardCheckInputs: checks.inputs ? 'Ready' : 'Waiting',
-      cardCheckOutput: checks.output ? 'Ready' : 'Waiting',
-      cardCheckReady: checks.ready ? 'Ready' : 'Not Ready'
+      cardCheckGeometry: current.geometry ? 'Ready' : (baseReady ? 'Waiting' : 'Setup Needed'),
+      cardCheckInputs: current.inputs ? 'Ready' : (current.started ? 'In Progress' : 'Waiting'),
+      cardCheckOutput: current.output ? 'Ready' : 'Waiting',
+      cardCheckReady: current.ready ? 'Ready' : (current.started || current.geometry ? 'In Progress' : 'Not Ready')
     };
     Object.entries(labelMap).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) { el.textContent=val; el.dataset.state=val.toLowerCase().replace(/\s+/g,'-'); } });
 
     const stageReadyMap = {
-      workflowStatusHotTap: activeMode==='hotTap' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('ttd') !== '—' ? 'Built' : 'Not Ready'),
-      workflowStatusHtp: activeMode==='htp' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('htpTco') !== '—' ? 'Built' : 'Not Ready'),
-      workflowStatusLineStop: activeMode==='lineStop' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('ls_li') !== '—' ? 'Built' : 'Not Ready'),
-      workflowStatusCompletionPlug: activeMode==='completionPlug' ? (checks.ready ? 'Ready' : 'In Progress') : (getText('cp_li') !== '—' ? 'Built' : 'Not Ready')
+      workflowStatusHotTap: describeStage('hotTap'),
+      workflowStatusHtp: describeStage('htp'),
+      workflowStatusLineStop: describeStage('lineStop'),
+      workflowStatusCompletionPlug: describeStage('completionPlug')
     };
-    Object.entries(stageReadyMap).forEach(([id,val])=>{ const el=document.getElementById(id); if(el){ el.textContent=val; el.dataset.state=val.toLowerCase().replace(/\s+/g,'-'); } });
+    Object.entries(stageReadyMap).forEach(([id,state])=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      const val = state.ready ? 'Ready' : (state.started || state.geometry ? 'In Progress' : 'Not Ready');
+      el.textContent = val;
+      el.dataset.state = val.toLowerCase().replace(/\s+/g,'-');
+    });
   }
 
   function updateCurrentJobLabel(){
