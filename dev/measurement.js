@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha54';
+const BUILD_VERSION = '3.0.0-alpha56';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha54', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha35', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1759,17 +1759,6 @@ function getStateFields() {
   ];
 }
 
-
-function setFieldValueAndNotify(id, value) {
-  const el = document.getElementById(id);
-  if (!el) return false;
-  if (el.type === 'checkbox') el.checked = !!value;
-  else el.value = value == null ? '' : String(value);
-  try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
-  try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
-  return true;
-}
-
 function collectJobState() {
   const state = {};
   getStateFields().forEach(id => {
@@ -1820,102 +1809,82 @@ function restoreCurrentJob() {
 function loadRecordIntoCalculator(record, options = {}) {
   const state = buildStateFromRecord(record);
   if (!state || !Object.keys(state).length) return;
+  applyJobState(state);
 
-  const writeMap = {
-    jobClient: state.jobClient || record?.job?.client || '',
-    jobDescription: state.jobDescription || record?.job?.description || '',
-    jobNumber: state.jobNumber || record?.job?.jobNumber || '',
-    jobPressure: state.jobPressure || record?.job?.pressure || '',
-    jobTemperature: state.jobTemperature || record?.job?.temperature || '',
-    jobDate: state.jobDate || record?.job?.date || '',
-    jobProduct: state.jobProduct || record?.job?.product || '',
-    jobLocation: state.jobLocation || record?.job?.location || '',
-    jobTechnician: state.jobTechnician || record?.job?.technician || '',
-    jobNotes: state.jobNotes || record?.job?.notes || '',
-    machineType: state.machineType || record?.machine?.machine || '',
-    operationType: state.operationType || '',
-    bcoPipeMaterial: state.bcoPipeMaterial || record?.pipe?.material || '',
-    bcoPipeOD: state.bcoPipeOD || record?.pipe?.nominalSize || '',
-    bcoSchedule: state.bcoSchedule || record?.pipe?.schedule || '',
-    bcoPipeID: state.bcoPipeID || record?.pipe?.pipeId || '',
-    bcoCutterOD: state.bcoCutterOD || record?.machine?.cutterOd || '',
-    etaMachine: state.etaMachine || '',
-    etaCutterSize: state.etaCutterSize || record?.machine?.cutterOd || '',
-    etaBco: state.etaBco || record?.calculations?.bco || '',
-    md: state.md || record?.measurements?.hotTap?.md || '',
-    ld: state.ld || record?.measurements?.hotTap?.ld || '',
-    ldSign: state.ldSign || record?.measurements?.hotTap?.ldSign || '',
-    ptc: state.ptc || record?.measurements?.hotTap?.ptc || '',
-    pod: state.pod || record?.measurements?.hotTap?.pod || '',
-    mt: state.mt || record?.measurements?.hotTap?.mt || '',
-    start: state.start || record?.measurements?.hotTap?.rodStart || '',
-    htpMd: state.htpMd || record?.measurements?.htp?.md || '',
-    htpLd: state.htpLd || record?.measurements?.htp?.ld || '',
-    htpLdSign: state.htpLdSign || record?.measurements?.htp?.ldSign || '',
-    htpPtc: state.htpPtc || record?.measurements?.htp?.ptc || '',
-    htpPipeSize: state.htpPipeSize || record?.measurements?.htp?.pipeSize || '',
-    lsMd: state.lsMd || record?.measurements?.lineStop?.md || '',
-    lsLd: state.lsLd || record?.measurements?.lineStop?.ld || '',
-    lsLdSign: state.lsLdSign || record?.measurements?.lineStop?.ldSign || '',
-    lsPod: state.lsPod || record?.measurements?.lineStop?.pod || '',
-    lsTravel: state.lsTravel || record?.measurements?.lineStop?.travel || '',
-    lsMachineTravel: state.lsMachineTravel || record?.measurements?.lineStop?.machineTravel || '',
-    cpStart: state.cpStart || record?.measurements?.completionPlug?.start || '',
-    cpJbf: state.cpJbf || record?.measurements?.completionPlug?.jbf || '',
-    cpLd: state.cpLd || record?.measurements?.completionPlug?.ld || '',
-    cpPt: state.cpPt || record?.measurements?.completionPlug?.pt || ''
+  const directMap = {
+    jobClient: record?.job?.client,
+    jobDescription: record?.job?.description,
+    jobNumber: record?.job?.jobNumber,
+    jobPressure: record?.job?.pressure,
+    jobTemperature: record?.job?.temperature,
+    jobDate: record?.job?.date,
+    jobProduct: record?.job?.product,
+    jobLocation: record?.job?.location,
+    jobTechnician: record?.job?.technician,
+    jobNotes: record?.job?.notes,
+    machineType: state.machineType || record?.machine?.machine,
+    operationType: state.operationType,
+    bcoPipeMaterial: state.bcoPipeMaterial,
+    bcoPipeOD: state.bcoPipeOD,
+    bcoSchedule: state.bcoSchedule,
+    bcoPipeID: state.bcoPipeID,
+    bcoCutterOD: state.bcoCutterOD,
+    etaMachine: state.etaMachine,
+    etaCutterSize: state.etaCutterSize,
+    etaBco: state.etaBco
   };
-
-  // Apply once to internal state.
-  applyJobState({ ...state, ...writeMap });
-
-  // Then force values into the visible fields.
-  Object.entries(writeMap).forEach(([id, value]) => {
-    if (value !== undefined) setFieldValueAndNotify(id, value);
+  Object.entries(directMap).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el && value != null && value !== '') {
+      el.value = value;
+      try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+    }
   });
 
-  const hydrateVisibleFields = () => {
-    Object.entries(writeMap).forEach(([id, value]) => {
-      if (value !== undefined) setFieldValueAndNotify(id, value);
-    });
-    try {
-      if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary();
-      if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
-      if (typeof syncOperationSelection === 'function') syncOperationSelection();
-    } catch {}
-    try {
-      refreshBcoState();
-      updateBcoDisplays();
-      if (!options.skipHeavyRecalc) {
-        calculateIntegratedBco({ silent: true });
-        calcHotTap();
-        calcHtp();
-        calcLineStop();
-        calcCompletionPlug();
-        initEtaCalculator();
-        syncBcoToEta({ force: true });
-        updateEtaEstimate();
-      }
-    } catch (error) {
-      console.error('TapCalc hydrate recalculation failed', error);
-    }
-  };
-
-  hydrateVisibleFields();
-  clearTimeout(window.__tapcalcHydrateTimerA);
-  clearTimeout(window.__tapcalcHydrateTimerB);
-  window.__tapcalcHydrateTimerA = setTimeout(hydrateVisibleFields, 40);
-
   try {
-    localStorage.setItem(JOB_STATE_KEY, JSON.stringify({ ...state, ...writeMap }));
+    const currentJobNameEl = document.getElementById('jobsCurrentJobName');
+    if (currentJobNameEl) currentJobNameEl.textContent = state.jobDescription || state.jobNumber || state.jobClient || 'Loaded Job';
   } catch {}
+
+  refreshBcoState();
+  updateBcoDisplays();
+  calculateIntegratedBco({ silent: true });
+  calcHotTap();
+  calcHtp();
+  calcLineStop();
+  calcCompletionPlug();
+  initEtaCalculator();
+  syncBcoToEta({ force: true });
+  updateEtaEstimate();
+
+  clearTimeout(window.__tapcalcLoadJobBcoTimer);
+  window.__tapcalcLoadJobBcoTimer = setTimeout(() => {
+    refreshBcoState();
+    updateBcoDisplays();
+    calculateIntegratedBco({ silent: true });
+    calcHotTap();
+    calcHtp();
+    calcLineStop();
+    calcCompletionPlug();
+    syncBcoToEta({ force: true });
+    updateEtaEstimate();
+    updateJobInfoSummary();
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+  }, 80);
+
   persistCurrentJob();
+  updateJobInfoSummary();
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   if (jobsCloudStatusEl && options.message !== false) {
-    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || writeMap.jobDescription || writeMap.jobNumber || 'saved job'} into TapCalc.`;
+    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
   }
   const targetMode = state?.activeMode || 'hotTap';
-  try { if (targetMode) setMode(targetMode); } catch {}
-  try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+  if (targetMode) setMode(targetMode);
+  try {
+    const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
+    jobTab?.click();
+  } catch {}
 }
 
 
@@ -2306,7 +2275,6 @@ function updateJobsListSelectionUI() {
     const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
     item.classList.toggle('active', active);
     item.setAttribute('aria-pressed', active ? 'true' : 'false');
-    item.setAttribute('aria-selected', active ? 'true' : 'false');
   });
 }
 
@@ -2325,7 +2293,6 @@ function renderSelectedJobDetails(jobs = null) {
   selectedJobId = String(selectedJob.id);
   updateJobsListSelectionUI();
   const record = selectedJob.record;
-  window.__tapcalcSelectedLibraryRecord = record || null;
   const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
   const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
   const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
@@ -2357,8 +2324,7 @@ function renderSelectedJobDetails(jobs = null) {
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
   if (loadBtn) loadBtn.addEventListener('click', () => {
     const selected = getSelectedCombinedJob(list) || { record };
-    const selectedRecord = selected.record || window.__tapcalcSelectedLibraryRecord || record;
-    loadRecordIntoCalculator(selectedRecord || {});
+    loadRecordIntoCalculator(selected.record || record);
     try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
   });
 }
@@ -2403,24 +2369,23 @@ function renderJobsList() {
             ? `Date: ${date}`
             : 'Search';
       const isActive = String(id) === selectedJobId;
-      const item = document.createElement('button');
-      item.type = 'button';
+      const item = document.createElement('div');
       item.className = `jobs-list-item${isActive ? ' active' : ''}`;
       item.dataset.jobId = String(id);
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
       item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-      item.setAttribute('aria-selected', isActive ? 'true' : 'false');
       item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
       item.querySelector('.jobs-list-title').textContent = title;
       item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
       const selectThis = (event) => {
         if (event) { event.preventDefault(); event.stopPropagation(); }
         selectedJobId = String(id);
-        window.__tapcalcSelectedLibraryRecord = record || null;
         updateJobsListSelectionUI();
         renderSelectedJobDetails(jobs);
       };
-      item.addEventListener('click', selectThis, { passive:false });
-      item.addEventListener('touchend', selectThis, { passive:false });
+      item.addEventListener('click', selectThis);
+      item.addEventListener('pointerup', selectThis);
       item.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') selectThis(event);
       });
@@ -2800,7 +2765,6 @@ window.addEventListener('load', async () => {
     if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>{ openSharedLibraryLane(); }, 80);
     if (b.dataset.goMode) setTimeout(()=>window.setMode(b.dataset.goMode), 80);
   }));
-  window.tapCalcSetScreen = setScreen;
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
   setScreen(views[saved]?saved:'home');
   if((views[saved]?saved:'home')==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); }
@@ -3090,7 +3054,7 @@ window.addEventListener('load', async () => {
   };
 
   window.selectLibraryJobByIndex = function(index){ const jobs=alpha47GetJobs(); const entry=jobs[index]; if(entry){ selectedJobId = String(entry.id); updateJobsListSelectionUI(); renderSelectedJobDetails(jobs); } };
-  window.loadSelectedLibraryJob = function(){ return window.alpha47LoadSelectedLibraryJob && window.alpha47LoadSelectedLibraryJob(); };
+  window.loadSelectedLibraryJob = window.alpha47LoadSelectedLibraryJob;
 
   updateJobsListSelectionUI = function updateJobsListSelectionUIAlpha47() {
     const jobsSelectEl = getJobsSelectEl();
@@ -3106,24 +3070,12 @@ window.addEventListener('load', async () => {
   window.alpha47LoadSelectedLibraryJob = function() {
     const list = alpha47GetJobs();
     const selected = list.find((job) => String(job.id) === String(selectedJobId || '')) || list[0];
-    const selectedRecord = selected?.record || window.__tapcalcSelectedLibraryRecord || {};
-    if (!selectedRecord || !Object.keys(selectedRecord).length) return false;
+    if (!selected) return;
     try {
-      if (typeof loadRecordIntoCalculator === 'function') {
-        loadRecordIntoCalculator(selectedRecord, { message: true, skipHeavyRecalc: true });
-      }
-      try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
-      try { updateJobInfoSummary(); } catch {}
-      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
-      setTimeout(() => {
-        try { refreshBcoState(); updateBcoDisplays(); calculateIntegratedBco({ silent: true }); } catch {}
-        try { initEtaCalculator(); syncBcoToEta({ force: true }); updateEtaEstimate(); } catch {}
-        try { calcHotTap(); calcHtp(); calcLineStop(); calcCompletionPlug(); } catch {}
-      }, 20);
-      return true;
+      loadRecordIntoCalculator(selected.record || {});
+      document.querySelector('.screen-tab[data-screen="job"]')?.click();
     } catch (error) {
       console.error('Load Job failed', error);
-      return false;
     }
   };
 
@@ -3228,5 +3180,189 @@ window.addEventListener('load', async () => {
         renderSelectedJobDetails();
       }
     });
+  }
+})();
+
+
+
+/* ===== 3.0.0-alpha56 library picker direct rebuild ===== */
+(function(){
+  const getJobsSelectEl = () => document.getElementById('jobsSelect');
+  const getJobsListEl = () => document.getElementById('jobsList');
+  const getJobsResultsMetaEl = () => document.getElementById('jobsResultsMeta');
+
+  function safeJobs() {
+    try {
+      const jobs = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []);
+      return Array.isArray(jobs) ? jobs : [];
+    } catch (error) {
+      console.error('alpha56 jobs build failed', error);
+      return [];
+    }
+  }
+
+  function esc(value) {
+    return String(value ?? '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function sourceLabel(source) {
+    return source === 'local' ? 'Local'
+      : source === 'synced' ? 'Synced'
+      : 'Shared';
+  }
+
+  function ensureSelection(list) {
+    if (!list.length) {
+      window.__tapcalcSelectedLibraryIndex = -1;
+      window.__tapcalcSelectedLibraryRecord = null;
+      selectedJobId = '';
+      return null;
+    }
+    let idx = Number(window.__tapcalcSelectedLibraryIndex);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= list.length) {
+      const existing = list.findIndex((job) => String(job.id) === String(selectedJobId || ''));
+      idx = existing >= 0 ? existing : 0;
+    }
+    window.__tapcalcSelectedLibraryIndex = idx;
+    const selected = list[idx];
+    selectedJobId = String(selected?.id || '');
+    window.__tapcalcSelectedLibraryRecord = selected?.record || null;
+    return selected;
+  }
+
+  function renderAlpha56Detail(list) {
+    const jobsListEl = getJobsListEl();
+    if (!jobsListEl) return;
+    const selected = ensureSelection(list);
+    if (!selected) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const record = selected.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const op = record?.meta?.operationType || 'Job';
+    jobsListEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${esc(title)}</div>
+          <div class="job-detail-subtitle">${esc(savedAtDisplay)} • ${esc(op)} • ${esc(sourceLabel(selected.source))} DB</div>
+        </div>
+        <div class="job-record-badges"><span class="job-source-badge ${esc(selected.source)}">${esc(sourceLabel(selected.source))} DB</span></div>
+      </div>
+      <div class="job-detail-actions">
+        <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+      </div>
+      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
+    `;
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (btn) btn.onclick = () => window.tapCalcLibraryLoadSelected();
+  }
+
+  function renderAlpha56SelectionUI(list) {
+    const jobsSelectEl = getJobsSelectEl();
+    if (!jobsSelectEl) return;
+    const activeId = String(selectedJobId || '');
+    jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+      const active = String(item.dataset.jobId || '') === activeId;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  window.tapCalcLibrarySelect = function(index) {
+    const list = safeJobs();
+    if (!list.length) return false;
+    const idx = Number(index);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= list.length) return false;
+    window.__tapcalcSelectedLibraryIndex = idx;
+    selectedJobId = String(list[idx].id || '');
+    window.__tapcalcSelectedLibraryRecord = list[idx].record || null;
+    renderAlpha56SelectionUI(list);
+    renderAlpha56Detail(list);
+    return true;
+  };
+
+  window.tapCalcLibraryLoadSelected = function() {
+    const list = safeJobs();
+    const selected = ensureSelection(list);
+    if (!selected || !selected.record) return false;
+    try {
+      loadRecordIntoCalculator(selected.record || {}, { message: true });
+    } catch (error) {
+      console.error('alpha56 Load Job failed', error);
+      return false;
+    }
+    try {
+      if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+      else document.querySelector('.screen-tab[data-screen="job"]')?.click();
+    } catch {}
+    return true;
+  };
+
+  renderJobsList = function renderJobsListAlpha56() {
+    const jobsSelectEl = getJobsSelectEl();
+    const jobsResultsMetaEl = getJobsResultsMetaEl();
+    const list = safeJobs();
+    if (!jobsSelectEl) return;
+    if (jobsResultsMetaEl) {
+      const countText = `${list.length} job${list.length === 1 ? '' : 's'} found`;
+      const modeLabel = (typeof jobsBrowseMode === 'string' && jobsBrowseMode !== 'all')
+        ? jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1)
+        : 'Search';
+      jobsResultsMetaEl.textContent = (typeof jobsSearchTerm === 'string' && jobsSearchTerm)
+        ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view`
+        : `${countText} • ${modeLabel} view`;
+    }
+    if (!list.length) {
+      jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      renderAlpha56Detail(list);
+      return;
+    }
+    ensureSelection(list);
+    jobsSelectEl.innerHTML = list.map(({source,id,record}, index) => {
+      const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+      const client = record?.job?.client || 'No customer';
+      const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+      const op = record?.meta?.operationType || 'Job';
+      const nominalSize = record?.pipe?.nominalSize || '—';
+      const groupPrefix = jobsBrowseMode === 'customer'
+        ? `Customer: ${client}`
+        : jobsBrowseMode === 'location'
+          ? `Location: ${record?.job?.location || 'No location'}`
+          : jobsBrowseMode === 'date'
+            ? `Date: ${date}`
+            : 'Search';
+      const active = String(id) === String(selectedJobId || '');
+      return `
+        <button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${esc(id)}" data-job-index="${index}" aria-selected="${active ? 'true' : 'false'}" aria-pressed="${active ? 'true' : 'false'}" onclick="window.tapCalcLibrarySelect(${index})">
+          <span class="jobs-list-title">${esc(title)}</span>
+          <span class="jobs-list-meta">${esc(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel(source)}`)}</span>
+        </button>`;
+    }).join('');
+    renderAlpha56SelectionUI(list);
+    renderAlpha56Detail(list);
+  };
+
+  const jobsSelectEl = getJobsSelectEl();
+  if (jobsSelectEl && !jobsSelectEl.dataset.alpha56Bound) {
+    jobsSelectEl.addEventListener('click', (event) => {
+      const row = event.target.closest('.jobs-list-item[data-job-index]');
+      if (!row) return;
+      event.preventDefault();
+      window.tapCalcLibrarySelect(Number(row.dataset.jobIndex));
+    });
+    jobsSelectEl.addEventListener('touchend', (event) => {
+      const row = event.target.closest('.jobs-list-item[data-job-index]');
+      if (!row) return;
+      event.preventDefault();
+      window.tapCalcLibrarySelect(Number(row.dataset.jobIndex));
+    }, { passive: false });
+    jobsSelectEl.dataset.alpha56Bound = 'true';
   }
 })();

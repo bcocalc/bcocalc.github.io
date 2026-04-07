@@ -4077,3 +4077,12 @@ body.measurement-page * {
 
 .jobs-list-item{position:relative;z-index:2;pointer-events:auto;-webkit-tap-highlight-color:rgba(47,105,225,.2);}
 .jobs-listbox{position:relative;z-index:1;}
+
+
+/* === alpha56 mobile nav + library picker fix === */
+@media (max-width: 768px){
+  .screen-nav{position:sticky !important; top:56px !important; bottom:auto !important; left:auto !important; right:auto !important; z-index:55 !important; padding:8px 0 10px !important; border-top:none !important; border-bottom:1px solid rgba(255,255,255,.08) !important;}
+  body{padding-bottom:0 !important;}
+}
+.jobs-select{overflow-y:auto !important; -webkit-overflow-scrolling:touch;}
+.jobs-list-item{display:block;width:100%;touch-action:manipulation;}
