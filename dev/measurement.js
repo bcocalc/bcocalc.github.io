@@ -1142,6 +1142,7 @@ const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
 const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
 let firebaseModuleCache = null;
+let firebaseInitPromise = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
@@ -1871,34 +1872,48 @@ function buildHistorySnapshot() {
   };
 }
 
-async function ensureFirebaseReady() {
+async function ensureFirebaseReady(options = {}) {
   if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+  if (firebaseInitPromise && !options.forceRetry) return firebaseInitPromise;
   const config = window.TAPCALC_FIREBASE_CONFIG;
   if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
-    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not configured';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase config is missing in this build.';
     return { enabled: false };
   }
-  try {
-    const [appModule, firestoreModule, authModule] = await Promise.all([
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
-    ]);
-    const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
-    const auth = authModule.getAuth(app);
-    if (!auth.currentUser) {
-      await authModule.signInAnonymously(auth);
+  if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connecting…';
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Connecting to shared job database...';
+  firebaseInitPromise = (async () => {
+    try {
+      const [appModule, firestoreModule, authModule] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
+      ]);
+      const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
+      const auth = authModule.getAuth(app);
+      if (!auth.currentUser) {
+        await authModule.signInAnonymously(auth);
+      }
+      if (typeof auth.authStateReady === 'function') {
+        await auth.authStateReady();
+      }
+      firebaseDb = firestoreModule.getFirestore(app);
+      firebaseModuleCache = firestoreModule;
+      if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Connected to shared job database (${config.projectId}).`;
+      return { enabled: true, db: firebaseDb, modules: firestoreModule };
+    } catch (error) {
+      console.error('Firebase init failed', error);
+      if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
+      return { enabled: false, error };
+    } finally {
+      firebaseInitPromise = null;
+      try { syncJobsWorkspace(); } catch {}
     }
-    firebaseDb = firestoreModule.getFirestore(app);
-    firebaseModuleCache = firestoreModule;
-    if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
-    return { enabled: true, db: firebaseDb, modules: firestoreModule };
-  } catch (error) {
-    console.error('Firebase init failed', error);
-    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
-    return { enabled: false, error };
-  }
+  })();
+  return firebaseInitPromise;
 }
 
 function getJobsCollectionName() {
@@ -2450,7 +2465,8 @@ window.addEventListener('load', () => {
   renderJobsList();
   updateJobInfoSummary();
   initAccordionSections();
-  loadCloudJobs();
+  await ensureFirebaseReady();
+  await loadCloudJobs();
 });
 
 })();
@@ -2650,9 +2666,10 @@ window.addEventListener('load', () => {
   }
 
   function initAlpha18CoreActions(){
-    document.getElementById('currentSaveLocalBtn')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
-    document.getElementById('currentSyncSharedBtn')?.addEventListener('click', ()=>document.getElementById('syncJobsBtn')?.click());
+    document.getElementById('currentSaveLocalBtn')?.addEventListener('click', async ()=>{ await saveCurrentJobToHistory(); });
+    document.getElementById('currentSyncSharedBtn')?.addEventListener('click', async ()=>{ await saveCurrentJobToHistory(); document.getElementById('syncJobsBtn')?.click(); });
     document.getElementById('currentResetBtn')?.addEventListener('click', ()=>document.getElementById('resetJobBtn')?.click());
+    document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async ()=>{ await ensureFirebaseReady({ forceRetry:true }); await loadCloudJobs(); });
   }
   function syncOperationSelection(){
     const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
