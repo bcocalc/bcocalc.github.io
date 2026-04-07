@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha23';
+const BUILD_VERSION = '3.0.0-alpha24';
 
 (function(){
 
@@ -89,6 +89,8 @@ function setMode(mode) {
     localStorage.setItem('measurementCardActiveModeV1', mode);
   } catch {}
 }
+
+window.setMode = setMode;
 
 modeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -993,7 +995,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha23', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha24', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2508,7 +2510,7 @@ window.addEventListener('load', async () => {
   setScreen(views[saved]?saved:'home');
   if((views[saved]?saved:'home')==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); }
   const subBtns=[...document.querySelectorAll('.submode-btn[data-mode]')];
-  const oldSetMode=setMode;
+  const oldSetMode = window.setMode || function(){};
   function syncSub(mode){subBtns.forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));}
   window.setMode=function(mode){ oldSetMode(mode); syncSub(mode); };
   subBtns.forEach(b=>b.addEventListener('click',()=>window.setMode(b.dataset.mode)));
