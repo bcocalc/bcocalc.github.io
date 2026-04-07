@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha36';
+const BUILD_VERSION = '3.0.0-alpha37';
 
 (function(){
 
@@ -1154,6 +1154,7 @@ let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
 let selectedJobId = '';
+let selectedJobEntry = null;
 
 
 
@@ -1793,6 +1794,7 @@ function applyJobState(state) {
   if (state.activeMode) {
     setMode(state.activeMode);
   }
+  getStateFields().forEach((id) => dispatchFieldUpdate(id));
   updateJobInfoSummary();
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
 }
@@ -1835,8 +1837,9 @@ function loadRecordIntoCalculator(record, options = {}) {
   };
   Object.entries(directMap).forEach(([id, value]) => {
     const el = document.getElementById(id);
-    if (el && value != null && value !== '') el.value = value;
+    if (el && value != null) el.value = value;
   });
+  Object.keys(directMap).forEach((id) => dispatchFieldUpdate(id));
 
   try {
     const currentJobNameEl = document.getElementById('jobsCurrentJobName');
@@ -2262,7 +2265,9 @@ function getSelectedCombinedJob(jobs = null) {
   const list = jobs || getCombinedJobsForDisplay();
   if (!list.length) return null;
   const selectedId = selectedJobId ? String(selectedJobId) : '';
-  return list.find((job) => String(job.id) === selectedId) || list[0] || null;
+  const found = list.find((job) => String(job.id) === selectedId) || list[0] || null;
+  if (found) selectedJobEntry = found;
+  return found;
 }
 
 function updateJobsListSelectionUI() {
@@ -2272,6 +2277,19 @@ function updateJobsListSelectionUI() {
     item.classList.toggle('active', active);
     item.setAttribute('aria-pressed', active ? 'true' : 'false');
   });
+}
+
+function setSelectedJobEntry(entry) {
+  selectedJobEntry = entry || null;
+  selectedJobId = entry ? String(entry.id) : '';
+  updateJobsListSelectionUI();
+}
+
+function dispatchFieldUpdate(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+  try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
 }
 
 function renderSelectedJobDetails(jobs = null) {
@@ -2286,8 +2304,7 @@ function renderSelectedJobDetails(jobs = null) {
     jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     return;
   }
-  selectedJobId = String(selectedJob.id);
-  updateJobsListSelectionUI();
+  setSelectedJobEntry(selectedJob);
   const record = selectedJob.record;
   const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
   const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
@@ -2319,7 +2336,7 @@ function renderSelectedJobDetails(jobs = null) {
     </div>`;
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
   if (loadBtn) loadBtn.addEventListener('click', () => {
-    const selected = getSelectedCombinedJob(list) || { record };
+    const selected = selectedJobEntry || getSelectedCombinedJob(list) || { record };
     loadRecordIntoCalculator(selected.record || record);
     try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
   });
@@ -2344,6 +2361,7 @@ function renderJobsList() {
   const previousSelectedId = selectedJobId ? String(selectedJobId) : '';
   const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
   selectedJobId = selectedStillExists ? previousSelectedId : String(jobs[0].id);
+  selectedJobEntry = jobs.find((job) => String(job.id) === String(selectedJobId)) || jobs[0] || null;
 
   if (jobsSelectEl) {
     const previousScrollTop = jobsSelectEl.scrollTop;
@@ -2649,9 +2667,10 @@ if (jobsSelectEl) {
   jobsSelectEl.addEventListener('click', (event) => {
     const item = event.target.closest('.jobs-list-item[data-job-id]');
     if (!item) return;
-    selectedJobId = String(item.dataset.jobId || '');
-    updateJobsListSelectionUI();
-    renderSelectedJobDetails();
+    const jobs = getCombinedJobsForDisplay();
+    const selected = jobs.find((job) => String(job.id) === String(item.dataset.jobId || '')) || null;
+    setSelectedJobEntry(selected);
+    renderSelectedJobDetails(jobs);
   });
   jobsSelectEl.addEventListener('keydown', (event) => {
     const jobs = getCombinedJobsForDisplay();
@@ -2664,8 +2683,7 @@ if (jobsSelectEl) {
     else if (event.key === 'End') index = jobs.length - 1;
     else return;
     event.preventDefault();
-    selectedJobId = String(jobs[index].id);
-    updateJobsListSelectionUI();
+    setSelectedJobEntry(jobs[index]);
     renderSelectedJobDetails(jobs);
     const activeItem = jobsSelectEl.querySelector('.jobs-list-item.active');
     activeItem?.scrollIntoView({ block: 'nearest' });
