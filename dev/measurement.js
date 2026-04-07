@@ -1886,14 +1886,16 @@ function loadRecordIntoCalculator(record, options = {}) {
     try {
       refreshBcoState();
       updateBcoDisplays();
-      calculateIntegratedBco({ silent: true });
-      calcHotTap();
-      calcHtp();
-      calcLineStop();
-      calcCompletionPlug();
-      initEtaCalculator();
-      syncBcoToEta({ force: true });
-      updateEtaEstimate();
+      if (!options.skipHeavyRecalc) {
+        calculateIntegratedBco({ silent: true });
+        calcHotTap();
+        calcHtp();
+        calcLineStop();
+        calcCompletionPlug();
+        initEtaCalculator();
+        syncBcoToEta({ force: true });
+        updateEtaEstimate();
+      }
     } catch (error) {
       console.error('TapCalc hydrate recalculation failed', error);
     }
@@ -1902,8 +1904,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   hydrateVisibleFields();
   clearTimeout(window.__tapcalcHydrateTimerA);
   clearTimeout(window.__tapcalcHydrateTimerB);
-  window.__tapcalcHydrateTimerA = setTimeout(hydrateVisibleFields, 50);
-  window.__tapcalcHydrateTimerB = setTimeout(hydrateVisibleFields, 250);
+  window.__tapcalcHydrateTimerA = setTimeout(hydrateVisibleFields, 40);
 
   try {
     localStorage.setItem(JOB_STATE_KEY, JSON.stringify({ ...state, ...writeMap }));
@@ -1914,10 +1915,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   }
   const targetMode = state?.activeMode || 'hotTap';
   try { if (targetMode) setMode(targetMode); } catch {}
-  try {
-    const currentTab = document.querySelector('.screen-tab[data-screen="job"]');
-    currentTab?.click();
-  } catch {}
+  try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
 }
 
 
@@ -2802,6 +2800,7 @@ window.addEventListener('load', async () => {
     if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>{ openSharedLibraryLane(); }, 80);
     if (b.dataset.goMode) setTimeout(()=>window.setMode(b.dataset.goMode), 80);
   }));
+  window.tapCalcSetScreen = setScreen;
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
   setScreen(views[saved]?saved:'home');
   if((views[saved]?saved:'home')==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); }
@@ -3091,7 +3090,7 @@ window.addEventListener('load', async () => {
   };
 
   window.selectLibraryJobByIndex = function(index){ const jobs=alpha47GetJobs(); const entry=jobs[index]; if(entry){ selectedJobId = String(entry.id); updateJobsListSelectionUI(); renderSelectedJobDetails(jobs); } };
-  window.loadSelectedLibraryJob = window.alpha47LoadSelectedLibraryJob;
+  window.loadSelectedLibraryJob = function(){ return window.alpha47LoadSelectedLibraryJob && window.alpha47LoadSelectedLibraryJob(); };
 
   updateJobsListSelectionUI = function updateJobsListSelectionUIAlpha47() {
     const jobsSelectEl = getJobsSelectEl();
@@ -3108,45 +3107,23 @@ window.addEventListener('load', async () => {
     const list = alpha47GetJobs();
     const selected = list.find((job) => String(job.id) === String(selectedJobId || '')) || list[0];
     const selectedRecord = selected?.record || window.__tapcalcSelectedLibraryRecord || {};
-    if (!selectedRecord || !Object.keys(selectedRecord).length) return;
+    if (!selectedRecord || !Object.keys(selectedRecord).length) return false;
     try {
-      const rebuiltState = buildStateFromRecord(selectedRecord);
-      const mergedState = {
-        ...rebuiltState,
-        jobClient: rebuiltState.jobClient || selectedRecord?.job?.client || '',
-        jobDescription: rebuiltState.jobDescription || selectedRecord?.job?.description || '',
-        jobNumber: rebuiltState.jobNumber || selectedRecord?.job?.jobNumber || '',
-        jobDate: rebuiltState.jobDate || selectedRecord?.job?.date || '',
-        jobLocation: rebuiltState.jobLocation || selectedRecord?.job?.location || '',
-        jobTechnician: rebuiltState.jobTechnician || selectedRecord?.job?.technician || '',
-        machineType: rebuiltState.machineType || selectedRecord?.machine?.machine || '',
-        operationType: rebuiltState.operationType || selectedRecord?.meta?.operationType || 'Hot Tap',
-        bcoPipeMaterial: rebuiltState.bcoPipeMaterial || selectedRecord?.pipe?.material || '',
-        bcoPipeOD: rebuiltState.bcoPipeOD || selectedRecord?.pipe?.nominalSize || '',
-        bcoSchedule: rebuiltState.bcoSchedule || selectedRecord?.pipe?.schedule || '',
-        bcoPipeID: rebuiltState.bcoPipeID || selectedRecord?.pipe?.pipeId || '',
-        bcoCutterOD: rebuiltState.bcoCutterOD || selectedRecord?.machine?.cutterOd || '',
-        etaBco: rebuiltState.etaBco || selectedRecord?.calculations?.bco || '',
-        etaCutterSize: rebuiltState.etaCutterSize || selectedRecord?.machine?.cutterOd || ''
-      };
-      if (mergedState.jobDate) {
-        const m = String(mergedState.jobDate).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-        if (m) mergedState.jobDate = `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(selectedRecord, { message: true, skipHeavyRecalc: true });
       }
-      localStorage.setItem(JOB_STATE_KEY, JSON.stringify(mergedState));
-      localStorage.setItem('tapcalcV3Screen', 'job');
-      try { applyJobState(mergedState); } catch {}
-      Object.entries(mergedState).forEach(([id, value]) => {
-        try { setFieldValueAndNotify(id, value); } catch {}
-      });
+      try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
       try { updateJobInfoSummary(); } catch {}
       try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
-      try { refreshBcoState(); updateBcoDisplays(); calculateIntegratedBco({ silent: true }); } catch {}
-      try { calcHotTap(); calcHtp(); calcLineStop(); calcCompletionPlug(); initEtaCalculator(); syncBcoToEta({ force: true }); updateEtaEstimate(); } catch {}
-      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
-      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${selectedRecord?.meta?.title || mergedState.jobDescription || mergedState.jobNumber || 'saved job'} into TapCalc.`;
+      setTimeout(() => {
+        try { refreshBcoState(); updateBcoDisplays(); calculateIntegratedBco({ silent: true }); } catch {}
+        try { initEtaCalculator(); syncBcoToEta({ force: true }); updateEtaEstimate(); } catch {}
+        try { calcHotTap(); calcHtp(); calcLineStop(); calcCompletionPlug(); } catch {}
+      }, 20);
+      return true;
     } catch (error) {
       console.error('Load Job failed', error);
+      return false;
     }
   };
 
