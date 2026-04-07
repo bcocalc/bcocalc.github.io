@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha43';
+const BUILD_VERSION = '3.0.0-alpha44';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha43', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha44', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2754,9 +2754,6 @@ window.addEventListener('load', async () => {
   initAccordionSections();
   ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
 });
-
-})();
-
 
 // alpha4 app shell navigation
 (function(){
