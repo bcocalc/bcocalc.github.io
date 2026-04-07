@@ -1835,7 +1835,11 @@ function loadRecordIntoCalculator(record, options = {}) {
   };
   Object.entries(directMap).forEach(([id, value]) => {
     const el = document.getElementById(id);
-    if (el && value != null && value !== '') el.value = value;
+    if (el && value != null && value !== '') {
+      el.value = value;
+      try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+    }
   });
 
   try {
@@ -3129,7 +3133,7 @@ window.addEventListener('load', async () => {
     if (!jobs.some((job) => String(job.id) === String(selectedJobId || ''))) {
       selectedJobId = String(jobs[0].id);
     }
-    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }) => {
+    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }, index) => {
       const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
@@ -3146,19 +3150,35 @@ window.addEventListener('load', async () => {
       const active = String(id) === String(selectedJobId);
       const escapedId = alpha47Escape(id);
       return `
-        <button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${escapedId}" aria-pressed="${active ? 'true' : 'false'}" aria-selected="${active ? 'true' : 'false'}" onclick="window.alpha47SelectJobById('${escapedId}')">
+        <div class="jobs-list-item${active ? ' active' : ''}" role="button" tabindex="0" data-job-id="${escapedId}" data-job-index="${index}" aria-pressed="${active ? 'true' : 'false'}" aria-selected="${active ? 'true' : 'false'}">
           <span class="jobs-list-title">${alpha47Escape(title)}</span>
           <span class="jobs-list-meta">${alpha47Escape(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`)}</span>
-        </button>`;
+        </div>`;
     }).join('');
     jobsSelectEl.scrollTop = previousScrollTop;
     updateJobsListSelectionUI();
     renderSelectedJobDetails(jobs);
   };
 
-  document.addEventListener('click', (event) => {
-    const item = event.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
-    if (!item) return;
-    alpha47SelectJob(item.dataset.jobId);
-  }, true);
+  const jobsSelectContainer = getJobsSelectEl();
+  if (jobsSelectContainer) {
+    jobsSelectContainer.addEventListener('click', (event) => {
+      const item = event.target.closest('.jobs-list-item[data-job-id]');
+      if (!item) return;
+      event.preventDefault();
+      selectedJobId = String(item.dataset.jobId || '');
+      updateJobsListSelectionUI();
+      renderSelectedJobDetails();
+    });
+    jobsSelectContainer.addEventListener('keydown', (event) => {
+      const item = event.target.closest('.jobs-list-item[data-job-id]');
+      if (!item) return;
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectedJobId = String(item.dataset.jobId || '');
+        updateJobsListSelectionUI();
+        renderSelectedJobDetails();
+      }
+    });
+  }
 })();
