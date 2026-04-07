@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha28';
+const BUILD_VERSION = '3.0.0-alpha29';
 
 (function(){
 
@@ -2353,6 +2353,8 @@ function renderHistory() {
   `).join('');
 }
 
+window.ensureFirebaseReady = ensureFirebaseReady;
+
 async function saveCurrentJobToHistory() {
   const items = getHistory();
   const snapshot = buildHistorySnapshot();
@@ -2440,6 +2442,7 @@ if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
   el.addEventListener('change', persistCurrentJob);
 });
 window.saveCurrentJobToHistory = saveCurrentJobToHistory;
+window.loadCloudJobs = loadCloudJobs;
 if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobToHistory);
 if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
@@ -2799,10 +2802,10 @@ window.addEventListener('load', async () => {
   }
 
   function initAlpha18CoreActions(){
-    document.getElementById('currentSaveLocalBtn')?.addEventListener('click', async ()=>{ await saveCurrentJobToHistory(); });
-    document.getElementById('currentSyncSharedBtn')?.addEventListener('click', async ()=>{ await saveCurrentJobToHistory(); document.getElementById('syncJobsBtn')?.click(); });
+    document.getElementById('currentSaveLocalBtn')?.addEventListener('click', async ()=>{ await window.saveCurrentJobToHistory(); });
+    document.getElementById('currentSyncSharedBtn')?.addEventListener('click', async ()=>{ await window.saveCurrentJobToHistory(); document.getElementById('syncJobsBtn')?.click(); });
     document.getElementById('currentResetBtn')?.addEventListener('click', ()=>document.getElementById('resetJobBtn')?.click());
-    document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async ()=>{ await ensureFirebaseReady({ forceRetry:true }); await loadCloudJobs(); });
+    document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async ()=>{ await window.ensureFirebaseReady({ forceRetry:true }); await window.loadCloudJobs(); });
     document.getElementById('cardJumpToInputsBtn')?.addEventListener('click', ()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'));
   }
   function syncOperationSelection(){
