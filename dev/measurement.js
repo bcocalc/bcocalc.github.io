@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha53';
+const BUILD_VERSION = '3.0.0-alpha54';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha53', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha54', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2308,6 +2308,7 @@ function updateJobsListSelectionUI() {
     const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
     item.classList.toggle('active', active);
     item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    item.setAttribute('aria-selected', active ? 'true' : 'false');
   });
 }
 
@@ -2404,23 +2405,24 @@ function renderJobsList() {
             ? `Date: ${date}`
             : 'Search';
       const isActive = String(id) === selectedJobId;
-      const item = document.createElement('div');
+      const item = document.createElement('button');
+      item.type = 'button';
       item.className = `jobs-list-item${isActive ? ' active' : ''}`;
       item.dataset.jobId = String(id);
-      item.setAttribute('role', 'button');
-      item.setAttribute('tabindex', '0');
       item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      item.setAttribute('aria-selected', isActive ? 'true' : 'false');
       item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
       item.querySelector('.jobs-list-title').textContent = title;
       item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
       const selectThis = (event) => {
         if (event) { event.preventDefault(); event.stopPropagation(); }
         selectedJobId = String(id);
+        window.__tapcalcSelectedLibraryRecord = record || null;
         updateJobsListSelectionUI();
         renderSelectedJobDetails(jobs);
       };
-      item.addEventListener('click', selectThis);
-      item.addEventListener('pointerup', selectThis);
+      item.addEventListener('click', selectThis, { passive:false });
+      item.addEventListener('touchend', selectThis, { passive:false });
       item.addEventListener('keydown', (event) => {
         if (event.key === 'Enter' || event.key === ' ') selectThis(event);
       });
