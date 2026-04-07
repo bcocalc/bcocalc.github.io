@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha30';
+const BUILD_VERSION = '3.0.0-alpha32';
 
 (function(){
 
@@ -1184,6 +1184,67 @@ function renderBcoResult(payload = {}) {
   bcoResultEl.innerHTML = buildBcoResultMarkup(payload);
 }
 
+function buildStateFromRecord(record = {}) {
+  const state = { ...(record.state || {}) };
+  const op = String(record?.meta?.operationType || '').toLowerCase();
+  if (!state.jobClient) state.jobClient = record?.job?.client || '';
+  if (!state.jobDescription) state.jobDescription = record?.job?.description || '';
+  if (!state.jobNumber) state.jobNumber = record?.job?.jobNumber || '';
+  if (!state.jobPressure) state.jobPressure = record?.job?.pressure || '';
+  if (!state.jobTemperature) state.jobTemperature = record?.job?.temperature || '';
+  if (!state.jobDate) state.jobDate = record?.job?.date || '';
+  if (!state.jobProduct) state.jobProduct = record?.job?.product || '';
+  if (!state.jobLocation) state.jobLocation = record?.job?.location || '';
+  if (!state.jobTechnician) state.jobTechnician = record?.job?.technician || '';
+  if (!state.jobNotes) state.jobNotes = record?.job?.notes || '';
+  if (!state.bcoPipeMaterial) state.bcoPipeMaterial = record?.pipe?.material || '';
+  if (!state.bcoPipeOD) state.bcoPipeOD = record?.pipe?.nominalSize || '';
+  if (!state.bcoSchedule) state.bcoSchedule = record?.pipe?.schedule || '';
+  if (!state.bcoCutterOD) state.bcoCutterOD = record?.machine?.cutterOd || '';
+  const machine = String(record?.machine?.machine || '');
+  if (!state.etaMachine && machine) {
+    if (machine.includes('360')) state.etaMachine = '360';
+    else if (machine.includes('660') || machine.includes('760')) state.etaMachine = '660';
+    else if (machine.includes('1200')) state.etaMachine = '1200';
+    else state.etaMachine = machine;
+  }
+  if (!state.pipeOD && record?.pipe?.trueOd) state.pipeOD = record.pipe.trueOd;
+  if (!state.pipeID && record?.pipe?.pipeId) state.pipeID = record.pipe.pipeId;
+  if (!state.wallThickness && record?.pipe?.wallThickness) state.wallThickness = record.pipe.wallThickness;
+  if (!state.md && record?.measurements?.hotTap?.md) state.md = record.measurements.hotTap.md;
+  if (!state.ld && record?.measurements?.hotTap?.ld) state.ld = record.measurements.hotTap.ld;
+  if (!state.ldSign && record?.measurements?.hotTap?.ldSign) state.ldSign = record.measurements.hotTap.ldSign;
+  if (!state.ptc && record?.measurements?.hotTap?.ptc) state.ptc = record.measurements.hotTap.ptc;
+  if (!state.pod && record?.measurements?.hotTap?.pod) state.pod = record.measurements.hotTap.pod;
+  if (!state.mt && record?.measurements?.hotTap?.mt) state.mt = record.measurements.hotTap.mt;
+  if (!state.start && record?.measurements?.hotTap?.rodStart) state.start = record.measurements.hotTap.rodStart;
+  if (!state.htpMd && record?.measurements?.htp?.md) state.htpMd = record.measurements.htp.md;
+  if (!state.htpLd && record?.measurements?.htp?.ld) state.htpLd = record.measurements.htp.ld;
+  if (!state.htpLdSign && record?.measurements?.htp?.ldSign) state.htpLdSign = record.measurements.htp.ldSign;
+  if (!state.htpPtc && record?.measurements?.htp?.ptc) state.htpPtc = record.measurements.htp.ptc;
+  if (!state.htpPipeSize && record?.measurements?.htp?.pipeSize) state.htpPipeSize = record.measurements.htp.pipeSize;
+  if (!state.lsMd && record?.measurements?.lineStop?.md) state.lsMd = record.measurements.lineStop.md;
+  if (!state.lsLd && record?.measurements?.lineStop?.ld) state.lsLd = record.measurements.lineStop.ld;
+  if (!state.lsLdSign && record?.measurements?.lineStop?.ldSign) state.lsLdSign = record.measurements.lineStop.ldSign;
+  if (!state.lsPod && record?.measurements?.lineStop?.pod) state.lsPod = record.measurements.lineStop.pod;
+  if (!state.lsTravel && record?.measurements?.lineStop?.travel) state.lsTravel = record.measurements.lineStop.travel;
+  if (!state.lsMachineTravel && record?.measurements?.lineStop?.machineTravel) state.lsMachineTravel = record.measurements.lineStop.machineTravel;
+  if (!state.cpStart && record?.measurements?.completionPlug?.start) state.cpStart = record.measurements.completionPlug.start;
+  if (!state.cpJbf && record?.measurements?.completionPlug?.jbf) state.cpJbf = record.measurements.completionPlug.jbf;
+  if (!state.cpLd && record?.measurements?.completionPlug?.ld) state.cpLd = record.measurements.completionPlug.ld;
+  if (!state.cpLdSign && record?.measurements?.completionPlug?.ldSign) state.cpLdSign = record.measurements.completionPlug.ldSign;
+  if (!state.cpPt && record?.measurements?.completionPlug?.pt) state.cpPt = record.measurements.completionPlug.pt;
+
+  if (!state.activeMode) {
+    if (op.includes('completion')) state.activeMode = 'completionPlug';
+    else if (op.includes('line stop')) state.activeMode = 'lineStop';
+    else if (op.includes('htp')) state.activeMode = 'htp';
+    else if (op.includes('hot tap')) state.activeMode = 'hotTap';
+    else state.activeMode = 'bco';
+  }
+  return state;
+}
+
 function setLibraryLane(lane) {
   const next = lane === 'shared' ? 'shared' : 'local';
   const jobsScreen = document.getElementById('jobsScreen');
@@ -1733,8 +1794,9 @@ function restoreCurrentJob() {
 }
 
 function loadRecordIntoCalculator(record, options = {}) {
-  if (!record?.state) return;
-  applyJobState(record.state);
+  const state = record?.state || buildStateFromRecord(record);
+  if (!state || !Object.keys(state).length) return;
+  applyJobState(state);
   refreshBcoState();
   updateBcoDisplays();
   calculateIntegratedBco({ silent: true });
@@ -1762,7 +1824,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
   }
-  const targetMode = record?.state?.activeMode || 'bco';
+  const targetMode = state?.activeMode || record?.state?.activeMode || 'bco';
   if (targetMode) setMode(targetMode);
   try {
     document.getElementById('bcoPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -2002,6 +2064,7 @@ async function uploadHistoryItemToCloud(item) {
 
   const payload = {
     ...item.record,
+    state: item.state || item.record?.state || collectJobState(),
     localId: item.id,
     syncedAt: serverTimestamp(),
     source: 'tapcalc-web'
@@ -2143,6 +2206,49 @@ function getCombinedJobsForDisplay() {
   return jobs;
 }
 
+function renderSelectedJobDetails(jobs = null) {
+  const list = jobs || getCombinedJobsForDisplay();
+  if (!jobsListEl) return;
+  if (!list.length) {
+    jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+    return;
+  }
+  const selectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : String(list[0].id);
+  const selectedJob = list.find((job) => String(job.id) === selectedId) || list[0];
+  if (jobsSelectEl && selectedJob) jobsSelectEl.value = String(selectedJob.id);
+  const record = selectedJob.record;
+  const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+  const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
+  const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+  const warnings = [
+    ...(record?.warnings?.hotTap || []),
+    ...(record?.warnings?.lineStop || []),
+    ...(record?.warnings?.completionPlug || [])
+  ].filter(Boolean);
+  jobsListEl.innerHTML = `
+    <div class="job-detail-header">
+      <div>
+        <div class="job-detail-title">${title}</div>
+        <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+      </div>
+      <div class="job-record-badges">
+        <span class="job-source-badge ${selectedJob.source}">${sourceLabel}</span>
+      </div>
+    </div>
+    <div class="job-detail-actions">
+      <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+    </div>
+    ${renderJobRecordDetails(record)}
+    <div class="job-detail-grid">
+      <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+      <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
+      <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+    </div>`;
+  const loadBtn = document.getElementById('jobsLoadSelectedBtn');
+  if (loadBtn) loadBtn.addEventListener('click', () => loadRecordIntoCalculator(record));
+}
+
 function renderJobsList() {
   if (!jobsListEl) return;
   const jobs = getCombinedJobsForDisplay();
@@ -2189,45 +2295,9 @@ function renderJobsList() {
     jobsSelectEl.value = selectedStillExists ? previousSelectedId : String(jobs[0].id);
   }
 
-  const selectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : String(jobs[0].id);
-  const selectedJob = jobs.find((job) => String(job.id) === selectedId) || jobs[0];
-  if (jobsSelectEl && selectedJob) jobsSelectEl.value = String(selectedJob.id);
-
-  const record = selectedJob.record;
-  const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
-  const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
-  const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
-  const warnings = [
-    ...(record?.warnings?.hotTap || []),
-    ...(record?.warnings?.lineStop || []),
-    ...(record?.warnings?.completionPlug || [])
-  ].filter(Boolean);
-
-  jobsListEl.innerHTML = `
-    <div class="job-detail-header">
-      <div>
-        <div class="job-detail-title">${title}</div>
-        <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
-      </div>
-      <div class="job-record-badges">
-        <span class="job-source-badge ${selectedJob.source}">${sourceLabel}</span>
-      </div>
-    </div>
-    <div class="job-detail-actions">
-      <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
-    </div>
-    ${renderJobRecordDetails(record)}
-    <div class="job-detail-grid">
-      <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-      <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-      <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
-      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
-    </div>`;
-
-  const loadBtn = document.getElementById('jobsLoadSelectedBtn');
-  if (loadBtn) {
-    loadBtn.addEventListener('click', () => loadRecordIntoCalculator(record));
-  }
+  const listScrollTop = jobsSelectEl ? jobsSelectEl.scrollTop : 0;
+  renderSelectedJobDetails(jobs);
+  if (jobsSelectEl) jobsSelectEl.scrollTop = listScrollTop;
 }
 
 async function loadCloudJobs() {
@@ -2499,10 +2569,8 @@ if (bcoResultEl) {
   });
 }
 if (jobsSelectEl) {
-  jobsSelectEl.addEventListener('change', renderJobsList);
-  jobsSelectEl.addEventListener('click', renderJobsList);
-  jobsSelectEl.addEventListener('keyup', renderJobsList);
-  jobsSelectEl.addEventListener('mouseup', () => setTimeout(renderJobsList, 0));
+  jobsSelectEl.addEventListener('change', () => renderSelectedJobDetails());
+  jobsSelectEl.addEventListener('keyup', (event) => { if (['ArrowUp','ArrowDown','Home','End','PageUp','PageDown'].includes(event.key)) renderSelectedJobDetails(); });
 }
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
