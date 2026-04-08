@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha102';
+const BUILD_VERSION = '3.0.0-alpha103';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha102', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha103', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4300,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha102';
+  const TC63_VERSION = '3.0.0-alpha103';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha102';
+  const VERSION = '3.0.0-alpha103';
 
   function tc65GetJobs() {
     try {
@@ -5324,7 +5324,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha103 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5476,7 +5476,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha103 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5674,7 +5674,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha103 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5818,7 +5818,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha103 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -5976,7 +5976,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha103 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6139,7 +6139,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha103 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6301,7 +6301,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha103 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6417,7 +6417,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha103 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6596,7 +6596,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha103 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6739,7 +6739,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha103 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6915,7 +6915,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha103 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7084,7 +7084,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha102 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha103 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7176,4 +7176,180 @@ window.addEventListener('load', async () => {
     }, 420);
     return false;
   };
+})();
+
+
+/* alpha103 canonical library loader reset */
+(function(){
+  function tc103IsMobileCompact(){
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
+  }
+  function tc103SharedVisible(){
+    try { return !!document.querySelector('[data-library-lane-panel="shared"].active'); } catch { return false; }
+  }
+  function tc103GetJobs(){
+    try { return typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : []; } catch { return []; }
+  }
+  function tc103GetSelected(jobs){
+    const list = Array.isArray(jobs) ? jobs : tc103GetJobs();
+    if (!list.length) return null;
+    const id = String(selectedJobId || '');
+    return list.find(j => String(j?.id) === id) || null;
+  }
+  function tc103UpdateSelectionUI(){
+    try {
+      if (!jobsSelectEl) return;
+      jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+        const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    } catch {}
+  }
+  function tc103ShowCurrent(){
+    try {
+      if (typeof openScreen === 'function') { openScreen('job'); return; }
+    } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+  }
+  function tc103CanonicalLoad(record){
+    if (!record) return false;
+    try { window.__tapCalcSelectedLibraryRecord = record; } catch {}
+    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: false, message: true }); } catch (e) { console.error('alpha103 loadRecordIntoCalculator failed', e); }
+    try { if (typeof tc63Hydrate === 'function') tc63Hydrate(record); } catch {}
+    const delays = [0, 60, 180, 360];
+    delays.forEach((ms) => setTimeout(() => {
+      try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: false, message: false }); } catch {}
+      try { if (typeof tc63Hydrate === 'function') tc63Hydrate(record); } catch {}
+      try { if (typeof updateCurrentJobLabel === 'function') updateCurrentJobLabel(); } catch {}
+      try { if (typeof updateCardStageChecks === 'function') updateCardStageChecks(); } catch {}
+    }, ms));
+    setTimeout(tc103ShowCurrent, 40);
+    return true;
+  }
+  window.tapCalcForceLoadSelectedJob = function tc103ForceLoadSelectedJob(){
+    const jobs = tc103GetJobs();
+    const selected = tc103GetSelected(jobs);
+    const record = selected?.record || window.__tapCalcSelectedLibraryRecord || window.__tapCalcVisibleLibraryRecord || null;
+    if (!record) return false;
+    return tc103CanonicalLoad(record);
+  };
+  window.renderSelectedJobDetails = function tc103RenderSelectedJobDetails(jobs){
+    const list = Array.isArray(jobs) ? jobs : tc103GetJobs();
+    if (!jobsListEl) return;
+    const compactShared = tc103IsMobileCompact() && tc103SharedVisible();
+    if (!list.length) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const selected = tc103GetSelected(list) || (!compactShared ? list[0] : null);
+    if (!selected) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    selectedJobId = String(selected.id);
+    try { window.__tapCalcSelectedLibraryRecord = selected.record; window.__tapCalcVisibleLibraryRecord = selected.record; } catch {}
+    tc103UpdateSelectionUI();
+    const record = selected.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const warnings = [
+      ...((record?.warnings?.hotTap) || []),
+      ...((record?.warnings?.lineStop) || []),
+      ...((record?.warnings?.completionPlug) || [])
+    ].filter(Boolean);
+    jobsListEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${title}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+        </div>
+        <div class="job-record-badges"><span class="job-source-badge ${selected.source}">${sourceLabel}</span></div>
+      </div>
+      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button></div>
+      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
+      <div class="job-detail-grid">
+        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      </div>`;
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (btn) {
+      const fresh = btn.cloneNode(true);
+      btn.replaceWith(fresh);
+      fresh.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); window.tapCalcForceLoadSelectedJob(); });
+      fresh.addEventListener('touchstart', (event) => { event.stopPropagation(); }, { passive: true });
+    }
+  };
+  window.renderJobsList = function tc103RenderJobsList(){
+    if (!jobsListEl) return;
+    const jobs = tc103GetJobs();
+    if (jobsResultsMetaEl) {
+      const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
+      const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+    }
+    if (!jobs.length) {
+      if (jobsSelectEl) jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const previousSelectedId = selectedJobId ? String(selectedJobId) : '';
+    const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
+    const compactShared = tc103IsMobileCompact() && tc103SharedVisible();
+    selectedJobId = compactShared ? (selectedStillExists ? previousSelectedId : '') : (selectedStillExists ? previousSelectedId : String(jobs[0].id));
+    if (jobsSelectEl) {
+      const previousScrollTop = jobsSelectEl.scrollTop;
+      jobsSelectEl.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      jobs.forEach(({ source, id, record }) => {
+        const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+        const client = record?.job?.client || 'No customer';
+        const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+        const op = record?.meta?.operationType || 'Job';
+        const nominalSize = record?.pipe?.nominalSize || '—';
+        const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+        const groupPrefix = jobsBrowseMode === 'customer'
+          ? `Customer: ${client}`
+          : jobsBrowseMode === 'location'
+            ? `Location: ${record?.job?.location || 'No location'}`
+            : jobsBrowseMode === 'date'
+              ? `Date: ${date}`
+              : 'Search';
+        const isActive = String(id) === String(selectedJobId || '');
+        const item = document.createElement('div');
+        item.className = `jobs-list-item${isActive ? ' active' : ''}`;
+        item.dataset.jobId = String(id);
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
+        item.querySelector('.jobs-list-title').textContent = title;
+        item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
+        const selectThis = (event) => {
+          if (event) { event.preventDefault(); event.stopPropagation(); }
+          selectedJobId = String(id);
+          try { window.__tapCalcSelectedLibraryRecord = record; window.__tapCalcVisibleLibraryRecord = record; } catch {}
+          tc103UpdateSelectionUI();
+          window.renderSelectedJobDetails(jobs);
+        };
+        item.addEventListener('click', selectThis);
+        item.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectThis(event); });
+        frag.appendChild(item);
+      });
+      jobsSelectEl.appendChild(frag);
+      jobsSelectEl.scrollTop = previousScrollTop;
+      try {
+        jobsSelectEl.style.overflowY = 'auto';
+        jobsSelectEl.style.webkitOverflowScrolling = 'touch';
+      } catch {}
+    }
+    tc103UpdateSelectionUI();
+    window.renderSelectedJobDetails(jobs);
+  };
+  try { renderJobsList = window.renderJobsList; } catch {}
+  try { renderSelectedJobDetails = window.renderSelectedJobDetails; } catch {}
+  try { setTimeout(() => { if (typeof window.renderJobsList === 'function') window.renderJobsList(); }, 0); } catch {}
 })();
