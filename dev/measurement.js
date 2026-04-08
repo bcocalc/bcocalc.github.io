@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha81';
+const BUILD_VERSION = '3.0.0-alpha82';
 
 (function(){
 
@@ -1213,7 +1213,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha81', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha82', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4270,7 +4270,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha81';
+  const TC63_VERSION = '3.0.0-alpha82';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4512,7 +4512,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha81';
+  const VERSION = '3.0.0-alpha82';
 
   function tc65GetJobs() {
     try {
@@ -4682,7 +4682,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha81 mobile shared-library selection fix ===== */
+/* ===== 3.0.0-alpha82 mobile shared-library selection fix ===== */
 (function(){
   function tc81IsCompactLibrary() {
     try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
