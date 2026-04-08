@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha96';
+const BUILD_VERSION = '3.0.0-alpha97';
 
 (function(){
 
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha96';
+  const VERSION = '3.0.0-alpha97';
 
   function tc65GetJobs() {
     try {
@@ -6298,4 +6298,120 @@ window.addEventListener('load', async () => {
   window.addEventListener('pageshow', ()=> setTimeout(bindMobileLoadButton, 60));
   document.addEventListener('DOMContentLoaded', ()=> setTimeout(bindMobileLoadButton, 60));
   setTimeout(bindMobileLoadButton, 180);
+})();
+
+
+/* ===== 3.0.0-alpha97 mobile load job exact detail record ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  };
+  function setExactDetailRecord(entry){
+    if (!entry || !entry.record) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactMobileDetailEntry = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+  }
+  function getExactDetailRecord(){
+    const direct = window.__tapcalcExactMobileDetailEntry;
+    if (direct && direct.record) return direct;
+    const id = String(window.__tapcalcDetailSelectedId || window.__tapcalcLibrarySelectedId || '').trim();
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      if (id && Array.isArray(list)) {
+        const found = list.find(job => String(job?.id || '') === id);
+        if (found?.record) return found;
+      }
+    } catch {}
+    return null;
+  }
+  function hardExitLibrary(){
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.classList.add('active'); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+        jobsScreen.style.zIndex = '0';
+      }
+    } catch {}
+    try { document.body.classList.remove('show-library-screen'); } catch {}
+  }
+  function mobileExactLoad(ev){
+    if (!isMobile()) return true;
+    if (ev) {
+      try { ev.preventDefault(); } catch {}
+      try { ev.stopPropagation(); } catch {}
+      try { if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation(); } catch {}
+    }
+    const entry = getExactDetailRecord();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    setExactDetailRecord(entry);
+    try {
+      loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+    } catch (error) {
+      console.error('alpha97 mobile exact load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(hardExitLibrary, 20);
+    setTimeout(hardExitLibrary, 120);
+    return false;
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha97RenderWrapped) {
+    window.__alpha97RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : (typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : []);
+        let entry = null;
+        try { entry = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null; } catch {}
+        if (entry?.record) setExactDetailRecord(entry);
+        const btn = $('jobsLoadSelectedBtn');
+        if (btn && btn.dataset.tc97Bound !== '1') {
+          btn.dataset.tc97Bound = '1';
+          btn.style.width = '100%';
+          btn.style.display = 'block';
+          const handler = (e) => mobileExactLoad(e);
+          btn.addEventListener('touchend', handler, { capture:true, passive:false });
+          btn.addEventListener('click', handler, { capture:true });
+        }
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (!row) return;
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      const entry = Array.isArray(list) ? list.find(job => String(job?.id || '') === String(row.dataset.jobId || '')) : null;
+      if (entry?.record) setExactDetailRecord(entry);
+    } catch {}
+  }, true);
+  window.tapCalcMobileExactLoad = mobileExactLoad;
+  const prevForce = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcForceLoadSelectedJob = function(e){
+    if (isMobile()) return mobileExactLoad(e);
+    return typeof prevForce === 'function' ? prevForce(e) : true;
+  };
 })();
