@@ -3968,3 +3968,89 @@ window.addEventListener('load', async () => {
   window.addEventListener('load', () => setTimeout(tc61ApplyPending, 250));
 })();
 
+
+
+/* ===== 3.0.0-alpha62 unified load-job fix ===== */
+(function(){
+  function tc62FindSelectedEntry() {
+    try {
+      const list = (typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : []) || [];
+      const candidates = [
+        window.__tapcalcLibrarySelectedId,
+        typeof selectedJobId !== 'undefined' ? selectedJobId : '',
+        window.__tapcalcSelectedLibraryId,
+      ].map(v => String(v || '')).filter(Boolean);
+      for (const id of candidates) {
+        const found = list.find(job => String(job?.id || '') === id);
+        if (found && found.record) return found;
+      }
+      if (window.__tapcalcLibrarySelectedRecord) return { record: window.__tapcalcLibrarySelectedRecord };
+      if (window.__tapcalcSelectedLibraryRecord) return { record: window.__tapcalcSelectedLibraryRecord };
+      if (Number.isInteger(window.__tapcalcSelectedLibraryIndex) && list[window.__tapcalcSelectedLibraryIndex]) {
+        return list[window.__tapcalcSelectedLibraryIndex];
+      }
+      const first = list[0];
+      return first && first.record ? first : null;
+    } catch (error) {
+      console.error('alpha62 find selected entry failed', error);
+      return null;
+    }
+  }
+
+  function tc62RunRecalc() {
+    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+    try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+    try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
+    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+  }
+
+  function tc62LoadRecord(record) {
+    if (!record || typeof record !== 'object') return false;
+    try {
+      const state = (typeof buildStateFromRecord === 'function') ? buildStateFromRecord(record) : (record.state || {});
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+      try { localStorage.setItem('measurementCardStateV1', JSON.stringify(state || {})); } catch {}
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(record, { message: true });
+      } else {
+        tc62RunRecalc();
+      }
+      setTimeout(tc62RunRecalc, 80);
+      setTimeout(tc62RunRecalc, 220);
+      setTimeout(tc62RunRecalc, 500);
+      try {
+        if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+        else document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      } catch {}
+      return true;
+    } catch (error) {
+      console.error('alpha62 load record failed', error);
+      return false;
+    }
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha62LoadSelected(){
+    const entry = tc62FindSelectedEntry();
+    const record = entry?.record || null;
+    if (!record) {
+      console.warn('alpha62 Load Job: no selected record found');
+      return false;
+    }
+    window.__tapcalcLibrarySelectedRecord = record;
+    if (entry?.id != null) {
+      window.__tapcalcLibrarySelectedId = String(entry.id);
+      try { selectedJobId = String(entry.id); } catch {}
+    }
+    return tc62LoadRecord(record);
+  };
+
+  window.loadSelectedLibraryJob = window.tapCalcLibraryLoadSelected;
+})();
