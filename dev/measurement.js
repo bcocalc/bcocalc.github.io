@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha121';
+const BUILD_VERSION = '3.0.0-alpha122';
 
 (function(){
 
@@ -1250,7 +1250,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha121', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha122', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3093,12 +3093,12 @@ window.addEventListener('load', async () => {
       lineStop: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('lsMd') && hasValue('lsTravel') && hasValue('lsMachineTravel'),
-        output: getText('ls_li') !== '—'
+        output: (getValue('lsLiManual') || getText('lsLiManual')) !== '—'
       },
       completionPlug: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt'),
-        output: getText('cp_li') !== '—'
+        output: (getValue('cpLiManual') || getText('cpLiManual')) !== '—'
       }
     };
 
@@ -3207,8 +3207,8 @@ window.addEventListener('load', async () => {
     const focusOutput=document.getElementById('cardFocusOutput');
     const hotTapTtd=document.getElementById('ttd')?.textContent?.trim() || '—';
     const htpTco=document.getElementById('htpTco')?.textContent?.trim() || '—';
-    const lsLi=document.getElementById('ls_li')?.textContent?.trim() || '—';
-    const cpLi=document.getElementById('cp_li')?.textContent?.trim() || '—';
+    const lsLi=document.getElementById('lsLiManual')?.textContent?.trim() || '—';
+    const cpLi=document.getElementById('cpLiManual')?.textContent?.trim() || '—';
     if(focusOutput){
       const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '—', htp: htpTco !== '' ? htpTco : '—', lineStop: lsLi !== '' ? lsLi : '—', completionPlug: cpLi !== '' ? cpLi : '—'};
       const safeOutputMode = map[activeMode] ? activeMode : 'hotTap';
@@ -4336,7 +4336,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha121';
+  const TC63_VERSION = '3.0.0-alpha122';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4578,7 +4578,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha121';
+  const VERSION = '3.0.0-alpha122';
 
   function tc65GetJobs() {
     try {
@@ -5360,7 +5360,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha122 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5512,7 +5512,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha122 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5710,7 +5710,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha122 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5854,7 +5854,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha122 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -6012,7 +6012,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha122 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6175,7 +6175,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha122 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6337,7 +6337,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha122 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6453,7 +6453,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha122 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6632,7 +6632,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha122 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6775,7 +6775,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha122 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6951,7 +6951,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha122 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7120,7 +7120,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha122 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7524,7 +7524,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha122 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7770,9 +7770,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha121 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha122 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha121';
+  const VERSION = '3.0.0-alpha122';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7883,7 +7883,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha122 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8080,7 +8080,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha122 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8218,7 +8218,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile current debug ===== */
+/* ===== 3.0.0-alpha122 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8316,7 +8316,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha122 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8425,7 +8425,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha122 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8500,7 +8500,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha122 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8556,7 +8556,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha121 mobile library screen ownership reset ===== */
+/* ===== 3.0.0-alpha122 mobile library screen ownership reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
