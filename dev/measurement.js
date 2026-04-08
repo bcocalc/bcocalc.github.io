@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha122';
+const BUILD_VERSION = '3.0.0-alpha123';
 
 (function(){
 
@@ -1250,7 +1250,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha122', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha123', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3076,29 +3076,38 @@ window.addEventListener('load', async () => {
     const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
     const hasJobInfo = ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician'].some(id => hasValue(id));
     const hasMachine = hasValue('machineType');
-    const geometryReady = getText('summaryBco') !== '—' && getText('summaryPipe') !== '—' && getText('summaryCutter') !== '—';
+    const summaryBco = getText('summaryBco');
+    const summaryPipe = getText('summaryPipe');
+    const summaryCutter = getText('summaryCutter');
+    const geometryReady = summaryBco !== '—' && summaryPipe !== '—' && summaryCutter !== '—';
     const baseReady = hasJobInfo && hasMachine;
+    const readOut = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return '—';
+      const raw = 'value' in el ? String(el.value ?? '').trim() : String(el.textContent ?? '').trim();
+      return raw && raw !== '—' ? raw : '—';
+    };
 
     const stageChecks = {
       hotTap: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('md') && hasValue('ptc') && hasValue('mt'),
-        output: getText('ttd') !== '—'
+        output: readOut('ttd') !== '—'
       },
       htp: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
-        output: getText('htpTco') !== '—'
+        output: readOut('htpTco') !== '—'
       },
       lineStop: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('lsMd') && hasValue('lsTravel') && hasValue('lsMachineTravel'),
-        output: (getValue('lsLiManual') || getText('lsLiManual')) !== '—'
+        output: readOut('lsLiManual') !== '—'
       },
       completionPlug: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt'),
-        output: (getValue('cpLiManual') || getText('cpLiManual')) !== '—'
+        output: readOut('cpLiManual') !== '—'
       }
     };
 
@@ -3205,10 +3214,16 @@ window.addEventListener('load', async () => {
     const focusBco=document.getElementById('cardFocusBco');
     if(focusBco) focusBco.textContent=bcoLabel || '—';
     const focusOutput=document.getElementById('cardFocusOutput');
-    const hotTapTtd=document.getElementById('ttd')?.textContent?.trim() || '—';
-    const htpTco=document.getElementById('htpTco')?.textContent?.trim() || '—';
-    const lsLi=document.getElementById('lsLiManual')?.textContent?.trim() || '—';
-    const cpLi=document.getElementById('cpLiManual')?.textContent?.trim() || '—';
+    const readCardOutput=(id)=>{
+      const el=document.getElementById(id);
+      if(!el) return '—';
+      const raw=('value' in el ? String(el.value ?? '') : String(el.textContent ?? '')).trim();
+      return raw || '—';
+    };
+    const hotTapTtd=readCardOutput('ttd');
+    const htpTco=readCardOutput('htpTco');
+    const lsLi=readCardOutput('lsLiManual');
+    const cpLi=readCardOutput('cpLiManual');
     if(focusOutput){
       const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '—', htp: htpTco !== '' ? htpTco : '—', lineStop: lsLi !== '' ? lsLi : '—', completionPlug: cpLi !== '' ? cpLi : '—'};
       const safeOutputMode = map[activeMode] ? activeMode : 'hotTap';
@@ -4336,7 +4351,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha122';
+  const TC63_VERSION = '3.0.0-alpha123';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4578,7 +4593,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha122';
+  const VERSION = '3.0.0-alpha123';
 
   function tc65GetJobs() {
     try {
@@ -5360,7 +5375,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha123 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5512,7 +5527,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha123 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5710,7 +5725,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha123 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5854,7 +5869,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha123 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -6012,7 +6027,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha123 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6175,7 +6190,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha123 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6337,7 +6352,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha123 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6453,7 +6468,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha123 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6632,7 +6647,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha123 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6775,7 +6790,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha123 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6951,7 +6966,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha123 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7120,7 +7135,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha123 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7524,7 +7539,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha123 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7770,9 +7785,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha122 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha123 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha122';
+  const VERSION = '3.0.0-alpha123';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7883,7 +7898,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha123 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8080,7 +8095,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha123 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8218,7 +8233,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile current debug ===== */
+/* ===== 3.0.0-alpha123 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8316,7 +8331,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha123 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8425,7 +8440,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha123 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8500,7 +8515,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha123 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8556,7 +8571,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha122 mobile library screen ownership reset ===== */
+/* ===== 3.0.0-alpha123 mobile library screen ownership reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
