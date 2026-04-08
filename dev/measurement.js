@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha89';
+const BUILD_VERSION = '3.0.0-alpha90';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha89', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha90', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3067,13 +3067,15 @@ window.addEventListener('load', async () => {
     };
 
     function describeStage(stage){
-      const checks = stageChecks[stage];
-      const started = checks.inputs || checks.output;
-      const ready = checks.geometry && checks.inputs && checks.output;
-      return { ...checks, started, ready };
+      const fallback = { geometry: false, inputs: false, output: false };
+      const checks = stageChecks[stage] || stageChecks.hotTap || fallback;
+      const started = !!(checks.inputs || checks.output);
+      const ready = !!(checks.geometry && checks.inputs && checks.output);
+      return { ...fallback, ...checks, started, ready };
     }
 
-    const current = describeStage(activeMode);
+    const safeActiveMode = stageChecks[activeMode] ? activeMode : 'hotTap';
+    const current = describeStage(safeActiveMode);
     const missingSetup = [];
     if (!hasJobInfo) missingSetup.push('job');
     if (!hasMachine) missingSetup.push('machine');
@@ -3173,7 +3175,8 @@ window.addEventListener('load', async () => {
     const cpLi=document.getElementById('cp_li')?.textContent?.trim() || '—';
     if(focusOutput){
       const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '—', htp: htpTco !== '' ? htpTco : '—', lineStop: lsLi !== '' ? lsLi : '—', completionPlug: cpLi !== '' ? cpLi : '—'};
-      focusOutput.textContent = map[activeMode] || '—';
+      const safeOutputMode = map[activeMode] ? activeMode : 'hotTap';
+      focusOutput.textContent = map[safeOutputMode] || '—';
     }
     const focusTitle=document.getElementById('cardFocusTitle');
     const focusDesc=document.getElementById('cardFocusDesc');
@@ -4297,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha89';
+  const TC63_VERSION = '3.0.0-alpha90';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4539,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha89';
+  const VERSION = '3.0.0-alpha90';
 
   function tc65GetJobs() {
     try {
@@ -5321,7 +5324,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha89 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha90 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5473,7 +5476,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha89 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha90 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5556,7 +5559,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha89 Load Job failed', error);
+      console.error('alpha90 Load Job failed', error);
       if(status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5614,8 +5617,8 @@ window.addEventListener('load', async () => {
   }, true);
 
   const origRender = window.renderJobsList || (typeof renderJobsList === 'function' ? renderJobsList : null);
-  if (typeof origRender === 'function' && !window.__alpha89RenderJobsWrapped) {
-    window.__alpha89RenderJobsWrapped = true;
+  if (typeof origRender === 'function' && !window.__alpha90RenderJobsWrapped) {
+    window.__alpha90RenderJobsWrapped = true;
     const wrapped = function(){
       const result = origRender.apply(this, arguments);
       try {
@@ -5641,8 +5644,8 @@ window.addEventListener('load', async () => {
   }
 
   const origShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
-  if (typeof origShow === 'function' && !window.__alpha89ShowWrapped) {
-    window.__alpha89ShowWrapped = true;
+  if (typeof origShow === 'function' && !window.__alpha90ShowWrapped) {
+    window.__alpha90ShowWrapped = true;
     const wrappedShow = function(name){
       const result = origShow.apply(this, arguments);
       try {
