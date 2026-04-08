@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha83';
+const BUILD_VERSION = '3.0.0-alpha84';
 
 (function(){
 
@@ -761,8 +761,12 @@ function renderGarlock600Rows(rows) {
 function populateGarlock600Select() {
   if (!garlock600SizeSelectEl) return;
   const previous = garlock600SizeSelectEl.value;
-  garlock600SizeSelectEl.innerHTML = garlock600Data.map((row) => `<option value="${row.size}">${row.size}</option>`).join('');
+  const markup = garlock600Data.map((row) => `<option value="${row.size}">${row.size}</option>`).join('');
+  if (!garlock600SizeSelectEl.options.length || garlock600SizeSelectEl.innerHTML.trim() !== markup.trim()) {
+    garlock600SizeSelectEl.innerHTML = markup;
+  }
   if (previous && garlock600Data.some((row) => row.size === previous)) garlock600SizeSelectEl.value = previous;
+  if (!garlock600SizeSelectEl.value && garlock600Data[0]?.size) garlock600SizeSelectEl.value = garlock600Data[0].size;
 }
 
 function updateGarlock600Summary() {
@@ -1213,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha83', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha84', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2494,13 +2498,24 @@ function updateJobsListSelectionUI() {
 function renderSelectedJobDetails(jobs = null) {
   const list = jobs || getCombinedJobsForDisplay();
   if (!jobsListEl) return;
+  const compactShared = (() => {
+    try {
+      const compact = window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820;
+      const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+      return compact && sharedVisible;
+    } catch { return false; }
+  })();
   if (!list.length) {
     jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     return;
   }
+  if (compactShared && !selectedJobId) {
+    jobsListEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+    return;
+  }
   const selectedJob = getSelectedCombinedJob(list);
   if (!selectedJob) {
-    jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+    jobsListEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
     return;
   }
   selectedJobId = String(selectedJob.id);
@@ -2561,7 +2576,14 @@ function renderJobsList() {
 
   const previousSelectedId = selectedJobId ? String(selectedJobId) : '';
   const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
-  selectedJobId = selectedStillExists ? previousSelectedId : String(jobs[0].id);
+  const compactShared = (() => {
+    try {
+      const compact = window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820;
+      const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+      return compact && sharedVisible;
+    } catch { return false; }
+  })();
+  selectedJobId = compactShared ? (selectedStillExists ? previousSelectedId : '') : (selectedStillExists ? previousSelectedId : String(jobs[0].id));
 
   if (jobsSelectEl) {
     const previousScrollTop = jobsSelectEl.scrollTop;
@@ -4275,7 +4297,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha83';
+  const TC63_VERSION = '3.0.0-alpha84';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4517,7 +4539,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha83';
+  const VERSION = '3.0.0-alpha84';
 
   function tc65GetJobs() {
     try {
@@ -4687,7 +4709,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha83 mobile shared-library selection fix ===== */
+/* ===== 3.0.0-alpha84 mobile shared-library selection fix ===== */
 (function(){
   function tc81IsCompactLibrary() {
     try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
@@ -4732,7 +4754,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha83 garlock init + compact library lane guard ===== */
+/* ===== 3.0.0-alpha84 garlock init + compact library lane guard ===== */
 (function(){
   function tc83IsCompact(){
     try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
@@ -4797,4 +4819,80 @@ window.addEventListener('load', async () => {
     const libTab = event.target.closest('.screen-tab[data-screen="jobs"]');
     if (libTab) setTimeout(tc83ForceLocalOnCompactLibrary, 0);
   });
+})();
+
+
+/* ===== 3.0.0-alpha84 dropdown + mobile library hard fix ===== */
+(function(){
+  function tc84Compact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function tc84SharedVisible(){
+    try { return !!document.querySelector('[data-library-lane-panel="shared"].active'); } catch { return false; }
+  }
+  function tc84ApplyLocalLane(){
+    if (!tc84Compact()) return;
+    try { localStorage.setItem('tapcalcLibraryLaneV1', 'local'); } catch {}
+    try {
+      document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((btn)=>{
+        const active = btn.dataset.libraryLane === 'local';
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-library-lane-panel]').forEach((panel)=>{
+        const active = panel.dataset.libraryLanePanel === 'local';
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+        panel.style.display = active ? 'block' : 'none';
+        panel.style.pointerEvents = active ? 'auto' : 'none';
+      });
+      const jobsScreen = document.getElementById('jobsScreen');
+      if (jobsScreen) jobsScreen.dataset.activeLane = 'local';
+    } catch {}
+    try { selectedJobId = ''; } catch {}
+    try { window.__tapcalcLibrarySelectedId = ''; window.__tapcalcLibrarySelectedRecord = null; } catch {}
+    try { renderJobsList(); } catch {}
+    try {
+      const detailsEl = document.getElementById('jobsList');
+      if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+    } catch {}
+  }
+  function tc84InitGarlock(){
+    try {
+      const select = document.getElementById('garlock600SizeSelect');
+      if (select) {
+        const current = select.value;
+        const markup = garlock600Data.map((row) => `<option value="${row.size}">${row.size}</option>`).join('');
+        if (!select.options.length || !select.innerHTML.trim()) select.innerHTML = markup;
+        if (current && [...select.options].some((o)=>o.value===current)) select.value = current;
+        if (!select.value && garlock600Data[0]?.size) select.value = garlock600Data[0].size;
+      }
+    } catch {}
+    try { populateGarlock600Select(); } catch {}
+    try { renderGarlock600Rows(garlock600Data); } catch {}
+    try { updateGarlock600Summary(); } catch {}
+  }
+  document.addEventListener('click', (event) => {
+    const libTab = event.target.closest('.screen-tab[data-screen="jobs"]');
+    if (libTab) setTimeout(tc84ApplyLocalLane, 0);
+    const otherTab = event.target.closest('.screen-tab:not([data-screen="jobs"])');
+    if (otherTab) {
+      try {
+        const jobs = document.getElementById('jobsScreen');
+        if (jobs) { jobs.classList.remove('active'); jobs.style.pointerEvents = 'none'; }
+      } catch {}
+    }
+    if (event.target.closest('[data-reference-target="garlock600"]') || event.target.closest('#referenceViewSelect')) {
+      setTimeout(tc84InitGarlock, 0);
+      setTimeout(tc84InitGarlock, 120);
+    }
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target && event.target.id === 'referenceViewSelect' && event.target.value === 'garlock600') {
+      setTimeout(tc84InitGarlock, 0);
+      setTimeout(tc84InitGarlock, 120);
+    }
+  });
+  window.addEventListener('pageshow', () => { setTimeout(tc84InitGarlock, 60); });
+  document.addEventListener('DOMContentLoaded', () => { setTimeout(tc84InitGarlock, 60); setTimeout(tc84ApplyLocalLane, 60); });
 })();
