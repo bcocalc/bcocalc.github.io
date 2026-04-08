@@ -4744,3 +4744,23 @@ body.light .converter-block {
     touch-action: manipulation;
   }
 }
+
+
+/* ===== alpha96 mobile library load button alignment ===== */
+@media (max-width: 820px) {
+  .job-detail-actions {
+    display: block;
+    padding: 0 0 12px;
+  }
+  .job-detail-actions button,
+  #jobsLoadSelectedBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 48px;
+    text-align: center;
+    margin: 0;
+    padding: 0 16px;
+  }
+}
