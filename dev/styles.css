@@ -4830,3 +4830,35 @@ body.light .converter-block {
     max-width: 100% !important;
   }
 }
+
+
+/* ===== 3.0.0-alpha115 mobile library overlay ownership fix ===== */
+@media (max-width: 820px) {
+  body.measurement-page.show-library-screen .screen-nav {
+    display: none !important;
+    pointer-events: none !important;
+  }
+  body.measurement-page.show-library-screen #jobsScreen.active {
+    position: relative !important;
+    z-index: 1001 !important;
+    pointer-events: auto !important;
+    background: var(--app-bg, #081a30) !important;
+    padding-bottom: 36px !important;
+    margin-bottom: 0 !important;
+  }
+  body.measurement-page.show-library-screen #jobsScreen.active,
+  body.measurement-page.show-library-screen #jobsScreen.active * {
+    touch-action: pan-y;
+  }
+  body.measurement-page.show-library-screen #jobsList,
+  body.measurement-page.show-library-screen .jobs-library-details,
+  body.measurement-page.show-library-screen .job-detail-actions,
+  body.measurement-page.show-library-screen #jobsLoadSelectedBtnFinal {
+    position: relative !important;
+    z-index: 1002 !important;
+    pointer-events: auto !important;
+  }
+  body.measurement-page.show-library-screen #jobsLoadSelectedBtnFinal {
+    touch-action: manipulation !important;
+  }
+}
