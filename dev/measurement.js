@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha71';
+const BUILD_VERSION = '3.0.0-alpha72';
 
 (function(){
 
@@ -582,15 +582,29 @@ const referenceViewSelectEl = document.getElementById('referenceViewSelect');
 const referenceViewEls = Array.from(document.querySelectorAll('.reference-view[data-reference-view]'));
 const referenceShortcutEls = Array.from(document.querySelectorAll('[data-reference-target]'));
 
+function getSafeReferenceView(view) {
+  const requested = String(view || referenceViewSelectEl?.value || '').trim();
+  const validViews = new Set(referenceViewEls.map((panel) => panel.dataset.referenceView).filter(Boolean));
+  if (requested && validViews.has(requested)) return requested;
+  if (validViews.has('converter')) return 'converter';
+  return referenceViewEls[0]?.dataset.referenceView || 'converter';
+}
+
 function syncReferenceShortcutState(view) {
   referenceShortcutEls.forEach((el) => el.classList.toggle('active', el.dataset.referenceTarget === view));
 }
 
 function setReferenceView(view) {
-  const nextView = view || referenceViewSelectEl?.value || 'converter';
+  const nextView = getSafeReferenceView(view);
+  let activated = false;
   referenceViewEls.forEach((panel) => {
-    panel.classList.toggle('active', panel.dataset.referenceView === nextView);
+    const isActive = panel.dataset.referenceView === nextView;
+    panel.classList.toggle('active', isActive);
+    if (isActive) activated = true;
   });
+  if (!activated && referenceViewEls[0]) {
+    referenceViewEls[0].classList.add('active');
+  }
   if (referenceViewSelectEl && referenceViewSelectEl.value !== nextView) referenceViewSelectEl.value = nextView;
   syncReferenceShortcutState(nextView);
   try { localStorage.setItem('tapcalcReferenceViewV1', nextView); } catch {}
@@ -1035,7 +1049,7 @@ function initReferenceWorkspaceHard() {
     renderSimpleTableRows('plant150Body', plant150Data);
     renderSimpleTableRows('plant600Body', plant600Data);
     if (typeof initBoltingReference === 'function') initBoltingReference();
-    const safeView = localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl?.value || 'converter';
+    const safeView = getSafeReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl?.value || 'converter');
     setReferenceView(safeView);
   } catch (error) {
     console.warn('alpha71 reference workspace init fallback failed', error);
@@ -1049,6 +1063,11 @@ document.addEventListener('click', (event) => {
   setTimeout(initReferenceWorkspaceHard, 0);
 });
 window.addEventListener('pageshow', () => setTimeout(initReferenceWorkspaceHard, 0));
+document.addEventListener('click', (event) => {
+  const refTab = event.target.closest('.screen-tab[data-screen="ref"]');
+  const refCard = event.target.closest('.ref-category-card, .ref-shortcut-btn');
+  if (refTab || refCard) setTimeout(initReferenceWorkspaceHard, 0);
+});
 
 initBoltingReference();
 
@@ -4111,7 +4130,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha69';
+  const TC63_VERSION = '3.0.0-alpha72';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
