@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha64';
+const BUILD_VERSION = '3.0.0-alpha65';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha64', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha65', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4056,9 +4056,9 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha64 forced load-job hydration + version pass ===== */
+/* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha64';
+  const TC63_VERSION = '3.0.0-alpha65';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4295,4 +4295,176 @@ window.addEventListener('load', async () => {
     } catch {}
     return result;
   };
+})();
+
+
+/* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
+(function(){
+  const VERSION = '3.0.0-alpha65';
+
+  function tc65GetJobs() {
+    try {
+      const list = (typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : []) || [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function tc65FindSelectedEntry() {
+    const list = tc65GetJobs();
+    if (!list.length) return null;
+    const domActive = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect [data-job-id][aria-selected="true"], #jobsSelect [data-job-id][aria-pressed="true"]');
+    const selectedId = String(domActive?.dataset?.jobId || window.__tapcalcLibrarySelectedId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+    const found = selectedId ? list.find((job) => String(job?.id || '') === selectedId) : null;
+    return found || list[0] || null;
+  }
+
+  function tc65SyncSelection(entry) {
+    if (!entry) return;
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcLibrarySelectedId = String(entry.id || ''); } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || ''); } catch {}
+    try {
+      document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item) => {
+        const active = String(item.dataset.jobId || '') === String(entry.id || '');
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    } catch {}
+  }
+
+  function tc65LoadSelected() {
+    const entry = tc65FindSelectedEntry();
+    if (!entry?.record) {
+      try {
+        const statusEl = document.getElementById('jobsCloudStatus');
+        if (statusEl) statusEl.textContent = 'Load Job failed: no selected library record found.';
+      } catch {}
+      return false;
+    }
+    tc65SyncSelection(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false });
+    } catch (error) {
+      console.error('alpha65 loadRecordIntoCalculator failed', error);
+      return false;
+    }
+    try {
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+    } catch {}
+    try {
+      const statusEl = document.getElementById('jobsCloudStatus');
+      if (statusEl) statusEl.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    } catch {}
+    return true;
+  }
+
+  function tc65BindLoadButton() {
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (!btn) return;
+    const fresh = btn.cloneNode(true);
+    fresh.removeAttribute('onclick');
+    fresh.dataset.tc65Bound = 'true';
+    btn.replaceWith(fresh);
+    const handler = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+      tc65LoadSelected();
+      return false;
+    };
+    fresh.addEventListener('click', handler, { capture: true });
+    fresh.addEventListener('pointerup', handler, { capture: true });
+    fresh.addEventListener('touchend', handler, { capture: true });
+  }
+
+  function tc65RenderDetails() {
+    const detailsEl = document.getElementById('jobsList');
+    if (!detailsEl) return;
+    const entry = tc65FindSelectedEntry();
+    if (!entry?.record) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    tc65SyncSelection(entry);
+    const record = entry.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = entry.source === 'local' ? 'Local only' : entry.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const warnings = [
+      ...(record?.warnings?.hotTap || []),
+      ...(record?.warnings?.lineStop || []),
+      ...(record?.warnings?.completionPlug || [])
+    ].filter(Boolean);
+    const detailsHtml = typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : '';
+    detailsEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${title}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+        </div>
+        <div class="job-record-badges">
+          <span class="job-source-badge ${entry.source}">${sourceLabel}</span>
+        </div>
+      </div>
+      <div class="job-detail-actions">
+        <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+      </div>
+      ${detailsHtml}
+      <div class="job-detail-grid">
+        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      </div>`;
+    tc65BindLoadButton();
+  }
+
+  const originalRenderJobsList = typeof window.renderJobsList === 'function' ? window.renderJobsList : null;
+  window.renderJobsList = function alpha65RenderJobsList(){
+    const result = originalRenderJobsList ? originalRenderJobsList.apply(this, arguments) : undefined;
+    tc65RenderDetails();
+    return result;
+  };
+
+  window.renderSelectedJobDetails = function alpha65RenderSelectedJobDetails(){
+    tc65RenderDetails();
+    return true;
+  };
+
+  window.tapCalcLibraryLoadSelected = tc65LoadSelected;
+  window.loadSelectedLibraryJob = tc65LoadSelected;
+  window.tapCalcForceLoadSelectedJob = tc65LoadSelected;
+
+  document.addEventListener('click', (event) => {
+    const row = event.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (!row) return;
+    const list = tc65GetJobs();
+    const entry = list.find((job) => String(job?.id || '') === String(row.dataset.jobId || '')) || null;
+    if (!entry) return;
+    tc65SyncSelection(entry);
+    setTimeout(tc65RenderDetails, 0);
+  }, true);
+
+  const detailsEl = document.getElementById('jobsList');
+  if (detailsEl) {
+    const observer = new MutationObserver(() => {
+      const btn = document.getElementById('jobsLoadSelectedBtn');
+      if (btn && btn.dataset.tc65Bound !== 'true') tc65BindLoadButton();
+    });
+    observer.observe(detailsEl, { childList: true, subtree: true });
+  }
+
+  setTimeout(() => {
+    try {
+      const badge = document.querySelector('.version-badge');
+      if (badge) badge.textContent = `TapCalc Dev ${VERSION} · 2026-04-07`;
+      const title = document.querySelector('.top-app-title');
+      if (title) title.textContent = `TapCalc Dev ${VERSION} · 2026-04-07`;
+      tc65RenderDetails();
+    } catch {}
+  }, 0);
 })();
