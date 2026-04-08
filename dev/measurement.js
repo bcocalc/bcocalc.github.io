@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha105';
+const BUILD_VERSION = '3.0.0-alpha106';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha105', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha106', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4300,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha105';
+  const TC63_VERSION = '3.0.0-alpha106';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha105';
+  const VERSION = '3.0.0-alpha106';
 
   function tc65GetJobs() {
     try {
@@ -5324,7 +5324,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha106 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5476,7 +5476,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha106 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5674,7 +5674,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha106 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5818,7 +5818,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha106 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -5976,7 +5976,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha106 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6139,7 +6139,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha106 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6301,7 +6301,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha106 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6417,7 +6417,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha106 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6596,7 +6596,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha106 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6739,7 +6739,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha106 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6915,7 +6915,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha106 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7084,7 +7084,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha106 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7179,7 +7179,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* alpha105 canonical library loader reset */
+/* alpha106 canonical library loader reset */
 (function(){
   function tc103IsMobileCompact(){
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
@@ -7215,7 +7215,7 @@ window.addEventListener('load', async () => {
   function tc103CanonicalLoad(record){
     if (!record) return false;
     try { window.__tapCalcSelectedLibraryRecord = record; } catch {}
-    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: false, message: true }); } catch (e) { console.error('alpha105 loadRecordIntoCalculator failed', e); }
+    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: false, message: true }); } catch (e) { console.error('alpha106 loadRecordIntoCalculator failed', e); }
     try { if (typeof tc63Hydrate === 'function') tc63Hydrate(record); } catch {}
     const delays = [0, 60, 180, 360];
     delays.forEach((ms) => setTimeout(() => {
@@ -7355,7 +7355,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* alpha105 mobile pending load bridge */
+/* alpha106 mobile pending load bridge */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -7405,7 +7405,7 @@ window.addEventListener('load', async () => {
           loadRecordIntoCalculator(record, { switchScreen: false, message: true });
           ok=true;
         }
-      } catch(e) { console.error('alpha105 mobile applyRecord failed', e); }
+      } catch(e) { console.error('alpha106 mobile applyRecord failed', e); }
     };
     run();
     setTimeout(run, 0);
@@ -7446,8 +7446,8 @@ window.addEventListener('load', async () => {
     if(!btn) return;
     const entry=getSelectedEntry();
     if(entry?.id) btn.dataset.jobId = String(entry.id);
-    if(btn.dataset.alpha105Bound==='1') return;
-    btn.dataset.alpha105Bound='1';
+    if(btn.dataset.alpha106Bound==='1') return;
+    btn.dataset.alpha106Bound='1';
     btn.removeAttribute('onclick');
     ['touchstart','touchend','pointerdown','pointerup','click'].forEach(type=>{
       btn.addEventListener(type, function(e){ if(isMobile()) mobileLoadSelected(e); }, {capture:true});
@@ -7488,7 +7488,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha105 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha106 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7522,7 +7522,7 @@ window.addEventListener('load', async () => {
     const selected = getSelected(jobs);
     if (!selected?.record) return false;
     syncSelected(selected.id);
-    try { loadRecordIntoCalculator(selected.record, { message: true }); } catch (error) { console.error('alpha105 canonical load failed', error); }
+    try { loadRecordIntoCalculator(selected.record, { message: true }); } catch (error) { console.error('alpha106 canonical load failed', error); }
     setTimeout(() => {
       try { loadRecordIntoCalculator(selected.record, { message: false }); } catch {}
       try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
@@ -7673,5 +7673,62 @@ window.addEventListener('load', async () => {
   window.renderJobsList = renderJobsCanonical;
   try { renderSelectedJobDetails = renderSelectedCanonical; } catch {}
   try { renderJobsList = renderJobsCanonical; } catch {}
-  setTimeout(() => { try { renderJobsCanonical(); } catch (e) { console.error('alpha105 initial render failed', e); } }, 50);
+  setTimeout(() => { try { renderJobsCanonical(); } catch (e) { console.error('alpha106 initial render failed', e); } }, 50);
 })();
+
+
+// alpha106 mobile Load Job debug tracer
+(function(){
+  const isCompact = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
+  };
+  const status = (msg) => {
+    try {
+      const el = document.getElementById('jobsCloudStatus');
+      if (el) el.textContent = msg;
+      console.log('[alpha106-mobile-debug]', msg);
+    } catch {}
+  };
+  const txt = (sel) => (document.querySelector(sel)?.textContent || '').trim();
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
+  const mobileTrace = (phase) => {
+    if (!isCompact()) return;
+    const activeId = (window.selectedJobId || '').toString();
+    const title = txt('.job-detail-title');
+    const subtitle = txt('.job-detail-subtitle');
+    const currentClient = val('jobClient');
+    const currentJob = val('jobDescription') || val('jobNumber');
+    status(`${phase} | selectedJobId=${activeId || 'none'} | detail=${title || 'none'} | currentClient=${currentClient || 'blank'} | currentJob=${currentJob || 'blank'} | ${subtitle || ''}`);
+  };
+  document.addEventListener('click', (e) => {
+    if (!isCompact()) return;
+    const item = e.target.closest('.jobs-list-item[data-job-id]');
+    if (item) {
+      setTimeout(() => {
+        status(`ROW CLICK | rowId=${item.dataset.jobId || 'none'} | detail=${txt('.job-detail-title') || 'none'}`);
+      }, 25);
+    }
+  }, true);
+  const bindBtn = () => {
+    if (!isCompact()) return;
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (!btn || btn.dataset.alpha106DebugBound) return;
+    btn.dataset.alpha106DebugBound = '1';
+    ['touchstart','pointerdown','click'].forEach((evt) => {
+      btn.addEventListener(evt, () => {
+        mobileTrace(`LOAD BTN ${evt}`);
+        setTimeout(() => mobileTrace(`POST ${evt} 150ms`), 150);
+        setTimeout(() => mobileTrace(`POST ${evt} 500ms`), 500);
+        setTimeout(() => mobileTrace(`POST ${evt} 1200ms`), 1200);
+      }, true);
+    });
+  };
+  const mo = new MutationObserver(() => bindBtn());
+  const start = () => {
+    bindBtn();
+    try { mo.observe(document.body, {childList:true, subtree:true}); } catch {}
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});
+  else start();
+})();
+
