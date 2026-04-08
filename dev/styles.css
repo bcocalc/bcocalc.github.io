@@ -4766,7 +4766,7 @@ body.light .converter-block {
 }
 
 
-/* ===== alpha107 mobile library width cleanup ===== */
+/* ===== alpha108 mobile library width cleanup ===== */
 @media (max-width: 820px) {
   #jobsScreen,
   #jobsPanel,
@@ -4807,5 +4807,26 @@ body.light .converter-block {
     width: 100% !important;
     margin: 0 auto !important;
     justify-content: center;
+  }
+}
+
+
+/* ===== 3.0.0-alpha108 mobile library containment ===== */
+@media (max-width: 820px) {
+  #jobsScreen, #jobsPanel, .jobs-workspace-panel, #jobsList, #jobsSelect, .jobs-library-details, .jobs-listbox {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  #jobsPanel, .jobs-workspace-panel, .jobs-library-panel, .jobs-library-details, .job-detail-actions, .job-detail-header {
+    overflow-x: hidden !important;
+  }
+  .job-detail-actions .secondary-btn, #jobsLoadSelectedBtnFinal {
+    width: 100% !important;
+    display: block !important;
+    margin: 0 auto !important;
+    text-align: center !important;
+  }
+  #jobsScreen .section-card, #jobsScreen .library-hero-card, #jobsScreen .jobs-shared-panel, #jobsScreen .jobs-search-panel {
+    max-width: 100% !important;
   }
 }
