@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha94';
+const BUILD_VERSION = '3.0.0-alpha95';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha94', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha95', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4300,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha94';
+  const TC63_VERSION = '3.0.0-alpha95';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha94';
+  const VERSION = '3.0.0-alpha95';
 
   function tc65GetJobs() {
     try {
@@ -5324,7 +5324,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha94 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha95 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5476,7 +5476,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha94 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha95 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5559,7 +5559,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha94 Load Job failed', error);
+      console.error('alpha95 Load Job failed', error);
       if(status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5617,8 +5617,8 @@ window.addEventListener('load', async () => {
   }, true);
 
   const origRender = window.renderJobsList || (typeof renderJobsList === 'function' ? renderJobsList : null);
-  if (typeof origRender === 'function' && !window.__alpha94RenderJobsWrapped) {
-    window.__alpha94RenderJobsWrapped = true;
+  if (typeof origRender === 'function' && !window.__alpha95RenderJobsWrapped) {
+    window.__alpha95RenderJobsWrapped = true;
     const wrapped = function(){
       const result = origRender.apply(this, arguments);
       try {
@@ -5644,8 +5644,8 @@ window.addEventListener('load', async () => {
   }
 
   const origShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
-  if (typeof origShow === 'function' && !window.__alpha94ShowWrapped) {
-    window.__alpha94ShowWrapped = true;
+  if (typeof origShow === 'function' && !window.__alpha95ShowWrapped) {
+    window.__alpha95ShowWrapped = true;
     const wrappedShow = function(name){
       const result = origShow.apply(this, arguments);
       try {
@@ -5674,7 +5674,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha94 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha95 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5740,7 +5740,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha94 mobile load failed', error);
+      console.error('alpha95 mobile load failed', error);
       if (status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5773,8 +5773,8 @@ window.addEventListener('load', async () => {
   }
 
   const origRenderSelected = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
-  if (typeof origRenderSelected === 'function' && !window.__alpha94RenderSelectedWrapped) {
-    window.__alpha94RenderSelectedWrapped = true;
+  if (typeof origRenderSelected === 'function' && !window.__alpha95RenderSelectedWrapped) {
+    window.__alpha95RenderSelectedWrapped = true;
     const wrapped = function(){
       const result = origRenderSelected.apply(this, arguments);
       try {
@@ -5818,7 +5818,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha94 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha95 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -5907,7 +5907,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha94 mobile load failed', error);
+      console.error('alpha95 mobile load failed', error);
       if (status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5957,8 +5957,8 @@ window.addEventListener('load', async () => {
     if (btn && isCompact()) return doLoad(e);
   }, true);
   const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
-  if (typeof origRender === 'function' && !window.__alpha94RenderWrapped) {
-    window.__alpha94RenderWrapped = true;
+  if (typeof origRender === 'function' && !window.__alpha95RenderWrapped) {
+    window.__alpha95RenderWrapped = true;
     const wrapped = function(){
       const result = origRender.apply(this, arguments);
       try { syncButtonJobId(); bind(); } catch {}
@@ -5976,7 +5976,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha94 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha95 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6074,7 +6074,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha94 mobile load failed', error);
+      console.error('alpha95 mobile load failed', error);
       if (status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -6109,8 +6109,8 @@ window.addEventListener('load', async () => {
     });
   }
   const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
-  if (typeof origRender === 'function' && !window.__alpha94RenderWrapped) {
-    window.__alpha94RenderWrapped = true;
+  if (typeof origRender === 'function' && !window.__alpha95RenderWrapped) {
+    window.__alpha95RenderWrapped = true;
     const wrapped = function(){
       const result = origRender.apply(this, arguments);
       try { bindButton(); wireRowSelection(); } catch {}

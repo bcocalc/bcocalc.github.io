@@ -4688,16 +4688,19 @@ body.light .converter-block {
 #jobsScreen{touch-action:pan-y;}
 
 
-/* alpha93 mobile library viewport + load button fix */
+/* alpha95 mobile library scroll fix */
 @media (max-width: 820px) {
   body.measurement-page.show-library-screen {
-    overflow: hidden;
-    height: 100dvh;
+    overflow-y: auto;
+    min-height: 100dvh;
+    height: auto;
   }
   #jobsScreen.active {
     display: block;
-    max-height: calc(100dvh - 108px);
-    overflow: hidden;
+    max-height: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
   #jobsPanel.jobs-workspace-panel,
   #jobsPanel.jobs-workspace-panel > .jobs-workspace-grid,
@@ -4707,24 +4710,26 @@ body.light .converter-block {
   .jobs-panel-shared.library-lane.active {
     display: flex !important;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
+  }
+  #jobsSelect,
+  #jobsList,
+  .jobs-history-drawer,
+  .jobs-library-details {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
   }
   #jobsSelect {
     flex: 1 1 auto;
-    min-height: 200px !important;
-    max-height: none !important;
-    overflow-y: auto !important;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    min-height: 220px !important;
+    max-height: 42dvh !important;
     position: relative;
     z-index: 1;
   }
   #jobsList {
     flex: 0 0 auto;
-    max-height: 32dvh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
+    max-height: none;
     position: relative;
     z-index: 3;
     pointer-events: auto;
