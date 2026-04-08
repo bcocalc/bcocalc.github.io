@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha124">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha125">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha124 · 2026-04-08</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha125 · 2026-04-08</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha124 · 2026-04-08</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha125 · 2026-04-08</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -545,8 +545,10 @@
   <section id="glossaryPanel" class="mode-panel active">
     <div class="section glossary-section reference-workspace-card">
       <div class="reference-screen-head">
-        <div>
-          <h3>Reference Tools</h3>
+        <div class="collapsible-head-block">
+          <button type="button" id="referenceToolsToggleBtn" class="section-toggle-btn" aria-expanded="true" aria-controls="referenceWorkspaceContent">
+            <span>Reference Tools</span><span class="section-toggle-chevron" aria-hidden="true">▾</span>
+          </button>
           <p class="note">Use the category cards or the selector below to jump straight to the tool you need.</p>
           <div class="reference-inline-actions">
             <a class="secondary-btn" href="Bolting Chart.pdf" target="_blank" rel="noopener">Open Bolting PDF</a>
@@ -566,6 +568,7 @@
         </div>
       </div>
 
+      <div id="referenceWorkspaceContent" class="collapsible-content">
       <div class="reference-view active" data-reference-view="converter">
         <div class="reference-grid">
           <div class="reference-card">
@@ -868,11 +871,14 @@
 
       <div class="section jobs-panel-card jobs-panel-library jobs-panel-shared library-lane" data-library-lane-panel="shared" hidden aria-hidden="true">
         <div class="jobs-section-head">
-          <div>
-            <h3>Shared Jobs</h3>
+          <div class="collapsible-head-block">
+            <button type="button" id="sharedJobsToggleBtn" class="section-toggle-btn section-toggle-btn-jobs" aria-expanded="true" aria-controls="sharedJobsContent">
+              <span>Shared Jobs</span><span class="section-toggle-chevron" aria-hidden="true">▾</span>
+            </button>
             <p class="note jobs-note">Search every shared job by title, client, date, job number, location, technician, or pipe details, then open the one you need. If you do not see anything, tap Shared above to switch lanes.</p>
           </div>
         </div>
+        <div id="sharedJobsContent" class="collapsible-content">
         <div class="jobs-status-grid">
           <div class="summary-item"><span class="summary-label">Firebase</span><span id="firebaseStatus" class="summary-value">Connecting…</span></div>
           <div class="summary-item"><span class="summary-label">Unsynced Local Jobs</span><span id="unsyncedJobsCount" class="summary-value">0</span></div>
@@ -887,6 +893,7 @@
         <div class="jobs-library-meta" id="jobsResultsMeta">Loading jobs...</div>
         <div id="jobsSelect" class="jobs-select jobs-listbox" role="listbox" aria-label="Shared jobs results" tabindex="0"></div>
         <div id="jobsList" class="jobs-library-details">Select a job from the list to view its details.</div>
+        </div>
       </div>
     </div>
   </section>
@@ -931,8 +938,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha124"></script>
-<script src="measurement.js?v=3.0.0-alpha124"></script>
+<script src="firebase-config.js?v=3.0.0-alpha125"></script>
+<script src="measurement.js?v=3.0.0-alpha125"></script>
   </section>
 </body>
 </html>
