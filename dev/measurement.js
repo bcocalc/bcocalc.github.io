@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha63';
+const BUILD_VERSION = '3.0.0-alpha64';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha63', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha64', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2312,7 +2312,7 @@ function renderSelectedJobDetails(jobs = null) {
       </div>
     </div>
     <div class="job-detail-actions">
-      <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+      <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button>
     </div>
     ${renderJobRecordDetails(record)}
     <div class="job-detail-grid">
@@ -3105,7 +3105,7 @@ window.addEventListener('load', async () => {
         </div>
         <div class="job-record-badges"><span class="job-source-badge ${alpha47Escape(selected.source)}">${alpha47Escape(sourceLabel)}</span></div>
       </div>
-      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button></div>
+      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button></div>
       ${renderJobRecordDetails(record)}
     `;
     const loadBtn = document.getElementById('jobsLoadSelectedBtn');
@@ -3255,7 +3255,7 @@ window.addEventListener('load', async () => {
         <div class="job-record-badges"><span class="job-source-badge ${esc(selected.source)}">${esc(sourceLabel(selected.source))} DB</span></div>
       </div>
       <div class="job-detail-actions">
-        <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+        <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button>
       </div>
       ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
     `;
@@ -3735,7 +3735,7 @@ window.addEventListener('load', async () => {
         </div>
         <div class="job-record-badges"><span class="job-source-badge ${a59Esc(entry.source)}">${a59Esc(sourceLabel)}</span></div>
       </div>
-      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button></div>
+      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button></div>
       ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
     `;
     detailsEl.querySelector('#jobsLoadSelectedBtn')?.addEventListener('click', () => window.tapCalcLibraryLoadSelected());
@@ -4056,9 +4056,9 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha63 forced load-job hydration + version pass ===== */
+/* ===== 3.0.0-alpha64 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha63';
+  const TC63_VERSION = '3.0.0-alpha64';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4220,12 +4220,79 @@ window.addEventListener('load', async () => {
 
   window.loadSelectedLibraryJob = window.tapCalcLibraryLoadSelected;
 
-  document.addEventListener('click', function(event){
+  function tc64LoadSelectedFromAnySource() {
+    let entry = null;
+    try { entry = tc63FindSelectedEntry(); } catch {}
+    if (!entry?.record) {
+      try {
+        const list = (typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : []) || [];
+        const activeBtn = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect [data-job-id][aria-selected="true"], #jobsSelect [data-job-id][aria-pressed="true"]');
+        const domId = String(activeBtn?.dataset?.jobId || window.__tapcalcLibrarySelectedId || '').trim();
+        if (domId) entry = list.find(job => String(job?.id || '') === domId) || null;
+        if (!entry?.record && list.length) entry = list[0];
+      } catch {}
+    }
+    if (!entry?.record) {
+      try {
+        const statusEl = document.getElementById('jobsCloudStatus');
+        if (statusEl) statusEl.textContent = 'Load Job failed: no selected library record found.';
+      } catch {}
+      return false;
+    }
+    try {
+      window.__tapcalcLibrarySelectedRecord = entry.record;
+      window.__tapcalcLibrarySelectedId = String(entry.id || '');
+      if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || '');
+    } catch {}
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false });
+      }
+    } catch (error) {
+      console.error('alpha64 loadRecordIntoCalculator failed', error);
+    }
+    try { tc63Hydrate(entry.record); } catch (error) { console.error('alpha64 tc63Hydrate failed', error); }
+    try {
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+    } catch {}
+    try {
+      const statusEl = document.getElementById('jobsCloudStatus');
+      if (statusEl) statusEl.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    } catch {}
+    return true;
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha64LoadSelected(){
+    return tc64LoadSelectedFromAnySource();
+  };
+  window.loadSelectedLibraryJob = window.tapCalcLibraryLoadSelected;
+  window.tapCalcForceLoadSelectedJob = tc64LoadSelectedFromAnySource;
+
+  function tc64HandleLoadTap(event) {
     const btn = event.target.closest('#jobsLoadSelectedBtn');
     if (!btn) return;
     event.preventDefault();
     event.stopPropagation();
     if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
-    window.tapCalcLibraryLoadSelected();
-  }, true);
+    tc64LoadSelectedFromAnySource();
+  }
+
+  document.addEventListener('click', tc64HandleLoadTap, true);
+  document.addEventListener('pointerup', tc64HandleLoadTap, true);
+  document.addEventListener('touchend', tc64HandleLoadTap, true);
+
+  const _renderSelectedJobDetailsAlpha64 = window.renderSelectedJobDetails;
+  window.renderSelectedJobDetails = function alpha64RenderSelectedJobDetails(){
+    const result = typeof _renderSelectedJobDetailsAlpha64 === 'function' ? _renderSelectedJobDetailsAlpha64.apply(this, arguments) : undefined;
+    try {
+      const btn = document.getElementById('jobsLoadSelectedBtn');
+      if (btn) {
+        btn.setAttribute('onclick', 'return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();');
+        btn.dataset.alpha64Bound = 'true';
+      }
+    } catch {}
+    return result;
+  };
 })();
