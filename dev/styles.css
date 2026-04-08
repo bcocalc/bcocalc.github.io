@@ -4894,3 +4894,31 @@ body.light .converter-block {
     pointer-events: auto !important;
   }
 }
+
+
+/* ===== 3.0.0-alpha124 mobile reference shortcut fix ===== */
+@media (max-width: 768px){
+  .ref-top-actions{
+    display:flex;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    gap:10px;
+    padding-bottom:4px;
+    width:100%;
+    scrollbar-width:none;
+  }
+  .ref-top-actions::-webkit-scrollbar{display:none;}
+  .ref-top-actions .ref-shortcut-btn{
+    flex:0 0 auto;
+    min-width:138px;
+    white-space:normal;
+    line-height:1.15;
+    text-align:center;
+    padding:12px 14px;
+  }
+  .ref-category-strip{
+    grid-template-columns:1fr;
+  }
+}
