@@ -4342,7 +4342,7 @@ option[value="htpCutter"] {
 }
 
 
-/* ===== 3.0.0-alpha77 decimal/fraction layout fix ===== */
+/* ===== 3.0.0-alpha78 decimal/fraction layout fix ===== */
 .reference-view[data-reference-view="converter"] .reference-card {
   overflow: hidden;
 }
@@ -4444,7 +4444,7 @@ body.light .converter-block {
   }
 }
 
-/* ===== 3.0.0-alpha77 reference single-card width fix ===== */
+/* ===== 3.0.0-alpha78 reference single-card width fix ===== */
 .reference-view[data-reference-view="converter"] .reference-grid,
 .reference-view[data-reference-view="bolting"] .reference-grid {
   grid-template-columns: 1fr;
@@ -4464,5 +4464,80 @@ body.light .converter-block {
   .reference-view[data-reference-view="converter"] .reference-grid,
   .reference-view[data-reference-view="bolting"] .reference-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+
+/* ===== 3.0.0-alpha78 bolting width + spacing fix ===== */
+.reference-view[data-reference-view="bolting"] .reference-card.bolting-card {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-controls {
+  grid-template-columns: repeat(2, minmax(220px, 320px));
+  justify-content: start;
+  gap: 14px 18px;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-selects {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+  gap: 8px;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-selects label {
+  margin: 0;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-selects select {
+  width: 100%;
+  min-width: 0;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-summary-grid {
+  grid-template-columns: repeat(5, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-summary-item {
+  min-height: 96px;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-table-wrap {
+  width: 100%;
+  overflow: auto;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-table {
+  width: 100%;
+  min-width: 760px;
+}
+
+.reference-view[data-reference-view="bolting"] .bolting-table th,
+.reference-view[data-reference-view="bolting"] .bolting-table td {
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .reference-view[data-reference-view="bolting"] .bolting-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .reference-view[data-reference-view="bolting"] .bolting-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .reference-view[data-reference-view="bolting"] .bolting-controls,
+  .reference-view[data-reference-view="bolting"] .bolting-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-view[data-reference-view="bolting"] .bolting-table {
+    min-width: 620px;
   }
 }
