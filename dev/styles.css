@@ -4832,7 +4832,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha115 mobile library overlay ownership fix ===== */
+/* ===== 3.0.0-alpha116 mobile library overlay ownership fix ===== */
 @media (max-width: 820px) {
   body.measurement-page.show-library-screen .screen-nav {
     display: none !important;
@@ -4860,5 +4860,37 @@ body.light .converter-block {
   }
   body.measurement-page.show-library-screen #jobsLoadSelectedBtnFinal {
     touch-action: manipulation !important;
+  }
+}
+
+
+/* ===== 3.0.0-alpha116 mobile library screen visibility reset ===== */
+@media (max-width: 820px) {
+  body.measurement-page.show-library-screen .screen-nav {
+    display: grid !important;
+    pointer-events: auto !important;
+    z-index: 1105 !important;
+  }
+  body.measurement-page.show-library-screen #jobsScreen.active {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    position: relative !important;
+    z-index: 1100 !important;
+    overflow-x: hidden !important;
+  }
+  body.measurement-page.show-library-screen #jobScreen,
+  body.measurement-page.show-library-screen #homeScreen,
+  body.measurement-page.show-library-screen #calcScreen,
+  body.measurement-page.show-library-screen #cardScreen,
+  body.measurement-page.show-library-screen #refScreen {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+  body.measurement-page.show-library-screen #jobsScreen.active,
+  body.measurement-page.show-library-screen #jobsScreen.active * {
+    pointer-events: auto !important;
   }
 }

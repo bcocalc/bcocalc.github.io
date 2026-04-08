@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha115';
+const BUILD_VERSION = '3.0.0-alpha116';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha115', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha116', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4300,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha115';
+  const TC63_VERSION = '3.0.0-alpha116';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha115';
+  const VERSION = '3.0.0-alpha116';
 
   function tc65GetJobs() {
     try {
@@ -5324,7 +5324,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha116 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5476,7 +5476,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha116 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5674,7 +5674,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha116 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5818,7 +5818,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha116 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -5976,7 +5976,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha116 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6139,7 +6139,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha116 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6301,7 +6301,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha116 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6417,7 +6417,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha116 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6596,7 +6596,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha116 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6739,7 +6739,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha116 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6915,7 +6915,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha116 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7084,7 +7084,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha116 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7488,7 +7488,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha116 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7734,9 +7734,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha115 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha116 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha115';
+  const VERSION = '3.0.0-alpha116';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7847,7 +7847,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha116 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8044,7 +8044,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha116 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8182,7 +8182,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile current debug ===== */
+/* ===== 3.0.0-alpha116 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8280,7 +8280,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha116 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8389,7 +8389,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha116 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8464,7 +8464,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha115 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha116 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8517,4 +8517,75 @@ window.addEventListener('load', async () => {
   window.addEventListener('pageshow', syncLibraryOverlayState);
   window.addEventListener('resize', syncLibraryOverlayState);
   setTimeout(syncLibraryOverlayState, 0);
+})();
+
+
+/* ===== 3.0.0-alpha116 mobile library screen ownership reset ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
+  const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
+
+  function finalShowScreen(name){
+    Object.entries(screens).forEach(([key, id])=>{
+      const el = $(id); if(!el) return;
+      const active = key === name;
+      el.classList.toggle('active', active);
+      el.hidden = !active;
+      el.style.display = active ? 'block' : 'none';
+      el.style.pointerEvents = active ? 'auto' : 'none';
+      el.style.visibility = active ? 'visible' : 'hidden';
+      el.style.zIndex = active ? (name === 'jobs' ? '1001' : '2') : '0';
+      if (!active && key === 'jobs') {
+        el.style.position = '';
+      }
+      if (active && key === 'jobs') {
+        el.style.position = 'relative';
+        el.style.overflowX = 'hidden';
+      }
+    });
+    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab)=>{
+      const active = tab.dataset.screen === name;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    document.body.classList.toggle('show-library-screen', name === 'jobs');
+    try { localStorage.setItem('tapcalcV3Screen', name); } catch {}
+    if (name === 'jobs') setTimeout(forceLibraryInteractive, 0);
+  }
+
+  function forceLibraryInteractive(){
+    const jobs = $('jobsScreen');
+    if (!jobs) return;
+    jobs.hidden = false;
+    jobs.classList.add('active');
+    jobs.style.display = 'block';
+    jobs.style.visibility = 'visible';
+    jobs.style.pointerEvents = 'auto';
+    jobs.style.position = 'relative';
+    jobs.style.zIndex = '1001';
+    jobs.querySelectorAll('button, input, select, textarea, a, .jobs-list-item, .library-lane-btn, .jobs-chip-btn').forEach((el)=>{
+      el.style.pointerEvents = 'auto';
+      el.style.position = el.style.position || 'relative';
+      if (!el.style.zIndex) el.style.zIndex = '1002';
+    });
+  }
+
+  function handleTab(e){
+    const tab = e.target.closest('.screen-tab[data-screen]');
+    if (!tab || !compact()) return;
+    const next = String(tab.dataset.screen || '').trim();
+    if (!next) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    finalShowScreen(next);
+    return false;
+  }
+
+  document.addEventListener('pointerdown', handleTab, true);
+  document.addEventListener('click', handleTab, true);
+  window.addEventListener('pageshow', ()=>{ if (compact()) setTimeout(forceLibraryInteractive, 40); });
+  document.addEventListener('DOMContentLoaded', ()=>{ if (compact()) setTimeout(forceLibraryInteractive, 40); });
+  window.tapCalcFinalShowScreen = finalShowScreen;
 })();
