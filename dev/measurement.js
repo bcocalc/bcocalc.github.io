@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha119';
+const BUILD_VERSION = '3.0.0-alpha120';
 
 (function(){
 
@@ -838,6 +838,7 @@ const etaCutterSizeListEl = document.getElementById('etaCutterSizeList');
 const etaBcoEl = document.getElementById('etaBco');
 const etaFeedRateDisplayEl = document.getElementById('etaFeedRateDisplay');
 const etaRpmDisplayEl = document.getElementById('etaRpmDisplay');
+const etaRpmOverrideEl = document.getElementById('etaRpmOverride');
 const etaFeedSpeedDisplayEl = document.getElementById('etaFeedSpeedDisplay');
 const etaRangeDisplayEl = document.getElementById('etaRangeDisplay');
 const etaInlineStatusEl = document.getElementById('etaInlineStatus');
@@ -959,19 +960,22 @@ function syncBcoToEta(options = {}) {
   if (etaCutterSizeEl && Number.isFinite(currentCutter) && (!etaCutterSizeEl.value || force)) {
     etaCutterSizeEl.value = fmt(currentCutter);
   }
-  if (etaBcoEl && Number.isFinite(currentBco) && (!etaBcoEl.value || force)) {
+  const etaBcoIsAuto = !etaBcoEl || etaBcoEl.dataset.autoSync !== 'false';
+  if (etaBcoEl && Number.isFinite(currentBco) && (!etaBcoEl.value || force || etaBcoIsAuto)) {
     etaBcoEl.value = fmt(currentBco);
+    etaBcoEl.dataset.autoSync = 'true';
   }
 }
 
 function updateEtaEstimate() {
   if (!etaMachineEl || !etaCutterSizeEl || !etaBcoEl) return;
+  syncBcoToEta();
   if (etaFeedRateDisplayEl) etaFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
   const machine = etaMachineEl.value || '360';
   const cutterSize = etaCutterSizeEl.value;
   const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, cutterSize);
   const bco = getMeasurementValue(etaBcoEl);
-
+  const overrideRpm = getMeasurementValue(etaRpmOverrideEl);
 
   if (etaRpmDisplayEl) {
     etaRpmDisplayEl.textContent = rpmValues.length > 1
@@ -988,8 +992,11 @@ function updateEtaEstimate() {
 
   const minRpm = Math.min(...rpmValues);
   const maxRpm = Math.max(...rpmValues);
-  const slowFeed = minRpm * ETA_FEED_RATE;
-  const fastFeed = maxRpm * ETA_FEED_RATE;
+  const usingManualRpm = Number.isFinite(overrideRpm) && overrideRpm > 0;
+  const slowRpm = usingManualRpm ? overrideRpm : minRpm;
+  const fastRpm = usingManualRpm ? overrideRpm : maxRpm;
+  const slowFeed = slowRpm * ETA_FEED_RATE;
+  const fastFeed = fastRpm * ETA_FEED_RATE;
   const lowEta = bco / fastFeed;
   const highEta = bco / slowFeed;
 
@@ -1006,12 +1013,14 @@ function updateEtaEstimate() {
   const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
   if (etaInlineStatusEl) {
     const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
-    if (exact) {
-      etaInlineStatusEl.textContent = `Estimate shown using ${rpmText} for the ${machineLabel}.`;
+    if (usingManualRpm) {
+      etaInlineStatusEl.textContent = `Using manual RPM override of ${overrideRpm} RPM. Recommended chart RPM for the ${machineLabel} is ${rpmText}.`;
+    } else if (exact) {
+      etaInlineStatusEl.textContent = `Estimate shown using recommended ${rpmText} for the ${machineLabel}.`;
     } else if (typeof interpolated !== 'undefined' && interpolated) {
-      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using interpolated recommended RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
     } else {
-      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) at ${rpmText} for the ${machineLabel}.`;
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) with recommended ${rpmText} for the ${machineLabel}.`;
     }
   }
 }
@@ -1026,17 +1035,29 @@ function initEtaCalculator() {
 
   etaMachineEl.addEventListener('change', () => {
     populateEtaCutterSizes();
+    syncBcoToEta();
     updateEtaEstimate();
   });
   etaCutterSizeEl.addEventListener('input', updateEtaEstimate);
   etaCutterSizeEl.addEventListener('change', updateEtaEstimate);
-  etaBcoEl?.addEventListener('input', updateEtaEstimate);
-  etaBcoEl?.addEventListener('change', updateEtaEstimate);
+  etaBcoEl?.addEventListener('input', () => {
+    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';
+    updateEtaEstimate();
+  });
+  etaBcoEl?.addEventListener('change', () => {
+    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';
+    updateEtaEstimate();
+  });
+  etaRpmOverrideEl?.addEventListener('input', updateEtaEstimate);
+  etaRpmOverrideEl?.addEventListener('change', updateEtaEstimate);
   etaUseCurrentBcoBtnEl?.addEventListener('click', () => {
     syncBcoToEta({ force: true });
     updateEtaEstimate();
   });
-  etaRefreshBtnEl?.addEventListener('click', updateEtaEstimate);
+  etaRefreshBtnEl?.addEventListener('click', () => {
+    syncBcoToEta();
+    updateEtaEstimate();
+  });
 }
 if (openDecimalModalBtnEl) openDecimalModalBtnEl.addEventListener('click', openDecimalModal);
 if (closeDecimalModalBtnEl) closeDecimalModalBtnEl.addEventListener('click', closeDecimalModal);
@@ -1219,7 +1240,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha119', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha120', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1402,6 +1423,8 @@ function buildBcoResultMarkup(payload = {}) {
 function renderBcoResult(payload = {}) {
   if (!bcoResultEl) return;
   bcoResultEl.innerHTML = buildBcoResultMarkup(payload);
+  try { syncBcoToEta(); } catch {}
+  try { updateEtaEstimate(); } catch {}
 }
 
 function buildStateFromRecord(record = {}) {
@@ -1974,7 +1997,7 @@ function getStateFields() {
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
-    'etaMachine','etaCutterSize','etaPtc'
+    'etaMachine','etaCutterSize','etaBco','etaRpmOverride'
   ];
 }
 
@@ -2050,7 +2073,8 @@ function loadRecordIntoCalculator(record, options = {}) {
     bcoCutterOD: state.bcoCutterOD,
     etaMachine: state.etaMachine,
     etaCutterSize: state.etaCutterSize,
-    etaPtc: state.etaPtc
+    etaBco: state.etaBco,
+    etaRpmOverride: state.etaRpmOverride
   };
   Object.entries(directMap).forEach(([id, value]) => {
     const el = document.getElementById(id);
@@ -3858,7 +3882,7 @@ window.addEventListener('load', async () => {
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
-    'etaMachine','etaCutterSize','etaPtc'
+    'etaMachine','etaCutterSize','etaBco','etaRpmOverride'
   ];
 
   function a59Esc(v){
@@ -4302,7 +4326,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha119';
+  const TC63_VERSION = '3.0.0-alpha120';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4544,7 +4568,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha119';
+  const VERSION = '3.0.0-alpha120';
 
   function tc65GetJobs() {
     try {
@@ -5326,7 +5350,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha120 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5478,7 +5502,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha120 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5676,7 +5700,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha120 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5820,7 +5844,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha120 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -5978,7 +6002,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha120 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6141,7 +6165,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha120 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6303,7 +6327,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha120 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6419,7 +6443,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha120 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6598,7 +6622,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha120 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6741,7 +6765,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha120 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6917,7 +6941,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha120 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7086,7 +7110,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha120 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7490,7 +7514,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha120 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7736,9 +7760,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha119 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha120 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha119';
+  const VERSION = '3.0.0-alpha120';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7849,7 +7873,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha120 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8046,7 +8070,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha120 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8184,7 +8208,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile current debug ===== */
+/* ===== 3.0.0-alpha120 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8282,7 +8306,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha120 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8391,7 +8415,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha120 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8466,7 +8490,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha120 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8522,7 +8546,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha119 mobile library screen ownership reset ===== */
+/* ===== 3.0.0-alpha120 mobile library screen ownership reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
