@@ -4686,3 +4686,56 @@ body.light .converter-block {
 /* alpha91 mobile library scroll guard */
 #jobsSelect{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;pointer-events:auto;}
 #jobsScreen{touch-action:pan-y;}
+
+
+/* alpha93 mobile library viewport + load button fix */
+@media (max-width: 820px) {
+  body.measurement-page.show-library-screen {
+    overflow: hidden;
+    height: 100dvh;
+  }
+  #jobsScreen.active {
+    display: block;
+    max-height: calc(100dvh - 108px);
+    overflow: hidden;
+  }
+  #jobsPanel.jobs-workspace-panel,
+  #jobsPanel.jobs-workspace-panel > .jobs-workspace-grid,
+  .jobs-panel-shared.library-lane.active {
+    min-height: 0;
+  }
+  .jobs-panel-shared.library-lane.active {
+    display: flex !important;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #jobsSelect {
+    flex: 1 1 auto;
+    min-height: 200px !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    z-index: 1;
+  }
+  #jobsList {
+    flex: 0 0 auto;
+    max-height: 32dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    position: relative;
+    z-index: 3;
+    pointer-events: auto;
+    margin-top: 12px;
+  }
+  #jobsLoadSelectedBtn,
+  #jobsList .secondary-btn,
+  #jobsList button {
+    position: relative;
+    z-index: 6;
+    pointer-events: auto;
+    touch-action: manipulation;
+  }
+}

@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha92';
+const BUILD_VERSION = '3.0.0-alpha93';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha92', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha93', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4300,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha92';
+  const TC63_VERSION = '3.0.0-alpha93';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha92';
+  const VERSION = '3.0.0-alpha93';
 
   function tc65GetJobs() {
     try {
@@ -5324,7 +5324,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha92 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha93 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5476,7 +5476,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha92 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha93 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5559,7 +5559,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha92 Load Job failed', error);
+      console.error('alpha93 Load Job failed', error);
       if(status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5617,8 +5617,8 @@ window.addEventListener('load', async () => {
   }, true);
 
   const origRender = window.renderJobsList || (typeof renderJobsList === 'function' ? renderJobsList : null);
-  if (typeof origRender === 'function' && !window.__alpha92RenderJobsWrapped) {
-    window.__alpha92RenderJobsWrapped = true;
+  if (typeof origRender === 'function' && !window.__alpha93RenderJobsWrapped) {
+    window.__alpha93RenderJobsWrapped = true;
     const wrapped = function(){
       const result = origRender.apply(this, arguments);
       try {
@@ -5644,8 +5644,8 @@ window.addEventListener('load', async () => {
   }
 
   const origShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
-  if (typeof origShow === 'function' && !window.__alpha92ShowWrapped) {
-    window.__alpha92ShowWrapped = true;
+  if (typeof origShow === 'function' && !window.__alpha93ShowWrapped) {
+    window.__alpha93ShowWrapped = true;
     const wrappedShow = function(name){
       const result = origShow.apply(this, arguments);
       try {
@@ -5674,7 +5674,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha92 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha93 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5740,7 +5740,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha92 mobile load failed', error);
+      console.error('alpha93 mobile load failed', error);
       if (status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5773,8 +5773,8 @@ window.addEventListener('load', async () => {
   }
 
   const origRenderSelected = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
-  if (typeof origRenderSelected === 'function' && !window.__alpha92RenderSelectedWrapped) {
-    window.__alpha92RenderSelectedWrapped = true;
+  if (typeof origRenderSelected === 'function' && !window.__alpha93RenderSelectedWrapped) {
+    window.__alpha93RenderSelectedWrapped = true;
     const wrapped = function(){
       const result = origRenderSelected.apply(this, arguments);
       try {
@@ -5818,7 +5818,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha92 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha93 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -5907,7 +5907,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha92 mobile load failed', error);
+      console.error('alpha93 mobile load failed', error);
       if (status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5957,8 +5957,8 @@ window.addEventListener('load', async () => {
     if (btn && isCompact()) return doLoad(e);
   }, true);
   const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
-  if (typeof origRender === 'function' && !window.__alpha92RenderWrapped) {
-    window.__alpha92RenderWrapped = true;
+  if (typeof origRender === 'function' && !window.__alpha93RenderWrapped) {
+    window.__alpha93RenderWrapped = true;
     const wrapped = function(){
       const result = origRender.apply(this, arguments);
       try { syncButtonJobId(); bind(); } catch {}
@@ -5973,4 +5973,160 @@ window.addEventListener('load', async () => {
   window.addEventListener('pageshow', ()=> setTimeout(()=>{ syncButtonJobId(); bind(); }, 30));
   document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ syncButtonJobId(); bind(); }, 30));
   setTimeout(()=>{ syncButtonJobId(); bind(); }, 120);
+})();
+
+
+/* ===== 3.0.0-alpha93 mobile library viewport + direct load button fix ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  function compact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function setBodyLibraryLock(on){
+    if (!compact()) return;
+    try {
+      document.body.classList.toggle('show-library-screen', !!on);
+      document.body.style.overflow = on ? 'hidden' : '';
+      document.body.style.height = on ? '100dvh' : '';
+    } catch {}
+  }
+  function jobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if (!sid) return null;
+    return jobs().find((job) => String(job?.id || '') === sid) || null;
+  }
+  function activeRowId(){
+    try {
+      const row = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[data-selected="true"][data-job-id]');
+      return String(row?.dataset?.jobId || '').trim();
+    } catch { return ''; }
+  }
+  function currentEntry(){
+    const btn = $('jobsLoadSelectedBtn');
+    const ids = [btn?.dataset?.jobId, activeRowId(), window.__tapcalcDetailSelectedId, window.__tapcalcExactLibrarySelectedId, window.__tapcalcLibrarySelectedId, window.__alpha87SelectedJobId, (typeof selectedJobId !== 'undefined' ? selectedJobId : '')]
+      .map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids) {
+      const entry = entryById(id);
+      if (entry?.record) return entry;
+    }
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    if (window.__tapcalcDetailSelectedRecord) return { id: String(window.__tapcalcDetailSelectedId || 'detail'), record: window.__tapcalcDetailSelectedRecord };
+    if (window.__tapcalcLibrarySelectedRecord) return { id: String(window.__tapcalcLibrarySelectedId || 'selected'), record: window.__tapcalcLibrarySelectedRecord };
+    return null;
+  }
+  function pin(entry){
+    if (!entry) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record || null }; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record || null; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+  }
+  function exitLibrary(){
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.classList.add('active'); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+      }
+    } catch {}
+    setBodyLibraryLock(false);
+  }
+  function doLoad(e){
+    if (e) {
+      try { e.preventDefault(); } catch {}
+      try { e.stopPropagation(); } catch {}
+      try { if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch {}
+    }
+    const entry = currentEntry();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pin(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (error) {
+      console.error('alpha93 mobile load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(exitLibrary, 0);
+    setTimeout(exitLibrary, 80);
+    return false;
+  }
+  function bindButton(){
+    const btn = $('jobsLoadSelectedBtn');
+    if (!btn) return;
+    btn.setAttribute('onclick', 'return false;');
+    btn.setAttribute('ontouchstart', 'return false;');
+    btn.setAttribute('onpointerdown', 'return false;');
+    btn.style.touchAction = 'manipulation';
+    btn.style.pointerEvents = 'auto';
+    if (btn.dataset.tc93Bound === '1') return;
+    btn.dataset.tc93Bound = '1';
+    const handler = (ev) => doLoad(ev);
+    btn.addEventListener('touchstart', handler, { capture:true, passive:false });
+    btn.addEventListener('touchend', handler, { capture:true, passive:false });
+    btn.addEventListener('pointerdown', handler, { capture:true });
+    btn.addEventListener('click', handler, { capture:true });
+  }
+  function wireRowSelection(){
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((row) => {
+      if (row.dataset.tc93Bound === '1') return;
+      row.dataset.tc93Bound = '1';
+      const selectRow = () => { const entry = entryById(row.dataset.jobId); if (entry) pin(entry); };
+      row.addEventListener('touchstart', selectRow, { capture:true, passive:true });
+      row.addEventListener('pointerdown', selectRow, { capture:true });
+      row.addEventListener('click', selectRow, { capture:true });
+    });
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha93RenderWrapped) {
+    window.__alpha93RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try { bindButton(); wireRowSelection(); } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  document.addEventListener('click', (e) => {
+    const tab = e.target.closest('.screen-tab[data-screen]');
+    if (!tab) return;
+    setBodyLibraryLock(tab.dataset.screen === 'jobs');
+  }, true);
+  document.addEventListener('touchstart', (e) => {
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if (btn && compact()) return doLoad(e);
+    const tab = e.target.closest('.screen-tab[data-screen]');
+    if (tab) setBodyLibraryLock(tab.dataset.screen === 'jobs');
+  }, { capture:true, passive:false });
+  window.tapCalcForceLoadSelectedJob = doLoad;
+  window.loadSelectedLibraryJob = doLoad;
+  window.tapCalcLibraryLoadSelected = doLoad;
+  window.addEventListener('pageshow', ()=> setTimeout(()=>{ bindButton(); wireRowSelection(); }, 60));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ bindButton(); wireRowSelection(); }, 60));
+  setTimeout(()=>{ bindButton(); wireRowSelection(); }, 150);
 })();
