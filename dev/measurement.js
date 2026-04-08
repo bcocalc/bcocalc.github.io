@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha116';
+const BUILD_VERSION = '3.0.0-alpha117';
 
 (function(){
 
@@ -835,7 +835,8 @@ const ETA_FEED_RATE = 0.004;
 const etaMachineEl = document.getElementById('etaMachine');
 const etaCutterSizeEl = document.getElementById('etaCutterSize');
 const etaCutterSizeListEl = document.getElementById('etaCutterSizeList');
-const etaBcoEl = document.getElementById('etaBco');
+const etaPtcEl = document.getElementById('etaPtc');
+const etaTravelDisplayEl = document.getElementById('etaTravelDisplay');
 const etaFeedRateDisplayEl = document.getElementById('etaFeedRateDisplay');
 const etaRpmDisplayEl = document.getElementById('etaRpmDisplay');
 const etaFeedSpeedDisplayEl = document.getElementById('etaFeedSpeedDisplay');
@@ -951,25 +952,32 @@ function getEtaRpmMatch(machine, cutterSizeRaw) {
   };
 }
 
-function syncBcoToEta(options = {}) {
-  if (!etaBcoEl) return;
-  refreshBcoState();
+function syncTapValuesToEta(options = {}) {
   const force = !!options.force;
-  const currentBco = parseFloat(data?.bco);
-  if (!Number.isFinite(currentBco)) {
-    if (force) etaBcoEl.value = '';
-    return;
+  const currentCutter = getMeasurementValue(bcoCutterOdEl);
+  const currentPtc = getMeasurementValue(ptcEl);
+  const fmt = (value) => Number(value).toFixed(4).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+  if (etaCutterSizeEl && Number.isFinite(currentCutter) && (!etaCutterSizeEl.value || force)) {
+    etaCutterSizeEl.value = fmt(currentCutter);
   }
-  if (!etaBcoEl.value || force) etaBcoEl.value = currentBco.toFixed(4);
+  if (etaPtcEl && Number.isFinite(currentPtc) && (!etaPtcEl.value || force)) {
+    etaPtcEl.value = fmt(currentPtc);
+  }
 }
 
 function updateEtaEstimate() {
-  if (!etaMachineEl || !etaCutterSizeEl || !etaBcoEl) return;
+  if (!etaMachineEl || !etaCutterSizeEl || !etaPtcEl) return;
   if (etaFeedRateDisplayEl) etaFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
   const machine = etaMachineEl.value || '360';
-  const cutterSize = etaCutterSizeEl.value;
-  const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, cutterSize);
-  const bco = getMeasurementValue(etaBcoEl);
+  const cutterSizeRaw = etaCutterSizeEl.value;
+  const cutterSize = getMeasurementValue(etaCutterSizeEl);
+  const ptc = getMeasurementValue(etaPtcEl);
+  const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, cutterSizeRaw);
+  const travel = (Number.isFinite(cutterSize) ? cutterSize / 2 : NaN) + (Number.isFinite(ptc) ? ptc : NaN);
+
+  if (etaTravelDisplayEl) {
+    etaTravelDisplayEl.textContent = Number.isFinite(travel) && travel > 0 ? travel.toFixed(4) : '—';
+  }
 
   if (etaRpmDisplayEl) {
     etaRpmDisplayEl.textContent = rpmValues.length > 1
@@ -977,10 +985,10 @@ function updateEtaEstimate() {
       : (rpmValues[0] ? `${rpmValues[0]}` : '—');
   }
 
-  if (!rpmValues.length || !Number.isFinite(bco) || bco <= 0) {
+  if (!rpmValues.length || !Number.isFinite(travel) || travel <= 0) {
     if (etaFeedSpeedDisplayEl) etaFeedSpeedDisplayEl.textContent = '—';
     if (etaRangeDisplayEl) etaRangeDisplayEl.textContent = '—';
-    if (etaInlineStatusEl) etaInlineStatusEl.textContent = 'Enter a valid BCO and cutter size to calculate estimated time to BCO.';
+    if (etaInlineStatusEl) etaInlineStatusEl.textContent = 'Enter a valid cutter size and PTC to calculate tap ETA.';
     return;
   }
 
@@ -988,8 +996,8 @@ function updateEtaEstimate() {
   const maxRpm = Math.max(...rpmValues);
   const slowFeed = minRpm * ETA_FEED_RATE;
   const fastFeed = maxRpm * ETA_FEED_RATE;
-  const lowEta = bco / fastFeed;
-  const highEta = bco / slowFeed;
+  const lowEta = travel / fastFeed;
+  const highEta = travel / slowFeed;
 
   if (etaFeedSpeedDisplayEl) {
     etaFeedSpeedDisplayEl.textContent = slowFeed === fastFeed
@@ -1004,12 +1012,13 @@ function updateEtaEstimate() {
   const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
   if (etaInlineStatusEl) {
     const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
+    const travelText = Number.isFinite(travel) ? travel.toFixed(4) : '—';
     if (exact) {
-      etaInlineStatusEl.textContent = `Estimate shown using ${rpmText} for the ${machineLabel}.`;
+      etaInlineStatusEl.textContent = `Travel ${travelText} in using ${rpmText} for the ${machineLabel}.`;
     } else if (typeof interpolated !== 'undefined' && interpolated) {
-      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
+      etaInlineStatusEl.textContent = `Travel ${travelText} in using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
     } else {
-      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) at ${rpmText} for the ${machineLabel}.`;
+      etaInlineStatusEl.textContent = `Travel ${travelText} in using nearest charted size (${matchedSize}) at ${rpmText} for the ${machineLabel}.`;
     }
   }
 }
@@ -1017,7 +1026,7 @@ function updateEtaEstimate() {
 function initEtaCalculator() {
   if (!etaMachineEl || !etaCutterSizeEl) return;
   populateEtaCutterSizes();
-  syncBcoToEta();
+  syncTapValuesToEta();
   updateEtaEstimate();
   if (etaMachineEl.dataset.etaBound === 'true') return;
   etaMachineEl.dataset.etaBound = 'true';
@@ -1028,10 +1037,10 @@ function initEtaCalculator() {
   });
   etaCutterSizeEl.addEventListener('input', updateEtaEstimate);
   etaCutterSizeEl.addEventListener('change', updateEtaEstimate);
-  etaBcoEl?.addEventListener('input', updateEtaEstimate);
-  etaBcoEl?.addEventListener('change', updateEtaEstimate);
+  etaPtcEl?.addEventListener('input', updateEtaEstimate);
+  etaPtcEl?.addEventListener('change', updateEtaEstimate);
   etaUseCurrentBcoBtnEl?.addEventListener('click', () => {
-    syncBcoToEta({ force: true });
+    syncTapValuesToEta({ force: true });
     updateEtaEstimate();
   });
   etaRefreshBtnEl?.addEventListener('click', updateEtaEstimate);
@@ -1217,7 +1226,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha116', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha117', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1431,7 +1440,7 @@ function buildStateFromRecord(record = {}) {
     else state.operationType = 'Hot Tap';
   }
   if (!state.etaCutterSize && record?.machine?.cutterOd) state.etaCutterSize = record.machine.cutterOd;
-  if (!state.etaBco && record?.calculations?.bco) state.etaBco = record.calculations.bco;
+  if (!state.etaPtc && record?.measurements?.hotTap?.ptc) state.etaPtc = record.measurements.hotTap.ptc;
   if (!state.etaMachine && machine) {
     if (machine.includes('360')) state.etaMachine = '360';
     else if (machine.includes('660') || machine.includes('760')) state.etaMachine = '660';
@@ -1972,7 +1981,7 @@ function getStateFields() {
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
-    'etaMachine','etaCutterSize','etaBco'
+    'etaMachine','etaCutterSize','etaPtc'
   ];
 }
 
@@ -2048,7 +2057,7 @@ function loadRecordIntoCalculator(record, options = {}) {
     bcoCutterOD: state.bcoCutterOD,
     etaMachine: state.etaMachine,
     etaCutterSize: state.etaCutterSize,
-    etaBco: state.etaBco
+    etaPtc: state.etaPtc
   };
   Object.entries(directMap).forEach(([id, value]) => {
     const el = document.getElementById(id);
@@ -3856,7 +3865,7 @@ window.addEventListener('load', async () => {
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
-    'etaMachine','etaCutterSize','etaBco'
+    'etaMachine','etaCutterSize','etaPtc'
   ];
 
   function a59Esc(v){
@@ -4300,7 +4309,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha116';
+  const TC63_VERSION = '3.0.0-alpha117';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4551,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha116';
+  const VERSION = '3.0.0-alpha117';
 
   function tc65GetJobs() {
     try {
@@ -5324,7 +5333,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha117 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5476,7 +5485,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha117 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5674,7 +5683,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha117 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5818,7 +5827,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha117 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -5976,7 +5985,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha117 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6139,7 +6148,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha117 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6301,7 +6310,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha117 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6417,7 +6426,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha117 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6596,7 +6605,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha117 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6739,7 +6748,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha117 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6915,7 +6924,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha117 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7084,7 +7093,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha117 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7488,7 +7497,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha117 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7734,9 +7743,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha116 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha117 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha116';
+  const VERSION = '3.0.0-alpha117';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7847,7 +7856,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha117 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8044,7 +8053,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha117 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8182,7 +8191,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile current debug ===== */
+/* ===== 3.0.0-alpha117 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8280,7 +8289,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha117 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8389,7 +8398,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha117 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8464,7 +8473,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha117 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8520,7 +8529,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha116 mobile library screen ownership reset ===== */
+/* ===== 3.0.0-alpha117 mobile library screen ownership reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };

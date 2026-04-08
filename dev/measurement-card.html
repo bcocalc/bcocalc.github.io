@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha116">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha117">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha116 · 2026-04-08</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha117 · 2026-04-08</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha116 · 2026-04-08</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha117 · 2026-04-08</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -469,7 +469,7 @@
     <div class="measurement-grid">
       <div class="section">
         <h3>Tap ETA</h3>
-        <p class="note eta-note">Estimate from cutter touching pipe to reaching BCO. Feed rate stays fixed at 0.004 in/rev.</p>
+        <p class="note eta-note">Estimate uses Travel = (Cutter Size / 2) + PTC. Feed rate stays fixed at 0.004 in/rev.</p>
 
         <div class="row"><label>Machine</label>
           <select id="etaMachine">
@@ -484,13 +484,15 @@
           <datalist id="etaCutterSizeList"></datalist>
         </div>
 
-        <div class="row"><label>BCO</label><input id="etaBco" type="number" step="any" placeholder="Uses current BCO when available"></div>
+        <div class="row"><label>PTC</label><input id="etaPtc" type="number" step="any" placeholder="Uses current PTC when available"></div>
+
+        <div class="row"><label>Travel</label><span id="etaTravelDisplay" class="calc">—</span></div>
 
         <div class="row"><label>Feed Rate</label><span id="etaFeedRateDisplay" class="calc">0.0040</span></div>
         <div class="row"><label>RPM</label><span id="etaRpmDisplay" class="calc">—</span></div>
 
         <div class="button-row">
-          <button type="button" id="etaUseCurrentBcoBtn" class="secondary-btn">Use Current BCO</button>
+          <button type="button" id="etaUseCurrentBcoBtn" class="secondary-btn">Use Current Tap</button>
           <button type="button" id="etaRefreshBtn">Refresh ETA</button>
         </div>
       </div>
@@ -507,7 +509,7 @@
             <span id="etaRangeDisplay" class="summary-value">—</span>
           </div>
         </div>
-        <p id="etaInlineStatus" class="note">Type a cutter size or pick a suggested size, then use your BCO to estimate cut time.</p>
+        <p id="etaInlineStatus" class="note">Type a cutter size or pick a suggested size, then use your current tap values to estimate cut time.</p>
       </div>
     </div>
   </section>
@@ -929,8 +931,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha116"></script>
-<script src="measurement.js?v=3.0.0-alpha116"></script>
+<script src="firebase-config.js?v=3.0.0-alpha117"></script>
+<script src="measurement.js?v=3.0.0-alpha117"></script>
   </section>
 </body>
 </html>
