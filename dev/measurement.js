@@ -3859,3 +3859,112 @@ window.addEventListener('load', async () => {
   window.alpha47LoadSelectedLibraryJob = window.loadSelectedLibraryJob;
 })();
 
+
+
+/* ===== 3.0.0-alpha61 pending-load restore override ===== */
+(function(){
+  const PENDING_LOAD_KEY = 'tapcalcPendingLoadedRecordV1';
+  function tc61SafeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+  function tc61Set(id, value){
+    const el = document.getElementById(id);
+    if (!el) return false;
+    if (el.type === 'checkbox') el.checked = !!value;
+    else el.value = value ?? '';
+    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
+    return true;
+  }
+  function tc61ApplyRecord(record){
+    if (!record || typeof record !== 'object') return false;
+    const state = (record.state && typeof record.state === 'object' && Object.keys(record.state).length)
+      ? { ...record.state }
+      : (typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : {});
+    try {
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+    } catch {}
+    try {
+      if (state && typeof state === 'object') localStorage.setItem('measurementCardStateV1', JSON.stringify(state));
+    } catch {}
+    const job = record.job || {};
+    const pipe = record.pipe || {};
+    const machine = record.machine || {};
+    const calc = record.calculations || {};
+    const rawOp = String(record?.meta?.operationType || '').toLowerCase();
+    const op = rawOp.includes('completion') ? 'Completion Plug' : rawOp.includes('line stop') ? 'Line Stop' : rawOp.includes('htp') ? 'HTP' : 'Hot Tap';
+    const mapping = {
+      jobClient: job.client || '',
+      jobDescription: job.description || record?.meta?.title || '',
+      jobNumber: job.jobNumber || '',
+      jobDate: job.date || '',
+      jobLocation: job.location || '',
+      jobTechnician: job.technician || '',
+      jobPressure: job.pressure || '',
+      jobTemperature: job.temperature || '',
+      jobProduct: job.product || '',
+      jobNotes: job.notes || '',
+      machineType: machine.machine || '',
+      operationType: op,
+      bcoPipeMaterial: pipe.material || '',
+      bcoPipeOD: pipe.nominalSize || '',
+      bcoSchedule: pipe.schedule || '',
+      bcoPipeID: pipe.pipeId || '',
+      bcoCutterOD: machine.cutterOd || '',
+      etaMachine: (typeof a59DeriveEtaMachine === 'function' ? a59DeriveEtaMachine(machine.machine || '') : (machine.machine || '')),
+      etaCutterSize: machine.cutterOd || '',
+      etaBco: calc.bco || ''
+    };
+    Object.entries(mapping).forEach(([id,val]) => tc61Set(id,val));
+    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({silent:true}); } catch {}
+    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+    try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+    try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({force:true}); } catch {}
+    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+    return true;
+  }
+  function tc61ApplyPending(){
+    const raw = localStorage.getItem(PENDING_LOAD_KEY);
+    if (!raw) return false;
+    const record = tc61SafeParse(raw);
+    if (!record) { localStorage.removeItem(PENDING_LOAD_KEY); return false; }
+    // apply multiple times to beat old listeners/restore paths
+    tc61ApplyRecord(record);
+    setTimeout(() => tc61ApplyRecord(record), 60);
+    setTimeout(() => tc61ApplyRecord(record), 220);
+    setTimeout(() => tc61ApplyRecord(record), 600);
+    try { localStorage.removeItem(PENDING_LOAD_KEY); } catch {}
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    return true;
+  }
+  window.tapCalcLibraryLoadSelected = function alpha61LoadSelected(){
+    const record = window.__tapcalcLibrarySelectedRecord || null;
+    if (!record) return false;
+    try {
+      localStorage.setItem(PENDING_LOAD_KEY, JSON.stringify(record));
+      localStorage.setItem('tapcalcV3Screen', 'job');
+    } catch {}
+    // apply immediately for same-page success, then hard navigate to same page for clean restore
+    tc61ApplyRecord(record);
+    setTimeout(() => tc61ApplyRecord(record), 40);
+    setTimeout(() => {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('loaded', 'alpha61');
+        url.hash = '#current';
+        window.location.assign(url.toString());
+      } catch {
+        try { window.location.reload(); } catch {}
+      }
+    }, 120);
+    return true;
+  };
+  document.addEventListener('DOMContentLoaded', () => setTimeout(tc61ApplyPending, 150));
+  window.addEventListener('load', () => setTimeout(tc61ApplyPending, 250));
+})();
+
