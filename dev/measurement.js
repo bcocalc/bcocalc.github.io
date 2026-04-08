@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha56';
+const BUILD_VERSION = '3.0.0-alpha57';
 
 (function(){
 
@@ -3185,7 +3185,7 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha56 library picker direct rebuild ===== */
+/* ===== 3.0.0-alpha57 library picker direct rebuild ===== */
 (function(){
   const getJobsSelectEl = () => document.getElementById('jobsSelect');
   const getJobsListEl = () => document.getElementById('jobsList');
@@ -3365,4 +3365,155 @@ window.addEventListener('load', async () => {
     }, { passive: false });
     jobsSelectEl.dataset.alpha56Bound = 'true';
   }
+})();
+
+
+/* ===== 3.0.0-alpha57 direct load-job hydration override ===== */
+(function(){
+  function normalizeDateForInput(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+      const mm = m[1].padStart(2,'0');
+      const dd = m[2].padStart(2,'0');
+      return `${m[3]}-${mm}-${dd}`;
+    }
+    return raw;
+  }
+
+  function setFieldValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') {
+      el.checked = !!value;
+    } else {
+      el.value = value == null ? '' : String(value);
+    }
+    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
+  }
+
+  function deriveOperation(record) {
+    const raw = String(record?.meta?.operationType || '').toLowerCase();
+    if (raw.includes('completion')) return 'Completion Plug';
+    if (raw.includes('line stop')) return 'Line Stop';
+    if (raw.includes('htp')) return 'HTP';
+    return 'Hot Tap';
+  }
+
+  function deriveEtaMachine(machine) {
+    const m = String(machine || '');
+    if (m.includes('360')) return '360';
+    if (m.includes('660') || m.includes('760')) return '660';
+    if (m.includes('1200')) return '1200';
+    return m;
+  }
+
+  function hydrateVisibleFields(record) {
+    const job = record?.job || {};
+    const pipe = record?.pipe || {};
+    const machine = record?.machine || {};
+    const calc = record?.calculations || {};
+    const h = record?.measurements?.hotTap || {};
+    const htp = record?.measurements?.htp || {};
+    const ls = record?.measurements?.lineStop || {};
+    const cp = record?.measurements?.completionPlug || {};
+
+    setFieldValue('jobClient', job.client || '');
+    setFieldValue('jobDescription', job.description || record?.meta?.title || '');
+    setFieldValue('jobNumber', job.jobNumber || '');
+    setFieldValue('jobPressure', job.pressure || '');
+    setFieldValue('jobTemperature', job.temperature || '');
+    setFieldValue('jobDate', normalizeDateForInput(job.date || ''));
+    setFieldValue('jobProduct', job.product || '');
+    setFieldValue('jobLocation', job.location || '');
+    setFieldValue('jobTechnician', job.technician || '');
+    setFieldValue('jobNotes', job.notes || '');
+
+    setFieldValue('machineType', machine.machine || '');
+    setFieldValue('operationType', deriveOperation(record));
+
+    setFieldValue('bcoPipeMaterial', pipe.material || '');
+    setFieldValue('bcoPipeOD', pipe.nominalSize || '');
+    setFieldValue('bcoSchedule', pipe.schedule || '');
+    setFieldValue('bcoPipeID', pipe.pipeId || '');
+    setFieldValue('bcoCutterOD', machine.cutterOd || '');
+
+    setFieldValue('md', h.md || '');
+    setFieldValue('ld', h.ld || '');
+    setFieldValue('ldSign', h.ldSign || '+');
+    setFieldValue('ptc', h.ptc || '');
+    setFieldValue('pod', h.pod || pipe.trueOd || '');
+    setFieldValue('mt', h.mt || '');
+    setFieldValue('start', h.rodStart || '');
+
+    setFieldValue('htpPipeSize', htp.pipeSize || '');
+    setFieldValue('htpMd', htp.md || '');
+    setFieldValue('htpLd', htp.ld || '');
+    setFieldValue('htpLdSign', htp.ldSign || '+');
+    setFieldValue('htpPtc', htp.ptc || '');
+
+    setFieldValue('lsMd', ls.md || '');
+    setFieldValue('lsLd', ls.ld || '');
+    setFieldValue('lsLdSign', ls.ldSign || '+');
+    setFieldValue('lsPod', ls.pod || pipe.trueOd || '');
+    setFieldValue('lsTravel', ls.travel || '');
+    setFieldValue('lsMachineTravel', ls.machineTravel || '');
+
+    setFieldValue('cpStart', cp.start || '');
+    setFieldValue('cpJbf', cp.jbf || '');
+    setFieldValue('cpLd', cp.ld || '');
+    setFieldValue('cpPt', cp.pt || '');
+
+    setFieldValue('etaMachine', deriveEtaMachine(machine.machine || ''));
+    setFieldValue('etaCutterSize', machine.cutterOd || '');
+    setFieldValue('etaBco', calc.bco || '');
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha57LoadSelected() {
+    try {
+      const list = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []) || [];
+      let selected = null;
+      if (window.__tapcalcSelectedLibraryRecord) {
+        selected = { record: window.__tapcalcSelectedLibraryRecord };
+      }
+      if (!selected && Number.isInteger(window.__tapcalcSelectedLibraryIndex)) {
+        selected = list[window.__tapcalcSelectedLibraryIndex] || null;
+      }
+      if (!selected && typeof selectedJobId !== 'undefined') {
+        selected = list.find((job) => String(job.id) === String(selectedJobId || '')) || null;
+      }
+      if (!selected || !selected.record) {
+        console.warn('alpha57 Load Job: no selected record found');
+        return false;
+      }
+      const record = selected.record;
+      const rebuilt = (typeof buildStateFromRecord === 'function') ? buildStateFromRecord(record) : (record.state || {});
+      if (rebuilt && typeof applyJobState === 'function') applyJobState(rebuilt);
+      hydrateVisibleFields(record);
+      try { localStorage.setItem('measurementCardStateV1', JSON.stringify(rebuilt || {})); } catch {}
+      setTimeout(() => {
+        try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+        try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+        try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+        try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+        try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+        try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+        try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+        try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+        try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
+        try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+        try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+        try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+      }, 60);
+      const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
+      if (jobTab) jobTab.click();
+      return true;
+    } catch (error) {
+      console.error('alpha57 Load Job failed', error);
+      return false;
+    }
+  };
 })();
