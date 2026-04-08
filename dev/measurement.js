@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha67';
+const BUILD_VERSION = '3.0.0-alpha68';
 
 (function(){
 
@@ -580,6 +580,11 @@ if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openD
 
 const referenceViewSelectEl = document.getElementById('referenceViewSelect');
 const referenceViewEls = Array.from(document.querySelectorAll('.reference-view[data-reference-view]'));
+const referenceShortcutEls = Array.from(document.querySelectorAll('[data-reference-target]'));
+
+function syncReferenceShortcutState(view) {
+  referenceShortcutEls.forEach((el) => el.classList.toggle('active', el.dataset.referenceTarget === view));
+}
 
 function setReferenceView(view) {
   const nextView = view || referenceViewSelectEl?.value || 'converter';
@@ -594,6 +599,13 @@ function setReferenceView(view) {
   } catch {}
 }
 
+referenceShortcutEls.forEach((el) => {
+  el.addEventListener('click', () => {
+    const view = el.dataset.referenceTarget || 'converter';
+    setReferenceView(view);
+  });
+});
+
 if (referenceViewSelectEl) {
   referenceViewSelectEl.addEventListener('change', () => setReferenceView(referenceViewSelectEl.value));
   try {
@@ -601,19 +613,9 @@ if (referenceViewSelectEl) {
   } catch {
     setReferenceView(referenceViewSelectEl.value || 'converter');
   }
+} else {
+  syncReferenceShortcutState('converter');
 }
-const referenceShortcutEls = Array.from(document.querySelectorAll('[data-reference-target]'));
-function syncReferenceShortcutState(view) {
-  referenceShortcutEls.forEach((el) => el.classList.toggle('active', el.dataset.referenceTarget === view));
-}
-referenceShortcutEls.forEach((el) => {
-  el.addEventListener('click', () => {
-    const view = el.dataset.referenceTarget || 'converter';
-    setReferenceView(view);
-    syncReferenceShortcutState(view);
-  });
-});
-syncReferenceShortcutState(referenceViewSelectEl?.value || 'converter');
 
 const glossarySearchInputEl = document.getElementById('glossarySearchInput');
 const referenceBackToTopBtnEl = document.getElementById('referenceBackToTopBtn');
@@ -1027,7 +1029,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha67', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha68', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4084,7 +4086,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha67';
+  const TC63_VERSION = '3.0.0-alpha68';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4326,7 +4328,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha67';
+  const VERSION = '3.0.0-alpha68';
 
   function tc65GetJobs() {
     try {
