@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha84';
+const BUILD_VERSION = '3.0.0-alpha85';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha84', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha85', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4297,7 +4297,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha84';
+  const TC63_VERSION = '3.0.0-alpha85';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4539,7 +4539,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha84';
+  const VERSION = '3.0.0-alpha85';
 
   function tc65GetJobs() {
     try {
@@ -4709,7 +4709,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha84 mobile shared-library selection fix ===== */
+/* ===== 3.0.0-alpha85 mobile shared-library selection fix ===== */
 (function(){
   function tc81IsCompactLibrary() {
     try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
@@ -4754,7 +4754,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha84 garlock init + compact library lane guard ===== */
+/* ===== 3.0.0-alpha85 garlock init + compact library lane guard ===== */
 (function(){
   function tc83IsCompact(){
     try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
@@ -4822,7 +4822,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha84 dropdown + mobile library hard fix ===== */
+/* ===== 3.0.0-alpha85 dropdown + mobile library hard fix ===== */
 (function(){
   function tc84Compact(){
     try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
@@ -4895,4 +4895,104 @@ window.addEventListener('load', async () => {
   });
   window.addEventListener('pageshow', () => { setTimeout(tc84InitGarlock, 60); });
   document.addEventListener('DOMContentLoaded', () => { setTimeout(tc84InitGarlock, 60); setTimeout(tc84ApplyLocalLane, 60); });
+})();
+
+
+/* ===== 3.0.0-alpha85 garlock summary + mobile library hard stop ===== */
+(function(){
+  function tc85Compact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function tc85GarlockSelect(){ return document.getElementById('garlock600SizeSelect'); }
+  function tc85SetText(id, value){ const el = document.getElementById(id); if (el) el.textContent = value || '—'; }
+  function tc85NormalizeSize(value){
+    return String(value || '').replace(/["”]/g, '').replace(/\s+/g, '').toLowerCase();
+  }
+  function tc85UpdateGarlock(){
+    try {
+      const select = tc85GarlockSelect();
+      const activeSize = select?.value || garlock600Data[0]?.size || '';
+      const match = garlock600Data.find((row) => tc85NormalizeSize(row.size) === tc85NormalizeSize(activeSize)) || garlock600Data[0] || null;
+      if (!match) return;
+      tc85SetText('garlock600BoltCount', match.bolts);
+      tc85SetText('garlock600BoltSize', match.boltSize);
+      tc85SetText('garlock600MinTorque', `${match.minTorque} ft lbs`);
+      tc85SetText('garlock600PreferredTorque', `${match.preferredTorque} ft lbs`);
+      tc85SetText('garlock600Torque60', `${match.torque60} ft lbs`);
+      tc85SetText('garlock600StressValue', `${match.maxRecStress} psi`);
+      tc85SetText('garlock600ContactArea', `${match.area} in²`);
+    } catch {}
+  }
+  function tc85InitGarlock(){
+    try { populateGarlock600Select(); } catch {}
+    try { renderGarlock600Rows(garlock600Data); } catch {}
+    try {
+      const select = tc85GarlockSelect();
+      if (select && !select.value && garlock600Data[0]?.size) select.value = garlock600Data[0].size;
+    } catch {}
+    setTimeout(tc85UpdateGarlock, 0);
+    setTimeout(tc85UpdateGarlock, 120);
+  }
+  document.addEventListener('change', (event) => {
+    if (event.target && event.target.id === 'garlock600SizeSelect') tc85UpdateGarlock();
+    if (event.target && event.target.id === 'referenceViewSelect' && event.target.value === 'garlock600') tc85InitGarlock();
+  }, true);
+  document.addEventListener('input', (event) => {
+    if (event.target && event.target.id === 'garlock600SizeSelect') tc85UpdateGarlock();
+  }, true);
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-reference-target="garlock600"]')) {
+      setTimeout(tc85InitGarlock, 0);
+      setTimeout(tc85InitGarlock, 120);
+    }
+  }, true);
+  window.addEventListener('pageshow', () => { setTimeout(tc85InitGarlock, 80); });
+  document.addEventListener('DOMContentLoaded', () => { setTimeout(tc85InitGarlock, 80); });
+
+  const originalOpenSharedLane85 = window.openSharedLibraryLane || (typeof openSharedLibraryLane === 'function' ? openSharedLibraryLane : null);
+  window.openSharedLibraryLane = function(){
+    if (tc85Compact()) {
+      try { if (typeof window.setLibraryLane === 'function') window.setLibraryLane('local'); } catch {}
+      try { localStorage.setItem('tapcalcLibraryLaneV1', 'local'); } catch {}
+      try { selectedJobId = ''; } catch {}
+      try { window.__tapcalcLibrarySelectedId = ''; window.__tapcalcLibrarySelectedRecord = null; } catch {}
+      try {
+        const detailsEl = document.getElementById('jobsList');
+        if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      } catch {}
+      return;
+    }
+    return originalOpenSharedLane85 ? originalOpenSharedLane85.apply(this, arguments) : undefined;
+  };
+  try { openSharedLibraryLane = window.openSharedLibraryLane; } catch {}
+
+  const originalSetScreen85 = window.tapCalcSetScreen || null;
+  if (typeof originalSetScreen85 === 'function' && !window.__tc85ScreenWrapped) {
+    window.__tc85ScreenWrapped = true;
+    window.tapCalcSetScreen = function(name){
+      const result = originalSetScreen85.apply(this, arguments);
+      if (name === 'jobs' && tc85Compact()) {
+        try { window.openSharedLibraryLane(); } catch {}
+        try {
+          document.querySelectorAll('[data-library-lane-panel="shared"] .jobs-list-item.active').forEach((item)=>item.classList.remove('active'));
+        } catch {}
+      }
+      return result;
+    };
+  }
+
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('.screen-tab[data-screen]');
+    if (!tab) return;
+    if (tab.dataset.screen !== 'jobs') {
+      try {
+        const jobsScreen = document.getElementById('jobsScreen');
+        if (jobsScreen) {
+          jobsScreen.classList.remove('active');
+          jobsScreen.style.pointerEvents = 'none';
+          jobsScreen.style.zIndex = '0';
+        }
+      } catch {}
+    }
+  }, true);
 })();
