@@ -4342,7 +4342,7 @@ option[value="htpCutter"] {
 }
 
 
-/* ===== 3.0.0-alpha76 decimal/fraction layout fix ===== */
+/* ===== 3.0.0-alpha77 decimal/fraction layout fix ===== */
 .reference-view[data-reference-view="converter"] .reference-card {
   overflow: hidden;
 }
@@ -4441,5 +4441,28 @@ body.light .converter-block {
   .converter-result {
     min-height: 52px;
     font-size: 1rem;
+  }
+}
+
+/* ===== 3.0.0-alpha77 reference single-card width fix ===== */
+.reference-view[data-reference-view="converter"] .reference-grid,
+.reference-view[data-reference-view="bolting"] .reference-grid {
+  grid-template-columns: 1fr;
+}
+
+.reference-view[data-reference-view="converter"] .reference-card,
+.reference-view[data-reference-view="bolting"] .reference-card {
+  width: 100%;
+  max-width: none;
+}
+
+.reference-view[data-reference-view="converter"] .button-row.reference-actions {
+  justify-content: flex-start;
+}
+
+@media (max-width: 900px) {
+  .reference-view[data-reference-view="converter"] .reference-grid,
+  .reference-view[data-reference-view="bolting"] .reference-grid {
+    grid-template-columns: 1fr;
   }
 }
