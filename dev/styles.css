@@ -4340,3 +4340,106 @@ option[value="htpCutter"] {
   background: rgba(37, 99, 235, 0.08);
   border-color: rgba(37, 99, 235, 0.14);
 }
+
+
+/* ===== 3.0.0-alpha76 decimal/fraction layout fix ===== */
+.reference-view[data-reference-view="converter"] .reference-card {
+  overflow: hidden;
+}
+
+.converter-grid {
+  grid-template-columns: repeat(2, minmax(280px, 1fr));
+  align-items: start;
+}
+
+.converter-block {
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.03);
+}
+
+.converter-block .decimal-input,
+.converter-block #fractionPrecision,
+.fraction-input-row input {
+  width: 100%;
+  min-width: 0;
+}
+
+.quick-decimal-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.quick-decimal-btn {
+  min-height: 46px;
+  justify-content: center;
+}
+
+.converter-inline {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.converter-inline label {
+  margin: 0;
+}
+
+.converter-result {
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 1.05rem;
+}
+
+:root[data-theme="dark"] .converter-block,
+body.dark .converter-block {
+  background: rgba(13, 26, 46, 0.62);
+  border-color: rgba(148, 183, 255, 0.14);
+}
+
+:root[data-theme="dark"] .quick-decimal-btn,
+body.dark .quick-decimal-btn {
+  background: #2f3136;
+  border-color: #4b5563;
+  color: #ffffff;
+}
+
+:root[data-theme="light"] .converter-block,
+body.light .converter-block {
+  background: rgba(17, 78, 199, 0.04);
+  border-color: rgba(37, 99, 235, 0.12);
+}
+
+@media (max-width: 900px) {
+  .converter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .converter-block {
+    padding: 12px;
+  }
+
+  .fraction-input-row {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .quick-decimal-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .converter-inline {
+    grid-template-columns: 1fr;
+  }
+
+  .converter-result {
+    min-height: 52px;
+    font-size: 1rem;
+  }
+}
