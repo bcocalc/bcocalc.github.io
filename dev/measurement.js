@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha69';
+const BUILD_VERSION = '3.0.0-alpha71';
 
 (function(){
 
@@ -1024,6 +1024,31 @@ function initBoltingReference() {
   });
   boltingSizeSelectEl.addEventListener('change', updateBoltingSummary);
 }
+
+
+function initReferenceWorkspaceHard() {
+  try {
+    buildDecimalChart(decimalChartSearchEl?.value || '');
+    updateFractionToDecimal();
+    updateDecimalToFraction();
+    filterGlossaryRows(glossarySearchInputEl?.value || '');
+    renderSimpleTableRows('plant150Body', plant150Data);
+    renderSimpleTableRows('plant600Body', plant600Data);
+    if (typeof initBoltingReference === 'function') initBoltingReference();
+    const safeView = localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl?.value || 'converter';
+    setReferenceView(safeView);
+  } catch (error) {
+    console.warn('alpha71 reference workspace init fallback failed', error);
+  }
+}
+window.initReferenceWorkspaceHard = initReferenceWorkspaceHard;
+document.addEventListener('DOMContentLoaded', initReferenceWorkspaceHard, { once: true });
+document.addEventListener('click', (event) => {
+  const trigger = event.target.closest('[data-go-screen="ref"], #openRefBtn, #referenceBackToTopBtn');
+  if (!trigger) return;
+  setTimeout(initReferenceWorkspaceHard, 0);
+});
+window.addEventListener('pageshow', () => setTimeout(initReferenceWorkspaceHard, 0));
 
 initBoltingReference();
 
