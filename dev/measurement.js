@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha66';
+const BUILD_VERSION = '3.0.0-alpha67';
 
 (function(){
 
@@ -587,7 +587,11 @@ function setReferenceView(view) {
     panel.classList.toggle('active', panel.dataset.referenceView === nextView);
   });
   if (referenceViewSelectEl && referenceViewSelectEl.value !== nextView) referenceViewSelectEl.value = nextView;
+  syncReferenceShortcutState(nextView);
   try { localStorage.setItem('tapcalcReferenceViewV1', nextView); } catch {}
+  try {
+    document.querySelector(`.reference-view[data-reference-view="${nextView}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch {}
 }
 
 if (referenceViewSelectEl) {
@@ -610,6 +614,29 @@ referenceShortcutEls.forEach((el) => {
   });
 });
 syncReferenceShortcutState(referenceViewSelectEl?.value || 'converter');
+
+const glossarySearchInputEl = document.getElementById('glossarySearchInput');
+const referenceBackToTopBtnEl = document.getElementById('referenceBackToTopBtn');
+
+function filterGlossaryRows(query) {
+  const rows = Array.from(document.querySelectorAll('[data-reference-view="glossary"] tbody tr'));
+  const needle = String(query || '').trim().toLowerCase();
+  rows.forEach((row) => {
+    const text = row.textContent.toLowerCase();
+    row.style.display = !needle || text.includes(needle) ? '' : 'none';
+  });
+}
+
+if (glossarySearchInputEl) {
+  glossarySearchInputEl.addEventListener('input', () => filterGlossaryRows(glossarySearchInputEl.value));
+}
+
+if (referenceBackToTopBtnEl) {
+  referenceBackToTopBtnEl.addEventListener('click', () => {
+    document.querySelector('#refScreen .screen-intro-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
 
 const htpChartData = {
   '3': { branch: '6"', head: '3" – 4"', cutter: 5.500, bco: 3.000 },
@@ -1000,7 +1027,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha66', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha67', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4057,7 +4084,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha66';
+  const TC63_VERSION = '3.0.0-alpha67';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4299,7 +4326,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha66';
+  const VERSION = '3.0.0-alpha67';
 
   function tc65GetJobs() {
     try {

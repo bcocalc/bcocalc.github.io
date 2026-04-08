@@ -4174,3 +4174,123 @@ option[value="HTP"],
 option[value="htpCutter"] {
   display:none !important;
 }
+
+
+/* ===== 3.0.0-alpha67 theme + reference pass ===== */
+:root[data-theme="light"] body.measurement-page {
+  background:#dfe8f2 !important;
+}
+:root[data-theme="light"] .app-shell,
+:root[data-theme="light"] .top-app-bar,
+:root[data-theme="light"] .screen-nav {
+  background:#eef4f9 !important;
+}
+:root[data-theme="light"] .screen-tab,
+:root[data-theme="light"] .submode-btn,
+:root[data-theme="light"] .library-lane-btn,
+:root[data-theme="light"] .jobs-view-chip,
+:root[data-theme="light"] .secondary-btn,
+:root[data-theme="light"] .section,
+:root[data-theme="light"] .mode-panel,
+:root[data-theme="light"] .dashboard-hero,
+:root[data-theme="light"] .home-current-job-card,
+:root[data-theme="light"] .jobs-status-card,
+:root[data-theme="light"] .jobs-panel-card,
+:root[data-theme="light"] .card-focus-shell,
+:root[data-theme="light"] .card-focus-stat,
+:root[data-theme="light"] .job-form-card,
+:root[data-theme="light"] .summary-item,
+:root[data-theme="light"] .screen-intro-card,
+:root[data-theme="light"] .job-current-topbar,
+:root[data-theme="light"] .current-action-strip,
+:root[data-theme="light"] .workflow-card,
+:root[data-theme="light"] .reference-card,
+:root[data-theme="light"] .reference-workspace-card,
+:root[data-theme="light"] .ref-category-card {
+  background:linear-gradient(180deg,#f7fbff 0%,#edf4fb 100%) !important;
+  border:1px solid rgba(21,49,88,.14) !important;
+  box-shadow:0 8px 20px rgba(41,73,118,.06) !important;
+}
+:root[data-theme="light"] .screen-tab:hover,
+:root[data-theme="light"] .secondary-btn:hover,
+:root[data-theme="light"] .ref-category-card:hover {
+  background:#e8f0fa !important;
+}
+:root[data-theme="light"] .screen-tab.active,
+:root[data-theme="light"] .submode-btn.active,
+:root[data-theme="light"] .library-lane-btn.active,
+:root[data-theme="light"] .jobs-view-chip.active,
+:root[data-theme="light"] .ref-category-card.active,
+:root[data-theme="light"] .ref-shortcut-btn.active {
+  background:linear-gradient(180deg,#3d77ea 0%,#275fcd 100%) !important;
+  color:#fff !important;
+  border-color:#275fcd !important;
+  box-shadow:0 8px 18px rgba(47,105,225,.28) !important;
+}
+:root[data-theme="light"] .screen-tab.active,
+:root[data-theme="dark"] .screen-tab.active {
+  outline:2px solid rgba(255,255,255,.08);
+  outline-offset:0;
+}
+:root[data-theme="dark"] .screen-tab {
+  background:linear-gradient(180deg,#263244 0%,#1d2736 100%) !important;
+  border:1px solid rgba(255,255,255,.16) !important;
+  color:#dce7fb !important;
+}
+:root[data-theme="dark"] .screen-tab:hover {
+  background:linear-gradient(180deg,#314056 0%,#243246 100%) !important;
+}
+:root[data-theme="dark"] .screen-tab.active {
+  background:linear-gradient(180deg,#4d88ff 0%,#2a61d0 100%) !important;
+  border-color:rgba(183,212,255,.9) !important;
+  color:#ffffff !important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.18), 0 10px 22px rgba(17,78,199,.34) !important;
+}
+:root[data-theme="dark"] .ref-category-card,
+:root[data-theme="dark"] .reference-card,
+:root[data-theme="dark"] .reference-workspace-card {
+  background:linear-gradient(180deg,#13243c 0%,#101b2d 100%) !important;
+}
+.reference-inline-actions,
+.reference-search-row {
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.reference-search-row label {
+  min-width:110px;
+}
+.reference-search-row input {
+  flex:1 1 260px;
+}
+.ref-category-card.active strong,
+.ref-category-card.active span,
+.ref-shortcut-btn.active {
+  color:#fff !important;
+}
+:root[data-theme="dark"] .ref-category-card.active,
+:root[data-theme="dark"] .ref-shortcut-btn.active {
+  background:linear-gradient(180deg,#3f78e7 0%,#295fc6 100%) !important;
+  border-color:rgba(183,212,255,.82) !important;
+  box-shadow:0 10px 24px rgba(17,78,199,.28) !important;
+}
+:root[data-theme="light"] .ref-category-card.active strong,
+:root[data-theme="light"] .ref-category-card.active span,
+:root[data-theme="light"] .ref-shortcut-btn.active {
+  color:#fff !important;
+}
+:root[data-theme="light"] .top-app-subtitle {
+  color:#5f7390 !important;
+}
+@media (max-width: 768px){
+  .reference-inline-actions,
+  .reference-search-row {
+    flex-direction:column;
+    align-items:stretch;
+  }
+  .reference-search-row label {
+    min-width:0;
+  }
+}
