@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha90';
+const BUILD_VERSION = '3.0.0-alpha91';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha90', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha91', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4300,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha90';
+  const TC63_VERSION = '3.0.0-alpha91';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha90';
+  const VERSION = '3.0.0-alpha91';
 
   function tc65GetJobs() {
     try {
@@ -5324,7 +5324,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha90 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha91 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5476,7 +5476,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha90 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha91 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5559,7 +5559,7 @@ window.addEventListener('load', async () => {
         loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
       }
     } catch (error) {
-      console.error('alpha90 Load Job failed', error);
+      console.error('alpha91 Load Job failed', error);
       if(status) status.textContent = 'Load Job failed. See console.';
       return false;
     }
@@ -5617,8 +5617,8 @@ window.addEventListener('load', async () => {
   }, true);
 
   const origRender = window.renderJobsList || (typeof renderJobsList === 'function' ? renderJobsList : null);
-  if (typeof origRender === 'function' && !window.__alpha90RenderJobsWrapped) {
-    window.__alpha90RenderJobsWrapped = true;
+  if (typeof origRender === 'function' && !window.__alpha91RenderJobsWrapped) {
+    window.__alpha91RenderJobsWrapped = true;
     const wrapped = function(){
       const result = origRender.apply(this, arguments);
       try {
@@ -5644,8 +5644,8 @@ window.addEventListener('load', async () => {
   }
 
   const origShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
-  if (typeof origShow === 'function' && !window.__alpha90ShowWrapped) {
-    window.__alpha90ShowWrapped = true;
+  if (typeof origShow === 'function' && !window.__alpha91ShowWrapped) {
+    window.__alpha91ShowWrapped = true;
     const wrappedShow = function(name){
       const result = origShow.apply(this, arguments);
       try {
@@ -5671,4 +5671,148 @@ window.addEventListener('load', async () => {
   window.addEventListener('pageshow', ()=>setTimeout(mobileScrollFix, 60));
   document.addEventListener('DOMContentLoaded', ()=>setTimeout(mobileScrollFix, 60));
   setTimeout(mobileScrollFix, 250);
+})();
+
+
+/* ===== 3.0.0-alpha91 mobile load job direct detail bind ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+
+  function jobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if(!sid) return null;
+    return jobs().find((job)=> String(job?.id || '') === sid) || null;
+  }
+
+  function pinEntry(entry){
+    if(!entry) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record || null }; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+  }
+
+  function bestEntry(){
+    const ids = [
+      window.__tapcalcDetailSelectedId,
+      window.__tapcalcExactLibrarySelectedId,
+      window.__tapcalcLibrarySelectedId,
+      window.__alpha87SelectedJobId,
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '')
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids) {
+      const entry = entryById(id);
+      if (entry?.record) return entry;
+    }
+    if (window.__tapcalcDetailSelectedRecord) return { id: String(window.__tapcalcDetailSelectedId || window.__tapcalcLibrarySelectedId || 'detail'), record: window.__tapcalcDetailSelectedRecord };
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    if (window.__tapcalcLibrarySelectedRecord) return { id: String(window.__tapcalcLibrarySelectedId || 'selected'), record: window.__tapcalcLibrarySelectedRecord };
+    try {
+      const list = jobs();
+      const fallback = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null;
+      if (fallback?.record) return fallback;
+    } catch {}
+    return null;
+  }
+
+  function forceMobileFriendlyLoad(){
+    const entry = bestEntry();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pinEntry(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (error) {
+      console.error('alpha91 mobile load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(()=>{
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      try { document.getElementById('jobScreen')?.classList.add('active'); } catch {}
+      try { document.getElementById('jobsScreen')?.classList.remove('active'); } catch {}
+      try { document.getElementById('jobsScreen').hidden = true; } catch {}
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+    }, 20);
+    return false;
+  }
+
+  window.tapCalcForceLoadSelectedJob = forceMobileFriendlyLoad;
+  window.loadSelectedLibraryJob = forceMobileFriendlyLoad;
+  window.tapCalcLibraryLoadSelected = forceMobileFriendlyLoad;
+
+  function bindLoadButton(){
+    const btn = $('jobsLoadSelectedBtn');
+    if(!btn) return;
+    btn.onclick = forceMobileFriendlyLoad;
+    btn.ontouchend = function(e){
+      if (e) { e.preventDefault(); e.stopPropagation(); if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); }
+      return forceMobileFriendlyLoad();
+    };
+    btn.onpointerup = function(e){
+      if (e) { e.preventDefault(); e.stopPropagation(); if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); }
+      return forceMobileFriendlyLoad();
+    };
+  }
+
+  const origRenderSelected = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRenderSelected === 'function' && !window.__alpha91RenderSelectedWrapped) {
+    window.__alpha91RenderSelectedWrapped = true;
+    const wrapped = function(){
+      const result = origRenderSelected.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : jobs();
+        let entry = null;
+        try { entry = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null; } catch {}
+        if (entry?.record) pinEntry(entry);
+        bindLoadButton();
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+
+  document.addEventListener('touchstart', (e)=>{
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(!row) return;
+    const entry = entryById(row.dataset.jobId);
+    if(entry) pinEntry(entry);
+  }, {capture:true, passive:true});
+
+  document.addEventListener('click', (e)=>{
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(row){
+      const entry = entryById(row.dataset.jobId);
+      if(entry) pinEntry(entry);
+    }
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if(btn){
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      return forceMobileFriendlyLoad();
+    }
+  }, true);
+
+  window.addEventListener('pageshow', ()=> setTimeout(bindLoadButton, 60));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bindLoadButton, 60));
+  setTimeout(bindLoadButton, 120);
 })();
