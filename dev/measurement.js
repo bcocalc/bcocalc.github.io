@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha106';
+const BUILD_VERSION = '3.0.0-alpha107';
 
 (function(){
 
@@ -1217,7 +1217,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha106', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha107', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4300,7 +4300,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha106';
+  const TC63_VERSION = '3.0.0-alpha107';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4542,7 +4542,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha106';
+  const VERSION = '3.0.0-alpha107';
 
   function tc65GetJobs() {
     try {
@@ -7732,3 +7732,116 @@ window.addEventListener('load', async () => {
   else start();
 })();
 
+
+
+/* ===== 3.0.0-alpha107 mobile pending hydrate + library layout fix ===== */
+(() => {
+  const VERSION = '3.0.0-alpha107';
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
+  };
+  const getJobs = () => {
+    try { return typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : []; } catch { return []; }
+  };
+  const getSelected = () => {
+    const jobs = getJobs();
+    const activeId = String((window.__tapcalcLibrarySelectedId || '') || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || document.querySelector('.jobs-list-item.active')?.dataset?.jobId || '').trim();
+    return jobs.find((job) => String(job.id) === activeId) || null;
+  };
+  function forceHydrateRecord(record, message = true) {
+    if (!record) return false;
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(record, { switchScreen: false, skipPersist: false, message });
+      }
+    } catch (error) {
+      console.error('alpha107 forceHydrateRecord failed', error);
+    }
+    try {
+      const state = typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : null;
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+      const directMap = {
+        jobClient: record?.job?.client,
+        jobDescription: record?.job?.description,
+        jobNumber: record?.job?.jobNumber,
+        jobPressure: record?.job?.pressure,
+        jobTemperature: record?.job?.temperature,
+        jobDate: record?.job?.date,
+        jobProduct: record?.job?.product,
+        jobLocation: record?.job?.location,
+        jobTechnician: record?.job?.technician,
+        jobNotes: record?.job?.notes
+      };
+      Object.entries(directMap).forEach(([id, value]) => {
+        const el = $(id);
+        if (!el) return;
+        el.value = value == null ? '' : String(value);
+        try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+        try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+      });
+      try { if (typeof persistCurrentJob === 'function') persistCurrentJob(); } catch {}
+      try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+    } catch (error) {
+      console.error('alpha107 direct field hydrate failed', error);
+    }
+    return true;
+  }
+  function setPending(record) {
+    window.__tapcalcPendingMobileLoadRecord = record || null;
+    try { sessionStorage.setItem('tapcalcPendingMobileLoadRecord', JSON.stringify(record || null)); } catch {}
+  }
+  function getPending() {
+    if (window.__tapcalcPendingMobileLoadRecord) return window.__tapcalcPendingMobileLoadRecord;
+    try {
+      const raw = sessionStorage.getItem('tapcalcPendingMobileLoadRecord');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+  function clearPending() {
+    window.__tapcalcPendingMobileLoadRecord = null;
+    try { sessionStorage.removeItem('tapcalcPendingMobileLoadRecord'); } catch {}
+  }
+  function applyPendingAfterSwitch() {
+    if (!isMobile()) return;
+    const record = getPending();
+    if (!record) return;
+    const run = (delay, message = false) => setTimeout(() => forceHydrateRecord(record, message), delay);
+    run(20, true);
+    run(120, false);
+    run(320, false);
+    setTimeout(clearPending, 800);
+  }
+  function mobileLoadFromFinalButton(event) {
+    if (!isMobile()) return;
+    const btn = event.target.closest('#jobsLoadSelectedBtnFinal');
+    if (!btn) return;
+    try { event.preventDefault(); } catch {}
+    try { event.stopPropagation(); } catch {}
+    try { event.stopImmediatePropagation(); } catch {}
+    const selected = getSelected();
+    const record = selected?.record || null;
+    if (!record) return false;
+    setPending(record);
+    forceHydrateRecord(record, true);
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    applyPendingAfterSwitch();
+    setTimeout(() => {
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+      try { $('jobsScreen')?.classList.remove('active'); } catch {}
+    }, 450);
+    return false;
+  }
+  document.addEventListener('click', mobileLoadFromFinalButton, true);
+  document.addEventListener('touchstart', mobileLoadFromFinalButton, { capture: true, passive: false });
+  document.addEventListener('pointerdown', mobileLoadFromFinalButton, true);
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('.screen-tab[data-screen="job"]');
+    if (!tab || !isMobile()) return;
+    applyPendingAfterSwitch();
+  }, true);
+  window.addEventListener('pageshow', () => { if (isMobile()) setTimeout(applyPendingAfterSwitch, 40); });
+  window.tapCalcApplyPendingMobileLoad = applyPendingAfterSwitch;
+})();

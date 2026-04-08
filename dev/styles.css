@@ -4764,3 +4764,48 @@ body.light .converter-block {
     padding: 0 16px;
   }
 }
+
+
+/* ===== alpha107 mobile library width cleanup ===== */
+@media (max-width: 820px) {
+  #jobsScreen,
+  #jobsPanel,
+  #jobsPanel.jobs-workspace-panel,
+  #jobsPanel.jobs-workspace-panel > .jobs-workspace-grid,
+  .jobs-panel-shared.library-lane.active,
+  .jobs-status-strip,
+  .jobs-screen-topbar,
+  #jobsSelect,
+  #jobsList,
+  .jobs-library-details,
+  .job-detail-grid,
+  .job-detail-actions {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  #jobsScreen {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+    overflow-x: hidden !important;
+  }
+  #jobsPanel.jobs-workspace-panel > .jobs-workspace-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .jobs-screen-topbar,
+  .jobs-status-strip,
+  .jobs-panel-shared.library-lane.active,
+  #jobsList,
+  .jobs-library-details {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+  .job-detail-actions button,
+  #jobsLoadSelectedBtn,
+  #jobsLoadSelectedBtnFinal {
+    width: 100% !important;
+    margin: 0 auto !important;
+    justify-content: center;
+  }
+}
