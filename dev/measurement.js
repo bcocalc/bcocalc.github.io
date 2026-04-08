@@ -3812,3 +3812,50 @@ window.addEventListener('load', async () => {
   document.addEventListener('DOMContentLoaded', () => setTimeout(a59RenderLibrary, 50));
   setTimeout(a59RenderLibrary, 200);
 })();
+
+
+// alpha60 force-reload Load Job path
+(function(){
+  function alpha60GetSelectedRecord() {
+    try {
+      if (typeof window.getCombinedJobsForDisplay === 'function') {
+        const list = window.getCombinedJobsForDisplay() || [];
+        const selectedId = (typeof selectedJobId !== 'undefined' ? String(selectedJobId || '') : '');
+        const selected = list.find((job) => String(job.id) === selectedId) || list[0];
+        return selected && selected.record ? selected.record : null;
+      }
+    } catch (error) {
+      console.error('alpha60 get selected record failed', error);
+    }
+    return null;
+  }
+
+  function alpha60PersistAndReload(record) {
+    const state = (typeof buildStateFromRecord === 'function') ? buildStateFromRecord(record) : (record && record.state ? record.state : null);
+    if (!state || typeof state !== 'object') {
+      console.warn('alpha60: no loadable state found for selected record');
+      return;
+    }
+    try {
+      localStorage.setItem(JOB_STATE_KEY, JSON.stringify(state));
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      localStorage.setItem('tapcalcV3LoadedFromLibrary', '1');
+    } catch (error) {
+      console.error('alpha60 persist failed', error);
+      return;
+    }
+    try {
+      window.location.reload();
+    } catch (error) {
+      console.error('alpha60 reload failed', error);
+    }
+  }
+
+  window.loadSelectedLibraryJob = function alpha60LoadSelectedLibraryJob() {
+    const record = alpha60GetSelectedRecord();
+    if (!record) return;
+    alpha60PersistAndReload(record);
+  };
+  window.alpha47LoadSelectedLibraryJob = window.loadSelectedLibraryJob;
+})();
+
