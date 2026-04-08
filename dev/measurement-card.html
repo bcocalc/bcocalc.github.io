@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha80">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha81">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha80 · 2026-04-07</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha81 · 2026-04-07</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha80 · 2026-04-07</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha81 · 2026-04-07</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -523,6 +523,7 @@
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="glossary">Glossary</button>
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="plant150">150# Plant</button>
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="plant600">600# Plant</button>
+      <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="garlock600">Graphonic 600# Torque</button>
     </div>
   </section>
 
@@ -532,6 +533,7 @@
     <button type="button" class="ref-category-card" data-reference-target="glossary"><strong>Glossary</strong><span>Abbreviations and field meanings</span></button>
     <button type="button" class="ref-category-card" data-reference-target="plant150"><strong>150# Plant</strong><span>Jack-bolt and packing wrench info</span></button>
     <button type="button" class="ref-category-card" data-reference-target="plant600"><strong>600# Plant</strong><span>Higher class flange reference</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="garlock600"><strong>Graphonic 600# Torque</strong><span>Garlock preferred and minimum torque lookup</span></button>
   </section>
 
   <section id="glossaryPanel" class="mode-panel active">
@@ -553,6 +555,7 @@
             <option value="glossary">Glossary</option>
             <option value="plant150">150# Plant Series</option>
             <option value="plant600">600# Plant Series</option>
+            <option value="garlock600">Graphonic 600# Torque</option>
           </select>
         </div>
       </div>
@@ -715,6 +718,44 @@
         </div>
         <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant600Body"></tbody></table></div>
       </div>
+      <div class="reference-view" data-reference-view="garlock600">
+        <h3 class="reference-subheading">Graphonic 600# Torque</h3>
+        <p class="reference-copy">Garlock GRAPHONIC gasket torque reference for ASME B16.5 Class 600# flanges, built into TapCalc so you can filter by pipe size without opening the sheet.</p>
+        <div class="reference-grid plant-reference-grid torque-reference-grid">
+          <div class="reference-card plant-summary-card torque-summary-card">
+            <h4>600# Torque Quick Lookup</h4>
+            <div class="converter-inline plant-select-row torque-select-row">
+              <label for="garlock600SizeSelect">Pipe Size</label>
+              <select id="garlock600SizeSelect"></select>
+            </div>
+            <div class="bolting-summary-grid torque-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="garlock600BoltCount" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="garlock600BoltSize" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Min Torque / Bolt</span><span id="garlock600MinTorque" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Preferred Torque / Bolt</span><span id="garlock600PreferredTorque" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Torque @ 60 ksi</span><span id="garlock600Torque60" class="summary-value">—</span></div>
+            </div>
+            <div class="reference-chip-row torque-chip-row">
+              <span class="reference-chip"><strong id="garlock600StressValue">—</strong> max gasket stress</span>
+              <span class="reference-chip"><strong id="garlock600ContactArea">—</strong> contact area</span>
+            </div>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row torque-search-row">
+          <label for="garlock600SearchInput">Filter torque chart</label>
+          <input id="garlock600SearchInput" type="text" placeholder="Search size, torque, bolt count, or bolt size">
+        </div>
+        <div class="glossary-table-wrap bolting-table-wrap torque-table-wrap">
+          <table class="glossary-table bolting-table torque-table">
+            <thead>
+              <tr><th>Pipe Size</th><th>Bolts</th><th>Bolt Size</th><th>Torque @ 60 ksi</th><th>Min Torque</th><th>Preferred Torque</th><th>Max Stress</th><th>Contact Area</th></tr>
+            </thead>
+            <tbody id="garlock600Body"></tbody>
+          </table>
+        </div>
+        <p class="reference-footnote">Source: Garlock Bolt Torque Values for GRAPHONIC Gaskets in ASME B16.5 Class 600# Flanges. Built as structured data, not just an image paste-in.</p>
+      </div>
+
     </div>
   </section>
 
@@ -864,8 +905,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha80"></script>
-<script src="measurement.js?v=3.0.0-alpha80"></script>
+<script src="firebase-config.js?v=3.0.0-alpha81"></script>
+<script src="measurement.js?v=3.0.0-alpha81"></script>
   </section>
 </body>
 </html>
