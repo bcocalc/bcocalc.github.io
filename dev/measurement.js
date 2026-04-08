@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha78';
+const BUILD_VERSION = '3.0.0-alpha80';
 
 (function(){
 
@@ -1156,7 +1156,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha78', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha80', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4213,7 +4213,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha78';
+  const TC63_VERSION = '3.0.0-alpha80';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4455,7 +4455,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha78';
+  const VERSION = '3.0.0-alpha80';
 
   function tc65GetJobs() {
     try {
