@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha65';
+const BUILD_VERSION = '3.0.0-alpha66';
 
 (function(){
 
@@ -1000,7 +1000,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha65', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha66', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2771,10 +2771,10 @@ window.addEventListener('load', async () => {
   const subBtns=[...document.querySelectorAll('.submode-btn[data-mode]')];
   const oldSetMode = window.setMode || function(){};
   function syncSub(mode){subBtns.forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));}
-  window.setMode=function(mode){ oldSetMode(mode); syncSub(mode); };
+  window.setMode=function(mode){ if(mode==='htp') mode='hotTap'; oldSetMode(mode); syncSub(mode); };
   subBtns.forEach(b=>b.addEventListener('click',()=>window.setMode(b.dataset.mode)));
   const oldWindowSetMode = window.setMode;
-  window.setMode = function(mode){ oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); if(['hotTap','htp','lineStop','completionPlug'].includes(mode)){ focusActiveCardPanel(mode); } };
+  window.setMode = function(mode){ if(mode==='htp') mode='hotTap'; oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); if(['hotTap','lineStop','completionPlug'].includes(mode)){ focusActiveCardPanel(mode); } };
   syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
   initAlpha8WorkspaceActions();
   initAlpha18CoreActions();
@@ -2945,7 +2945,6 @@ window.addEventListener('load', async () => {
     if(focusTitle || focusDesc){
       const modeCopy={
         hotTap:['Hot Tap workflow','Set MD, LD, and PTC first, then verify LI, BCO, and on-rod values before moving forward.'],
-        htp:['HTP workflow','Use pipe size to drive branch, head, cutter, and ETA automatically before confirming the cut math.'],
         lineStop:['Line Stop workflow','Use the stop-stage fields to confirm lower-in, turns, and valve positioning before setting the stop.'],
         completionPlug:['Completion Plug workflow','Finish the operation by confirming plug dimensions, lower-in, and final checks.']
       };
@@ -3002,7 +3001,7 @@ window.addEventListener('load', async () => {
   }
   function syncOperationSelection(){
     const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
-    const map={'Hot Tap':'hotTap','HTP':'htp','Line Stop':'lineStop','Completion Plug':'completionPlug'};
+    const map={'Hot Tap':'hotTap','Line Stop':'lineStop','Completion Plug':'completionPlug'};
     const target=map[operation] || 'hotTap';
     const active=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode;
     if(active !== target) window.setMode(target);
@@ -4058,7 +4057,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha65';
+  const TC63_VERSION = '3.0.0-alpha66';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4300,7 +4299,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha65';
+  const VERSION = '3.0.0-alpha66';
 
   function tc65GetJobs() {
     try {

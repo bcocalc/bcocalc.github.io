@@ -4086,3 +4086,91 @@ body.measurement-page * {
 }
 .jobs-select{overflow-y:auto !important; -webkit-overflow-scrolling:touch;}
 .jobs-list-item{display:block;width:100%;touch-action:manipulation;}
+
+
+/* ===== 3.0.0-alpha66 contrast + HTP hold ===== */
+:root[data-theme="light"] .job-current-topbar,
+:root[data-theme="light"] .current-action-strip,
+:root[data-theme="light"] .screen-intro-card,
+:root[data-theme="light"] .card-focus-shell,
+:root[data-theme="light"] .workflow-card,
+:root[data-theme="light"] .job-form-card-head,
+:root[data-theme="light"] .current-action-copy strong,
+:root[data-theme="light"] .screen-intro-card h3,
+:root[data-theme="light"] .job-current-topbar h3,
+:root[data-theme="light"] .workflow-card strong,
+:root[data-theme="light"] .workflow-card .workflow-status,
+:root[data-theme="light"] .hero-eyebrow {
+  color:#16233a !important;
+}
+
+:root[data-theme="light"] .job-current-topbar,
+:root[data-theme="light"] .current-action-strip,
+:root[data-theme="light"] .screen-intro-card,
+:root[data-theme="light"] .card-focus-shell,
+:root[data-theme="light"] .workflow-card {
+  background:#ffffff !important;
+  border:1px solid rgba(15,42,79,.14) !important;
+  box-shadow:none !important;
+}
+
+:root[data-theme="light"] .job-current-topbar p,
+:root[data-theme="light"] .current-action-copy span,
+:root[data-theme="light"] .screen-intro-card p,
+:root[data-theme="light"] .screen-intro-meta,
+:root[data-theme="light"] .workflow-card span {
+  color:#4a6284 !important;
+}
+
+:root[data-theme="light"] .bco-result-card {
+  background:linear-gradient(180deg,#fff8d8,#fff1b8) !important;
+  border:1px solid rgba(208,165,0,.42) !important;
+}
+
+:root[data-theme="light"] .bco-result-header,
+:root[data-theme="light"] .bco-result-verify span,
+:root[data-theme="light"] .bco-result-verify strong,
+:root[data-theme="light"] .bco-result-main {
+  color:#3f3100 !important;
+}
+
+:root[data-theme="light"] .bco-result-main {
+  background:rgba(255,255,255,.72) !important;
+  border:1px solid rgba(208,165,0,.28) !important;
+}
+
+:root[data-theme="dark"] .measurement-page #bcoResult,
+:root[data-theme="dark"] .measurement-page .bco-result-card {
+  background:#152235 !important;
+  border-color:rgba(244,223,123,.42) !important;
+}
+
+:root[data-theme="dark"] .measurement-page .bco-result-header {
+  color:#f4d76f !important;
+}
+
+:root[data-theme="dark"] .measurement-page .bco-result-verify span {
+  color:#c7d6ea !important;
+}
+
+:root[data-theme="dark"] .measurement-page .bco-result-verify strong,
+:root[data-theme="dark"] .measurement-page .bco-result-main {
+  color:#ffffff !important;
+}
+
+:root[data-theme="dark"] .measurement-page .bco-result-main {
+  background:#24334a !important;
+  border:1px solid rgba(244,223,123,.32) !important;
+  box-shadow:none !important;
+}
+
+/* HTP is intentionally on hold for now */
+#htpPanel,
+[data-mode="htp"],
+[data-workflow-target="htp"],
+[data-reference-target="htpCutter"],
+[data-reference-view="htpCutter"],
+option[value="HTP"],
+option[value="htpCutter"] {
+  display:none !important;
+}
