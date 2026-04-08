@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha73';
+const BUILD_VERSION = '3.0.0-alpha74';
 
 (function(){
 
@@ -633,19 +633,66 @@ if (referenceViewSelectEl) {
 
 const glossarySearchInputEl = document.getElementById('glossarySearchInput');
 const referenceBackToTopBtnEl = document.getElementById('referenceBackToTopBtn');
+const glossaryTableBodyEl = document.getElementById('glossaryTableBody');
+const glossaryCountChipEl = document.getElementById('glossaryCountChip');
+const glossaryVisibleChipEl = document.getElementById('glossaryVisibleChip');
+const plant150SizeSelectEl = document.getElementById('plant150SizeSelect');
+const plant600SizeSelectEl = document.getElementById('plant600SizeSelect');
+const plant150SearchInputEl = document.getElementById('plant150SearchInput');
+const plant600SearchInputEl = document.getElementById('plant600SearchInput');
+const glossaryRowsData = [
+  ['MD', 'Measured Distance'],
+  ['LD', 'Lost Distance'],
+  ['LI', 'Lower In'],
+  ['PTC', 'Pilot To Cutter'],
+  ['BCO', 'Book Cut Out'],
+  ['CCO', 'Coupon Cut Out'],
+  ['MCO', 'Maximum Cut Out'],
+  ['POP', 'Pilot On Pipe'],
+  ['COP', 'Cutter On Pipe'],
+  ['TTD', 'Total Travel Distance'],
+  ['TCO', 'Total Cutout'],
+  ['MT', 'Machine Travel'],
+  ['POD', 'Pipe Outside Diameter'],
+  ['OD', 'Outside Diameter'],
+  ['ID', 'Inside Diameter'],
+  ['WT / Wall', 'Wall Thickness'],
+  ['VB', 'Valve Bore'],
+  ['GTF', 'Gate To Flange'],
+  ['Valve T', 'Valve Turns'],
+  ['Seg T', 'Segment Turns'],
+  ['-1 Wall', 'Minus One Wall Thickness'],
+  ['JBF', 'Jack Bolt to Flange'],
+  ['PT', 'Plug Thickness'],
+  ['RPM', 'Revolutions Per Minute'],
+  ['ETA', 'Estimated cutting time based on travel, feed, and RPM'],
+  ['Feed Rate', 'Advance per revolution, shown in inches per revolution'],
+  ['Hot Tap', 'Operation that cuts into the line with a pilot and cutter'],
+  ['Line Stop', 'Operation that inserts a stopping head or inflatable stop into the line'],
+  ['Completion Plug', 'Plug used to seal the branch after the tapping / stopping work is complete'],
+  ['FHL', 'Folding Head Line Stop'],
+  ['HI-Stop', 'Inflatable line stop variant'],
+  ['Coupon', 'The cutout removed by the cutter during a hot tap'],
+  ['Plant Series', 'Reference chart for jack-bolt wrench size, packing nut wrench size, and jack-bolt count']
+];
+
+function renderGlossaryRows(rows) {
+  if (!glossaryTableBodyEl) return;
+  glossaryTableBodyEl.innerHTML = rows.map(([abbr, meaning]) => `<tr><td>${abbr}</td><td>${meaning}</td></tr>`).join('');
+  if (glossaryCountChipEl) glossaryCountChipEl.textContent = String(glossaryRowsData.length);
+  if (glossaryVisibleChipEl) glossaryVisibleChipEl.textContent = String(rows.length);
+}
 
 function filterGlossaryRows(query) {
-  const rows = Array.from(document.querySelectorAll('[data-reference-view="glossary"] tbody tr'));
   const needle = String(query || '').trim().toLowerCase();
-  rows.forEach((row) => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = !needle || text.includes(needle) ? '' : 'none';
-  });
+  const filtered = glossaryRowsData.filter(([abbr, meaning]) => `${abbr} ${meaning}`.toLowerCase().includes(needle));
+  renderGlossaryRows(filtered);
 }
 
 if (glossarySearchInputEl) {
   glossarySearchInputEl.addEventListener('input', () => filterGlossaryRows(glossarySearchInputEl.value));
 }
+renderGlossaryRows(glossaryRowsData);
 
 if (referenceBackToTopBtnEl) {
   referenceBackToTopBtnEl.addEventListener('click', () => {
@@ -682,9 +729,46 @@ function renderSimpleTableRows(targetId, rows) {
   body.innerHTML = rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('');
 }
 
+function populatePlantSelect(selectEl, rows) {
+  if (!selectEl) return;
+  const previous = selectEl.value;
+  selectEl.innerHTML = rows.map((row) => `<option value="${row[0]}">${row[0]}</option>`).join('');
+  if (previous && rows.some((row) => row[0] === previous)) selectEl.value = previous;
+}
+
+function updatePlantSummary(seriesKey) {
+  const rows = seriesKey === '600' ? plant600Data : plant150Data;
+  const selectEl = seriesKey === '600' ? plant600SizeSelectEl : plant150SizeSelectEl;
+  const jackEl = document.getElementById(seriesKey === '600' ? 'plant600JackBolt' : 'plant150JackBolt');
+  const packingEl = document.getElementById(seriesKey === '600' ? 'plant600Packing' : 'plant150Packing');
+  const countEl = document.getElementById(seriesKey === '600' ? 'plant600Count' : 'plant150Count');
+  const activeSize = selectEl?.value || rows[0]?.[0];
+  const match = rows.find((row) => row[0] === activeSize) || rows[0];
+  if (!match) return;
+  if (jackEl) jackEl.textContent = match[1] || '—';
+  if (packingEl) packingEl.textContent = match[2] || '—';
+  if (countEl) countEl.textContent = match[3] || '—';
+}
+
+function filterPlantRows(seriesKey, query) {
+  const rows = seriesKey === '600' ? plant600Data : plant150Data;
+  const targetId = seriesKey === '600' ? 'plant600Body' : 'plant150Body';
+  const needle = String(query || '').trim().toLowerCase();
+  const filtered = !needle ? rows : rows.filter((row) => row.join(' ').toLowerCase().includes(needle));
+  renderSimpleTableRows(targetId, filtered);
+}
+
 renderSimpleTableRows('htpReferenceBody', Object.entries(htpChartData).map(([size, item]) => [size + '"', item.branch, item.head, Number(item.cutter).toFixed(3) + '"']));
 renderSimpleTableRows('plant150Body', plant150Data);
 renderSimpleTableRows('plant600Body', plant600Data);
+populatePlantSelect(plant150SizeSelectEl, plant150Data);
+populatePlantSelect(plant600SizeSelectEl, plant600Data);
+updatePlantSummary('150');
+updatePlantSummary('600');
+if (plant150SizeSelectEl) plant150SizeSelectEl.addEventListener('change', () => updatePlantSummary('150'));
+if (plant600SizeSelectEl) plant600SizeSelectEl.addEventListener('change', () => updatePlantSummary('600'));
+if (plant150SearchInputEl) plant150SearchInputEl.addEventListener('input', () => filterPlantRows('150', plant150SearchInputEl.value));
+if (plant600SearchInputEl) plant600SearchInputEl.addEventListener('input', () => filterPlantRows('600', plant600SearchInputEl.value));
 
 
 const ETA_FEED_RATE = 0.004;
@@ -1073,7 +1157,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha73', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha74', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4130,7 +4214,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha73';
+  const TC63_VERSION = '3.0.0-alpha74';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4372,7 +4456,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha73';
+  const VERSION = '3.0.0-alpha74';
 
   function tc65GetJobs() {
     try {

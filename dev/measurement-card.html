@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha73">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha74">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha73 · 2026-04-07</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha74 · 2026-04-07</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha73 · 2026-04-07</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha74 · 2026-04-07</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -651,17 +651,19 @@
 
       <div class="reference-view" data-reference-view="glossary">
         <h3 class="reference-subheading">Glossary</h3>
-        <p class="reference-copy">Common measurement-card abbreviations and field meanings used throughout TapCalc.</p>
+        <p class="reference-copy">Common measurement-card abbreviations, setup terms, and field meanings used throughout TapCalc.</p>
+        <div class="reference-chip-row" id="glossaryStatsRow">
+          <span class="reference-chip"><strong id="glossaryCountChip">0</strong> terms</span>
+          <span class="reference-chip"><strong id="glossaryVisibleChip">0</strong> visible</span>
+        </div>
         <div class="reference-search-row">
           <label for="glossarySearchInput">Filter glossary</label>
           <input id="glossarySearchInput" type="text" placeholder="Search abbreviation or meaning">
         </div>
         <div class="glossary-table-wrap">
           <table class="glossary-table">
-            <thead><tr><th>Abbrev.</th><th>Meaning</th></tr></thead>
-            <tbody>
-              <tr><td>MD</td><td>Measured Distance</td></tr><tr><td>LD</td><td>Lost Distance</td></tr><tr><td>LI</td><td>Lower In</td></tr><tr><td>PTC</td><td>Pilot To Cutter</td></tr><tr><td>BCO</td><td>Book Cut Out</td></tr><tr><td>CCO</td><td>Coupon Cut Out</td></tr><tr><td>MCO</td><td>Maximum Cut Out</td></tr><tr><td>POP</td><td>Pilot On Pipe</td></tr><tr><td>COP</td><td>Cutter On Pipe</td></tr><tr><td>TTD</td><td>Total Travel Distance</td></tr><tr><td>TCO</td><td>Total Cutout</td></tr><tr><td>MT</td><td>Machine Travel</td></tr><tr><td>POD</td><td>Pipe Outside Diameter</td></tr><tr><td>VB</td><td>Valve Bore</td></tr><tr><td>GTF</td><td>Gate To Flange</td></tr><tr><td>Valve T</td><td>Valve Turns</td></tr><tr><td>Seg T</td><td>Segment Turns</td></tr><tr><td>-1 Wall</td><td>Minus One Wall Thickness</td></tr><tr><td>JBF</td><td>Jack Bolt to Flange</td></tr><tr><td>PT</td><td>Plug Thickness</td></tr>
-            </tbody>
+            <thead><tr><th>Abbrev. / Term</th><th>Meaning</th></tr></thead>
+            <tbody id="glossaryTableBody"></tbody>
           </table>
         </div>
       </div>
@@ -669,12 +671,48 @@
       <div class="reference-view" data-reference-view="plant150">
         <h3 class="reference-subheading">150# Plant Series Flange Information</h3>
         <p class="reference-copy">Quick plant-series lookup for jack-bolt wrench size, packing nut wrench size, and jack-bolt count.</p>
+        <div class="reference-grid plant-reference-grid">
+          <div class="reference-card plant-summary-card">
+            <h4>150# Quick Lookup</h4>
+            <div class="converter-inline plant-select-row">
+              <label for="plant150SizeSelect">Plant Size</label>
+              <select id="plant150SizeSelect"></select>
+            </div>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolt Wrench</span><span id="plant150JackBolt" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Packing Nut Wrench</span><span id="plant150Packing" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolts</span><span id="plant150Count" class="summary-value">—</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row">
+          <label for="plant150SearchInput">Filter 150# table</label>
+          <input id="plant150SearchInput" type="text" placeholder="Search size or wrench">
+        </div>
         <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant150Body"></tbody></table></div>
       </div>
 
       <div class="reference-view" data-reference-view="plant600">
         <h3 class="reference-subheading">600# Plant Series Flange Information</h3>
         <p class="reference-copy">Higher-class plant-series lookup for jack-bolt wrench size, packing nut wrench size, and jack-bolt count.</p>
+        <div class="reference-grid plant-reference-grid">
+          <div class="reference-card plant-summary-card">
+            <h4>600# Quick Lookup</h4>
+            <div class="converter-inline plant-select-row">
+              <label for="plant600SizeSelect">Plant Size</label>
+              <select id="plant600SizeSelect"></select>
+            </div>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolt Wrench</span><span id="plant600JackBolt" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Packing Nut Wrench</span><span id="plant600Packing" class="summary-value">—</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolts</span><span id="plant600Count" class="summary-value">—</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row">
+          <label for="plant600SearchInput">Filter 600# table</label>
+          <input id="plant600SearchInput" type="text" placeholder="Search size or wrench">
+        </div>
         <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant600Body"></tbody></table></div>
       </div>
     </div>
@@ -826,8 +864,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha73"></script>
-<script src="measurement.js?v=3.0.0-alpha73"></script>
+<script src="firebase-config.js?v=3.0.0-alpha74"></script>
+<script src="measurement.js?v=3.0.0-alpha74"></script>
   </section>
 </body>
 </html>
