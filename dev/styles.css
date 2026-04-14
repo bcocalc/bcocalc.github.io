@@ -5147,3 +5147,44 @@ body.measurement-page[data-active-screen="calc"] #calcScreen .panel.active {
   display: block !important;
   visibility: visible !important;
 }
+
+
+/* ===== 3.0.0-alpha135 screen ownership hard fix ===== */
+.measurement-page .screen-view{display:none !important;visibility:hidden !important;pointer-events:none !important;opacity:0 !important;}
+.measurement-page .screen-view.active{display:block !important;visibility:visible !important;pointer-events:auto !important;opacity:1 !important;}
+.measurement-page[data-active-screen="home"] #homeScreen,
+.measurement-page[data-active-screen="job"] #jobScreen,
+.measurement-page[data-active-screen="calc"] #calcScreen,
+.measurement-page[data-active-screen="card"] #cardScreen,
+.measurement-page[data-active-screen="jobs"] #jobsScreen,
+.measurement-page[data-active-screen="ref"] #refScreen{display:block !important;visibility:visible !important;pointer-events:auto !important;opacity:1 !important;position:relative !important;z-index:2 !important;}
+.measurement-page[data-active-screen="home"] #jobScreen,
+.measurement-page[data-active-screen="home"] #calcScreen,
+.measurement-page[data-active-screen="home"] #cardScreen,
+.measurement-page[data-active-screen="home"] #jobsScreen,
+.measurement-page[data-active-screen="home"] #refScreen,
+.measurement-page[data-active-screen="job"] #homeScreen,
+.measurement-page[data-active-screen="job"] #calcScreen,
+.measurement-page[data-active-screen="job"] #cardScreen,
+.measurement-page[data-active-screen="job"] #jobsScreen,
+.measurement-page[data-active-screen="job"] #refScreen,
+.measurement-page[data-active-screen="calc"] #homeScreen,
+.measurement-page[data-active-screen="calc"] #jobScreen,
+.measurement-page[data-active-screen="calc"] #cardScreen,
+.measurement-page[data-active-screen="calc"] #jobsScreen,
+.measurement-page[data-active-screen="calc"] #refScreen,
+.measurement-page[data-active-screen="card"] #homeScreen,
+.measurement-page[data-active-screen="card"] #jobScreen,
+.measurement-page[data-active-screen="card"] #calcScreen,
+.measurement-page[data-active-screen="card"] #jobsScreen,
+.measurement-page[data-active-screen="card"] #refScreen,
+.measurement-page[data-active-screen="jobs"] #homeScreen,
+.measurement-page[data-active-screen="jobs"] #jobScreen,
+.measurement-page[data-active-screen="jobs"] #calcScreen,
+.measurement-page[data-active-screen="jobs"] #cardScreen,
+.measurement-page[data-active-screen="jobs"] #refScreen,
+.measurement-page[data-active-screen="ref"] #homeScreen,
+.measurement-page[data-active-screen="ref"] #jobScreen,
+.measurement-page[data-active-screen="ref"] #calcScreen,
+.measurement-page[data-active-screen="ref"] #cardScreen,
+.measurement-page[data-active-screen="ref"] #jobsScreen{display:none !important;visibility:hidden !important;pointer-events:none !important;opacity:0 !important;z-index:0 !important;}

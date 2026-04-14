@@ -3006,10 +3006,26 @@ window.addEventListener('load', async () => {
   const views={home:document.getElementById('homeScreen'),job:document.getElementById('jobScreen'),calc:document.getElementById('calcScreen'),card:document.getElementById('cardScreen'),jobs:document.getElementById('jobsScreen'),ref:document.getElementById('refScreen')};
   function setScreen(name){
     tabs.forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
-    Object.entries(views).forEach(([k,v])=>{ if(v) v.classList.toggle('active', k===name); });
+    document.body.dataset.activeScreen = name;
+    Object.entries(views).forEach(([k,v])=>{
+      if(!v) return;
+      const isActive = k===name;
+      v.classList.toggle('active', isActive);
+      v.style.display = isActive ? 'block' : 'none';
+      v.style.visibility = isActive ? 'visible' : 'hidden';
+      v.style.pointerEvents = isActive ? 'auto' : 'none';
+      v.style.opacity = isActive ? '1' : '0';
+    });
     document.body.classList.toggle('show-library-screen', name === 'jobs');
     const jobsPanelEl = document.getElementById('jobsPanel');
-    if (jobsPanelEl) jobsPanelEl.classList.add('active');
+    if (jobsPanelEl) jobsPanelEl.classList.toggle('active', name === 'jobs');
+    if (name !== 'jobs') {
+      const jobsScreenEl = document.getElementById('jobsScreen');
+      if (jobsScreenEl) {
+        jobsScreenEl.scrollTop = 0;
+        jobsScreenEl.style.zIndex = '0';
+      }
+    }
     if (name === 'jobs') {
       try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch {}
       try { renderJobsList(); } catch {}
