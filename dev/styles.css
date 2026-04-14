@@ -4896,7 +4896,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha126 mobile reference shortcut fix ===== */
+/* ===== 3.0.0-alpha127 mobile reference shortcut fix ===== */
 @media (max-width: 768px){
   .ref-top-actions{
     display:flex;
@@ -4924,7 +4924,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha126 ref/mobile cleanup ===== */
+/* ===== 3.0.0-alpha127 ref/mobile cleanup ===== */
 
 .section-toggle-btn{
   appearance:none;
@@ -4974,4 +4974,42 @@ body.light .converter-block {
     align-items:stretch;
   }
   .section-toggle-btn span:first-child{font-size:1.1rem;}
+}
+
+
+/* ===== 3.0.0-alpha127 workflow shell ===== */
+.workflow-shell-jobtype{margin:18px 0 20px;padding:18px 18px 16px;border-radius:18px;background:linear-gradient(180deg,rgba(35,67,96,.08),rgba(35,67,96,.03));border:1px solid rgba(48,88,124,.14);display:grid;gap:14px;}
+.workflow-shell-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.workflow-shell-head h3{margin:4px 0 8px;}
+.workflow-shell-copy{margin:0;}
+.workflow-shell-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.workflow-jobtype-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;}
+.workflow-jobtype-card{appearance:none;border:1px solid rgba(57,101,141,.18);background:rgba(255,255,255,.86);border-radius:16px;padding:14px 14px 13px;text-align:left;display:grid;gap:6px;cursor:pointer;box-shadow:0 12px 28px rgba(16,27,39,.06);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;}
+.workflow-jobtype-card:hover{transform:translateY(-1px);border-color:rgba(57,101,141,.35);box-shadow:0 16px 30px rgba(16,27,39,.1);}
+.workflow-jobtype-card.active{border-color:rgba(27,94,32,.46);background:rgba(231,247,234,.95);box-shadow:0 0 0 2px rgba(27,94,32,.10) inset,0 16px 30px rgba(16,27,39,.12);}
+.workflow-jobtype-eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;font-weight:700;color:#4a667d;}
+.workflow-stage-roadmap,.workflow-phase-steps{display:flex;flex-wrap:wrap;gap:8px;}
+.workflow-roadmap-pill,.workflow-phase-step{display:inline-flex;align-items:center;gap:8px;padding:10px 12px;border-radius:999px;background:rgba(11,31,46,.07);color:#18354a;font-weight:700;font-size:.9rem;line-height:1.1;}
+.workflow-roadmap-pill.active,.workflow-phase-step.active{background:#16364b;color:#fff;}
+.workflow-phase-shell{margin:10px 0 16px;padding:16px 18px;border-radius:18px;border:1px solid rgba(57,101,141,.16);background:rgba(255,255,255,.82);display:grid;gap:12px;}
+.workflow-phase-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.workflow-phase-head h4{margin:4px 0 6px;}
+.workflow-phase-head p{margin:0;max-width:620px;color:#4b6174;}
+.workflow-phase-step small{font-size:.78rem;font-weight:600;opacity:.78;}
+[data-jobtype-only].jobtype-hidden{display:none !important;}
+.screen-nav .screen-tab[data-screen="card"]::after{content:"";}
+body.dark-mode .workflow-shell-jobtype{background:linear-gradient(180deg,rgba(70,112,156,.22),rgba(40,60,80,.16));border-color:rgba(110,155,201,.16);}
+body.dark-mode .workflow-jobtype-card{background:rgba(20,31,42,.92);border-color:rgba(120,152,186,.18);box-shadow:none;color:#e9f3fb;}
+body.dark-mode .workflow-jobtype-card.active{background:rgba(19,55,32,.56);border-color:rgba(88,168,106,.55);box-shadow:0 0 0 1px rgba(88,168,106,.22) inset;}
+body.dark-mode .workflow-jobtype-eyebrow{color:#9ab7cf;}
+body.dark-mode .workflow-roadmap-pill,body.dark-mode .workflow-phase-step{background:rgba(125,155,189,.14);color:#e7f1fa;}
+body.dark-mode .workflow-roadmap-pill.active,body.dark-mode .workflow-phase-step.active{background:#1f5f86;color:#fff;}
+body.dark-mode .workflow-phase-shell{background:rgba(17,24,33,.92);border-color:rgba(103,131,161,.18);}
+body.dark-mode .workflow-phase-head p{color:#9fb8cb;}
+@media (max-width: 720px){
+  .workflow-shell-jobtype{padding:14px;}
+  .workflow-shell-actions{width:100%;}
+  .workflow-shell-actions .secondary-btn{flex:1 1 160px;}
+  .workflow-jobtype-cards{grid-template-columns:1fr;}
+  .workflow-roadmap-pill,.workflow-phase-step{width:100%;justify-content:flex-start;border-radius:14px;}
 }

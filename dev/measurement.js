@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha126';
+const BUILD_VERSION = '3.0.0-alpha127';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha126', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha127', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4350,7 +4350,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha126';
+  const TC63_VERSION = '3.0.0-alpha127';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4592,7 +4592,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha126';
+  const VERSION = '3.0.0-alpha127';
 
   function tc65GetJobs() {
     try {
@@ -5374,7 +5374,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha127 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5526,7 +5526,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha127 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5724,7 +5724,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha127 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5868,7 +5868,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha127 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -6026,7 +6026,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha127 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6189,7 +6189,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha127 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6351,7 +6351,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha127 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6467,7 +6467,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha127 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6646,7 +6646,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha127 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6789,7 +6789,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha127 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6965,7 +6965,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha127 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7134,7 +7134,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha127 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7538,7 +7538,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha127 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7784,9 +7784,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha126 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha127 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha126';
+  const VERSION = '3.0.0-alpha127';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7897,7 +7897,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha127 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8094,7 +8094,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha127 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8232,7 +8232,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile current debug ===== */
+/* ===== 3.0.0-alpha127 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8330,7 +8330,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha127 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8439,7 +8439,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha127 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8514,7 +8514,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha127 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8570,7 +8570,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha126 mobile library screen ownership reset ===== */
+/* ===== 3.0.0-alpha127 mobile library screen ownership reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -8667,4 +8667,135 @@ window.addEventListener('load', async () => {
     initAuditToggles();
   }
   window.addEventListener('pageshow', initAuditToggles);
+})();
+
+
+/* ===== 3.0.0-alpha127 guided workflow shell ===== */
+(function(){
+  const JOB_TYPES = {
+    'Hot Tap': {
+      title: 'Hot Tap job roadmap',
+      copy: 'Keep it simple: set the job, confirm pipe and cutter, run the hot tap, then review ETA and output.',
+      shellTitle: 'Hot Tap job selected',
+      shellCopy: 'Only the Hot Tap workflow stays on screen so the crew does not have to sort through Line Stop or Plug fields.',
+      steps: ['1 Job Setup','2 Pipe / Cutter','3 Hot Tap','4 ETA / Review']
+    },
+    'Line Stop': {
+      title: 'Line Stop job roadmap',
+      copy: 'Run the full sequence in order: job setup, pipe and cutter, hot tap, line stop, completion plug, then review.',
+      shellTitle: 'Line Stop job selected',
+      shellCopy: 'This job shows the full path: Hot Tap, Line Stop, and Completion Plug, in one guided sequence.',
+      steps: ['1 Job Setup','2 Pipe / Cutter','3 Hot Tap','4 Line Stop','5 Completion Plug','6 ETA / Review']
+    }
+  };
+
+  function normalizeJobType(raw){
+    const value = String(raw || '').trim().toLowerCase();
+    if (value.includes('line stop') || value.includes('completion')) return 'Line Stop';
+    return 'Hot Tap';
+  }
+
+  function renderStepPills(targetId, steps){
+    const host = document.getElementById(targetId);
+    if (!host) return;
+    host.innerHTML = steps.map((label, index) => `<span class="${targetId === 'workflowStageRoadmap' ? 'workflow-roadmap-pill' : 'workflow-phase-step'} ${index===0 ? 'active' : ''}"><span>${label}</span>${targetId === 'workflowPhaseSteps' ? `<small>${index < steps.length - 1 ? 'Next' : 'Finish'}</small>` : ''}</span>`).join('');
+  }
+
+  function applyWorkflowShell(){
+    const select = document.getElementById('operationType');
+    if (!select) return;
+    const jobType = normalizeJobType(select.value);
+    if (select.value !== jobType) select.value = jobType;
+    const config = JOB_TYPES[jobType] || JOB_TYPES['Hot Tap'];
+    document.querySelectorAll('[data-jobtype-choice]').forEach((button) => {
+      button.classList.toggle('active', button.dataset.jobtypeChoice === jobType);
+      button.setAttribute('aria-pressed', button.dataset.jobtypeChoice === jobType ? 'true' : 'false');
+    });
+    const shellTitle = document.getElementById('workflowShellTitle');
+    const shellCopy = document.getElementById('workflowShellCopy');
+    const phaseTitle = document.getElementById('workflowPhaseTitle');
+    const phaseCopy = document.getElementById('workflowPhaseCopy');
+    if (shellTitle) shellTitle.textContent = config.shellTitle;
+    if (shellCopy) shellCopy.textContent = config.shellCopy;
+    if (phaseTitle) phaseTitle.textContent = config.title;
+    if (phaseCopy) phaseCopy.textContent = config.copy;
+    renderStepPills('workflowStageRoadmap', config.steps);
+    renderStepPills('workflowPhaseSteps', config.steps);
+
+    const isLineStop = jobType === 'Line Stop';
+    document.querySelectorAll('[data-jobtype-only="lineStop"]').forEach((el) => {
+      el.hidden = !isLineStop;
+      el.classList.toggle('jobtype-hidden', !isLineStop);
+    });
+    const stageStat = document.getElementById('cardStageStat');
+    if (stageStat && !isLineStop && /line stop|completion/i.test(stageStat.textContent || '')) stageStat.textContent = 'Hot Tap';
+    const focusOutputLabel = document.querySelector('.card-focus-stat span');
+    if (focusOutputLabel) focusOutputLabel.textContent = 'Stage';
+    const currentOperation = document.getElementById('currentOperationStat');
+    if (currentOperation) currentOperation.textContent = jobType;
+    const workflowMeta = document.getElementById('cardCurrentMeta');
+    if (workflowMeta) {
+      workflowMeta.textContent = isLineStop
+        ? 'Follow the full sequence: Job Setup, Pipe / Cutter, Hot Tap, Line Stop, Completion Plug, then review.'
+        : 'This job only needs Job Setup, Pipe / Cutter, Hot Tap, and review.';
+    }
+    const workflowJump = document.getElementById('cardJumpToInputsBtn');
+    if (workflowJump) workflowJump.textContent = isLineStop ? 'Jump to Active Stage' : 'Jump to Hot Tap Inputs';
+
+    const activeMode = document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
+    if (!isLineStop && (activeMode === 'lineStop' || activeMode === 'completionPlug')) {
+      try { if (typeof window.setMode === 'function') window.setMode('hotTap'); } catch {}
+    }
+  }
+
+  function bindJobTypeCards(){
+    document.querySelectorAll('[data-jobtype-choice]').forEach((button) => {
+      if (button.dataset.boundJobtypeChoice === 'true') return;
+      button.dataset.boundJobtypeChoice = 'true';
+      button.addEventListener('click', () => {
+        const select = document.getElementById('operationType');
+        if (!select) return;
+        select.value = button.dataset.jobtypeChoice || 'Hot Tap';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+        applyWorkflowShell();
+      });
+    });
+  }
+
+  bindJobTypeCards();
+  document.getElementById('operationType')?.addEventListener('change', applyWorkflowShell);
+  document.getElementById('operationType')?.addEventListener('input', applyWorkflowShell);
+  window.addEventListener('load', () => { setTimeout(applyWorkflowShell, 120); setTimeout(applyWorkflowShell, 500); });
+  window.addEventListener('pageshow', () => setTimeout(applyWorkflowShell, 120));
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('.screen-tab[data-screen], [data-go-screen]');
+    if (!tab) return;
+    setTimeout(applyWorkflowShell, 80);
+  }, true);
+
+  const originalLoader = window.loadRecordIntoCalculator;
+  if (typeof originalLoader === 'function' && !window.__alpha127WorkflowWrappedLoader) {
+    window.__alpha127WorkflowWrappedLoader = true;
+    window.loadRecordIntoCalculator = function(...args){
+      const result = originalLoader.apply(this, args);
+      setTimeout(applyWorkflowShell, 30);
+      setTimeout(applyWorkflowShell, 220);
+      return result;
+    };
+  }
+
+  const originalShow = window.showScreen;
+  if (typeof originalShow === 'function' && !window.__alpha127WorkflowWrappedShow) {
+    window.__alpha127WorkflowWrappedShow = true;
+    const wrappedShow = function(name, ...rest){
+      const result = originalShow.call(this, name, ...rest);
+      setTimeout(applyWorkflowShell, 30);
+      return result;
+    };
+    window.showScreen = wrappedShow;
+    try { showScreen = wrappedShow; } catch {}
+  }
+
+  setTimeout(applyWorkflowShell, 120);
 })();

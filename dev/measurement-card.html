@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha126">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha127">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha126 · 2026-04-08</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha127 · 2026-04-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha126 · 2026-04-08</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha127 · 2026-04-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -36,11 +36,11 @@
 
   <nav class="screen-nav" aria-label="Primary">
     <button type="button" class="screen-tab active" data-screen="home">Home</button>
-    <button type="button" class="screen-tab" data-screen="job">Current</button>
-    <button type="button" class="screen-tab" data-screen="calc">Calc</button>
-    <button type="button" class="screen-tab" data-screen="card">Card</button>
+    <button type="button" class="screen-tab" data-screen="job">Job</button>
+    <button type="button" class="screen-tab" data-screen="calc">Tools</button>
+    <button type="button" class="screen-tab" data-screen="card">Workflow</button>
     <button type="button" class="screen-tab" data-screen="jobs">Library</button>
-    <button type="button" class="screen-tab" data-screen="ref">Ref</button>
+    <button type="button" class="screen-tab" data-screen="ref">Reference</button>
   </nav>
 
   <section id="homeScreen" class="screen-view active">
@@ -52,7 +52,7 @@
       </div>
       <div class="hero-actions">
         <button type="button" class="secondary-btn" data-go-screen="job">New / Edit Job</button>
-        <button type="button" class="secondary-btn" data-go-screen="card">Open Card</button>
+        <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
       </div>
     </div>
 
@@ -64,7 +64,7 @@
           <p id="homeCurrentJobSubtitle">Set up a customer and location to get rolling.</p>
         </div>
         <div class="home-current-job-actions">
-          <button type="button" class="secondary-btn" data-go-screen="job">Open Current</button>
+          <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
           <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
         <button type="button" class="secondary-btn" id="cardJumpToInputsBtn">Jump to Inputs</button>
         </div>
@@ -93,11 +93,11 @@
       <span>The new shell with clear lanes</span>
     </div>
     <div class="dashboard-grid app-sections-grid">
-      <button type="button" class="dash-card" data-go-screen="job"><strong>Current</strong><span>Customer, location, machine, pipe setup</span></button>
-      <button type="button" class="dash-card" data-go-screen="calc"><strong>Calc</strong><span>BCO and ETA tools</span></button>
-      <button type="button" class="dash-card" data-go-screen="card"><strong>Card</strong><span>Hot Tap, Line Stop, and Completion Plug</span></button>
+      <button type="button" class="dash-card" data-go-screen="job"><strong>Job</strong><span>Set the job type, customer, machine, and notes</span></button>
+      <button type="button" class="dash-card" data-go-screen="calc"><strong>Tools</strong><span>BCO and ETA helpers that feed the workflow</span></button>
+      <button type="button" class="dash-card" data-go-screen="card"><strong>Workflow</strong><span>Follow the job steps in order</span></button>
       <button type="button" class="dash-card" data-go-screen="jobs"><strong>Library</strong><span>Local and shared job management</span></button>
-      <button type="button" class="dash-card" data-go-screen="ref"><strong>Ref</strong><span>Charts, glossary, lookup tools</span></button>
+      <button type="button" class="dash-card" data-go-screen="ref"><strong>Reference</strong><span>Charts, glossary, lookup tools</span></button>
       <button type="button" class="dash-card" data-go-screen="job"><strong>Continue Job</strong><span>Pick up where you left off</span></button>
     </div>
   </section>
@@ -106,33 +106,60 @@
 
     <section class="job-current-topbar">
       <div>
-        <div class="hero-eyebrow">Current Workspace</div>
+        <div class="hero-eyebrow">Job Setup</div>
         <h3>Fill out the active job here</h3>
-        <p>Enter the job basics first, then lock in machine and operation. Pipe geometry and cutter stay tied to Calc so the whole app reads from one place.</p>
+        <p>Start with the type of job you are running. TapCalc will only show the workflow steps that matter for that job.</p>
       </div>
       <div class="job-current-top-actions">
-        <button type="button" class="secondary-btn" data-go-screen="calc">Open Calc</button>
-        <button type="button" class="secondary-btn" data-go-screen="card">Open Card</button>
+        <button type="button" class="secondary-btn" data-go-screen="calc">Open Tools</button>
+        <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
       </div>
     </section>
 
     <section class="current-action-strip">
       <div class="current-action-copy">
         <span class="hero-eyebrow">Active Job Controls</span>
-        <strong>Everything you enter here drives Home, Card, and Library.</strong>
-        <span>Save locally anytime, then sync from here or in Library.</span>
+        <strong>Everything you enter here drives Workflow, Tools, and Library.</strong>
+        <span>Lock in the basics first, then move into Workflow when the job shell looks right.</span>
       </div>
       <div class="current-action-buttons">
         <button type="button" id="currentSaveLocalBtn" class="secondary-btn">Save Local</button>
         <button type="button" id="currentSyncSharedBtn" class="secondary-btn">Sync Shared</button>
-        <button type="button" id="currentResetBtn" class="secondary-btn danger-btn">Reset Current</button>
+        <button type="button" id="currentResetBtn" class="secondary-btn danger-btn">Reset Job</button>
       </div>
+    </section>
+
+    <section class="workflow-shell workflow-shell-jobtype" id="workflowShell">
+      <div class="workflow-shell-head">
+        <div>
+          <div class="hero-eyebrow">Guided Workflow</div>
+          <h3 id="workflowShellTitle">Pick the kind of job first</h3>
+          <p id="workflowShellCopy">TapCalc will only show the workflow stages that apply to the job you picked.</p>
+        </div>
+        <div class="workflow-shell-actions">
+          <button type="button" class="secondary-btn" data-go-screen="card">Start Workflow</button>
+          <button type="button" class="secondary-btn" data-go-screen="jobs">Load Saved Job</button>
+        </div>
+      </div>
+      <div class="workflow-jobtype-cards" role="group" aria-label="Job type quick picks">
+        <button type="button" class="workflow-jobtype-card active" data-jobtype-choice="Hot Tap">
+          <span class="workflow-jobtype-eyebrow">Simple path</span>
+          <strong>Hot Tap</strong>
+          <span>Only show Setup, Pipe / Cutter, Hot Tap, and review steps.</span>
+        </button>
+        <button type="button" class="workflow-jobtype-card" data-jobtype-choice="Line Stop">
+          <span class="workflow-jobtype-eyebrow">Full path</span>
+          <strong>Line Stop</strong>
+          <span>Show Hot Tap, Line Stop, and Completion Plug in one guided sequence.</span>
+        </button>
+      </div>
+      <div id="workflowStageRoadmap" class="workflow-stage-roadmap" aria-live="polite"></div>
     </section>
 
     <section class="section job-info-section job-info-section-v3" id="jobInfoSection">
       <div class="job-info-header">
         <div class="job-info-heading">
-          <h3>Current Job Setup</h3>
+          <h3>Job Setup</h3>
           <button type="button" id="jobInfoToggleBtn" class="secondary-btn job-info-toggle-btn" aria-expanded="true">Collapse</button>
         </div>
         <div class="job-info-summary" id="jobInfoSummary">No job info yet.</div>
@@ -147,7 +174,7 @@
           <section class="job-form-card">
             <div class="job-form-card-head">
               <h4>Job Basics</h4>
-              <span>Who, where, and what</span>
+              <span>Who, where, and what job you are running</span>
             </div>
             <div class="job-info-grid job-info-grid-primary">
               <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
@@ -161,15 +188,14 @@
           <section class="job-form-card job-form-card-secondary">
             <div class="job-form-card-head">
               <h4>Field Details</h4>
-              <span>Setup, product, and notes</span>
+              <span>Choose the job type, machine, and field notes</span>
             </div>
             <div class="job-info-grid job-info-grid-secondary">
               <div class="row"><label>Machine</label><input id="machineType" type="text" placeholder="Machine type"></div>
-              <div class="row"><label>Operation</label>
+              <div class="row"><label>Job Type</label>
                 <select id="operationType">
                   <option value="Hot Tap">Hot Tap</option>
                   <option value="Line Stop">Line Stop</option>
-                  <option value="Completion Plug">Completion Plug</option>
                 </select>
               </div>
               <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
@@ -178,8 +204,8 @@
               <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="4" placeholder="Notes"></textarea></div>
             </div>
             <div class="job-jump-actions">
-              <button type="button" class="secondary-btn" data-go-screen="calc">Pipe / Cutter in Calc</button>
-              <button type="button" class="secondary-btn" data-go-screen="card">Go to Card</button>
+              <button type="button" class="secondary-btn" data-go-screen="calc">Pipe / Cutter in Tools</button>
+              <button type="button" class="secondary-btn" data-go-screen="card">Go to Workflow</button>
             </div>
           </section>
         </div>
@@ -188,7 +214,7 @@
 
     <section class="current-live-shell current-live-shell-below">
       <article class="current-live-card">
-        <div class="hero-eyebrow">Current Snapshot</div>
+        <div class="hero-eyebrow">Job Snapshot</div>
         <h4 id="currentSnapshotTitle">No active job</h4>
         <p id="currentSnapshotMeta">Start with customer and location, then add machine and pipe setup.</p>
         <div class="current-live-grid">
@@ -204,20 +230,20 @@
       </article>
       <article class="current-live-card current-live-card-secondary">
         <div class="hero-eyebrow">Geometry Status</div>
-        <p>Pipe and cutter are driven from <strong>Calc → BCO</strong> so results stay synced everywhere.</p>
+        <p>Pipe and cutter are driven from <strong>Tools → BCO</strong> so the workflow stays synced everywhere.</p>
         <div class="current-setup-grid">
           <div class="current-live-stat"><span>Pipe Setup</span><strong id="currentPipeSetup">—</strong></div>
           <div class="current-live-stat"><span>Cutter</span><strong id="currentCutterSetup">—</strong></div>
         </div>
         <div class="job-jump-actions">
-          <button type="button" class="secondary-btn" data-go-screen="calc">Open BCO Setup</button>
+          <button type="button" class="secondary-btn" data-go-screen="calc">Open Pipe / Cutter Tools</button>
         </div>
       </article>
     </section>
 
     <div class="utility-bar">
-      <button type="button" id="saveHistoryBtn" class="secondary-btn">Save Job to History</button>
-      <button type="button" id="resetJobBtn" class="secondary-btn danger-btn">Reset Current Job</button>
+      <button type="button" id="saveHistoryBtn" class="secondary-btn">Save Job</button>
+      <button type="button" id="resetJobBtn" class="secondary-btn danger-btn">Reset Job</button>
     </div>
 
   </section>
@@ -225,9 +251,9 @@
   <section id="calcScreen" class="screen-view">
   <section class="screen-intro-card calc-screen-intro">
     <div>
-      <div class="hero-eyebrow">Calc Workspace</div>
-      <h3>Quick tools for field math</h3>
-      <p>Keep BCO and ETA compact here so you can punch numbers fast without digging through the measurement card.</p>
+      <div class="hero-eyebrow">Toolbox</div>
+      <h3>Pipe, cutter, BCO, and ETA tools</h3>
+      <p>Use these tools to set pipe geometry, calculate BCO, and check ETA without losing your place in the workflow.</p>
     </div>
     <div class="screen-intro-stats">
       <div class="screen-intro-stat"><span>Current BCO</span><strong id="calcCurrentBco">—</strong></div>
@@ -340,9 +366,9 @@
   <section id="cardScreen" class="screen-view">
   <section class="screen-intro-card card-screen-intro">
     <div>
-      <div class="hero-eyebrow">Measurement Card</div>
-      <h3>Run the operation in order</h3>
-      <p>Use this like a guided field worksheet: set the job, confirm geometry, run the cut, then move into stop or plug work only when needed.</p>
+      <div class="hero-eyebrow">Workflow</div>
+      <h3>Run the job one step at a time</h3>
+      <p>Only the stages that match the selected job type stay on screen. Hot Tap jobs stay simple; Line Stop jobs open the full sequence.</p>
     </div>
     <div class="screen-intro-stats">
       <div class="screen-intro-stat"><span>Current Job</span><strong id="cardCurrentJob">No active job</strong></div>
@@ -351,24 +377,34 @@
     </div>
     <p id="cardCurrentMeta" class="screen-intro-meta">Fill out Current, then use Calc → BCO. The checklist below will call out what is still missing.</p>
   </section>
+  <section class="workflow-phase-shell">
+    <div class="workflow-phase-head">
+      <div>
+        <div class="hero-eyebrow">Workflow Roadmap</div>
+        <h4 id="workflowPhaseTitle">Hot Tap job roadmap</h4>
+      </div>
+      <p id="workflowPhaseCopy">Start with Job Setup and Pipe / Cutter, then run only the stages that apply to this job.</p>
+    </div>
+    <div id="workflowPhaseSteps" class="workflow-phase-steps" aria-live="polite"></div>
+  </section>
   <section class="workflow-strip card-workflow-strip">
     <article class="workflow-card active" data-workflow-target="hotTap">
       <span class="workflow-step">1</span>
       <div><strong>Hot Tap</strong><span>Start the cut and rod math here.</span></div><span class="workflow-status" id="workflowStatusHotTap">Not Ready</span>
     </article>
-    <article class="workflow-card" data-workflow-target="lineStop">
+    <article class="workflow-card" data-workflow-target="lineStop" data-jobtype-only="lineStop">
       <span class="workflow-step">3</span>
       <div><strong>Line Stop</strong><span>Lower-in, turns, and valve positioning.</span></div><span class="workflow-status" id="workflowStatusLineStop">Not Ready</span>
     </article>
-    <article class="workflow-card" data-workflow-target="completionPlug">
+    <article class="workflow-card" data-workflow-target="completionPlug" data-jobtype-only="lineStop">
       <span class="workflow-step">4</span>
       <div><strong>Completion Plug</strong><span>Finish-out dimensions and checks.</span></div><span class="workflow-status" id="workflowStatusCompletionPlug">Not Ready</span>
     </article>
   </section>
   <div class="card-subnav">
     <button type="button" class="submode-btn active" data-mode="hotTap">Hot Tap</button>
-    <button type="button" class="submode-btn" data-mode="lineStop">Line Stop</button>
-    <button type="button" class="submode-btn" data-mode="completionPlug">Completion Plug</button>
+    <button type="button" class="submode-btn" data-mode="lineStop" data-jobtype-only="lineStop">Line Stop</button>
+    <button type="button" class="submode-btn" data-mode="completionPlug" data-jobtype-only="lineStop">Completion Plug</button>
   </div>
   <section class="card-focus-shell">
     <div class="card-focus-head">
@@ -378,8 +414,8 @@
         <p id="cardFocusDesc">Set MD, LD, and PTC first, then verify LI, BCO, and on-rod values before moving forward.</p>
       </div>
       <div class="card-focus-actions">
-        <button type="button" class="secondary-btn" data-go-screen="calc">Open Calc</button>
-        <button type="button" class="secondary-btn" data-go-screen="job">Open Current</button>
+        <button type="button" class="secondary-btn" data-go-screen="calc">Open Tools</button>
+        <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
         <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
         <button type="button" class="secondary-btn" id="cardJumpToInputsBtn">Jump to Inputs</button>
       </div>
@@ -446,7 +482,7 @@
     </div>
   </section>
 
-  <section id="lineStopPanel" class="mode-panel">
+  <section id="lineStopPanel" class="mode-panel" data-jobtype-only="lineStop">
     <div class="measurement-grid">
       <div class="section">
         <h3>Line Stop</h3>
@@ -486,7 +522,7 @@
     </div>
   </section>
 
-  <section id="completionPlugPanel" class="mode-panel">
+  <section id="completionPlugPanel" class="mode-panel" data-jobtype-only="lineStop">
     <div class="measurement-grid">
       <div class="section">
         <h3>Completion Plug</h3>
@@ -519,7 +555,7 @@
   <section id="refScreen" class="screen-view">
   <section class="ref-screen-topbar">
     <div>
-      <div class="hero-eyebrow">Reference Workspace</div>
+      <div class="hero-eyebrow">Reference Toolbox</div>
       <h3>Lookup charts and field helpers fast</h3>
       <p>Pick a category and keep the right chart in front of you instead of hunting through a long page.</p>
     </div>
@@ -793,7 +829,7 @@
 <section id="jobsScreen" class="screen-view">
   <section class="jobs-screen-topbar">
     <div>
-      <div class="hero-eyebrow">Library Workspace</div>
+      <div class="hero-eyebrow">Job Library</div>
       <h3>Manage saved and shared work</h3>
       <p>Keep the current job in view, then jump between local saves and shared results without a long scroll.</p>
     </div>
@@ -811,8 +847,8 @@
       <strong id="jobsCurrentTitle">No active job yet</strong>
       <span id="jobsCurrentMeta" class="jobs-mini-note">Start a job in the Current screen, then save locally or sync to shared.</span>
       <div class="jobs-current-actions">
-        <button type="button" class="secondary-btn" data-go-screen="job">Open Current</button>
-        <button type="button" class="secondary-btn" data-go-screen="card">Open Card</button>
+        <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
+        <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
         <button type="button" id="syncJobsBtnClone">Sync Shared</button>
       </div>
     </article>
@@ -847,9 +883,9 @@
         </div>
 
         <div class="jobs-actions jobs-actions-compact">
-          <button type="button" id="saveHistoryBtnClone" class="secondary-btn">Save Current</button>
-          <button type="button" class="secondary-btn" data-go-screen="job">Edit Current</button>
-          <button type="button" class="secondary-btn" data-go-screen="calc">Go to Calc</button>
+          <button type="button" id="saveHistoryBtnClone" class="secondary-btn">Save Job</button>
+          <button type="button" class="secondary-btn" data-go-screen="job">Edit Job</button>
+          <button type="button" class="secondary-btn" data-go-screen="calc">Go to Tools</button>
         </div>
 
         <div class="jobs-status-grid jobs-status-grid-local">
@@ -938,8 +974,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha126"></script>
-<script src="measurement.js?v=3.0.0-alpha126"></script>
+<script src="firebase-config.js?v=3.0.0-alpha127"></script>
+<script src="measurement.js?v=3.0.0-alpha127"></script>
   </section>
 </body>
 </html>
