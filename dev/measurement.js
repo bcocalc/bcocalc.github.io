@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha136';
+const BUILD_VERSION = '3.0.0-alpha137';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha136', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha137', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2057,9 +2057,46 @@ function restoreCurrentJob() {
   } catch {}
 }
 
+
+function sanitizeLoadedJobState(state) {
+  const next = { ...(state || {}) };
+  const allowedModes = new Set(['bco','eta','hotTap','lineStop','completionPlug']);
+  if (!allowedModes.has(String(next.activeMode || ''))) {
+    delete next.activeMode;
+  }
+  if (!next.activeMode) {
+    const op = String(next.operationType || '').toLowerCase();
+    next.activeMode = op === 'linestop' ? 'hotTap' : 'hotTap';
+  }
+  return next;
+}
+
 function loadRecordIntoCalculator(record, options = {}) {
-  const state = buildStateFromRecord(record);
+  const state = sanitizeLoadedJobState(buildStateFromRecord(record));
   if (!state || !Object.keys(state).length) return;
+  try {
+    localStorage.setItem('tapcalcV3Screen', 'job');
+    localStorage.setItem('tapcalcLibraryLaneV1', 'local');
+    document.body.dataset.activeScreen = 'job';
+  } catch {}
+  try {
+    document.querySelectorAll('.screen-panel').forEach(panel => {
+      if (panel.id === 'jobScreen') panel.classList.add('active');
+      else panel.classList.remove('active');
+      panel.style.pointerEvents = panel.id === 'jobScreen' ? 'auto' : 'none';
+    });
+  } catch {}
+  try {
+    const jobsScreenEl = document.getElementById('jobsScreen');
+    if (jobsScreenEl) {
+      jobsScreenEl.classList.remove('active');
+      jobsScreenEl.style.pointerEvents = 'none';
+      jobsScreenEl.style.zIndex = '0';
+      jobsScreenEl.dataset.activeLane = 'local';
+    }
+    const jobsPanelEl = document.getElementById('jobsPanel');
+    if (jobsPanelEl) jobsPanelEl.classList.remove('active');
+  } catch {}
   applyJobState(state);
 
   const directMap = {
@@ -2131,13 +2168,23 @@ function loadRecordIntoCalculator(record, options = {}) {
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
   }
-  const targetMode = state?.activeMode || 'hotTap';
+  const targetMode = ['bco','eta','hotTap','lineStop','completionPlug'].includes(String(state?.activeMode || '')) ? state.activeMode : 'hotTap';
   if (targetMode) setMode(targetMode);
   try {
     const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
     jobTab?.click();
+    setTimeout(() => {
+      document.body.dataset.activeScreen = 'job';
+      const jobScreen = document.getElementById('jobScreen');
+      if (jobScreen) { jobScreen.classList.add('active'); jobScreen.style.pointerEvents = 'auto'; }
+      const jobsScreenEl = document.getElementById('jobsScreen');
+      if (jobsScreenEl) { jobsScreenEl.classList.remove('active'); jobsScreenEl.style.pointerEvents = 'none'; jobsScreenEl.style.zIndex = '0'; }
+      const jobsPanelEl = document.getElementById('jobsPanel');
+      if (jobsPanelEl) jobsPanelEl.classList.remove('active');
+    }, 40);
   } catch {}
 }
+
 
 
 function getHistory() {
@@ -4373,7 +4420,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha136';
+  const TC63_VERSION = '3.0.0-alpha137';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4615,7 +4662,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha136';
+  const VERSION = '3.0.0-alpha137';
 
   function tc65GetJobs() {
     try {
@@ -7809,7 +7856,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha136';
+  const VERSION = '3.0.0-alpha137';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -9186,7 +9233,7 @@ window.addEventListener('load', async () => {
   }, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha136 final screen/nav ownership fix ===== */
+/* ===== 3.0.0-alpha137 final screen/nav ownership fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
