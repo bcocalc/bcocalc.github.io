@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha127';
+const BUILD_VERSION = '3.0.0-alpha128';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha127', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha128', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4350,7 +4350,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha127';
+  const TC63_VERSION = '3.0.0-alpha128';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4592,7 +4592,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha127';
+  const VERSION = '3.0.0-alpha128';
 
   function tc65GetJobs() {
     try {
@@ -5374,7 +5374,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha128 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5526,7 +5526,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha128 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5724,7 +5724,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha128 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5868,7 +5868,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha128 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -6026,7 +6026,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha128 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6189,7 +6189,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha128 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6351,7 +6351,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha128 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6467,7 +6467,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha128 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6646,7 +6646,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha128 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6789,7 +6789,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha128 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6965,7 +6965,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha128 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7134,7 +7134,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha128 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7538,7 +7538,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha128 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7784,9 +7784,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha127 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha128 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha127';
+  const VERSION = '3.0.0-alpha128';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7897,7 +7897,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha128 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8094,7 +8094,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha128 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8232,7 +8232,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile current debug ===== */
+/* ===== 3.0.0-alpha128 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8330,7 +8330,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha128 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8439,7 +8439,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha128 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8514,7 +8514,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha128 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8570,7 +8570,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 mobile library screen ownership reset ===== */
+/* ===== 3.0.0-alpha128 mobile library screen ownership reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -8670,7 +8670,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha127 guided workflow shell ===== */
+/* ===== 3.0.0-alpha128 guided workflow shell ===== */
 (function(){
   const JOB_TYPES = {
     'Hot Tap': {
@@ -8775,8 +8775,8 @@ window.addEventListener('load', async () => {
   }, true);
 
   const originalLoader = window.loadRecordIntoCalculator;
-  if (typeof originalLoader === 'function' && !window.__alpha127WorkflowWrappedLoader) {
-    window.__alpha127WorkflowWrappedLoader = true;
+  if (typeof originalLoader === 'function' && !window.__alpha128WorkflowWrappedLoader) {
+    window.__alpha128WorkflowWrappedLoader = true;
     window.loadRecordIntoCalculator = function(...args){
       const result = originalLoader.apply(this, args);
       setTimeout(applyWorkflowShell, 30);
@@ -8786,8 +8786,8 @@ window.addEventListener('load', async () => {
   }
 
   const originalShow = window.showScreen;
-  if (typeof originalShow === 'function' && !window.__alpha127WorkflowWrappedShow) {
-    window.__alpha127WorkflowWrappedShow = true;
+  if (typeof originalShow === 'function' && !window.__alpha128WorkflowWrappedShow) {
+    window.__alpha128WorkflowWrappedShow = true;
     const wrappedShow = function(name, ...rest){
       const result = originalShow.call(this, name, ...rest);
       setTimeout(applyWorkflowShell, 30);
@@ -8798,4 +8798,241 @@ window.addEventListener('load', async () => {
   }
 
   setTimeout(applyWorkflowShell, 120);
+})();
+
+/* ===== 3.0.0-alpha128 guided workflow stage flow ===== */
+(function(){
+  const STORAGE_KEY = 'tapcalcWorkflowStageV2';
+  const MODE_STAGES = new Set(['hotTap','lineStop','completionPlug']);
+  const PANEL_FOR_STAGE = {
+    hotTap: 'hotTapPanel',
+    lineStop: 'lineStopPanel',
+    completionPlug: 'completionPlugPanel'
+  };
+  const STAGE_META = {
+    setup: {
+      title: 'Step 1 · Job Setup',
+      lead: 'Confirm who, where, and what kind of job this is before you jump into measurements.',
+      short: 'Job Setup',
+      eyebrow: 'Step 1',
+      copy: 'Start with the basics so the workflow can guide the rest of the job.'
+    },
+    pipe: {
+      title: 'Step 2 · Pipe / Cutter Setup',
+      lead: 'Lock in pipe geometry, cutter size, and BCO first so the stage math has the right numbers to work from.',
+      short: 'Pipe / Cutter',
+      eyebrow: 'Step 2',
+      copy: 'Use Tools → BCO, then come right back here.'
+    },
+    hotTap: {
+      title: 'Step 3 · Hot Tap',
+      lead: 'Enter the hot tap measurements here and verify the output before moving forward.',
+      short: 'Hot Tap',
+      eyebrow: 'Step 3',
+      copy: 'This is the first active calculation stage.'
+    },
+    lineStop: {
+      title: 'Step 4 · Line Stop',
+      lead: 'Now calculate lower-in, travel margin, and stop-specific checks.',
+      short: 'Line Stop',
+      eyebrow: 'Step 4',
+      copy: 'Only appears on Line Stop jobs.'
+    },
+    completionPlug: {
+      title: 'Step 5 · Completion Plug',
+      lead: 'Finish the job with the plug measurements and completion checks.',
+      short: 'Completion Plug',
+      eyebrow: 'Step 5',
+      copy: 'Only appears on Line Stop jobs.'
+    },
+    review: {
+      title: 'Final Step · Review & Save',
+      lead: 'Check stage status, confirm BCO and ETA, then save or sync the job.',
+      short: 'Review',
+      eyebrow: 'Final Step',
+      copy: 'Wrap everything up before you send the crew out.'
+    }
+  };
+
+  function normalizeJobType(raw){
+    const value = String(raw || '').trim().toLowerCase();
+    return value.includes('line stop') || value.includes('completion') ? 'Line Stop' : 'Hot Tap';
+  }
+  function getJobType(){ return normalizeJobType(document.getElementById('operationType')?.value || 'Hot Tap'); }
+  function getStages(){
+    return getJobType() === 'Line Stop'
+      ? ['setup','pipe','hotTap','lineStop','completionPlug','review']
+      : ['setup','pipe','hotTap','review'];
+  }
+  function stageStatusText(stage){
+    const map = {
+      hotTap: document.getElementById('workflowStatusHotTap')?.textContent?.trim() || 'Not Ready',
+      lineStop: document.getElementById('workflowStatusLineStop')?.textContent?.trim() || 'Not Ready',
+      completionPlug: document.getElementById('workflowStatusCompletionPlug')?.textContent?.trim() || 'Not Ready'
+    };
+    if (map[stage]) return map[stage];
+    if (stage === 'setup') {
+      const customer = document.getElementById('jobClient')?.value?.trim();
+      const location = document.getElementById('jobLocation')?.value?.trim();
+      const machine = document.getElementById('machineType')?.value?.trim();
+      return customer && location && machine ? 'Ready' : ((customer || location || machine) ? 'In Progress' : 'Waiting');
+    }
+    if (stage === 'pipe') {
+      const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || '—';
+      const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || '—';
+      const bco = document.getElementById('summaryBco')?.textContent?.trim() || '—';
+      return pipe !== '—' && cutter !== '—' && bco !== '—' ? 'Ready' : ((pipe !== '—' || cutter !== '—' || bco !== '—') ? 'In Progress' : 'Waiting');
+    }
+    if (stage === 'review') {
+      return getStages().filter(s => MODE_STAGES.has(s)).every(s => stageStatusText(s) === 'Ready') ? 'Ready' : 'Review';
+    }
+    return 'Waiting';
+  }
+  function activeStage(){
+    const stages = getStages();
+    let stage = window.__tapCalcWorkflowStage || '';
+    if (!stage) {
+      try { stage = localStorage.getItem(STORAGE_KEY) || ''; } catch {}
+    }
+    return stages.includes(stage) ? stage : stages[0];
+  }
+  function setPhaseStepActive(index){
+    ['workflowPhaseSteps','workflowStageRoadmap'].forEach((id)=>{
+      const host = document.getElementById(id);
+      if (!host) return;
+      [...host.children].forEach((child, childIndex)=>child.classList.toggle('active', childIndex === index));
+    });
+  }
+  function renderStageNav(current){
+    const stages = getStages();
+    const nav = document.getElementById('workflowStageNav');
+    if (!nav) return;
+    nav.innerHTML = stages.map((stage, index)=>{
+      const meta = STAGE_META[stage] || { short: stage, eyebrow: `Step ${index+1}`, copy: '' };
+      const status = stageStatusText(stage);
+      return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}"><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${status}</em></button>`;
+    }).join('');
+    nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
+  }
+  function updateHelperSummaries(){
+    const customer = document.getElementById('jobClient')?.value?.trim() || '—';
+    const location = document.getElementById('jobLocation')?.value?.trim() || '—';
+    const machine = document.getElementById('machineType')?.value?.trim() || '—';
+    const jobType = getJobType();
+    const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || '—';
+    const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || '—';
+    const bco = document.getElementById('summaryBco')?.textContent?.trim() || '—';
+    const eta = document.getElementById('etaRangeDisplay')?.textContent?.trim() || '—';
+    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
+    setText('workflowSetupCustomer', customer);
+    setText('workflowSetupLocation', location);
+    setText('workflowSetupMachine', machine);
+    setText('workflowSetupType', jobType);
+    setText('workflowPipeSummary', pipe);
+    setText('workflowCutterSummary', cutter);
+    setText('workflowBcoSummary', bco);
+    setText('workflowPipeStatus', bco !== '—' ? 'Ready' : ((pipe !== '—' || cutter !== '—') ? 'In Progress' : 'Waiting on BCO'));
+    setText('workflowReviewBco', bco);
+    setText('workflowReviewEta', eta);
+    setText('workflowReviewHotTap', stageStatusText('hotTap'));
+    setText('workflowReviewLineStop', stageStatusText('lineStop'));
+    setText('workflowReviewCompletionPlug', stageStatusText('completionPlug'));
+    const setupNote = document.getElementById('workflowSetupNote');
+    if (setupNote) setupNote.textContent = (customer !== '—' && location !== '—' && machine !== '—')
+      ? 'Setup is ready. Move on to pipe and cutter so the job math has a solid base.'
+      : 'Add the basics on the Job screen, then come back here to keep moving.';
+    const pipeNote = document.getElementById('workflowPipeNote');
+    if (pipeNote) pipeNote.textContent = bco !== '—'
+      ? 'BCO is ready. The active workflow stages can use that number now.'
+      : 'Once BCO is calculated, the workflow can carry that number into the stages that need it.';
+    const reviewNote = document.getElementById('workflowReviewNote');
+    if (reviewNote) {
+      const modeStages = getStages().filter((stage)=>MODE_STAGES.has(stage));
+      const readyCount = modeStages.filter((stage)=>stageStatusText(stage) === 'Ready').length;
+      reviewNote.textContent = readyCount === modeStages.length
+        ? 'All active stages are reading Ready. Save locally or sync the job when you are done.'
+        : `You have ${readyCount} of ${modeStages.length} active stages reading Ready. Use the status chips above to see what still needs attention.`;
+    }
+  }
+  function setWorkflowStage(stage, opts={}){
+    const stages = getStages();
+    const nextStage = stages.includes(stage) ? stage : stages[0];
+    window.__tapCalcWorkflowStage = nextStage;
+    try { localStorage.setItem(STORAGE_KEY, nextStage); } catch {}
+    const meta = STAGE_META[nextStage] || STAGE_META.setup;
+    const index = stages.indexOf(nextStage);
+    const title = document.getElementById('workflowStageTitle');
+    const lead = document.getElementById('workflowStageLead');
+    if (title) title.textContent = meta.title;
+    if (lead) lead.textContent = meta.lead;
+    renderStageNav(nextStage);
+    setPhaseStepActive(index);
+    updateHelperSummaries();
+
+    const helperPanels = document.querySelectorAll('[data-workflow-stage-panel]');
+    helperPanels.forEach((panel)=>panel.classList.toggle('active', panel.dataset.workflowStagePanel === nextStage));
+
+    const modeShellEls = [
+      document.querySelector('.card-workflow-strip'),
+      document.querySelector('.card-subnav'),
+      document.querySelector('.card-focus-shell')
+    ].filter(Boolean);
+    const isModeStage = MODE_STAGES.has(nextStage);
+    modeShellEls.forEach((el)=>el.classList.toggle('workflow-mode-shell-hidden', !isModeStage));
+
+    const prevBtn = document.getElementById('workflowPrevBtn');
+    const nextBtn = document.getElementById('workflowNextBtn');
+    if (prevBtn) {
+      prevBtn.disabled = index === 0;
+      prevBtn.textContent = index === 0 ? 'Start' : 'Back';
+    }
+    if (nextBtn) {
+      nextBtn.disabled = index === stages.length - 1;
+      nextBtn.textContent = index === stages.length - 1 ? 'Reviewing' : `Next: ${(STAGE_META[stages[index + 1]] || {}).short || 'Next Step'}`;
+    }
+
+    document.querySelectorAll('.mode-panel').forEach((panel)=>panel.classList.toggle('workflow-mode-shell-hidden', !isModeStage));
+    if (isModeStage && typeof window.setMode === 'function' && !opts.skipSetMode) {
+      try { window.setMode(nextStage); } catch {}
+    }
+  }
+
+  function jumpBy(delta){
+    const stages = getStages();
+    const current = activeStage();
+    const index = stages.indexOf(current);
+    const target = stages[Math.max(0, Math.min(stages.length - 1, index + delta))];
+    setWorkflowStage(target);
+  }
+
+  document.getElementById('workflowPrevBtn')?.addEventListener('click', ()=>jumpBy(-1));
+  document.getElementById('workflowNextBtn')?.addEventListener('click', ()=>jumpBy(1));
+  document.getElementById('workflowSetupNextBtn')?.addEventListener('click', ()=>setWorkflowStage('pipe'));
+  document.getElementById('workflowPipeNextBtn')?.addEventListener('click', ()=>setWorkflowStage('hotTap'));
+
+  document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.addEventListener('click', ()=>setWorkflowStage(card.dataset.workflowTarget || 'hotTap', { skipSetMode:false })));
+  document.querySelectorAll('.submode-btn[data-mode]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.mode || 'hotTap', { skipSetMode:true })));
+  document.getElementById('operationType')?.addEventListener('change', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 60));
+  document.getElementById('operationType')?.addEventListener('input', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 60));
+
+  const currentSyncIds = ['jobClient','jobLocation','machineType','summaryPipe','summaryCutter','summaryBco','workflowStatusHotTap','workflowStatusLineStop','workflowStatusCompletionPlug','etaRangeDisplay'];
+  currentSyncIds.forEach((id)=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    const evt = ('value' in el) ? 'input' : 'change';
+    el.addEventListener(evt, ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNav(activeStage()); }, 20));
+  });
+  document.querySelectorAll('input, select, textarea').forEach((el)=>{
+    el.addEventListener('input', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNav(activeStage()); }, 40));
+    el.addEventListener('change', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNav(activeStage()); }, 40));
+  });
+
+  window.addEventListener('load', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 160));
+  window.addEventListener('pageshow', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 120));
+  document.addEventListener('click', (event)=>{
+    const gotoCard = event.target.closest('[data-go-screen="card"]');
+    if (!gotoCard) return;
+    setTimeout(()=>setWorkflowStage(activeStage()), 120);
+  }, true);
+  window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
