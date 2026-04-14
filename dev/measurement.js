@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha131';
+const BUILD_VERSION = '3.0.0-alpha132';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha131', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha132', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4350,7 +4350,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha131';
+  const TC63_VERSION = '3.0.0-alpha132';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4592,7 +4592,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha131';
+  const VERSION = '3.0.0-alpha132';
 
   function tc65GetJobs() {
     try {
@@ -5374,7 +5374,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 load job exact-record bind + mobile library hard exit ===== */
+/* ===== 3.0.0-alpha132 load job exact-record bind + mobile library hard exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5526,7 +5526,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 library selection/load stabilization ===== */
+/* ===== 3.0.0-alpha132 library selection/load stabilization ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -5724,7 +5724,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile load job direct detail bind ===== */
+/* ===== 3.0.0-alpha132 mobile load job direct detail bind ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -5868,7 +5868,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile load job touchstart fix ===== */
+/* ===== 3.0.0-alpha132 mobile load job touchstart fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isCompact(){
@@ -6026,7 +6026,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile library viewport + direct load button fix ===== */
+/* ===== 3.0.0-alpha132 mobile library viewport + direct load button fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function compact(){
@@ -6189,7 +6189,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile library visible-detail load fix ===== */
+/* ===== 3.0.0-alpha132 mobile library visible-detail load fix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6351,7 +6351,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile load job exact detail record ===== */
+/* ===== 3.0.0-alpha132 mobile load job exact detail record ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6467,7 +6467,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile load job single-bind + delayed hydrate ===== */
+/* ===== 3.0.0-alpha132 mobile load job single-bind + delayed hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6646,7 +6646,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile load job use canonical desktop loader ===== */
+/* ===== 3.0.0-alpha132 mobile load job use canonical desktop loader ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -6789,7 +6789,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile load job post-tab force hydrate ===== */
+/* ===== 3.0.0-alpha132 mobile load job post-tab force hydrate ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -6965,7 +6965,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile load job post-hydrate exit ===== */
+/* ===== 3.0.0-alpha132 mobile load job post-hydrate exit ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -7134,7 +7134,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile visible-record hardfix ===== */
+/* ===== 3.0.0-alpha132 mobile visible-record hardfix ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   function isMobile(){
@@ -7538,7 +7538,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 canonical final library/load reset ===== */
+/* ===== 3.0.0-alpha132 canonical final library/load reset ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const isCompact = () => {
@@ -7784,9 +7784,9 @@ window.addEventListener('load', async () => {
 
 
 
-/* ===== 3.0.0-alpha131 mobile pending hydrate + library layout fix ===== */
+/* ===== 3.0.0-alpha132 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha131';
+  const VERSION = '3.0.0-alpha132';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -7897,7 +7897,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile direct library load final override ===== */
+/* ===== 3.0.0-alpha132 mobile direct library load final override ===== */
 (() => {
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8094,7 +8094,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile current hydrate bridge ===== */
+/* ===== 3.0.0-alpha132 mobile current hydrate bridge ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8232,7 +8232,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile current debug ===== */
+/* ===== 3.0.0-alpha132 mobile current debug ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
@@ -8330,7 +8330,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile unique-button canonical load ===== */
+/* ===== 3.0.0-alpha132 mobile unique-button canonical load ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
@@ -8439,7 +8439,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile canonical desktop loader bind ===== */
+/* ===== 3.0.0-alpha132 mobile canonical desktop loader bind ===== */
 (function(){
   const MOBILE_MEDIA='(max-width: 820px)';
   const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
@@ -8514,7 +8514,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile library overlay/nav isolation ===== */
+/* ===== 3.0.0-alpha132 mobile library overlay/nav isolation ===== */
 (() => {
   const isCompact = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8570,7 +8570,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 mobile library screen ownership reset ===== */
+/* ===== 3.0.0-alpha132 mobile library screen ownership reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
@@ -8670,7 +8670,7 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha131 guided workflow shell ===== */
+/* ===== 3.0.0-alpha132 guided workflow shell ===== */
 (function(){
   const JOB_TYPES = {
     'Hot Tap': {
@@ -8775,8 +8775,8 @@ window.addEventListener('load', async () => {
   }, true);
 
   const originalLoader = window.loadRecordIntoCalculator;
-  if (typeof originalLoader === 'function' && !window.__alpha131WorkflowWrappedLoader) {
-    window.__alpha131WorkflowWrappedLoader = true;
+  if (typeof originalLoader === 'function' && !window.__alpha132WorkflowWrappedLoader) {
+    window.__alpha132WorkflowWrappedLoader = true;
     window.loadRecordIntoCalculator = function(...args){
       const result = originalLoader.apply(this, args);
       setTimeout(applyWorkflowShell, 30);
@@ -8786,8 +8786,8 @@ window.addEventListener('load', async () => {
   }
 
   const originalShow = window.showScreen;
-  if (typeof originalShow === 'function' && !window.__alpha131WorkflowWrappedShow) {
-    window.__alpha131WorkflowWrappedShow = true;
+  if (typeof originalShow === 'function' && !window.__alpha132WorkflowWrappedShow) {
+    window.__alpha132WorkflowWrappedShow = true;
     const wrappedShow = function(name, ...rest){
       const result = originalShow.call(this, name, ...rest);
       setTimeout(applyWorkflowShell, 30);
@@ -8800,7 +8800,7 @@ window.addEventListener('load', async () => {
   setTimeout(applyWorkflowShell, 120);
 })();
 
-/* ===== 3.0.0-alpha131 guided workflow stage flow ===== */
+/* ===== 3.0.0-alpha132 guided workflow stage flow ===== */
 (function(){
   const STORAGE_KEY = 'tapcalcWorkflowStageV2';
   const MODE_STAGES = new Set(['hotTap','lineStop','completionPlug']);
