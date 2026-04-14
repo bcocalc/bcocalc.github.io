@@ -4896,7 +4896,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha129 mobile reference shortcut fix ===== */
+/* ===== 3.0.0-alpha130 mobile reference shortcut fix ===== */
 @media (max-width: 768px){
   .ref-top-actions{
     display:flex;
@@ -4924,7 +4924,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha129 ref/mobile cleanup ===== */
+/* ===== 3.0.0-alpha130 ref/mobile cleanup ===== */
 
 .section-toggle-btn{
   appearance:none;
@@ -4977,7 +4977,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha129 workflow shell ===== */
+/* ===== 3.0.0-alpha130 workflow shell ===== */
 .workflow-shell-jobtype{margin:18px 0 20px;padding:18px 18px 16px;border-radius:18px;background:linear-gradient(180deg,rgba(35,67,96,.08),rgba(35,67,96,.03));border:1px solid rgba(48,88,124,.14);display:grid;gap:14px;}
 .workflow-shell-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .workflow-shell-head h3{margin:4px 0 8px;}
@@ -5066,4 +5066,33 @@ body.dark-mode .workflow-next-banner p{color:#9fb8cb;}
   .workflow-next-banner{padding:14px;}
   .workflow-next-banner-actions{width:100%;}
   .workflow-next-banner-actions button{width:100%;}
+}
+
+
+/* ===== 3.0.0-alpha130 guided workflow simplification ===== */
+.workflow-phase-shell{display:none !important;}
+.card-workflow-strip,.card-subnav{display:none !important;}
+.workflow-stage-nav{grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));align-items:stretch;}
+.workflow-stage-chip{min-height:94px;align-content:flex-start;}
+.workflow-stage-chip[data-stage-state="current"]{grid-column:span 2;min-height:112px;box-shadow:0 16px 32px rgba(22,54,75,.16);}
+.workflow-stage-chip[data-stage-state="done"]{background:rgba(231,247,234,.95);border-color:rgba(27,94,32,.22);}
+.workflow-stage-chip[data-stage-state="done"] span{color:#183a28;}
+.workflow-stage-chip[data-stage-state="done"] em{color:#2d6a45;opacity:.92;}
+.workflow-stage-chip[data-stage-state="upcoming"]{background:rgba(244,248,252,.72);}
+.workflow-stage-chip[data-stage-state="upcoming"] em{opacity:.72;}
+.workflow-guided-shell{position:sticky;top:78px;z-index:6;backdrop-filter:blur(10px);}
+.workflow-next-banner{border-width:2px;}
+.workflow-helper-panel,.card-focus-shell{scroll-margin-top:120px;}
+.workflow-helper-head p,.card-focus-head p{max-width:760px;}
+.workflow-review-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+.workflow-review-grid .workflow-helper-card strong[data-state="ready"]{color:#1f7a42;}
+.workflow-review-grid .workflow-helper-card strong[data-state="in-progress"]{color:#9a6b00;}
+body.dark-mode .workflow-stage-chip[data-stage-state="done"]{background:rgba(19,55,32,.56);border-color:rgba(88,168,106,.34);}
+body.dark-mode .workflow-stage-chip[data-stage-state="done"] span,
+body.dark-mode .workflow-stage-chip[data-stage-state="done"] em{color:#d6f2df;}
+body.dark-mode .workflow-stage-chip[data-stage-state="upcoming"]{background:rgba(20,31,42,.82);}
+@media (max-width: 900px){
+  .workflow-guided-shell{position:static;backdrop-filter:none;}
+  .workflow-stage-nav{grid-template-columns:1fr;}
+  .workflow-stage-chip[data-stage-state="current"]{grid-column:auto;min-height:102px;}
 }
