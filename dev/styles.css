@@ -5188,3 +5188,26 @@ body.measurement-page[data-active-screen="calc"] #calcScreen .panel.active {
 .measurement-page[data-active-screen="ref"] #calcScreen,
 .measurement-page[data-active-screen="ref"] #cardScreen,
 .measurement-page[data-active-screen="ref"] #jobsScreen{display:none !important;visibility:hidden !important;pointer-events:none !important;opacity:0 !important;z-index:0 !important;}
+
+/* ===== 3.0.0-alpha136 nav hit-area and screen containment fix ===== */
+.measurement-page .screen-nav{z-index:7000 !important;}
+.measurement-page .screen-view{position:relative;z-index:1;overflow-x:hidden;}
+.measurement-page[data-active-screen="calc"] #calcScreen,
+.measurement-page[data-active-screen="jobs"] #jobsScreen,
+.measurement-page[data-active-screen="card"] #cardScreen,
+.measurement-page[data-active-screen="ref"] #refScreen,
+.measurement-page[data-active-screen="job"] #jobScreen,
+.measurement-page[data-active-screen="home"] #homeScreen{overflow-x:hidden !important;}
+@media (max-width: 700px){
+  .measurement-page .screen-nav{z-index:9000 !important;}
+  .measurement-page #homeScreen,
+  .measurement-page #jobScreen,
+  .measurement-page #calcScreen,
+  .measurement-page #cardScreen,
+  .measurement-page #jobsScreen,
+  .measurement-page #refScreen{padding-bottom:92px !important;}
+  .measurement-page[data-active-screen="calc"] #calcScreen,
+  .measurement-page[data-active-screen="jobs"] #jobsScreen,
+  .measurement-page[data-active-screen="card"] #cardScreen,
+  .measurement-page[data-active-screen="ref"] #refScreen{max-width:100vw;overflow-x:hidden !important;}
+}

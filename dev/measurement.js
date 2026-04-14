@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha134';
+const BUILD_VERSION = '3.0.0-alpha136';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha134', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha136', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4373,7 +4373,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha134';
+  const TC63_VERSION = '3.0.0-alpha136';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4615,7 +4615,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha134';
+  const VERSION = '3.0.0-alpha136';
 
   function tc65GetJobs() {
     try {
@@ -7809,7 +7809,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha134';
+  const VERSION = '3.0.0-alpha136';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -9183,5 +9183,126 @@ window.addEventListener('load', async () => {
       }
       document.body.classList.remove('show-library-screen');
     }
+  }, { passive:true });
+})();
+
+/* ===== 3.0.0-alpha136 final screen/nav ownership fix ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
+  const validModes = new Set(['bco','eta']);
+
+  function normalizeScreen(name){
+    const safe = String(name || '').trim();
+    return screens[safe] ? safe : 'home';
+  }
+
+  function ensureCalcMode(){
+    try {
+      const current = localStorage.getItem('measurementCardActiveModeV1') || '';
+      const next = validModes.has(current) ? current : 'bco';
+      if (typeof window.setMode === 'function') window.setMode(next);
+    } catch {
+      try { if (typeof window.setMode === 'function') window.setMode('bco'); } catch {}
+    }
+  }
+
+  function applyScreenState(name){
+    const activeName = normalizeScreen(name);
+    document.body.dataset.activeScreen = activeName;
+    document.body.classList.toggle('show-library-screen', activeName === 'jobs');
+
+    Object.entries(screens).forEach(([key, id]) => {
+      const el = $(id);
+      if (!el) return;
+      const active = key === activeName;
+      el.classList.toggle('active', active);
+      el.hidden = !active;
+      el.style.display = active ? 'block' : 'none';
+      el.style.visibility = active ? 'visible' : 'hidden';
+      el.style.pointerEvents = active ? 'auto' : 'none';
+      el.style.opacity = active ? '1' : '0';
+      el.style.zIndex = active ? '2' : '0';
+      el.style.position = 'relative';
+      el.style.overflowX = 'hidden';
+    });
+
+    const jobs = $('jobsScreen');
+    if (jobs) {
+      if (activeName === 'jobs') {
+        jobs.classList.add('active');
+        jobs.hidden = false;
+        jobs.style.display = 'block';
+        jobs.style.visibility = 'visible';
+        jobs.style.pointerEvents = 'auto';
+        jobs.style.zIndex = '2';
+      } else {
+        jobs.classList.remove('active');
+        jobs.hidden = true;
+        jobs.style.display = 'none';
+        jobs.style.visibility = 'hidden';
+        jobs.style.pointerEvents = 'none';
+        jobs.style.zIndex = '0';
+      }
+    }
+
+    const calc = $('calcScreen');
+    if (calc && activeName !== 'calc') {
+      calc.style.overflowX = 'hidden';
+    }
+
+    const jobsPanel = $('jobsPanel');
+    if (jobsPanel) jobsPanel.classList.toggle('active', activeName === 'jobs');
+
+    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
+      const active = tab.dataset.screen === activeName;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+
+    if (activeName === 'calc') ensureCalcMode();
+
+    try { localStorage.setItem('tapcalcV3Screen', activeName); } catch {}
+    return activeName;
+  }
+
+  function openScreen(name){
+    return applyScreenState(name);
+  }
+
+  function handleTabEvent(event){
+    const tab = event.target && event.target.closest ? event.target.closest('.screen-tab[data-screen]') : null;
+    if (!tab) return;
+    const next = normalizeScreen(tab.dataset.screen);
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    openScreen(next);
+    return false;
+  }
+
+  document.addEventListener('pointerdown', handleTabEvent, true);
+  document.addEventListener('touchstart', handleTabEvent, true);
+  document.addEventListener('click', handleTabEvent, true);
+
+  const wrappedShow = function(name){
+    return openScreen(name);
+  };
+  window.showScreen = wrappedShow;
+  window.openScreen = wrappedShow;
+  try { showScreen = wrappedShow; } catch {}
+
+  function restoreScreen(){
+    let saved = 'home';
+    try { saved = localStorage.getItem('tapcalcV3Screen') || 'home'; } catch {}
+    openScreen(saved);
+  }
+
+  window.addEventListener('pageshow', () => setTimeout(restoreScreen, 20));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(restoreScreen, 20));
+  window.addEventListener('load', () => setTimeout(restoreScreen, 40));
+  window.addEventListener('scroll', () => {
+    const activeName = normalizeScreen(document.body.dataset.activeScreen || 'home');
+    applyScreenState(activeName);
   }, { passive:true });
 })();
