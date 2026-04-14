@@ -1,18 +1,18 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha128';
+const CACHE_NAME = 'tapcalc-cache-v2.27d9';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha128",
-  "./measurement.js?v=3.0.0-alpha128",
+  "./styles.css",
+  "./measurement.js",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha128",
+  "./firebase-config.js",
   "./team-logo.png"
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => Promise.resolve()));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
   self.skipWaiting();
 });
 
@@ -25,30 +25,14 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  const url = new URL(event.request.url);
-  const isSameOrigin = url.origin === self.location.origin;
-  const isShellAsset = isSameOrigin && (
-    url.pathname.endsWith('/measurement-card.html') ||
-    url.pathname.endsWith('/styles.css') ||
-    url.pathname.endsWith('/measurement.js') ||
-    url.pathname.endsWith('/firebase-config.js') ||
-    url.pathname.endsWith('/service-worker.js')
-  );
-  if (event.request.mode === 'navigate' || isShellAsset) {
-    event.respondWith(
-      fetch(event.request, { cache: 'no-store' }).then((response) => {
+  event.respondWith(
+    caches.match(event.request).then((cached) => {
+      if (cached) return cached;
+      return fetch(event.request).then((response) => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         return response;
-      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./measurement-card.html')))
-    );
-    return;
-  }
-  event.respondWith(
-    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      return response;
-    }))
+      }).catch(() => caches.match("./measurement-card.html"));
+    })
   );
 });
