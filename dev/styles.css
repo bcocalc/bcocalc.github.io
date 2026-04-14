@@ -4896,7 +4896,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha128 mobile reference shortcut fix ===== */
+/* ===== 3.0.0-alpha129 mobile reference shortcut fix ===== */
 @media (max-width: 768px){
   .ref-top-actions{
     display:flex;
@@ -4924,7 +4924,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha128 ref/mobile cleanup ===== */
+/* ===== 3.0.0-alpha129 ref/mobile cleanup ===== */
 
 .section-toggle-btn{
   appearance:none;
@@ -4977,7 +4977,7 @@ body.light .converter-block {
 }
 
 
-/* ===== 3.0.0-alpha128 workflow shell ===== */
+/* ===== 3.0.0-alpha129 workflow shell ===== */
 .workflow-shell-jobtype{margin:18px 0 20px;padding:18px 18px 16px;border-radius:18px;background:linear-gradient(180deg,rgba(35,67,96,.08),rgba(35,67,96,.03));border:1px solid rgba(48,88,124,.14);display:grid;gap:14px;}
 .workflow-shell-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .workflow-shell-head h3{margin:4px 0 8px;}
@@ -5052,4 +5052,18 @@ body.dark-mode .workflow-helper-note{background:rgba(33,64,91,.34);border-color:
   .workflow-guided-actions,.workflow-helper-actions{width:100%;}
   .workflow-guided-actions button,.workflow-helper-actions button{flex:1 1 160px;}
   .workflow-stage-nav{grid-template-columns:1fr;}
+}
+
+
+.workflow-next-banner{margin:0 0 16px;padding:16px 18px;border-radius:18px;border:1px solid rgba(57,101,141,.16);background:linear-gradient(180deg,rgba(22,54,75,.08),rgba(22,54,75,.03));display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap;}
+.workflow-next-banner h4{margin:4px 0 6px;}
+.workflow-next-banner p{margin:0;max-width:680px;color:#4b6174;}
+.workflow-next-banner-actions{display:flex;gap:10px;flex-wrap:wrap;}
+body.dark-mode .workflow-next-banner{background:linear-gradient(180deg,rgba(33,64,91,.34),rgba(20,31,42,.26));border-color:rgba(103,131,161,.18);}
+body.dark-mode .workflow-next-banner p{color:#9fb8cb;}
+@media (max-width: 720px){
+  .workflow-phase-shell{display:none;}
+  .workflow-next-banner{padding:14px;}
+  .workflow-next-banner-actions{width:100%;}
+  .workflow-next-banner-actions button{width:100%;}
 }

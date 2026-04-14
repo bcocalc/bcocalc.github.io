@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha128">
+  <link rel="stylesheet" href="styles.css?v=3.0.0-alpha129">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-      <span class="version-badge">TapCalc Dev v3.0.0-alpha128 · 2026-04-14</span>
+      <span class="version-badge">TapCalc Dev v3.0.0-alpha129 · 2026-04-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha128 · 2026-04-14</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha129 · 2026-04-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -51,8 +51,8 @@
         <p>Start from the current job, jump into quick tools, or head straight to references and shared jobs.</p>
       </div>
       <div class="hero-actions">
-        <button type="button" class="secondary-btn" data-go-screen="job">New / Edit Job</button>
-        <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
+        <button type="button" class="secondary-btn" data-go-screen="job">Start New Job</button>
+        <button type="button" class="secondary-btn" data-go-screen="card">Continue Workflow</button>
       </div>
     </div>
 
@@ -66,7 +66,7 @@
         <div class="home-current-job-actions">
           <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
           <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
-        <button type="button" class="secondary-btn" id="cardJumpToInputsBtn">Jump to Inputs</button>
+        <button type="button" class="secondary-btn" id="cardJumpToInputsBtn">Open Workflow</button>
         </div>
       </div>
       <div class="home-stat-grid">
@@ -88,18 +88,6 @@
       <button type="button" class="dash-card dash-card-feature" data-go-screen="jobs" data-library-lane-target="shared"><strong>Shared Jobs</strong><span>Search, open, and sync field work</span></button>
     </div>
 
-    <div class="home-section-heading">
-      <h3>App Sections</h3>
-      <span>The new shell with clear lanes</span>
-    </div>
-    <div class="dashboard-grid app-sections-grid">
-      <button type="button" class="dash-card" data-go-screen="job"><strong>Job</strong><span>Set the job type, customer, machine, and notes</span></button>
-      <button type="button" class="dash-card" data-go-screen="calc"><strong>Tools</strong><span>BCO and ETA helpers that feed the workflow</span></button>
-      <button type="button" class="dash-card" data-go-screen="card"><strong>Workflow</strong><span>Follow the job steps in order</span></button>
-      <button type="button" class="dash-card" data-go-screen="jobs"><strong>Library</strong><span>Local and shared job management</span></button>
-      <button type="button" class="dash-card" data-go-screen="ref"><strong>Reference</strong><span>Charts, glossary, lookup tools</span></button>
-      <button type="button" class="dash-card" data-go-screen="job"><strong>Continue Job</strong><span>Pick up where you left off</span></button>
-    </div>
   </section>
 
   <section id="jobScreen" class="screen-view">
@@ -400,6 +388,17 @@
       </div>
     </div>
     <div id="workflowStageNav" class="workflow-stage-nav" aria-live="polite"></div>
+  </section>
+
+  <section class="workflow-next-banner" id="workflowNextBanner">
+    <div>
+      <div class="hero-eyebrow">Do This Next</div>
+      <h4 id="workflowNextBannerTitle">Start with Job Setup</h4>
+      <p id="workflowNextBannerCopy">Fill in the job basics first, then keep moving step by step.</p>
+    </div>
+    <div class="workflow-next-banner-actions">
+      <button type="button" class="secondary-btn" id="workflowNextPrimaryBtn">Go to Pipe / Cutter</button>
+    </div>
   </section>
 
   <section id="workflowSetupPanel" class="workflow-helper-panel active" data-workflow-stage-panel="setup">
@@ -1053,8 +1052,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha128"></script>
-<script src="measurement.js?v=3.0.0-alpha128"></script>
+<script src="firebase-config.js?v=3.0.0-alpha129"></script>
+<script src="measurement.js?v=3.0.0-alpha129"></script>
   </section>
 </body>
 </html>
