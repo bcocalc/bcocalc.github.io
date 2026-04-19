@@ -5525,3 +5525,85 @@ body.dark-mode .workflow-helper-panel{
   background:#163d74 !important;
   color:#ffffff !important;
 }
+
+/* ===== 3.0.0-alpha142 global light-theme softening ===== */
+:root[data-theme="light"] body.measurement-page{
+  background:#d9e3ec !important;
+  color:#18314d !important;
+}
+:root[data-theme="light"] .app-shell{
+  background:linear-gradient(180deg,#eaf1f8 0%,#e1e9f2 100%) !important;
+  color:#18314d !important;
+}
+:root[data-theme="light"] .top-app-bar,
+:root[data-theme="light"] .screen-nav{
+  background:rgba(232,240,247,.96) !important;
+  border-color:rgba(31,63,108,.1) !important;
+  backdrop-filter:blur(10px);
+}
+:root[data-theme="light"] .screen-tab,
+:root[data-theme="light"] .submode-btn,
+:root[data-theme="light"] .library-lane-btn,
+:root[data-theme="light"] .jobs-view-chip,
+:root[data-theme="light"] .secondary-btn,
+:root[data-theme="light"] .section,
+:root[data-theme="light"] .mode-panel,
+:root[data-theme="light"] .dashboard-hero,
+:root[data-theme="light"] .home-current-job-card,
+:root[data-theme="light"] .jobs-status-card,
+:root[data-theme="light"] .jobs-panel-card,
+:root[data-theme="light"] .card-focus-shell,
+:root[data-theme="light"] .card-focus-stat,
+:root[data-theme="light"] .job-form-card,
+:root[data-theme="light"] .summary-item,
+:root[data-theme="light"] .screen-intro-card,
+:root[data-theme="light"] .job-current-topbar,
+:root[data-theme="light"] .current-action-strip,
+:root[data-theme="light"] .workflow-card,
+:root[data-theme="light"] .reference-card,
+:root[data-theme="light"] .reference-workspace-card,
+:root[data-theme="light"] .ref-category-card,
+:root[data-theme="light"] .current-live-card,
+:root[data-theme="light"] .workflow-jobtype-card,
+:root[data-theme="light"] .workflow-stage-chip,
+:root[data-theme="light"] .workflow-roadmap-pill,
+:root[data-theme="light"] .workflow-guided-meta span,
+:root[data-theme="light"] .workflow-helper-card{
+  background:linear-gradient(180deg,#f2f6fb 0%,#e8eef6 100%) !important;
+  border-color:rgba(31,63,108,.12) !important;
+  box-shadow:0 10px 22px rgba(43,71,109,.06) !important;
+}
+:root[data-theme="light"] .workflow-guided-shell,
+:root[data-theme="light"] .workflow-helper-panel,
+:root[data-theme="light"] .workflow-next-banner,
+:root[data-theme="light"] .workflow-shell-jobtype{
+  background:linear-gradient(180deg,#eef4fa 0%,#e4ecf5 100%) !important;
+  border-color:rgba(31,63,108,.13) !important;
+  box-shadow:0 14px 28px rgba(43,71,109,.08) !important;
+}
+:root[data-theme="light"] input,
+:root[data-theme="light"] select,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] .jobs-select,
+:root[data-theme="light"] .jobs-list-item{
+  background:#f6f8fb !important;
+  color:#18314d !important;
+  border-color:rgba(31,63,108,.14) !important;
+}
+:root[data-theme="light"] .secondary-btn{
+  background:linear-gradient(180deg,#f4f7fb 0%,#e9eff6 100%) !important;
+  color:#1d3a58 !important;
+  border-color:rgba(31,63,108,.14) !important;
+}
+:root[data-theme="light"] .secondary-btn:hover,
+:root[data-theme="light"] .screen-tab:hover,
+:root[data-theme="light"] .jobs-view-chip:hover,
+:root[data-theme="light"] .library-lane-btn:hover,
+:root[data-theme="light"] .submode-btn:hover{
+  background:linear-gradient(180deg,#ecf2f8 0%,#e3eaf3 100%) !important;
+}
+:root[data-theme="light"] .jobs-shared-anchor,
+:root[data-theme="light"] .workflow-helper-note{
+  background:#e2ebf6 !important;
+  border-color:#c0d2ea !important;
+}
