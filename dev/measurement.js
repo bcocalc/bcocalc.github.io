@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha138';
+const BUILD_VERSION = '3.0.0-alpha139';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-    navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha138', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+  navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha139', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4420,7 +4420,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-  const TC63_VERSION = '3.0.0-alpha138';
+  const TC63_VERSION = '3.0.0-alpha139';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4662,7 +4662,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-  const VERSION = '3.0.0-alpha138';
+const VERSION = '3.0.0-alpha139';
 
   function tc65GetJobs() {
     try {
@@ -7856,7 +7856,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-  const VERSION = '3.0.0-alpha138';
+const VERSION = '3.0.0-alpha139';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -9127,142 +9127,54 @@ window.addEventListener('load', async () => {
 })();
 
 
-/* ===== 3.0.0-alpha134 tools/library screen ownership fix ===== */
+/* ===== 3.0.0-alpha139 shell screen/router reset ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
-  const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
-
-  function ensureModeForScreen(name){
-    if (name !== 'calc') return;
-    try {
-      const current = localStorage.getItem('measurementCardActiveModeV1') || '';
-      const safe = ['bco','eta'].includes(current) ? current : 'bco';
-      if (typeof window.setMode === 'function') window.setMode(safe);
-    } catch {
-      try { if (typeof window.setMode === 'function') window.setMode('bco'); } catch {}
-    }
-  }
-
-  function enforceScreen(name){
-    document.body.dataset.activeScreen = name;
-    document.body.classList.toggle('show-library-screen', name === 'jobs');
-    Object.entries(screens).forEach(([key,id])=>{
-      const el=$(id); if(!el) return;
-      const active = key===name;
-      el.classList.toggle('active', active);
-      el.hidden = !active;
-      el.style.display = active ? 'block' : 'none';
-      el.style.visibility = active ? 'visible' : 'hidden';
-      el.style.pointerEvents = active ? 'auto' : 'none';
-      el.style.zIndex = active ? (name === 'jobs' ? '1100' : '2') : '0';
-      if (!active && key === 'jobs') {
-        el.style.position = '';
-        el.style.overflowX = 'hidden';
-      }
-    });
-    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab)=>{
-      const active = tab.dataset.screen === name;
-      tab.classList.toggle('active', active);
-      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-    ensureModeForScreen(name);
-  }
-
-  function openScreen(name){
-    enforceScreen(name);
-    try { localStorage.setItem('tapcalcV3Screen', name); } catch {}
-    if (name === 'jobs') {
-      const jobs = $('jobsScreen');
-      if (jobs) {
-        jobs.style.position = 'relative';
-        jobs.style.overflowX = 'hidden';
-      }
-    }
-  }
-
-  function handleTabEvent(e){
-    const tab = e.target.closest('.screen-tab[data-screen]');
-    if (!tab) return;
-    const next = String(tab.dataset.screen || '').trim();
-    if (!next) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-    openScreen(next);
-    return false;
-  }
-
-  document.addEventListener('pointerdown', handleTabEvent, true);
-  document.addEventListener('click', handleTabEvent, true);
-
-  const origShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
-  const wrappedShow = function(name, ...rest){
-    const target = String(name || '').trim();
-    if (screens[target]) {
-      openScreen(target);
-      return;
-    }
-    if (typeof origShow === 'function') return origShow.call(this, name, ...rest);
-  };
-  window.showScreen = wrappedShow;
-  try { showScreen = wrappedShow; } catch {}
-
-  function restore(){
-    let saved = 'home';
-    try { saved = localStorage.getItem('tapcalcV3Screen') || 'home'; } catch {}
-    if (!screens[saved]) saved = 'home';
-    openScreen(saved);
-  }
-
-  window.addEventListener('pageshow', ()=> setTimeout(restore, 20));
-  document.addEventListener('DOMContentLoaded', ()=> setTimeout(restore, 20));
-  window.addEventListener('scroll', ()=>{
-    const active = document.body.dataset.activeScreen || 'home';
-    if (active !== 'jobs') {
-      const jobs = $('jobsScreen');
-      if (jobs) {
-        jobs.classList.remove('active');
-        jobs.hidden = true;
-        jobs.style.display = 'none';
-        jobs.style.visibility = 'hidden';
-        jobs.style.pointerEvents = 'none';
-        jobs.style.zIndex = '0';
-      }
-      document.body.classList.remove('show-library-screen');
-    }
-  }, { passive:true });
-})();
-
-/* ===== 3.0.0-alpha138 final screen/nav ownership fix ===== */
-(function(){
-  const $ = (id) => document.getElementById(id);
-  const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
-  const validModes = new Set(['bco','eta']);
+  const screenMap = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
+  const calcModes = new Set(['bco', 'eta']);
 
   function normalizeScreen(name){
     const safe = String(name || '').trim();
-    return screens[safe] ? safe : 'home';
+    return screenMap[safe] ? safe : 'home';
   }
 
-  function ensureCalcMode(){
+  function normalizeLane(lane){
+    return String(lane || '').trim() === 'shared' ? 'shared' : 'local';
+  }
+
+  function calcModeForEntry(preferredMode){
+    const preferred = String(preferredMode || '').trim();
+    if (calcModes.has(preferred)) return preferred;
     try {
-      const current = localStorage.getItem('measurementCardActiveModeV1') || '';
-      const next = validModes.has(current) ? current : 'bco';
-      if (typeof window.setMode === 'function') window.setMode(next);
+      const saved = String(localStorage.getItem('measurementCardActiveModeV1') || '').trim();
+      return saved === 'eta' ? 'eta' : 'bco';
     } catch {
-      try { if (typeof window.setMode === 'function') window.setMode('bco'); } catch {}
+      return 'bco';
     }
   }
 
-  function applyScreenState(name){
-    const activeName = normalizeScreen(name);
-    document.body.dataset.activeScreen = activeName;
-    document.body.classList.toggle('show-library-screen', activeName === 'jobs');
+  function applyCalcMode(preferredMode){
+    const nextMode = calcModeForEntry(preferredMode);
+    try { if (typeof window.setMode === 'function') window.setMode(nextMode); } catch {}
+    return nextMode;
+  }
 
-    Object.entries(screens).forEach(([key, id]) => {
+  function syncTabs(activeScreen){
+    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
+      const active = tab.dataset.screen === activeScreen;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function syncVisibleScreens(activeScreen){
+    document.body.dataset.activeScreen = activeScreen;
+    document.body.classList.toggle('show-library-screen', activeScreen === 'jobs');
+
+    Object.entries(screenMap).forEach(([key, id]) => {
       const el = $(id);
       if (!el) return;
-      const active = key === activeName;
+      const active = key === activeScreen;
       el.classList.toggle('active', active);
       el.hidden = !active;
       el.style.display = active ? 'block' : 'none';
@@ -9274,104 +9186,19 @@ window.addEventListener('load', async () => {
       el.style.overflowX = 'hidden';
     });
 
-    const jobs = $('jobsScreen');
-    if (jobs) {
-      if (activeName === 'jobs') {
-        jobs.classList.add('active');
-        jobs.hidden = false;
-        jobs.style.display = 'block';
-        jobs.style.visibility = 'visible';
-        jobs.style.pointerEvents = 'auto';
-        jobs.style.zIndex = '2';
-      } else {
-        jobs.classList.remove('active');
-        jobs.hidden = true;
-        jobs.style.display = 'none';
-        jobs.style.visibility = 'hidden';
-        jobs.style.pointerEvents = 'none';
-        jobs.style.zIndex = '0';
-      }
-    }
-
-    const calc = $('calcScreen');
-    if (calc && activeName !== 'calc') {
-      calc.style.overflowX = 'hidden';
-    }
-
     const jobsPanel = $('jobsPanel');
-    if (jobsPanel) jobsPanel.classList.toggle('active', activeName === 'jobs');
-
-    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
-      const active = tab.dataset.screen === activeName;
-      tab.classList.toggle('active', active);
-      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-
-    if (activeName === 'calc') ensureCalcMode();
-
-    try { localStorage.setItem('tapcalcV3Screen', activeName); } catch {}
-    return activeName;
+    if (jobsPanel) jobsPanel.classList.toggle('active', activeScreen === 'jobs');
   }
 
-  function openScreen(name){
-    return applyScreenState(name);
-  }
-
-  function handleTabEvent(event){
-    const tab = event.target && event.target.closest ? event.target.closest('.screen-tab[data-screen]') : null;
-    if (!tab) return;
-    const next = normalizeScreen(tab.dataset.screen);
-    event.preventDefault();
-    event.stopPropagation();
-    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
-    openScreen(next);
-    return false;
-  }
-
-  document.addEventListener('pointerdown', handleTabEvent, true);
-  document.addEventListener('touchstart', handleTabEvent, true);
-  document.addEventListener('click', handleTabEvent, true);
-
-  const wrappedShow = function(name){
-    return openScreen(name);
-  };
-  window.showScreen = wrappedShow;
-  window.openScreen = wrappedShow;
-  try { showScreen = wrappedShow; } catch {}
-
-  function restoreScreen(){
-    let saved = 'home';
-    try { saved = localStorage.getItem('tapcalcV3Screen') || 'home'; } catch {}
-    openScreen(saved);
-  }
-
-  window.addEventListener('pageshow', () => setTimeout(restoreScreen, 20));
-  document.addEventListener('DOMContentLoaded', () => setTimeout(restoreScreen, 20));
-  window.addEventListener('load', () => setTimeout(restoreScreen, 40));
-  window.addEventListener('scroll', () => {
-    const activeName = normalizeScreen(document.body.dataset.activeScreen || 'home');
-    applyScreenState(activeName);
-  }, { passive:true });
-})();
-
-
-/* ===== 3.0.0-alpha138 library lane restore fix ===== */
-(function(){
-  const $ = (id) => document.getElementById(id);
-  const laneBtns = () => Array.from(document.querySelectorAll('.library-lane-btn[data-library-lane]'));
-  const lanePanels = () => Array.from(document.querySelectorAll('[data-library-lane-panel]'));
-  const jobsScreen = () => $('jobsScreen');
-  const jobsPanel = () => $('jobsPanel');
-
-  function baseSetLibraryLane(lane){
-    const next = lane === 'shared' ? 'shared' : 'local';
-    laneBtns().forEach((btn) => {
-      const active = btn.dataset.libraryLane === next;
+  function setLibraryLaneCore(lane){
+    const nextLane = normalizeLane(lane);
+    document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((btn) => {
+      const active = btn.dataset.libraryLane === nextLane;
       btn.classList.toggle('active', active);
       btn.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
-    lanePanels().forEach((panel) => {
-      const active = panel.dataset.libraryLanePanel === next;
+    document.querySelectorAll('[data-library-lane-panel]').forEach((panel) => {
+      const active = panel.dataset.libraryLanePanel === nextLane;
       panel.classList.toggle('active', active);
       panel.hidden = !active;
       panel.setAttribute('aria-hidden', active ? 'false' : 'true');
@@ -9380,117 +9207,104 @@ window.addEventListener('load', async () => {
       panel.style.pointerEvents = active ? 'auto' : 'none';
       panel.style.opacity = active ? '1' : '0';
     });
-    const js = jobsScreen();
-    if (js) js.dataset.activeLane = next;
-    try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
-    if (next === 'shared') {
-      setTimeout(() => { try { if (typeof loadCloudJobs === 'function') loadCloudJobs(); } catch {} }, 30);
-    }
+    const jobs = $('jobsScreen');
+    if (jobs) jobs.dataset.activeLane = nextLane;
+    try { localStorage.setItem('tapcalcLibraryLaneV1', nextLane); } catch {}
     setTimeout(() => { try { if (typeof renderJobsList === 'function') renderJobsList(); } catch {} }, 20);
-    return next;
+    if (nextLane === 'shared') {
+      setTimeout(() => { try { if (typeof loadCloudJobs === 'function') loadCloudJobs(); } catch {} }, 40);
+      setTimeout(() => { try { if (typeof renderJobsList === 'function') renderJobsList(); } catch {} }, 140);
+    }
+    return nextLane;
   }
 
-  function normalizeLibraryScreen(){
-    try {
-      const screen = jobsScreen();
-      if (screen) {
-        screen.classList.add('active');
-        screen.hidden = false;
-        screen.style.display = 'block';
-        screen.style.visibility = 'visible';
-        screen.style.pointerEvents = 'auto';
-        screen.style.opacity = '1';
-        screen.style.zIndex = '2';
+  function openScreenCore(name, options = {}){
+    const activeScreen = normalizeScreen(name);
+    syncVisibleScreens(activeScreen);
+    syncTabs(activeScreen);
+
+    if (activeScreen === 'calc') {
+      applyCalcMode(options.mode);
+    }
+    if (activeScreen === 'jobs') {
+      const forcedLane = String(options.libraryLane || '').trim();
+      if (forcedLane) {
+        setLibraryLaneCore(forcedLane);
+      } else {
+        let savedLane = 'local';
+        try { savedLane = normalizeLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch {}
+        setLibraryLaneCore(savedLane);
       }
-      const panel = jobsPanel();
-      if (panel) panel.classList.add('active');
-      document.body.classList.add('show-library-screen');
-      document.body.dataset.activeScreen = 'jobs';
-      document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
-        const active = tab.dataset.screen === 'jobs';
-        tab.classList.toggle('active', active);
-        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
-      });
-    } catch {}
+    }
+
+    try { localStorage.setItem('tapcalcV3Screen', activeScreen); } catch {}
+    return activeScreen;
   }
 
-  function openLibrarySafely(forceLane){
-    normalizeLibraryScreen();
-    let lane = forceLane === 'shared' ? 'shared' : forceLane === 'local' ? 'local' : '';
-    if (!lane) {
-      try { lane = localStorage.getItem('tapcalcLibraryLaneV1') || ''; } catch {}
-    }
-    if (!lane) lane = 'local';
-    baseSetLibraryLane(lane);
-    setTimeout(() => { try { if (typeof renderJobsList === 'function') renderJobsList(); } catch {} }, 40);
-    if (lane === 'shared') {
-      setTimeout(() => { try { if (typeof loadCloudJobs === 'function') loadCloudJobs(); } catch {} }, 60);
-      setTimeout(() => { try { if (typeof renderJobsList === 'function') renderJobsList(); } catch {} }, 180);
-    }
+  function enforceActiveScreenOnly(){
+    const activeScreen = normalizeScreen(document.body.dataset.activeScreen || 'home');
+    syncVisibleScreens(activeScreen);
+    syncTabs(activeScreen);
   }
 
-  window.setLibraryLane = baseSetLibraryLane;
-  try { setLibraryLane = baseSetLibraryLane; } catch {}
-  window.openSharedLibraryLane = function(){ openLibrarySafely('shared'); };
-  try { openSharedLibraryLane = window.openSharedLibraryLane; } catch {}
-  window.tapCalcOpenLibrary = openLibrarySafely;
+  function openFromTrigger(trigger){
+    if (!trigger || !trigger.dataset) return;
+    const rawTarget = String(trigger.dataset.goScreen || trigger.dataset.screen || '').trim();
+    if (!rawTarget) return;
+    const targetScreen = normalizeScreen(rawTarget);
+    const requestedMode = String(trigger.dataset.goMode || '').trim();
+    const requestedLane = String(trigger.dataset.libraryLaneTarget || '').trim();
+    openScreenCore(targetScreen, {
+      mode: requestedMode,
+      libraryLane: requestedLane
+    });
+  }
 
-  const priorSetScreen = window.tapCalcSetScreen || window.openScreen || window.showScreen || null;
-  const wrappedSetScreen = function(name){
-    const next = String(name || '').trim();
-    if (next === 'jobs') {
-      openLibrarySafely();
-      return 'jobs';
-    }
-    const result = priorSetScreen ? priorSetScreen.apply(this, arguments) : next;
-    try {
-      const screen = jobsScreen();
-      if (screen) {
-        screen.classList.remove('active');
-        screen.hidden = true;
-        screen.style.display = 'none';
-        screen.style.visibility = 'hidden';
-        screen.style.pointerEvents = 'none';
-        screen.style.opacity = '0';
-        screen.style.zIndex = '0';
-      }
-      const panel = jobsPanel();
-      if (panel) panel.classList.remove('active');
-      document.body.classList.remove('show-library-screen');
-    } catch {}
-    return result;
-  };
-  window.tapCalcSetScreen = wrappedSetScreen;
-  window.openScreen = wrappedSetScreen;
-  window.showScreen = wrappedSetScreen;
-  try { tapCalcSetScreen = wrappedSetScreen; } catch {}
-  try { openScreen = wrappedSetScreen; } catch {}
-  try { showScreen = wrappedSetScreen; } catch {}
-
-  document.addEventListener('click', (event) => {
-    const tab = event.target.closest('.screen-tab[data-screen]');
-    if (!tab) return;
-    if (tab.dataset.screen === 'jobs') {
-      event.preventDefault();
-      event.stopPropagation();
-      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
-      openLibrarySafely();
-    }
-  }, true);
-
-  document.addEventListener('click', (event) => {
-    const laneBtn = event.target.closest('.library-lane-btn[data-library-lane]');
-    if (!laneBtn) return;
+  function navHandler(event){
+    const trigger = event.target && event.target.closest
+      ? event.target.closest('.screen-tab[data-screen], [data-go-screen]')
+      : null;
+    if (!trigger) return;
     event.preventDefault();
     event.stopPropagation();
     if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
-    openLibrarySafely(laneBtn.dataset.libraryLane === 'shared' ? 'shared' : 'local');
-  }, true);
+    openFromTrigger(trigger);
+    return false;
+  }
 
-  window.addEventListener('pageshow', () => {
-    try {
-      const active = document.body.dataset.activeScreen || localStorage.getItem('tapcalcV3Screen') || 'home';
-      if (active === 'jobs') setTimeout(() => openLibrarySafely(), 30);
-    } catch {}
-  });
+  function restoreScreen(){
+    let saved = 'home';
+    try { saved = localStorage.getItem('tapcalcV3Screen') || 'home'; } catch {}
+    openScreenCore(saved);
+  }
+
+  window.tapCalcSetScreen = function(name){
+    return openScreenCore(name);
+  };
+  window.openScreen = window.tapCalcSetScreen;
+  window.showScreen = window.tapCalcSetScreen;
+  try { tapCalcSetScreen = window.tapCalcSetScreen; } catch {}
+  try { openScreen = window.tapCalcSetScreen; } catch {}
+  try { showScreen = window.tapCalcSetScreen; } catch {}
+
+  window.setLibraryLane = function(lane){
+    return setLibraryLaneCore(lane);
+  };
+  try { setLibraryLane = window.setLibraryLane; } catch {}
+  window.openSharedLibraryLane = function(){
+    return openScreenCore('jobs', { libraryLane: 'shared' });
+  };
+  try { openSharedLibraryLane = window.openSharedLibraryLane; } catch {}
+  window.tapCalcOpenLibrary = function(lane){
+    return openScreenCore('jobs', { libraryLane: normalizeLane(lane) });
+  };
+
+  document.addEventListener('pointerdown', navHandler, true);
+  document.addEventListener('touchstart', navHandler, true);
+  document.addEventListener('click', navHandler, true);
+
+  window.addEventListener('pageshow', () => setTimeout(restoreScreen, 20));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(restoreScreen, 20));
+  window.addEventListener('load', () => setTimeout(restoreScreen, 40));
+  window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
