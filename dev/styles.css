@@ -5695,3 +5695,28 @@ body.dark-mode .workflow-helper-panel{
   background:#dbe5f0 !important;
   border-color:#bccfe3 !important;
 }
+
+/* ===== 3.0.0-alpha144 active chip contrast fix ===== */
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip.active,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="current"]{
+  background:linear-gradient(180deg,#3b73db 0%,#245ab6 100%) !important;
+  border-color:#204e9d !important;
+  color:#ffffff !important;
+  box-shadow:0 10px 22px rgba(30,77,154,.26) !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip.active span,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="current"] span,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip.active em,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="current"] em,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip.active small,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="current"] small{
+  color:#ffffff !important;
+  opacity:1 !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-roadmap-pill.active,
+:root[data-theme="light"] body.measurement-page .workflow-phase-step.active{
+  background:linear-gradient(180deg,#345f9c 0%,#234676 100%) !important;
+  border-color:#203d67 !important;
+  color:#ffffff !important;
+  box-shadow:0 8px 16px rgba(31,63,108,.18) !important;
+}
