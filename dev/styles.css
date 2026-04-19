@@ -5933,6 +5933,13 @@ body.dark-mode.measurement-page .workflow-phase-step.active{
   color:#5b7390 !important;
   opacity:1 !important;
 }
+:root[data-theme="light"] body.measurement-page .ref-category-card.active{
+  background:linear-gradient(180deg,#3d77ea 0%,#275fcd 100%) !important;
+  border-color:#275fcd !important;
+  color:#ffffff !important;
+  box-shadow:0 10px 22px rgba(47,105,225,.28) !important;
+}
+:root[data-theme="light"] body.measurement-page .ref-category-card.active strong,
 :root[data-theme="light"] body.measurement-page .ref-category-card.active span{
   color:#ffffff !important;
 }

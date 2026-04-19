@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha148';
+const BUILD_VERSION = '3.0.0-alpha149';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha148', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha149', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4419,7 +4419,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha148';
+const TC63_VERSION = '3.0.0-alpha149';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4661,7 +4661,7 @@ const TC63_VERSION = '3.0.0-alpha148';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha148';
+const VERSION = '3.0.0-alpha149';
 
   function tc65GetJobs() {
     try {
@@ -7855,7 +7855,7 @@ const VERSION = '3.0.0-alpha148';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha148';
+const VERSION = '3.0.0-alpha149';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
