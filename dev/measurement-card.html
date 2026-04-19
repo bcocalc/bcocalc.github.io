@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha149">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha151">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha149 - 2026-04-18</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha151 - 2026-04-19</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha149 - 2026-04-18</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha151 - 2026-04-19</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -565,44 +565,150 @@
   </section>
 
   <section id="lineStopPanel" class="mode-panel" data-jobtype-only="lineStop">
-    <div class="measurement-grid">
-      <div class="section">
-        <h3>Line Stop</h3>
-
-        <div class="row"><label>Type</label><input value="Standard Line Stop" disabled></div>
-
-        <div class="row"><label>MD</label><input id="lsMd" type="number" step="any"></div>
-
-        <div class="row row-split">
-          <label>LD</label>
-          <input id="lsLd" type="number" step="any">
-          <select id="lsLdSign"><option value="+">+</option><option value="-">−</option></select>
+    <input id="lineStopVariant" type="hidden" value="standard">
+    <div class="line-stop-variant-shell">
+      <div class="line-stop-variant-head">
+        <div>
+          <div class="hero-eyebrow">Stop Variant</div>
+          <h3>Pick the line stop math you need</h3>
+          <p>Standard, HTP, and Hi-Stop each keep their own fields and formulas so you do not have to force them into the same box.</p>
         </div>
-
-        <div class="row"><label>POD</label><input id="lsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
-        <div class="row"><label>Wall Thickness</label><span id="lsWallDisplay" class="display-geometry">—</span><span class="note">From BCO Calculator</span></div>
-
-        <div class="row row-manual-toggle">
-          <label>LI Override</label>
-          <label class="check-inline"><input id="lsLiManualToggle" type="checkbox"> Manual</label>
+        <div class="variant-chip-row">
+          <button type="button" class="variant-chip active" data-line-stop-variant="standard">Standard</button>
+          <button type="button" class="variant-chip" data-line-stop-variant="htp">HTP</button>
+          <button type="button" class="variant-chip" data-line-stop-variant="hiStop">Hi-Stop</button>
         </div>
-
-        <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
-
-        <p class="formula-note">Auto formula: LI = MD ± LD + POD − Wall</p>
       </div>
+      <div class="variant-inline-note" id="lineStopVariantNote">Standard line stop math uses LI = MD ± LD + POD − Wall.</div>
+    </div>
 
-      <div class="section">
-        <h3>Checks</h3>
+    <div class="line-stop-variant-panel active" data-line-stop-variant-panel="standard">
+      <div class="measurement-grid">
+        <div class="section">
+          <h3>Standard Line Stop</h3>
 
-        <div class="row"><label>Line Stop Travel</label><input id="lsTravel" type="number" step="any"></div>
-        <div class="row"><label>Machine Travel</label><input id="lsMachineTravel" type="number" step="any"></div>
-        <div class="row result-row primary-result-row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
+          <div class="row"><label>Type</label><input value="Standard Line Stop" disabled></div>
 
-        <div id="lsWarnings" class="warning-box"></div>
+          <div class="row"><label>MD</label><input id="lsMd" type="number" step="any"></div>
+
+          <div class="row row-split">
+            <label>LD</label>
+            <input id="lsLd" type="number" step="any">
+            <select id="lsLdSign"><option value="+">+</option><option value="-">−</option></select>
+          </div>
+
+          <div class="row"><label>POD</label><input id="lsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+          <div class="row"><label>Wall Thickness</label><span id="lsWallDisplay" class="display-geometry">—</span><span class="note">From BCO Calculator</span></div>
+
+          <div class="row row-manual-toggle">
+            <label>LI Override</label>
+            <label class="check-inline"><input id="lsLiManualToggle" type="checkbox"> Manual</label>
+          </div>
+
+          <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
+
+          <p class="formula-note">Auto formula: LI = MD ± LD + POD − Wall</p>
+        </div>
+
+        <div class="section">
+          <h3>Checks</h3>
+
+          <div class="row"><label>Line Stop Travel</label><input id="lsTravel" type="number" step="any"></div>
+          <div class="row"><label>Machine Travel</label><input id="lsMachineTravel" type="number" step="any"></div>
+          <div class="row result-row primary-result-row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
+
+          <div id="lsWarnings" class="warning-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="line-stop-variant-panel" data-line-stop-variant-panel="htp">
+      <div class="measurement-grid">
+        <div class="section">
+          <h3>HTP Stop</h3>
+          <p class="formula-note">Training formula: TCO = MD ± LD + PTC + BCO. For HTP, BCO matches the host pipe size from the chart.</p>
+
+          <div class="row"><label>Pipe Size</label>
+            <select id="htpPipeSize">
+              <option value="">Select</option>
+              <option value="3">3”</option>
+              <option value="4">4”</option>
+              <option value="6">6”</option>
+              <option value="8">8”</option>
+              <option value="10">10”</option>
+              <option value="12">12”</option>
+              <option value="14">14”</option>
+              <option value="16">16”</option>
+            </select>
+          </div>
+          <div class="row"><label>Branch Size</label><span id="htpBranchSize" class="calc">—</span></div>
+          <div class="row"><label>HTP Head</label><span id="htpHead" class="calc">—</span></div>
+          <div class="row"><label>Cutter Size</label><span id="htpCutterSize" class="calc">—</span></div>
+          <div class="row"><label>HTP BCO</label><span id="htpBco" class="calc">—</span></div>
+
+          <div class="row"><label>MD</label><input id="htpMd" type="number" step="any"></div>
+          <div class="row row-split">
+            <label>LD</label>
+            <input id="htpLd" type="number" step="any">
+            <select id="htpLdSign"><option value="+">+</option><option value="-">−</option></select>
+          </div>
+          <div class="row"><label>PTC</label><input id="htpPtc" type="number" step="any"></div>
+          <div class="row result-row primary-result-row"><label>TCO</label><span id="htpTco" class="calc">—</span></div>
+        </div>
+
+        <div class="section">
+          <h3>HTP ETA</h3>
+          <div class="row"><label>Machine</label>
+            <select id="htpMachine">
+              <option value="360">360 / 152</option>
+              <option value="660">660 / 760</option>
+              <option value="1200">1200-M120</option>
+            </select>
+          </div>
+          <div class="row"><label>Feed Rate</label><span id="htpFeedRateDisplay" class="calc">0.0040</span></div>
+          <div class="row"><label>Recommended RPM</label><span id="htpEtaRpm" class="calc">—</span></div>
+          <div class="row"><label>Feed Speed</label><span id="htpEtaFeedSpeed" class="calc">—</span></div>
+          <div class="row result-row primary-result-row"><label>ETA Range</label><span id="htpEtaRange" class="calc">—</span></div>
+          <p id="htpStatus" class="warning-box status-box">Select an HTP size to load the chart.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="line-stop-variant-panel" data-line-stop-variant-panel="hiStop">
+      <div class="measurement-grid">
+        <div class="section">
+          <h3>Hi-Stop Cutout</h3>
+          <p class="formula-note">Training formulas: LI = MD ± LD and TCO = (RL/2) + (POD/2) + CL + PTC.</p>
+
+          <div class="row"><label>MD</label><input id="hsMd" type="number" step="any"></div>
+          <div class="row row-split">
+            <label>LD</label>
+            <input id="hsLd" type="number" step="any">
+            <select id="hsLdSign"><option value="+">+</option><option value="-">−</option></select>
+          </div>
+          <div class="row result-row primary-result-row"><label>LI</label><span id="hsLi" class="calc">—</span></div>
+          <div class="row"><label>RL (Reamer Length)</label><input id="hsRl" type="number" step="any"></div>
+          <div class="row"><label>POD</label><input id="hsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+          <div class="row"><label>CL (Cutter Length)</label><input id="hsCl" type="number" step="any"></div>
+          <div class="row"><label>PTC</label><input id="hsPtc" type="number" step="any" placeholder="2&quot; and smaller usually have no PTC"></div>
+          <div class="row result-row primary-result-row"><label>TCO</label><span id="hsTco" class="calc">—</span></div>
+          <div class="row"><label>Wall Thickness</label><span id="hsWallDisplay" class="display-geometry">—</span><span class="note">Training minimum is schedule 40</span></div>
+        </div>
+
+        <div class="section">
+          <h3>Hi-Stop Plug Set</h3>
+          <p class="formula-note">PSD = ((RCD − PB) / (2 × Plug Taper)) + 0.25 and Plug Set = PSD + MD ± LD + ½ POD.</p>
+          <div class="row"><label>RCD</label><input id="hsRcd" type="number" step="any"></div>
+          <div class="row"><label>PB (Plug Bottom)</label><input id="hsPb" type="number" step="any"></div>
+          <div class="row"><label>Plug Taper</label><input id="hsPtp" type="number" step="any"></div>
+          <div class="row result-row support-result-row"><label>PSD</label><span id="hsPsd" class="calc">—</span></div>
+          <div class="row result-row primary-result-row"><label>Plug Set</label><span id="hsPlugSet" class="calc">—</span></div>
+          <div id="hsWarnings" class="warning-box"></div>
+        </div>
       </div>
     </div>
   </section>
+
 
   <section id="completionPlugPanel" class="mode-panel" data-jobtype-only="lineStop">
     <div class="measurement-grid">
@@ -645,6 +751,8 @@
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="converter">Decimal / Fraction</button>
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="bolting">Bolting</button>
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="glossary">Glossary</button>
+      <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="htp">HTP Chart</button>
+      <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="stopmath">Stop Math</button>
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="plant150">150# Plant</button>
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="plant600">600# Plant</button>
       <button type="button" class="secondary-btn ref-shortcut-btn" data-reference-target="garlock600">Graphonic 600# Torque</button>
@@ -655,6 +763,8 @@
     <button type="button" class="ref-category-card active" data-reference-target="converter"><strong>Decimal / Fraction</strong><span>Quick conversion and full chart</span></button>
     <button type="button" class="ref-category-card" data-reference-target="bolting"><strong>Bolting Chart</strong><span>Flange class, stud, wrench, counts</span></button>
     <button type="button" class="ref-category-card" data-reference-target="glossary"><strong>Glossary</strong><span>Abbreviations and field meanings</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="htp"><strong>HTP Chart</strong><span>Pipe size, branch, head, and cutter lookup</span></button>
+    <button type="button" class="ref-category-card" data-reference-target="stopmath"><strong>Stop Math</strong><span>Standard, HTP, and Hi-Stop formulas</span></button>
     <button type="button" class="ref-category-card" data-reference-target="plant150"><strong>150# Plant</strong><span>Jack-bolt and packing wrench info</span></button>
     <button type="button" class="ref-category-card" data-reference-target="plant600"><strong>600# Plant</strong><span>Higher class flange reference</span></button>
     <button type="button" class="ref-category-card" data-reference-target="garlock600"><strong>Graphonic 600# Torque</strong><span>Garlock preferred and minimum torque lookup</span></button>
@@ -679,6 +789,8 @@
             <option value="converter">Decimal / Fraction</option>
             <option value="bolting">Bolting Chart</option>
             <option value="glossary">Glossary</option>
+            <option value="htp">HTP Chart</option>
+            <option value="stopmath">Stop Math</option>
             <option value="plant150">150# Plant Series</option>
             <option value="plant600">600# Plant Series</option>
             <option value="garlock600">Graphonic 600# Torque</option>
@@ -797,7 +909,57 @@
           </table>
         </div>
       </div>
-
+      <div class="reference-view" data-reference-view="htp">
+        <h3 class="reference-subheading">HTP Pipe / Head / Cutter Chart</h3>
+        <p class="reference-copy">Built from the Level III HTP training chart so you can confirm branch size, HTP head range, and cutter size without opening the PDF.</p>
+        <div class="reference-grid plant-reference-grid">
+          <div class="reference-card plant-summary-card">
+            <h4>HTP Quick Rules</h4>
+            <div class="reference-formula-grid">
+              <div class="formula-card"><strong>Hot Tap Cutout</strong><span>TCO = MD ± LD + PTC + BCO</span><small>HTP training uses pipe size as the HTP BCO value.</small></div>
+              <div class="formula-card"><strong>Plug Set</strong><span>Plug Set = PSD ± LD</span><small>Used when setting the HTP plug after the hot tap is complete.</small></div>
+              <div class="formula-card"><strong>Service Range</strong><span>3” through 16” pipe</span><small>The training deck lists up to 1480 PSI and 900°F capability for HTP service.</small></div>
+            </div>
+          </div>
+        </div>
+        <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Pipe Size</th><th>Branch Size</th><th>HTP Head</th><th>Cutter Size</th></tr></thead><tbody id="htpReferenceBody"></tbody></table></div>
+      </div>
+      <div class="reference-view" data-reference-view="stopmath">
+        <h3 class="reference-subheading">Line Stop Math</h3>
+        <p class="reference-copy">Quick formulas and field notes for Standard Line Stop, HTP, and Hi-Stop. This is the fast field-reference version, not the full training deck.</p>
+        <div class="reference-formula-grid reference-formula-grid-wide">
+          <div class="formula-card">
+            <strong>Standard Line Stop</strong>
+            <span>Set Point = MD ± LD + POD − Wall</span>
+            <small>Use for conventional line stop heads when you need lower-in from the training set-point method.</small>
+          </div>
+          <div class="formula-card">
+            <strong>HTP Stop</strong>
+            <span>TCO = MD ± LD + PTC + BCO</span>
+            <small>HTP BCO follows the pipe size chart. Plug Set uses PSD ± LD.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Hi-Stop Cutout</strong>
+            <span>TCO = (RL/2) + (POD/2) + CL + PTC</span>
+            <small>Verify reamer length, cutter length, and pilot-to-cutter before trusting the cutout mark.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Hi-Stop Plug Set</strong>
+            <span>Plug Set = PSD + MD ± LD + ½ POD</span>
+            <small>PSD = ((RCD − PB) / (2 × Plug Taper)) + 0.25.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Hi-Stop Notes</strong>
+            <span>Minimum wall thickness is schedule 40</span>
+            <small>Training notes also call out 12 o’clock as the preferred location and no PTC on 2” and smaller Hi-Stops.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Completion Plug</strong>
+            <span>Pipeline LI = JBF + LD</span>
+            <small>Pipeline side-outlet completion plug training also uses LI = FTD − TMU ± LD.</small>
+          </div>
+        </div>
+      </div>
       <div class="reference-view" data-reference-view="plant150">
         <h3 class="reference-subheading">150# Plant Series Flange Information</h3>
         <p class="reference-copy">Quick plant-series lookup for jack-bolt wrench size, packing nut wrench size, and jack-bolt count.</p>
@@ -1056,8 +1218,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha149"></script>
-<script src="measurement.js?v=3.0.0-alpha149"></script>
+<script src="firebase-config.js?v=3.0.0-alpha151"></script>
+<script src="measurement.js?v=3.0.0-alpha151"></script>
   </section>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha149';
+const BUILD_VERSION = '3.0.0-alpha151';
 
 (function(){
 
@@ -116,11 +116,14 @@ try {
     const pipeIdEl = document.getElementById("pipeId");
     const wallThkEl = document.getElementById("wallThk");
     const lsWallDisplay = document.getElementById("lsWallDisplay");
+    const hsWallDisplay = document.getElementById("hsWallDisplay");
     const podEl = document.getElementById("pod");
     const lsPodEl = document.getElementById("lsPod");
+    const hsPodEl = document.getElementById("hsPod");
 
     if (podEl && isFinite(geometry.pipeOD) && geometry.pipeOD) podEl.value = geometry.pipeOD.toFixed(4);
     if (lsPodEl && isFinite(geometry.pipeOD) && geometry.pipeOD) lsPodEl.value = geometry.pipeOD.toFixed(4);
+    if (hsPodEl && isFinite(geometry.pipeOD) && geometry.pipeOD) hsPodEl.value = geometry.pipeOD.toFixed(4);
 
     if (!document.getElementById("pipeId") && document.getElementById("mco")) {
       const mcoRow = document.getElementById("mco").closest(".row");
@@ -145,8 +148,10 @@ try {
     if (isFinite(geometry.wall) && geometry.wall) {
       wallThk && (wallThk.textContent = geometry.wall.toFixed(4));
       lsWallDisplay && (lsWallDisplay.textContent = geometry.wall.toFixed(4));
+      hsWallDisplay && (hsWallDisplay.textContent = geometry.wall.toFixed(4));
     } else {
       lsWallDisplay && (lsWallDisplay.textContent = "—");
+      hsWallDisplay && (hsWallDisplay.textContent = "—");
     }
   }
 
@@ -1249,7 +1254,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha149', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha151', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1337,6 +1342,41 @@ function calcHtp() {
   el.addEventListener('change', calcHtp);
 });
 
+// ===== LINE STOP VARIANT SHELL =====
+const lineStopVariantInputEl = document.getElementById('lineStopVariant');
+const lineStopVariantBtnEls = Array.from(document.querySelectorAll('[data-line-stop-variant]'));
+const lineStopVariantPanelEls = Array.from(document.querySelectorAll('[data-line-stop-variant-panel]'));
+const lineStopVariantNoteEl = document.getElementById('lineStopVariantNote');
+const lineStopVariantCopy = {
+  standard: 'Standard line stop math uses LI = MD ± LD + POD − Wall.',
+  htp: 'HTP uses the training chart for branch size, head, cutter, and pipe-size BCO.',
+  hiStop: 'Hi-Stop keeps cutout and plug-set math separate so PSD and Plug Set stay visible.'
+};
+function getLineStopVariant(){
+  const raw = String(lineStopVariantInputEl?.value || 'standard').trim();
+  return ['standard','htp','hiStop'].includes(raw) ? raw : 'standard';
+}
+function setLineStopVariant(variant){
+  const next = ['standard','htp','hiStop'].includes(String(variant || '').trim()) ? String(variant).trim() : 'standard';
+  if (lineStopVariantInputEl) {
+    lineStopVariantInputEl.value = next;
+    try { lineStopVariantInputEl.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { lineStopVariantInputEl.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+  lineStopVariantBtnEls.forEach((btn) => {
+    const active = btn.dataset.lineStopVariant === next;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  lineStopVariantPanelEls.forEach((panel) => panel.classList.toggle('active', panel.dataset.lineStopVariantPanel === next));
+  if (lineStopVariantNoteEl) lineStopVariantNoteEl.textContent = lineStopVariantCopy[next] || lineStopVariantCopy.standard;
+  try { persistCurrentJob(); } catch {}
+  try { updateSummary(); } catch {}
+  try { updateCurrentJobLabel(); } catch {}
+}
+lineStopVariantBtnEls.forEach((btn) => btn.addEventListener('click', () => setLineStopVariant(btn.dataset.lineStopVariant || 'standard')));
+setTimeout(() => setLineStopVariant(getLineStopVariant()), 0);
+
 // ===== HOT TAP =====
 const mdEl = document.getElementById("md");
 const ldEl = document.getElementById("ld");
@@ -1358,6 +1398,7 @@ const hotTapWarnEl = document.getElementById("mtWarning");
 
 let lastHotTap = { li: NaN, ttd: NaN, warnings: [] };
 let lastLineStop = { li: NaN, ldRaw: NaN, warnings: [] };
+let lastHiStop = { li: NaN, tco: NaN, psd: NaN, plugSet: NaN, warnings: [] };
 let lastCompletionPlug = { li: NaN, warnings: [] };
 
 const JOB_STATE_KEY = 'measurementCardStateV1';
@@ -1459,8 +1500,15 @@ function buildStateFromRecord(record = {}) {
   if (!state.machineType && machine) state.machineType = machine;
   if (!state.operationType) {
     if (op.includes('completion')) state.operationType = 'Completion Plug';
+    else if (op.includes('hi-stop') || op.includes('histop')) {
+      state.operationType = 'Line Stop';
+      if (!state.lineStopVariant) state.lineStopVariant = 'hiStop';
+    }
+    else if (op.includes('htp')) {
+      state.operationType = 'Line Stop';
+      if (!state.lineStopVariant) state.lineStopVariant = 'htp';
+    }
     else if (op.includes('line stop')) state.operationType = 'Line Stop';
-    else if (op.includes('htp')) state.operationType = 'HTP';
     else if (op.includes('hot tap')) state.operationType = 'Hot Tap';
     else state.operationType = 'Hot Tap';
   }
@@ -1487,6 +1535,16 @@ function buildStateFromRecord(record = {}) {
   if (!state.htpLdSign && record?.measurements?.htp?.ldSign) state.htpLdSign = record.measurements.htp.ldSign;
   if (!state.htpPtc && record?.measurements?.htp?.ptc) state.htpPtc = record.measurements.htp.ptc;
   if (!state.htpPipeSize && record?.measurements?.htp?.pipeSize) state.htpPipeSize = record.measurements.htp.pipeSize;
+  if (!state.lineStopVariant && record?.measurements?.lineStop?.variant) state.lineStopVariant = record.measurements.lineStop.variant;
+  if (!state.hsMd && record?.measurements?.hiStop?.md) state.hsMd = record.measurements.hiStop.md;
+  if (!state.hsLd && record?.measurements?.hiStop?.ld) state.hsLd = record.measurements.hiStop.ld;
+  if (!state.hsLdSign && record?.measurements?.hiStop?.ldSign) state.hsLdSign = record.measurements.hiStop.ldSign;
+  if (!state.hsRl && record?.measurements?.hiStop?.rl) state.hsRl = record.measurements.hiStop.rl;
+  if (!state.hsCl && record?.measurements?.hiStop?.cl) state.hsCl = record.measurements.hiStop.cl;
+  if (!state.hsPtc && record?.measurements?.hiStop?.ptc) state.hsPtc = record.measurements.hiStop.ptc;
+  if (!state.hsRcd && record?.measurements?.hiStop?.rcd) state.hsRcd = record.measurements.hiStop.rcd;
+  if (!state.hsPb && record?.measurements?.hiStop?.pb) state.hsPb = record.measurements.hiStop.pb;
+  if (!state.hsPtp && record?.measurements?.hiStop?.ptp) state.hsPtp = record.measurements.hiStop.ptp;
   if (!state.lsMd && record?.measurements?.lineStop?.md) state.lsMd = record.measurements.lineStop.md;
   if (!state.lsLd && record?.measurements?.lineStop?.ld) state.lsLd = record.measurements.lineStop.ld;
   if (!state.lsLdSign && record?.measurements?.lineStop?.ldSign) state.lsLdSign = record.measurements.lineStop.ldSign;
@@ -1501,8 +1559,7 @@ function buildStateFromRecord(record = {}) {
 
   if (!state.activeMode) {
     if (op.includes('completion')) state.activeMode = 'completionPlug';
-    else if (op.includes('line stop')) state.activeMode = 'lineStop';
-    else if (op.includes('htp')) state.activeMode = 'htp';
+    else if (op.includes('line stop') || op.includes('htp') || op.includes('hi-stop') || op.includes('histop')) state.activeMode = 'lineStop';
     else if (op.includes('hot tap')) state.activeMode = 'hotTap';
     else state.activeMode = 'bco';
   }
@@ -1656,6 +1713,73 @@ function calcHotTap() {
   if (el) el.addEventListener("input", calcHotTap);
 });
 if (signEl) signEl.addEventListener("change", calcHotTap);
+
+// ===== HI-STOP =====
+const hsMdEl = document.getElementById('hsMd');
+const hsLdEl = document.getElementById('hsLd');
+const hsLdSignEl = document.getElementById('hsLdSign');
+const hsLiEl = document.getElementById('hsLi');
+const hsRlEl = document.getElementById('hsRl');
+const hsPodEl = document.getElementById('hsPod');
+const hsClEl = document.getElementById('hsCl');
+const hsPtcEl = document.getElementById('hsPtc');
+const hsTcoEl = document.getElementById('hsTco');
+const hsRcdEl = document.getElementById('hsRcd');
+const hsPbEl = document.getElementById('hsPb');
+const hsPtpEl = document.getElementById('hsPtp');
+const hsPsdEl = document.getElementById('hsPsd');
+const hsPlugSetEl = document.getElementById('hsPlugSet');
+const hsWarningsEl = document.getElementById('hsWarnings');
+
+function calcHiStop() {
+  const md = getMeasurementValue(hsMdEl) || 0;
+  const ldRaw = getMeasurementValue(hsLdEl) || 0;
+  const ld = (hsLdSignEl?.value || '+') === '-' ? -ldRaw : ldRaw;
+  const li = md + ld;
+  const rl = getMeasurementValue(hsRlEl);
+  const pod = getMeasurementValue(hsPodEl) || geometry.pipeOD || 0;
+  const cl = getMeasurementValue(hsClEl);
+  const ptc = getMeasurementValue(hsPtcEl) || 0;
+  const tco = Number.isFinite(rl) && Number.isFinite(pod) && Number.isFinite(cl)
+    ? (rl / 2) + (pod / 2) + cl + ptc
+    : NaN;
+  const rcd = getMeasurementValue(hsRcdEl);
+  const pb = getMeasurementValue(hsPbEl);
+  const taper = getMeasurementValue(hsPtpEl);
+  const psd = Number.isFinite(rcd) && Number.isFinite(pb) && Number.isFinite(taper) && taper !== 0
+    ? ((rcd - pb) / (2 * taper)) + 0.25
+    : NaN;
+  const plugSet = Number.isFinite(psd) && Number.isFinite(pod)
+    ? psd + md + ld + (pod / 2)
+    : NaN;
+
+  if (hsLiEl) hsLiEl.textContent = formatValue(li);
+  if (hsTcoEl) hsTcoEl.textContent = formatValue(tco);
+  if (hsPsdEl) hsPsdEl.textContent = formatValue(psd);
+  if (hsPlugSetEl) hsPlugSetEl.textContent = formatValue(plugSet);
+
+  const warnings = [];
+  if (!data) warnings.push('⚠️ BCO data is not loaded. POD and wall thickness should be checked in the BCO calculator first.');
+  if (!Number.isFinite(rl) || !Number.isFinite(cl)) warnings.push('⚠️ Enter reamer length and cutter length to verify Hi-Stop TCO.');
+  if (!Number.isFinite(psd)) warnings.push('⚠️ Enter RCD, plug bottom, and plug taper to calculate PSD and Plug Set.');
+  if (Number.isFinite(geometry.wall) && geometry.wall > 0 && geometry.wall < 0.25) warnings.push('⚠️ Training notes call for a schedule 40 minimum wall thickness. Double-check the planned Hi-Stop application.');
+  if (Number.isFinite(plugSet) && plugSet < 0) warnings.push('⚠️ Plug Set is negative. Recheck MD / LD sign and PSD inputs.');
+
+  if (hsWarningsEl) {
+    hsWarningsEl.innerHTML = warnings.length ? warnings.join('<br>') : 'No Hi-Stop warnings.';
+    hsWarningsEl.classList.toggle('active', warnings.length > 0);
+    hsWarningsEl.classList.toggle('ok', warnings.length === 0);
+  }
+
+  lastHiStop = { li, tco, psd, plugSet, warnings };
+  updateSummary();
+}
+
+[hsMdEl, hsLdEl, hsLdSignEl, hsRlEl, hsPodEl, hsClEl, hsPtcEl, hsRcdEl, hsPbEl, hsPtpEl].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', calcHiStop);
+  el.addEventListener('change', calcHiStop);
+});
 
 // ===== LINE STOP =====
 const lsMdEl = document.getElementById('lsMd');
@@ -1822,20 +1946,16 @@ function updateSummary() {
     const md = getMeasurementValue(mdEl);
     const li = lastHotTap.li;
     const ttd = lastHotTap.ttd;
-    if (document.querySelector('.mode-btn.active')?.dataset.mode === 'htp' || Number.isFinite(lastHtp.tco)) {
-      const htpPipe = htpPipeSizeEl?.value ? `${htpPipeSizeEl.value}"` : '—';
-      summaryEls.hotTap.textContent = Number.isFinite(lastHtp.tco)
-        ? `HTP ${htpPipe} • TCO ${formatValue(lastHtp.tco)} • ETA ${lastHtp.eta || '—'}`
-        : '—';
-    } else {
-      summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
-        ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
-        : '—';
-    }
+    summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
+      ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
+      : '—';
   }
 
   if (summaryEls.lineStopLi) {
-    summaryEls.lineStopLi.textContent = formatValue(lastLineStop.li);
+    const stopVariant = getLineStopVariant();
+    if (stopVariant === 'htp' && Number.isFinite(lastHtp.tco)) summaryEls.lineStopLi.textContent = `HTP TCO ${formatValue(lastHtp.tco)}`;
+    else if (stopVariant === 'hiStop' && Number.isFinite(lastHiStop.plugSet)) summaryEls.lineStopLi.textContent = `Plug ${formatValue(lastHiStop.plugSet)}`;
+    else summaryEls.lineStopLi.textContent = formatValue(lastLineStop.li);
   }
 
   if (summaryEls.completionLi) {
@@ -1843,7 +1963,7 @@ function updateSummary() {
   }
 
   if (summaryEls.warnings) {
-    const allWarnings = [...(lastHotTap.warnings || []), ...(lastLineStop.warnings || []), ...(lastCompletionPlug.warnings || [])];
+    const allWarnings = [...(lastHotTap.warnings || []), ...(lastHtp.warnings || []), ...(lastLineStop.warnings || []), ...(lastHiStop.warnings || []), ...(lastCompletionPlug.warnings || [])];
     summaryEls.warnings.textContent = allWarnings.length ? allWarnings.join(' | ') : 'None';
   }
 }
@@ -2003,8 +2123,9 @@ function getStateFields() {
     'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
-    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
+    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
+    'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
     'etaMachine','etaCutterSize','etaBco','etaRpmOverride'
   ];
@@ -2044,6 +2165,7 @@ function applyJobState(state) {
   if (state.activeMode) {
     setMode(state.activeMode);
   }
+  setLineStopVariant(state.lineStopVariant || 'standard');
   updateJobInfoSummary();
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
 }
@@ -2142,6 +2264,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   calcHotTap();
   calcHtp();
   calcLineStop();
+  calcHiStop();
   calcCompletionPlug();
   initEtaCalculator();
   syncBcoToEta({ force: true });
@@ -2155,6 +2278,7 @@ function loadRecordIntoCalculator(record, options = {}) {
     calcHotTap();
     calcHtp();
     calcLineStop();
+    calcHiStop();
     calcCompletionPlug();
     syncBcoToEta({ force: true });
     updateEtaEstimate();
@@ -2280,6 +2404,8 @@ function buildJobRecord(state = collectJobState()) {
       hotTapTtd: formatValue(lastHotTap.ttd),
       htpTco: formatValue(lastHtp.tco),
       lineStopLi: formatValue(lastLineStop.li),
+      hiStopTco: formatValue(lastHiStop.tco),
+      hiStopPlugSet: formatValue(lastHiStop.plugSet),
       completionPlugLi: formatValue(lastCompletionPlug.li)
     },
     measurements: {
@@ -2297,10 +2423,17 @@ function buildJobRecord(state = collectJobState()) {
         ldSign: state.htpLdSign || '+', ptc: state.htpPtc || '', tco: formatValue(lastHtp.tco), eta: lastHtp.eta || '—'
       },
       lineStop: {
+        variant: state.lineStopVariant || getLineStopVariant(),
         md: state.lsMd || '', ld: state.lsLd || '', ldSign: state.lsLdSign || '+',
         pod: state.lsPod || pipeOdText, wallThickness: wallText, li: formatValue(lastLineStop.li),
         travel: state.lsTravel || '', machineTravel: state.lsMachineTravel || '',
         travelMargin: lsTravelMarginEl?.textContent?.trim() || ''
+      },
+      hiStop: {
+        md: state.hsMd || '', ld: state.hsLd || '', ldSign: state.hsLdSign || '+', rl: state.hsRl || '',
+        pod: state.hsPod || pipeOdText, cl: state.hsCl || '', ptc: state.hsPtc || '',
+        tco: formatValue(lastHiStop.tco), rcd: state.hsRcd || '', pb: state.hsPb || '',
+        ptp: state.hsPtp || '', psd: formatValue(lastHiStop.psd), plugSet: formatValue(lastHiStop.plugSet)
       },
       completionPlug: {
         start: state.cpStart || '', jbf: state.cpJbf || '', ld: state.cpLd || '',
@@ -2310,6 +2443,7 @@ function buildJobRecord(state = collectJobState()) {
     warnings: {
       hotTap: lastHotTap.warnings || [],
       lineStop: lastLineStop.warnings || [],
+      hiStop: lastHiStop.warnings || [],
       completionPlug: lastCompletionPlug.warnings || []
     },
     state
@@ -2505,6 +2639,7 @@ function renderJobRecordDetails(record) {
   const warnings = [
     ...(record?.warnings?.hotTap || []),
     ...(record?.warnings?.lineStop || []),
+    ...(record?.warnings?.hiStop || []),
     ...(record?.warnings?.completionPlug || [])
   ].filter(Boolean);
   return `
@@ -2609,6 +2744,7 @@ function renderSelectedJobDetails(jobs = null) {
   const warnings = [
     ...(record?.warnings?.hotTap || []),
     ...(record?.warnings?.lineStop || []),
+    ...(record?.warnings?.hiStop || []),
     ...(record?.warnings?.completionPlug || [])
   ].filter(Boolean);
   jobsListEl.innerHTML = `
@@ -3033,6 +3169,7 @@ window.addEventListener('load', async () => {
   calcHotTap();
   calcHtp();
   calcLineStop();
+  calcHiStop();
   calcCompletionPlug();
   initEtaCalculator();
   persistCurrentJob();
@@ -3168,11 +3305,28 @@ window.addEventListener('load', async () => {
         inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
         output: readOut('htpTco') !== '—'
       },
-      lineStop: {
-        geometry: baseReady && geometryReady,
-        inputs: hasValue('lsMd') && hasValue('lsTravel') && hasValue('lsMachineTravel'),
-        output: readOut('lsLiManual') !== '—'
-      },
+      lineStop: (() => {
+        const variant = getLineStopVariant();
+        if (variant === 'htp') {
+          return {
+            geometry: baseReady,
+            inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
+            output: readOut('htpTco') !== '—'
+          };
+        }
+        if (variant === 'hiStop') {
+          return {
+            geometry: baseReady && geometryReady,
+            inputs: hasValue('hsMd') && hasValue('hsRl') && hasValue('hsCl') && hasValue('hsRcd') && hasValue('hsPb') && hasValue('hsPtp'),
+            output: readOut('hsPlugSet') !== '—'
+          };
+        }
+        return {
+          geometry: baseReady && geometryReady,
+          inputs: hasValue('lsMd') && hasValue('lsTravel') && hasValue('lsMachineTravel'),
+          output: readOut('lsLiManual') !== '—'
+        };
+      })(),
       completionPlug: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt'),
@@ -3190,11 +3344,13 @@ window.addEventListener('load', async () => {
 
     const safeActiveMode = stageChecks[activeMode] ? activeMode : 'hotTap';
     const current = describeStage(safeActiveMode);
+    const activeVariant = getLineStopVariant();
     const missingSetup = [];
     if (!hasMachine) missingSetup.push('machine');
-    if (getText('summaryPipe') === '—') missingSetup.push('pipe');
-    if (getText('summaryCutter') === '—') missingSetup.push('cutter');
-    if (getText('summaryBco') === '—') missingSetup.push('BCO');
+    const needsGeometryBundle = !(safeActiveMode === 'lineStop' && activeVariant === 'htp');
+    if (needsGeometryBundle && getText('summaryPipe') === '—') missingSetup.push('pipe');
+    if (needsGeometryBundle && getText('summaryCutter') === '—') missingSetup.push('cutter');
+    if (needsGeometryBundle && getText('summaryBco') === '—') missingSetup.push('BCO');
 
     const geometryLabel = current.geometry
       ? 'Ready'
@@ -3210,7 +3366,6 @@ window.addEventListener('load', async () => {
 
     const stageReadyMap = {
       workflowStatusHotTap: describeStage('hotTap'),
-      workflowStatusHtp: describeStage('htp'),
       workflowStatusLineStop: describeStage('lineStop'),
       workflowStatusCompletionPlug: describeStage('completionPlug')
     };
@@ -3291,18 +3446,31 @@ window.addEventListener('load', async () => {
     const hotTapTtd=readCardOutput('ttd');
     const htpTco=readCardOutput('htpTco');
     const lsLi=readCardOutput('lsLiManual');
+    const hsPlugSet=readCardOutput('hsPlugSet');
     const cpLi=readCardOutput('cpLiManual');
     if(focusOutput){
-      const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '—', htp: htpTco !== '' ? htpTco : '—', lineStop: lsLi !== '' ? lsLi : '—', completionPlug: cpLi !== '' ? cpLi : '—'};
+      const activeVariant = getLineStopVariant();
+      const lineStopOutput = activeVariant === 'htp'
+        ? (htpTco !== '' ? htpTco : '—')
+        : activeVariant === 'hiStop'
+          ? (hsPlugSet !== '' ? hsPlugSet : '—')
+          : (lsLi !== '' ? lsLi : '—');
+      const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '—', lineStop: lineStopOutput, completionPlug: cpLi !== '' ? cpLi : '—'};
       const safeOutputMode = map[activeMode] ? activeMode : 'hotTap';
       focusOutput.textContent = map[safeOutputMode] || '—';
     }
     const focusTitle=document.getElementById('cardFocusTitle');
     const focusDesc=document.getElementById('cardFocusDesc');
     if(focusTitle || focusDesc){
+      const activeVariant = getLineStopVariant();
+      const lineStopCopy = activeVariant === 'htp'
+        ? ['HTP workflow','Use the HTP chart, then verify TCO, cutter, and ETA before setting the HTP plug.']
+        : activeVariant === 'hiStop'
+          ? ['Hi-Stop workflow','Verify cutout with RL, POD, CL, and PTC, then calculate PSD and Plug Set before setting the stop.']
+          : ['Line Stop workflow','Use the stop-stage fields to confirm lower-in, turns, and valve positioning before setting the stop.'];
       const modeCopy={
         hotTap:['Hot Tap workflow','Set MD, LD, and PTC first, then verify LI, BCO, and on-rod values before moving forward.'],
-        lineStop:['Line Stop workflow','Use the stop-stage fields to confirm lower-in, turns, and valve positioning before setting the stop.'],
+        lineStop:lineStopCopy,
         completionPlug:['Completion Plug workflow','Finish the operation by confirming plug dimensions, lower-in, and final checks.']
       };
       const copy=modeCopy[activeMode] || modeCopy.hotTap;
@@ -3364,7 +3532,7 @@ window.addEventListener('load', async () => {
     if(active !== target) window.setMode(target);
   }
   document.getElementById('operationType')?.addEventListener('change', syncOperationSelection);
-  ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','cpStart','cpJbf','cpPt'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
+  ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','hsMd','hsRl','hsCl','hsRcd','hsPb','hsPtp','cpStart','cpJbf','cpPt','lineStopVariant'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
   syncOperationSelection();
   updateCurrentJobLabel();
   window.addEventListener('load', async () => { syncOperationSelection(); updateCurrentJobLabel(); });
@@ -3857,6 +4025,7 @@ window.addEventListener('load', async () => {
         try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
         try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
         try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+        try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
         try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
         try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
         try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
@@ -3951,6 +4120,7 @@ window.addEventListener('load', async () => {
         try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
         try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
         try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+        try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
         try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
         try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
         try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
@@ -3972,8 +4142,9 @@ window.addEventListener('load', async () => {
     'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
-    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine',
+    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
+    'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
     'etaMachine','etaCutterSize','etaBco','etaRpmOverride'
   ];
@@ -4070,6 +4241,7 @@ window.addEventListener('load', async () => {
     try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
     try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
     try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
     try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
     try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
     try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
@@ -4281,6 +4453,7 @@ window.addEventListener('load', async () => {
     try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
     try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
     try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
     try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
     try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
     try { if (typeof syncBcoToEta === 'function') syncBcoToEta({force:true}); } catch {}
@@ -4365,6 +4538,7 @@ window.addEventListener('load', async () => {
     try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
     try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
     try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
     try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
     try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
     try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
@@ -4419,7 +4593,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha149';
+const TC63_VERSION = '3.0.0-alpha151';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4661,7 +4835,7 @@ const TC63_VERSION = '3.0.0-alpha149';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha149';
+const VERSION = '3.0.0-alpha151';
 
   function tc65GetJobs() {
     try {
@@ -4758,6 +4932,7 @@ const VERSION = '3.0.0-alpha149';
     const warnings = [
       ...(record?.warnings?.hotTap || []),
       ...(record?.warnings?.lineStop || []),
+      ...(record?.warnings?.hiStop || []),
       ...(record?.warnings?.completionPlug || [])
     ].filter(Boolean);
     const detailsHtml = typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : '';
@@ -4822,9 +4997,9 @@ const VERSION = '3.0.0-alpha149';
   setTimeout(() => {
     try {
       const badge = document.querySelector('.version-badge');
-      if (badge) badge.textContent = `TapCalc Dev ${VERSION} · 2026-04-07`;
+      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-04-19`;
       const title = document.querySelector('.top-app-title');
-      if (title) title.textContent = `TapCalc Dev ${VERSION} · 2026-04-07`;
+      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-04-19`;
       tc65RenderDetails();
     } catch {}
   }, 0);
@@ -6943,6 +7118,7 @@ const VERSION = '3.0.0-alpha149';
     try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
     try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
     try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
     try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
     try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
     try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
@@ -7376,6 +7552,7 @@ const VERSION = '3.0.0-alpha149';
     const warnings = [
       ...((record?.warnings?.hotTap) || []),
       ...((record?.warnings?.lineStop) || []),
+      ...((record?.warnings?.hiStop) || []),
       ...((record?.warnings?.completionPlug) || [])
     ].filter(Boolean);
     jobsListEl.innerHTML = `
@@ -7683,6 +7860,7 @@ const VERSION = '3.0.0-alpha149';
     const warnings = [
       ...(record?.warnings?.hotTap || []),
       ...(record?.warnings?.lineStop || []),
+      ...(record?.warnings?.hiStop || []),
       ...(record?.warnings?.completionPlug || [])
     ].filter(Boolean);
     detailsEl.innerHTML = `
@@ -7855,7 +8033,7 @@ const VERSION = '3.0.0-alpha149';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha149';
+const VERSION = '3.0.0-alpha151';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8037,6 +8215,7 @@ const VERSION = '3.0.0-alpha149';
       try { calcHotTap(); } catch {}
       try { calcHtp(); } catch {}
       try { calcLineStop(); } catch {}
+      try { calcHiStop(); } catch {}
       try { calcCompletionPlug(); } catch {}
       try { initEtaCalculator(); } catch {}
       try { syncBcoToEta({ force: true }); } catch {}
@@ -8090,6 +8269,7 @@ const VERSION = '3.0.0-alpha149';
     const warnings = [
       ...(record?.warnings?.hotTap || []),
       ...(record?.warnings?.lineStop || []),
+      ...(record?.warnings?.hiStop || []),
       ...(record?.warnings?.completionPlug || [])
     ].filter(Boolean);
     detailsEl.innerHTML = `
@@ -8232,6 +8412,7 @@ const VERSION = '3.0.0-alpha149';
     try { calcHotTap(); } catch {}
     try { calcHtp(); } catch {}
     try { calcLineStop(); } catch {}
+    try { calcHiStop(); } catch {}
     try { calcCompletionPlug(); } catch {}
     try { initEtaCalculator(); } catch {}
     try { syncBcoToEta({ force: true }); } catch {}
@@ -8447,6 +8628,7 @@ const VERSION = '3.0.0-alpha149';
     try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
     try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
     try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
     try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
     try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
     try { if (typeof persistCurrentJob === 'function') persistCurrentJob(); } catch {}
