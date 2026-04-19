@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha151">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha152">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha151 - 2026-04-19</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha152 - 2026-04-19</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha151 - 2026-04-19</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha152 - 2026-04-19</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -66,7 +66,7 @@
         <div class="home-current-job-actions">
           <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
           <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
-        <button type="button" class="secondary-btn" id="cardJumpToInputsBtn">Open Workflow</button>
+        <button type="button" class="secondary-btn" id="homeOpenWorkflowBtn" data-go-screen="card">Open Workflow</button>
         </div>
       </div>
       <div class="home-stat-grid">
@@ -248,9 +248,9 @@
       <div class="screen-intro-stat"><span>Machine</span><strong id="calcCurrentMachine">—</strong></div>
     </div>
   </section>
-  <div class="card-subnav">
-    <button type="button" class="submode-btn active" data-mode="bco">BCO</button>
-    <button type="button" class="submode-btn" data-mode="eta">ETA</button>
+  <div class="card-subnav calc-subnav">
+    <button type="button" class="submode-btn calc-submode-btn active" data-mode="bco">BCO</button>
+    <button type="button" class="submode-btn calc-submode-btn" data-mode="eta">ETA</button>
   </div>
   <section id="bcoPanel" class="mode-panel active">
     <div class="measurement-grid">
@@ -483,10 +483,10 @@
       <div><strong>Completion Plug</strong><span>Finish-out dimensions and checks.</span></div><span class="workflow-status" id="workflowStatusCompletionPlug">Not Ready</span>
     </article>
   </section>
-  <div class="card-subnav">
-    <button type="button" class="submode-btn active" data-mode="hotTap">Hot Tap</button>
-    <button type="button" class="submode-btn" data-mode="lineStop" data-jobtype-only="lineStop">Line Stop</button>
-    <button type="button" class="submode-btn" data-mode="completionPlug" data-jobtype-only="lineStop">Completion Plug</button>
+  <div class="card-subnav workflow-mode-subnav">
+    <button type="button" class="submode-btn workflow-submode-btn active" data-mode="hotTap">Hot Tap</button>
+    <button type="button" class="submode-btn workflow-submode-btn" data-mode="lineStop" data-jobtype-only="lineStop">Line Stop</button>
+    <button type="button" class="submode-btn workflow-submode-btn" data-mode="completionPlug" data-jobtype-only="lineStop">Completion Plug</button>
   </div>
   <section class="card-focus-shell">
     <div class="card-focus-head">
@@ -499,7 +499,7 @@
         <button type="button" class="secondary-btn" data-go-screen="calc">Open Tools</button>
         <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
         <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
-        <button type="button" class="secondary-btn" id="cardJumpToInputsBtn">Jump to Inputs</button>
+        <button type="button" class="secondary-btn" id="cardFocusJumpBtn">Jump to Inputs</button>
       </div>
     </div>
     <div class="card-focus-stats">
@@ -1218,8 +1218,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha151"></script>
-<script src="measurement.js?v=3.0.0-alpha151"></script>
+<script src="firebase-config.js?v=3.0.0-alpha152"></script>
+<script src="measurement.js?v=3.0.0-alpha152"></script>
   </section>
 </body>
 </html>

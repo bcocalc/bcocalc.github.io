@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha151';
+const BUILD_VERSION = '3.0.0-alpha152';
 
 (function(){
 
@@ -69,7 +69,12 @@ function refreshBcoState() {
 refreshBcoState();
 
 // ===== MODE SWITCHING =====
-const modeButtons = Array.from(document.querySelectorAll('.mode-btn[data-mode]'));
+const WORKFLOW_MODE_KEY = 'measurementCardActiveModeV1';
+const CALC_MODE_KEY = 'measurementCardCalcModeV1';
+const CALC_SCREEN_MODES = new Set(['bco', 'eta']);
+const WORKFLOW_SCREEN_MODES = new Set(['hotTap', 'lineStop', 'completionPlug']);
+const calcModeButtons = Array.from(document.querySelectorAll('.calc-submode-btn[data-mode]'));
+const workflowModeButtons = Array.from(document.querySelectorAll('.workflow-submode-btn[data-mode]'));
 const panels = {
   bco: document.getElementById('bcoPanel'),
   hotTap: document.getElementById('hotTapPanel'),
@@ -79,24 +84,76 @@ const panels = {
   eta: document.getElementById('etaPanel')
 };
 
+function normalizeMode(mode) {
+  if (mode === 'htp') return 'hotTap';
+  return String(mode || '').trim();
+}
+
+function getStoredCalcMode() {
+  try {
+    const savedMode = normalizeMode(localStorage.getItem(CALC_MODE_KEY));
+    return savedMode === 'eta' ? 'eta' : 'bco';
+  } catch {
+    return 'bco';
+  }
+}
+
+function getStoredWorkflowMode() {
+  try {
+    const savedMode = normalizeMode(localStorage.getItem(WORKFLOW_MODE_KEY));
+    return WORKFLOW_SCREEN_MODES.has(savedMode) ? savedMode : 'hotTap';
+  } catch {
+    return 'hotTap';
+  }
+}
+
+function syncCalcModeButtons(mode) {
+  calcModeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
+}
+
+function syncWorkflowModeButtons(mode) {
+  workflowModeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
+}
+
+function getActiveCalcMode() {
+  return calcModeButtons.find((btn) => btn.classList.contains('active'))?.dataset.mode || getStoredCalcMode();
+}
+
+function getActiveWorkflowMode() {
+  return workflowModeButtons.find((btn) => btn.classList.contains('active'))?.dataset.mode || getStoredWorkflowMode();
+}
+
+function getActiveWorkflowLabel() {
+  return workflowModeButtons.find((btn) => btn.classList.contains('active'))?.textContent?.trim() || 'Hot Tap';
+}
+
 function setMode(mode) {
-  modeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+  const nextMode = normalizeMode(mode);
+  if (!panels[nextMode]) return;
+  if (CALC_SCREEN_MODES.has(nextMode)) syncCalcModeButtons(nextMode);
+  if (WORKFLOW_SCREEN_MODES.has(nextMode)) syncWorkflowModeButtons(nextMode);
   Object.entries(panels).forEach(([key, panel]) => {
     if (!panel) return;
-    panel.classList.toggle('active', key === mode);
+    panel.classList.toggle('active', key === nextMode);
   });
-  if (mode === 'eta') {
+  if (nextMode === 'eta') {
     syncBcoToEta({ force: true });
     updateEtaEstimate();
   }
-  try {
-    localStorage.setItem('measurementCardActiveModeV1', mode);
-  } catch {}
+  if (CALC_SCREEN_MODES.has(nextMode)) {
+    try { localStorage.setItem(CALC_MODE_KEY, nextMode); } catch {}
+  }
+  if (WORKFLOW_SCREEN_MODES.has(nextMode)) {
+    try { localStorage.setItem(WORKFLOW_MODE_KEY, nextMode); } catch {}
+  }
 }
 
 window.setMode = setMode;
+window.getActiveCalcMode = getActiveCalcMode;
+window.getActiveWorkflowMode = getActiveWorkflowMode;
+window.getActiveWorkflowLabel = getActiveWorkflowLabel;
 
-modeButtons.forEach(btn => {
+calcModeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
     setMode(btn.dataset.mode);
@@ -104,11 +161,11 @@ modeButtons.forEach(btn => {
 });
 
 try {
-  const savedMode = localStorage.getItem('measurementCardActiveModeV1');
-  setMode(savedMode && panels[savedMode] ? savedMode : 'bco');
+  setMode(getStoredCalcMode());
 } catch {
   setMode('bco');
 }
+syncWorkflowModeButtons(getStoredWorkflowMode());
 
 // ===== SUPPORTING GEOMETRY DISPLAY =====
 (function(){
@@ -1254,7 +1311,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha151', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha152', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1403,7 +1460,7 @@ let lastCompletionPlug = { li: NaN, warnings: [] };
 
 const JOB_STATE_KEY = 'measurementCardStateV1';
 const JOB_HISTORY_KEY = 'measurementCardHistoryV1';
-const ACTIVE_MODE_KEY = 'measurementCardActiveModeV1';
+const ACTIVE_MODE_KEY = WORKFLOW_MODE_KEY;
 const MAX_HISTORY_ITEMS = 8;
 const saveHistoryBtnEl = document.getElementById('saveHistoryBtn');
 const resetJobBtnEl = document.getElementById('resetJobBtn');
@@ -2139,7 +2196,8 @@ function collectJobState() {
     if (el.type === 'checkbox') state[id] = el.checked;
     else state[id] = el.value;
   });
-  state.activeMode = document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || localStorage.getItem(ACTIVE_MODE_KEY) || 'hotTap';
+  state.activeMode = getActiveWorkflowMode();
+  state.calcMode = getActiveCalcMode();
   state.lineStopMdUserEdited = lsMdEl?.dataset.userEdited === 'true';
   return state;
 }
@@ -2162,7 +2220,10 @@ function applyJobState(state) {
     if (state.lineStopMdUserEdited) lsMdEl.dataset.userEdited = 'true';
     else delete lsMdEl.dataset.userEdited;
   }
-  if (state.activeMode) {
+  if (CALC_SCREEN_MODES.has(normalizeMode(state.calcMode))) {
+    try { localStorage.setItem(CALC_MODE_KEY, normalizeMode(state.calcMode)); } catch {}
+  }
+  if (WORKFLOW_SCREEN_MODES.has(normalizeMode(state.activeMode))) {
     setMode(state.activeMode);
   }
   setLineStopVariant(state.lineStopVariant || 'standard');
@@ -2292,7 +2353,11 @@ function loadRecordIntoCalculator(record, options = {}) {
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
   }
-  const targetMode = ['bco','eta','hotTap','lineStop','completionPlug'].includes(String(state?.activeMode || '')) ? state.activeMode : 'hotTap';
+  const savedCalcMode = normalizeMode(state?.calcMode);
+  if (CALC_SCREEN_MODES.has(savedCalcMode)) {
+    try { localStorage.setItem(CALC_MODE_KEY, savedCalcMode); } catch {}
+  }
+  const targetMode = WORKFLOW_SCREEN_MODES.has(normalizeMode(state?.activeMode)) ? normalizeMode(state.activeMode) : 'hotTap';
   if (targetMode) setMode(targetMode);
   try {
     const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
@@ -3216,10 +3281,8 @@ window.addEventListener('load', async () => {
       try { loadCloudJobs(); } catch {}
     }
     if (name === 'calc') {
-      const activeMode = document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || localStorage.getItem('measurementCardActiveModeV1') || 'bco';
-      if (!['bco','eta'].includes(activeMode)) {
-        setTimeout(() => { try { window.setMode('bco'); } catch {} }, 40);
-      }
+      const activeMode = getActiveCalcMode();
+      setTimeout(() => { try { window.setMode(CALC_SCREEN_MODES.has(activeMode) ? activeMode : 'bco'); } catch {} }, 40);
     }
     try{ localStorage.setItem('tapcalcV3Screen', name);}catch{}
   }
@@ -3234,25 +3297,47 @@ window.addEventListener('load', async () => {
       try { firstInput?.focus({preventScroll:true}); } catch {}
     }, 80);
   }
-  tabs.forEach(t=>t.addEventListener('click',()=>{ setScreen(t.dataset.screen); if(t.dataset.screen==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); } }));
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    setScreen(t.dataset.screen);
+    if(t.dataset.screen==='card'){
+      setTimeout(()=>{
+        try { window.tapCalcSetWorkflowStage?.(localStorage.getItem('tapcalcWorkflowStageV2') || 'setup'); } catch {}
+        focusActiveCardPanel(getActiveWorkflowMode());
+      }, 120);
+    }
+  }));
   document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>{
     const screen=b.dataset.goScreen;
     setScreen(screen);
     if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>{ openSharedLibraryLane(); }, 80);
     const targetMode = b.dataset.goMode || (screen === 'calc' ? 'bco' : '');
     if (targetMode) setTimeout(()=>window.setMode(targetMode), 80);
+    if (screen === 'card') {
+      setTimeout(() => {
+        try { window.tapCalcSetWorkflowStage?.(localStorage.getItem('tapcalcWorkflowStageV2') || 'setup'); } catch {}
+      }, 80);
+    }
   }));
   const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
   setScreen(views[saved]?saved:'home');
-  if((views[saved]?saved:'home')==='card'){ setTimeout(()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'), 120); }
-  const subBtns=[...document.querySelectorAll('.submode-btn[data-mode]')];
-  const oldSetMode = window.setMode || function(){};
-  function syncSub(mode){subBtns.forEach(b=>b.classList.toggle('active', b.dataset.mode===mode));}
-  window.setMode=function(mode){ if(mode==='htp') mode='hotTap'; oldSetMode(mode); syncSub(mode); };
-  subBtns.forEach(b=>b.addEventListener('click',()=>window.setMode(b.dataset.mode)));
+  if((views[saved]?saved:'home')==='card'){
+    setTimeout(()=>{
+      try { window.tapCalcSetWorkflowStage?.(localStorage.getItem('tapcalcWorkflowStageV2') || 'setup'); } catch {}
+      focusActiveCardPanel(getActiveWorkflowMode());
+    }, 120);
+  }
   const oldWindowSetMode = window.setMode;
-  window.setMode = function(mode){ if(mode==='htp') mode='hotTap'; oldWindowSetMode(mode); syncSub(mode); document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.classList.toggle('active', card.dataset.workflowTarget===mode)); updateCurrentJobLabel(); if(['hotTap','lineStop','completionPlug'].includes(mode)){ focusActiveCardPanel(mode); } };
-  syncSub(localStorage.getItem('measurementCardActiveModeV1')||'bco');
+  window.setMode = function(mode){
+    const nextMode = normalizeMode(mode);
+    oldWindowSetMode(nextMode);
+    const workflowMode = WORKFLOW_SCREEN_MODES.has(nextMode) ? nextMode : getActiveWorkflowMode();
+    document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.classList.toggle('active', card.dataset.workflowTarget===workflowMode));
+    updateCurrentJobLabel();
+    if (WORKFLOW_SCREEN_MODES.has(nextMode) && document.body.dataset.activeScreen === 'card') {
+      focusActiveCardPanel(nextMode);
+    }
+  };
+  document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.classList.toggle('active', card.dataset.workflowTarget===getActiveWorkflowMode()));
   initAlpha8WorkspaceActions();
   initAlpha18CoreActions();
 
@@ -3279,7 +3364,7 @@ window.addEventListener('load', async () => {
   }
 
   function updateCardStageChecks(){
-    const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
+    const activeMode=getActiveWorkflowMode();
     const hasJobInfo = ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician'].some(id => hasValue(id));
     const hasMachine = hasValue('machineType');
     const summaryBco = getText('summaryBco');
@@ -3426,8 +3511,8 @@ window.addEventListener('load', async () => {
       const context=[location, date, technician].filter(Boolean).join(' • ');
       cardMeta.textContent = missing.length ? `Missing ${missing.join(', ')}. Fill out Current and Calc → BCO to unlock the card workflow.` : (context || 'Card workflow is ready for stage inputs.');
     }
-    const activeMode=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
-    const activeLabel=document.querySelector('.submode-btn.active[data-mode]')?.textContent?.trim() || 'Hot Tap';
+    const activeMode=getActiveWorkflowMode();
+    const activeLabel=getActiveWorkflowLabel();
     const stage=document.getElementById('cardStageStat');
     if(stage) stage.textContent=operation === 'Hot Tap' ? activeLabel : operation;
     const focusStage=document.getElementById('cardFocusStage');
@@ -3522,13 +3607,13 @@ window.addEventListener('load', async () => {
     document.getElementById('currentSyncSharedBtn')?.addEventListener('click', async ()=>{ await window.saveCurrentJobToHistory(); document.getElementById('syncJobsBtn')?.click(); });
     document.getElementById('currentResetBtn')?.addEventListener('click', ()=>document.getElementById('resetJobBtn')?.click());
     document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async ()=>{ await window.ensureFirebaseReady({ forceRetry:true }); await window.loadCloudJobs(); });
-    document.getElementById('cardJumpToInputsBtn')?.addEventListener('click', ()=>focusActiveCardPanel(document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap'));
+    document.getElementById('cardFocusJumpBtn')?.addEventListener('click', ()=>focusActiveCardPanel(getActiveWorkflowMode()));
   }
   function syncOperationSelection(){
     const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
     const map={'Hot Tap':'hotTap','Line Stop':'lineStop','Completion Plug':'completionPlug'};
     const target=map[operation] || 'hotTap';
-    const active=document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode;
+    const active=getActiveWorkflowMode();
     if(active !== target) window.setMode(target);
   }
   document.getElementById('operationType')?.addEventListener('change', syncOperationSelection);
@@ -4593,7 +4678,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha151';
+const TC63_VERSION = '3.0.0-alpha152';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4835,7 +4920,7 @@ const TC63_VERSION = '3.0.0-alpha151';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha151';
+const VERSION = '3.0.0-alpha152';
 
   function tc65GetJobs() {
     try {
@@ -8033,7 +8118,7 @@ const VERSION = '3.0.0-alpha151';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha151';
+const VERSION = '3.0.0-alpha152';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8990,10 +9075,10 @@ const VERSION = '3.0.0-alpha151';
         ? 'Follow the full sequence: Job Setup, Pipe / Cutter, Hot Tap, Line Stop, Completion Plug, then review.'
         : 'This job only needs Job Setup, Pipe / Cutter, Hot Tap, and review.';
     }
-    const workflowJump = document.getElementById('cardJumpToInputsBtn');
+    const workflowJump = document.getElementById('cardFocusJumpBtn');
     if (workflowJump) workflowJump.textContent = isLineStop ? 'Jump to Active Stage' : 'Jump to Hot Tap Inputs';
 
-    const activeMode = document.querySelector('.submode-btn.active[data-mode]')?.dataset.mode || 'hotTap';
+    const activeMode = getActiveWorkflowMode();
     if (!isLineStop && (activeMode === 'lineStop' || activeMode === 'completionPlug')) {
       try { if (typeof window.setMode === 'function') window.setMode('hotTap'); } catch {}
     }
@@ -9311,7 +9396,7 @@ const VERSION = '3.0.0-alpha151';
   document.getElementById('workflowNextPrimaryBtn')?.addEventListener('click', ()=>jumpBy(1));
 
   document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.addEventListener('click', ()=>setWorkflowStage(card.dataset.workflowTarget || 'hotTap', { skipSetMode:false })));
-  document.querySelectorAll('.submode-btn[data-mode]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.mode || 'hotTap', { skipSetMode:true })));
+  document.querySelectorAll('.workflow-submode-btn[data-mode]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.mode || 'hotTap', { skipSetMode:false })));
   document.getElementById('operationType')?.addEventListener('change', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 60));
   document.getElementById('operationType')?.addEventListener('input', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 60));
 
@@ -9356,12 +9441,7 @@ const VERSION = '3.0.0-alpha151';
   function calcModeForEntry(preferredMode){
     const preferred = String(preferredMode || '').trim();
     if (calcModes.has(preferred)) return preferred;
-    try {
-      const saved = String(localStorage.getItem('measurementCardActiveModeV1') || '').trim();
-      return saved === 'eta' ? 'eta' : 'bco';
-    } catch {
-      return 'bco';
-    }
+    return getStoredCalcMode();
   }
 
   function applyCalcMode(preferredMode){

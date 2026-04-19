@@ -5071,7 +5071,9 @@ body.dark-mode .workflow-next-banner p{color:#9fb8cb;}
 
 /* ===== 3.0.0-alpha134 guided workflow simplification ===== */
 .workflow-phase-shell{display:none !important;}
-.card-workflow-strip,.card-subnav{display:none !important;}
+.card-workflow-strip,.workflow-mode-subnav{display:none !important;}
+.calc-subnav{grid-template-columns:repeat(2,minmax(0,1fr));}
+.workflow-mode-subnav{grid-template-columns:repeat(3,minmax(0,1fr));}
 .workflow-stage-nav{grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));align-items:stretch;}
 .workflow-stage-chip{min-height:94px;align-content:flex-start;}
 .workflow-stage-chip[data-stage-state="current"]{grid-column:span 2;min-height:112px;box-shadow:0 16px 32px rgba(22,54,75,.16);}
@@ -6071,7 +6073,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 }
 
 
-/* ===== 3.0.0-alpha151 line stop variants + specialty reference ===== */
+/* ===== 3.0.0-alpha152 calc/workflow mode split ===== */
 .line-stop-variant-shell{margin-bottom:16px;padding:16px 18px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.03);}
 .line-stop-variant-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-end;flex-wrap:wrap;}
 .variant-chip-row{display:flex;gap:10px;flex-wrap:wrap;}
