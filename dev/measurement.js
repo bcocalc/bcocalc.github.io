@@ -9072,7 +9072,12 @@ const VERSION = '3.0.0-alpha139';
       nextBtn.textContent = index === stages.length - 1 ? 'Reviewing' : `Next: ${(STAGE_META[stages[index + 1]] || {}).short || 'Next Step'}`;
     }
 
-    document.querySelectorAll('.mode-panel').forEach((panel)=>panel.classList.toggle('workflow-mode-shell-hidden', !isModeStage));
+    Object.values(PANEL_FOR_STAGE).forEach((panelId) => {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const isTargetPanel = panelId === PANEL_FOR_STAGE[nextStage];
+      panel.classList.toggle('workflow-mode-shell-hidden', isModeStage ? !isTargetPanel : false);
+    });
     if (isModeStage && typeof window.setMode === 'function' && !opts.skipSetMode) {
       try { window.setMode(nextStage); } catch {}
     }
@@ -9170,6 +9175,12 @@ const VERSION = '3.0.0-alpha139';
   function syncVisibleScreens(activeScreen){
     document.body.dataset.activeScreen = activeScreen;
     document.body.classList.toggle('show-library-screen', activeScreen === 'jobs');
+
+    ['bcoPanel', 'etaPanel', 'jobsPanel', 'glossaryPanel'].forEach((panelId) => {
+      const panel = $(panelId);
+      if (!panel) return;
+      panel.classList.remove('workflow-mode-shell-hidden');
+    });
 
     Object.entries(screenMap).forEach(([key, id]) => {
       const el = $(id);
