@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha147';
+const BUILD_VERSION = '3.0.0-alpha148';
 
 (function(){
 
@@ -1249,7 +1249,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha147', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha148', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3149,7 +3149,7 @@ window.addEventListener('load', async () => {
     const summaryPipe = getText('summaryPipe');
     const summaryCutter = getText('summaryCutter');
     const geometryReady = summaryBco !== '—' && summaryPipe !== '—' && summaryCutter !== '—';
-    const baseReady = hasJobInfo && hasMachine;
+    const baseReady = hasMachine;
     const readOut = (id) => {
       const el = document.getElementById(id);
       if (!el) return '—';
@@ -3191,7 +3191,6 @@ window.addEventListener('load', async () => {
     const safeActiveMode = stageChecks[activeMode] ? activeMode : 'hotTap';
     const current = describeStage(safeActiveMode);
     const missingSetup = [];
-    if (!hasJobInfo) missingSetup.push('job');
     if (!hasMachine) missingSetup.push('machine');
     if (getText('summaryPipe') === '—') missingSetup.push('pipe');
     if (getText('summaryCutter') === '—') missingSetup.push('cutter');
@@ -4420,7 +4419,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha147';
+const TC63_VERSION = '3.0.0-alpha148';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4662,7 +4661,7 @@ const TC63_VERSION = '3.0.0-alpha147';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha147';
+const VERSION = '3.0.0-alpha148';
 
   function tc65GetJobs() {
     try {
@@ -7856,7 +7855,7 @@ const VERSION = '3.0.0-alpha147';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha147';
+const VERSION = '3.0.0-alpha148';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8942,10 +8941,10 @@ const VERSION = '3.0.0-alpha147';
     };
     if (map[stage]) return map[stage];
     if (stage === 'setup') {
-      const customer = document.getElementById('jobClient')?.value?.trim();
-      const location = document.getElementById('jobLocation')?.value?.trim();
       const machine = document.getElementById('machineType')?.value?.trim();
-      return customer && location && machine ? 'Ready' : ((customer || location || machine) ? 'In Progress' : 'Waiting');
+      const touched = ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician']
+        .some((id) => !!document.getElementById(id)?.value?.trim());
+      return machine ? 'Ready' : (touched ? 'In Progress' : 'Waiting');
     }
     if (stage === 'pipe') {
       const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || '—';
@@ -8957,6 +8956,16 @@ const VERSION = '3.0.0-alpha147';
       return getStages().filter(s => MODE_STAGES.has(s)).every(s => stageStatusText(s) === 'Ready') ? 'Ready' : 'Review';
     }
     return 'Waiting';
+  }
+  function stageStatusKey(stage){
+    const normalized = String(stageStatusText(stage) || '').trim().toLowerCase();
+    if (!normalized) return 'waiting';
+    if (normalized === 'ready') return 'ready';
+    if (normalized.includes('progress')) return 'in-progress';
+    if (normalized.includes('not ready')) return 'not-ready';
+    if (normalized.includes('review')) return 'review';
+    if (normalized.includes('wait')) return 'waiting';
+    return normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'waiting';
   }
   function activeStage(){
     const stages = getStages();
@@ -8983,6 +8992,21 @@ const VERSION = '3.0.0-alpha147';
       const status = stageStatusText(stage);
       const state = index < currentIndex ? 'done' : (index === currentIndex ? 'current' : 'upcoming');
       return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-stage-state="${state}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}" ${stage===current ? 'aria-current="step"' : ''}><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${state === 'current' ? `Current · ${status}` : state === 'done' ? `Done · ${status}` : `Up Next · ${status}`}</em></button>`;
+    }).join('');
+    nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
+  }
+  function renderStageNavByStatus(current){
+    const stages = getStages();
+    const nav = document.getElementById('workflowStageNav');
+    if (!nav) return;
+    const currentIndex = Math.max(0, stages.indexOf(current));
+    nav.innerHTML = stages.map((stage, index) => {
+      const meta = STAGE_META[stage] || { short: stage, eyebrow: `Step ${index+1}`, copy: '' };
+      const status = stageStatusText(stage);
+      const progress = stageStatusKey(stage);
+      const state = index < currentIndex ? 'done' : (index === currentIndex ? 'current' : 'upcoming');
+      const detail = stage === current ? `Current - ${status}` : status;
+      return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-stage-state="${state}" data-stage-progress="${progress}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}" ${stage===current ? 'aria-current="step"' : ''}><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${detail}</em></button>`;
     }).join('');
     nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
   }
@@ -9037,7 +9061,7 @@ const VERSION = '3.0.0-alpha147';
     const lead = document.getElementById('workflowStageLead');
     if (title) title.textContent = meta.title;
     if (lead) lead.textContent = meta.lead;
-    renderStageNav(nextStage);
+    renderStageNavByStatus(nextStage);
     setPhaseStepActive(index);
     updateHelperSummaries();
 
@@ -9114,11 +9138,11 @@ const VERSION = '3.0.0-alpha147';
     const el = document.getElementById(id);
     if (!el) return;
     const evt = ('value' in el) ? 'input' : 'change';
-    el.addEventListener(evt, ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNav(activeStage()); }, 20));
+      el.addEventListener(evt, ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNavByStatus(activeStage()); }, 20));
   });
   document.querySelectorAll('input, select, textarea').forEach((el)=>{
-    el.addEventListener('input', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNav(activeStage()); }, 40));
-    el.addEventListener('change', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNav(activeStage()); }, 40));
+      el.addEventListener('input', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNavByStatus(activeStage()); }, 40));
+      el.addEventListener('change', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNavByStatus(activeStage()); }, 40));
   });
 
   window.addEventListener('load', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 160));
