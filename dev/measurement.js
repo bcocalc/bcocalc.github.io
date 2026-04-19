@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha152';
+const BUILD_VERSION = '3.0.0-alpha153';
 
 (function(){
 
@@ -1311,7 +1311,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha152', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha153', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4678,7 +4678,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha152';
+const TC63_VERSION = '3.0.0-alpha153';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4920,7 +4920,7 @@ const TC63_VERSION = '3.0.0-alpha152';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha152';
+const VERSION = '3.0.0-alpha153';
 
   function tc65GetJobs() {
     try {
@@ -8118,7 +8118,7 @@ const VERSION = '3.0.0-alpha152';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha152';
+const VERSION = '3.0.0-alpha153';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -9389,11 +9389,53 @@ const VERSION = '3.0.0-alpha152';
     setWorkflowStage(target);
   }
 
-  document.getElementById('workflowPrevBtn')?.addEventListener('click', ()=>jumpBy(-1));
-  document.getElementById('workflowNextBtn')?.addEventListener('click', ()=>jumpBy(1));
-  document.getElementById('workflowSetupNextBtn')?.addEventListener('click', ()=>setWorkflowStage('pipe'));
-  document.getElementById('workflowPipeNextBtn')?.addEventListener('click', ()=>setWorkflowStage('hotTap'));
-  document.getElementById('workflowNextPrimaryBtn')?.addEventListener('click', ()=>jumpBy(1));
+  function runWorkflowAction(trigger, event){
+    if (!trigger || trigger.disabled) return false;
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+      try { if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation(); } catch {}
+    }
+    switch (trigger.id) {
+      case 'workflowPrevBtn':
+        jumpBy(-1);
+        break;
+      case 'workflowNextBtn':
+      case 'workflowNextPrimaryBtn':
+        jumpBy(1);
+        break;
+      case 'workflowSetupNextBtn':
+        setWorkflowStage('pipe');
+        break;
+      case 'workflowPipeNextBtn':
+        setWorkflowStage('hotTap');
+        break;
+      default:
+        return false;
+    }
+    return false;
+  }
+
+  function workflowActionHandler(event){
+    const trigger = event.target && event.target.closest
+      ? event.target.closest('#workflowPrevBtn, #workflowNextBtn, #workflowSetupNextBtn, #workflowPipeNextBtn, #workflowNextPrimaryBtn')
+      : null;
+    if (!trigger) return;
+    runWorkflowAction(trigger, event);
+  }
+
+  ['touchend', 'click'].forEach((evt) => {
+    document.addEventListener(evt, workflowActionHandler, true);
+  });
+
+  window.tapCalcWorkflowGo = function(stage){
+    try { setWorkflowStage(stage || activeStage()); } catch {}
+    return false;
+  };
+  window.tapCalcWorkflowJump = function(delta){
+    try { jumpBy(Number(delta) || 0); } catch {}
+    return false;
+  };
 
   document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.addEventListener('click', ()=>setWorkflowStage(card.dataset.workflowTarget || 'hotTap', { skipSetMode:false })));
   document.querySelectorAll('.workflow-submode-btn[data-mode]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.mode || 'hotTap', { skipSetMode:false })));

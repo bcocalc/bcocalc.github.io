@@ -5263,6 +5263,7 @@ body.measurement-page[data-active-screen="calc"] #calcScreen .panel.active {
   min-height:46px;
   border-radius:12px;
   font-weight:700;
+  touch-action:manipulation;
 }
 .workflow-guided-actions .secondary-btn,
 .workflow-helper-actions .secondary-btn,
@@ -6073,7 +6074,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 }
 
 
-/* ===== 3.0.0-alpha152 calc/workflow mode split ===== */
+/* ===== 3.0.0-alpha153 workflow action capture fix ===== */
 .line-stop-variant-shell{margin-bottom:16px;padding:16px 18px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.03);}
 .line-stop-variant-head{display:flex;justify-content:space-between;gap:14px;align-items:flex-end;flex-wrap:wrap;}
 .variant-chip-row{display:flex;gap:10px;flex-wrap:wrap;}
