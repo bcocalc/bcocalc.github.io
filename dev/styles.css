@@ -5802,3 +5802,128 @@ body.dark-mode .workflow-helper-panel{
 :root[data-theme="light"] body.measurement-page .glossary-table th{
   background:rgba(23,54,87,.08) !important;
 }
+
+/* ===== 3.0.0-alpha147 workflow stage contrast refresh ===== */
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip{
+  background:linear-gradient(180deg,#edf3f9 0%,#e1e9f2 100%) !important;
+  border-color:#bccbdd !important;
+  color:#173657 !important;
+  box-shadow:0 6px 14px rgba(49,77,114,.08) !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip small{
+  color:#5c7592 !important;
+  opacity:1 !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip span{
+  color:#173657 !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip em{
+  color:#4f6784 !important;
+  opacity:1 !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="done"]{
+  background:linear-gradient(180deg,#e6f4e9 0%,#d8ecde 100%) !important;
+  border-color:#8fbea0 !important;
+  box-shadow:0 8px 18px rgba(50,107,71,.10) !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="done"] small{
+  color:#36724e !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="done"] span{
+  color:#1d472f !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="done"] em{
+  color:#2f6a45 !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"]{
+  background:linear-gradient(180deg,#ebf0f5 0%,#dee6ef 100%) !important;
+  border-color:#c1cfdd !important;
+}
+:root[data-theme="light"] body.measurement-page .workflow-roadmap-pill,
+:root[data-theme="light"] body.measurement-page .workflow-phase-step{
+  background:linear-gradient(180deg,#e8eef5 0%,#dce5ef 100%) !important;
+  border:1px solid rgba(31,63,108,.14) !important;
+  color:#173657 !important;
+}
+
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip,
+body.dark-mode.measurement-page .workflow-stage-chip{
+  background:linear-gradient(180deg,#17283d 0%,#112034 100%) !important;
+  border-color:#375474 !important;
+  color:#eef6ff !important;
+  box-shadow:0 8px 18px rgba(4,10,18,.28) !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip small,
+body.dark-mode.measurement-page .workflow-stage-chip small{
+  color:#8fb2d8 !important;
+  opacity:1 !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip span,
+body.dark-mode.measurement-page .workflow-stage-chip span{
+  color:#eef6ff !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip em,
+body.dark-mode.measurement-page .workflow-stage-chip em{
+  color:#b6cbe4 !important;
+  opacity:1 !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip.active,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
+body.dark-mode.measurement-page .workflow-stage-chip.active,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]{
+  background:linear-gradient(180deg,#3d7af0 0%,#2058b8 100%) !important;
+  border-color:#7caeff !important;
+  box-shadow:0 12px 26px rgba(24,78,170,.34) !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip.active small,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"] small,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip.active span,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"] span,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip.active em,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"] em,
+body.dark-mode.measurement-page .workflow-stage-chip.active small,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"] small,
+body.dark-mode.measurement-page .workflow-stage-chip.active span,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"] span,
+body.dark-mode.measurement-page .workflow-stage-chip.active em,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"] em{
+  color:#ffffff !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="done"],
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="done"]{
+  background:linear-gradient(180deg,#215234 0%,#173d27 100%) !important;
+  border-color:#57a575 !important;
+  box-shadow:0 10px 22px rgba(18,63,36,.28) !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="done"] small,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="done"] small{
+  color:#98d9af !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="done"] span,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="done"] em,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="done"] span,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="done"] em{
+  color:#edfff2 !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="upcoming"]{
+  background:linear-gradient(180deg,#16263a 0%,#0f1d2f 100%) !important;
+  border-color:#32506d !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-roadmap-pill,
+:root[data-theme="dark"] body.measurement-page .workflow-phase-step,
+body.dark-mode.measurement-page .workflow-roadmap-pill,
+body.dark-mode.measurement-page .workflow-phase-step{
+  background:linear-gradient(180deg,#1a2c42 0%,#132338 100%) !important;
+  border:1px solid rgba(126,163,205,.22) !important;
+  color:#dcecff !important;
+}
+:root[data-theme="dark"] body.measurement-page .workflow-roadmap-pill.active,
+:root[data-theme="dark"] body.measurement-page .workflow-phase-step.active,
+body.dark-mode.measurement-page .workflow-roadmap-pill.active,
+body.dark-mode.measurement-page .workflow-phase-step.active{
+  background:linear-gradient(180deg,#3469cf 0%,#224a97 100%) !important;
+  border-color:#73a1f3 !important;
+  color:#ffffff !important;
+  box-shadow:0 8px 18px rgba(19,61,128,.28) !important;
+}
