@@ -5425,3 +5425,103 @@ body.dark-mode .workflow-helper-panel{
     min-width:0;
   }
 }
+
+/* ===== 3.0.0-alpha141 job screen light-mode readability pass ===== */
+:root[data-theme="light"] #jobScreen .hero-eyebrow{
+  color:#607999 !important;
+  opacity:1 !important;
+}
+:root[data-theme="light"] #jobScreen .job-current-topbar,
+:root[data-theme="light"] #jobScreen .current-action-strip,
+:root[data-theme="light"] #jobScreen .workflow-shell-jobtype,
+:root[data-theme="light"] #jobScreen .job-info-header,
+:root[data-theme="light"] #jobScreen .job-form-card,
+:root[data-theme="light"] #jobScreen .current-live-card,
+:root[data-theme="light"] #jobScreen .utility-bar{
+  background:linear-gradient(180deg,#ffffff 0%,#f4f8ff 100%) !important;
+  border:1px solid rgba(31,63,108,.14) !important;
+  box-shadow:0 12px 26px rgba(48,78,124,.08) !important;
+}
+:root[data-theme="light"] #jobScreen .job-form-card-secondary{
+  background:linear-gradient(180deg,#fbfdff 0%,#eef4fc 100%) !important;
+}
+:root[data-theme="light"] #jobScreen .job-current-topbar h3,
+:root[data-theme="light"] #jobScreen .current-action-copy strong,
+:root[data-theme="light"] #jobScreen .workflow-shell-head h3,
+:root[data-theme="light"] #jobScreen .job-info-heading h3,
+:root[data-theme="light"] #jobScreen .job-form-card-head h4,
+:root[data-theme="light"] #jobScreen .current-live-card h4,
+:root[data-theme="light"] #jobScreen .current-live-stat strong,
+:root[data-theme="light"] #jobScreen .currentSnapshotTitle,
+:root[data-theme="light"] #jobScreen .current-live-card-secondary p strong{
+  color:#102743 !important;
+}
+:root[data-theme="light"] #jobScreen .job-current-topbar p,
+:root[data-theme="light"] #jobScreen .current-action-copy span:last-child,
+:root[data-theme="light"] #jobScreen .workflow-shell-head p,
+:root[data-theme="light"] #jobScreen .job-info-summary,
+:root[data-theme="light"] #jobScreen .job-form-card-head span,
+:root[data-theme="light"] #jobScreen .current-live-card p,
+:root[data-theme="light"] #jobScreen .current-live-stat span,
+:root[data-theme="light"] #jobScreen .currentSnapshotMeta{
+  color:#4f6786 !important;
+}
+:root[data-theme="light"] #jobScreen .job-tools label,
+:root[data-theme="light"] #jobScreen .geometry-lock-toggle,
+:root[data-theme="light"] #jobScreen .job-info-grid .row label{
+  color:#284463 !important;
+}
+:root[data-theme="light"] #jobScreen input,
+:root[data-theme="light"] #jobScreen select,
+:root[data-theme="light"] #jobScreen textarea{
+  background:#ffffff !important;
+  color:#132945 !important;
+  border-color:rgba(31,63,108,.18) !important;
+  box-shadow:none !important;
+}
+:root[data-theme="light"] #jobScreen input::placeholder,
+:root[data-theme="light"] #jobScreen textarea::placeholder{
+  color:#7a8ea8 !important;
+}
+:root[data-theme="light"] #jobScreen .secondary-btn{
+  background:#ffffff !important;
+  color:#183554 !important;
+  border-color:rgba(31,63,108,.16) !important;
+  box-shadow:none !important;
+}
+:root[data-theme="light"] #jobScreen .secondary-btn:hover{
+  background:#eef4ff !important;
+  border-color:rgba(47,105,225,.24) !important;
+}
+:root[data-theme="light"] #jobScreen .danger-btn{
+  color:#7a1f26 !important;
+}
+:root[data-theme="light"] #jobScreen .workflow-shell-jobtype{
+  background:linear-gradient(180deg,#f8fbff 0%,#edf4fc 100%) !important;
+}
+:root[data-theme="light"] #jobScreen .workflow-jobtype-card{
+  background:#ffffff !important;
+  color:#16324a !important;
+  border:1px solid rgba(31,63,108,.12) !important;
+  box-shadow:none !important;
+}
+:root[data-theme="light"] #jobScreen .workflow-jobtype-card strong{
+  color:#102743 !important;
+}
+:root[data-theme="light"] #jobScreen .workflow-jobtype-card span{
+  color:#5c728d !important;
+  opacity:1 !important;
+}
+:root[data-theme="light"] #jobScreen .workflow-jobtype-card.active{
+  background:linear-gradient(180deg,#edf8ef 0%,#e2f0e5 100%) !important;
+  border-color:rgba(44,117,70,.28) !important;
+  box-shadow:0 0 0 1px rgba(44,117,70,.08) inset !important;
+}
+:root[data-theme="light"] #jobScreen .workflow-roadmap-pill{
+  background:#e7eef7 !important;
+  color:#23405e !important;
+}
+:root[data-theme="light"] #jobScreen .workflow-roadmap-pill.active{
+  background:#163d74 !important;
+  color:#ffffff !important;
+}
