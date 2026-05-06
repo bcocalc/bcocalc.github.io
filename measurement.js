@@ -525,9 +525,9 @@ function enableMixedMeasurementInputs() {
     });
     field.addEventListener('change', () => normalizeMeasurementField(field, { force: true }));
     field.addEventListener('input', () => {
-      if (shouldNormalizeMeasurement(field.value) && Number.isFinite(parseMixedMeasurement(field.value))) {
-        normalizeMeasurementField(field);
-      }
+      // Do not auto-normalize while the user is still typing a mixed fraction.
+      // Example: "11 5/1" may still become "11 5/16", so conversion waits for
+      // blur/change/Done instead of firing mid-entry.
     });
   });
 }
