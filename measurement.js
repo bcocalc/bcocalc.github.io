@@ -436,10 +436,14 @@ function enableMixedMeasurementInputs() {
     if (!field || field.dataset.mixedMeasurementEnabled === 'true') return;
     const prefersWholeNumbers = field.id === 'fractionNumerator' || field.id === 'fractionDenominator';
     try { field.type = 'text'; } catch {}
-    field.setAttribute('inputmode', prefersWholeNumbers ? 'numeric' : 'decimal');
+    field.setAttribute('inputmode', prefersWholeNumbers ? 'numeric' : 'text');
     field.setAttribute('autocomplete', 'off');
     field.setAttribute('autocorrect', 'off');
+    field.setAttribute('autocapitalize', 'off');
     field.setAttribute('spellcheck', 'false');
+    if (!prefersWholeNumbers) {
+      field.setAttribute('placeholder', field.getAttribute('placeholder') || '12 1/2 or 12.5');
+    }
     field.dataset.mixedMeasurementEnabled = 'true';
     field.addEventListener('blur', () => normalizeMeasurementField(field, { force: true }));
     field.addEventListener('change', () => normalizeMeasurementField(field, { force: true }));
