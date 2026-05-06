@@ -3090,3 +3090,74 @@ body.dark .job-operation-card {
     grid-template-columns: 1fr;
   }
 }
+
+
+.measurement-input-toolbar[hidden] {
+  display: none !important;
+}
+
+.measurement-input-toolbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10020;
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  background: rgba(255, 255, 255, 0.96);
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.measurement-input-toolbar-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  gap: 8px;
+}
+
+.measurement-input-toolbar-btn {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  background: #f8fafc;
+  color: var(--text-main);
+  font: inherit;
+  font-weight: 600;
+}
+
+.measurement-input-toolbar-btn-primary {
+  background: var(--accent, #2563eb);
+  color: #fff;
+  border-color: transparent;
+}
+
+body.measurement-toolbar-open {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+
+:root[data-theme="dark"] .measurement-input-toolbar,
+body.dark .measurement-input-toolbar {
+  background: rgba(19, 27, 37, 0.96);
+  border-top-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.28);
+}
+
+:root[data-theme="dark"] .measurement-input-toolbar-btn,
+body.dark .measurement-input-toolbar-btn {
+  background: #1f2937;
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #f8fafc;
+}
+
+@media (min-width: 769px) {
+  .measurement-input-toolbar {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .measurement-input-toolbar-btn {
+    max-width: 120px;
+  }
+}

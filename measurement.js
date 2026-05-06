@@ -374,6 +374,10 @@ const fractionPrecisionEl = document.getElementById('fractionPrecision');
 const decimalToFractionResultEl = document.getElementById('decimalToFractionResult');
 const decimalChartSearchEl = document.getElementById('decimalChartSearch');
 const quickDecimalBtnEls = Array.from(document.querySelectorAll('.quick-decimal-btn'));
+const measurementInputToolbarEl = document.getElementById('measurementInputToolbar');
+const measurementToolbarButtonEls = Array.from(document.querySelectorAll('[data-measurement-toolbar]'));
+let activeMeasurementField = null;
+let measurementToolbarHideTimer = null;
 
 function gcd(a, b) {
   a = Math.abs(a);
@@ -422,6 +426,70 @@ function normalizeMeasurementField(field, options = {}) {
   field.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+
+function isToolbarEligibleField(field) {
+  return Boolean(field && field.dataset.measurementToolbarEligible === 'true' && !field.disabled);
+}
+
+function showMeasurementInputToolbar(field) {
+  if (!measurementInputToolbarEl || !isToolbarEligibleField(field)) return;
+  activeMeasurementField = field;
+  if (measurementToolbarHideTimer) {
+    clearTimeout(measurementToolbarHideTimer);
+    measurementToolbarHideTimer = null;
+  }
+  measurementInputToolbarEl.hidden = false;
+  document.body.classList.add('measurement-toolbar-open');
+}
+
+function hideMeasurementInputToolbar() {
+  if (!measurementInputToolbarEl) return;
+  measurementToolbarHideTimer = setTimeout(() => {
+    const activeEl = document.activeElement;
+    if (activeEl && isToolbarEligibleField(activeEl)) return;
+    activeMeasurementField = null;
+    measurementInputToolbarEl.hidden = true;
+    document.body.classList.remove('measurement-toolbar-open');
+  }, 120);
+}
+
+function insertIntoMeasurementField(insertText) {
+  const field = activeMeasurementField;
+  if (!isToolbarEligibleField(field)) return;
+  const textToInsert = String(insertText ?? '');
+  const start = Number.isInteger(field.selectionStart) ? field.selectionStart : String(field.value || '').length;
+  const end = Number.isInteger(field.selectionEnd) ? field.selectionEnd : start;
+  const currentValue = String(field.value || '');
+  field.value = `${currentValue.slice(0, start)}${textToInsert}${currentValue.slice(end)}`;
+  const nextPosition = start + textToInsert.length;
+  try {
+    field.setSelectionRange(nextPosition, nextPosition);
+  } catch {}
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.focus({ preventScroll: true });
+}
+
+function backspaceMeasurementField() {
+  const field = activeMeasurementField;
+  if (!isToolbarEligibleField(field)) return;
+  const start = Number.isInteger(field.selectionStart) ? field.selectionStart : String(field.value || '').length;
+  const end = Number.isInteger(field.selectionEnd) ? field.selectionEnd : start;
+  const currentValue = String(field.value || '');
+  if (start !== end) {
+    field.value = `${currentValue.slice(0, start)}${currentValue.slice(end)}`;
+    try {
+      field.setSelectionRange(start, start);
+    } catch {}
+  } else if (start > 0) {
+    field.value = `${currentValue.slice(0, start - 1)}${currentValue.slice(end)}`;
+    try {
+      field.setSelectionRange(start - 1, start - 1);
+    } catch {}
+  }
+  field.dispatchEvent(new Event('input', { bubbles: true }));
+  field.focus({ preventScroll: true });
+}
+
 function enableMixedMeasurementInputs() {
   const measurementSelectors = [
     'input[type="number"][step="any"]',
@@ -434,18 +502,27 @@ function enableMixedMeasurementInputs() {
   ));
   fields.forEach((field) => {
     if (!field || field.dataset.mixedMeasurementEnabled === 'true') return;
-    const prefersWholeNumbers = field.id === 'fractionNumerator' || field.id === 'fractionDenominator';
+    const isWholeNumberField = field.id === 'fractionNumerator' || field.id === 'fractionDenominator';
+    const isMeasurementField = field.matches('input[step="any"]') && field.id !== 'decimalInput';
     try { field.type = 'text'; } catch {}
-    field.setAttribute('inputmode', prefersWholeNumbers ? 'numeric' : 'text');
+    field.setAttribute('inputmode', isWholeNumberField ? 'numeric' : 'decimal');
+    field.setAttribute('enterkeyhint', 'done');
     field.setAttribute('autocomplete', 'off');
     field.setAttribute('autocorrect', 'off');
     field.setAttribute('autocapitalize', 'off');
     field.setAttribute('spellcheck', 'false');
-    if (!prefersWholeNumbers) {
+    if (!isWholeNumberField) {
       field.setAttribute('placeholder', field.getAttribute('placeholder') || '12 1/2 or 12.5');
     }
+    field.dataset.measurementToolbarEligible = isMeasurementField ? 'true' : 'false';
     field.dataset.mixedMeasurementEnabled = 'true';
-    field.addEventListener('blur', () => normalizeMeasurementField(field, { force: true }));
+    field.addEventListener('focus', () => {
+      if (isMeasurementField) showMeasurementInputToolbar(field);
+    });
+    field.addEventListener('blur', () => {
+      normalizeMeasurementField(field, { force: true });
+      if (isMeasurementField) hideMeasurementInputToolbar();
+    });
     field.addEventListener('change', () => normalizeMeasurementField(field, { force: true }));
     field.addEventListener('input', () => {
       if (shouldNormalizeMeasurement(field.value) && Number.isFinite(parseMixedMeasurement(field.value))) {
@@ -545,41 +622,114 @@ function updateDecimalToFraction() {
 
 function parseMixedMeasurement(rawValue) {
   if (typeof rawValue !== 'string') return null;
+  const unicodeFractionMap = {
+    '¼': '1/4',
+    '½': '1/2',
+    '¾': '3/4',
+    '⅐': '1/7',
+    '⅑': '1/9',
+    '⅒': '1/10',
+    '⅓': '1/3',
+    '⅔': '2/3',
+    '⅕': '1/5',
+    '⅖': '2/5',
+    '⅗': '3/5',
+    '⅘': '4/5',
+    '⅙': '1/6',
+    '⅚': '5/6',
+    '⅛': '1/8',
+    '⅜': '3/8',
+    '⅝': '5/8',
+    '⅞': '7/8'
+  };
   const normalized = rawValue
     .trim()
     .replace(/[″”]/g, '')
     .replace(/[–—]/g, '-')
-    .replace(/\s+/g, ' ');
+    .replace(/[−]/g, '-')
+    .replace(/[¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/g, (match) => ` ${unicodeFractionMap[match] || match}`)
+    .replace(/\s+/g, ' ')
+    .trim();
   if (!normalized) return null;
 
-  if (/^\d*\.?\d+$/.test(normalized)) {
+  if (/^[+-]?\d*\.?\d+$/.test(normalized)) {
     const decimalValue = parseFloat(normalized);
     return Number.isFinite(decimalValue) ? decimalValue : null;
   }
 
-  const mixedMatch = normalized.match(/^(\d+)(?:\s|-)+(\d+)\/(\d+)$/);
+  const mixedMatch = normalized.match(/^([+-])?(\d+)(?:\s|-)+(\d+)\/(\d+)$/);
   if (mixedMatch) {
-    const whole = parseInt(mixedMatch[1], 10);
-    const numerator = parseInt(mixedMatch[2], 10);
-    const denominator = parseInt(mixedMatch[3], 10);
+    const sign = mixedMatch[1] === '-' ? -1 : 1;
+    const whole = parseInt(mixedMatch[2], 10);
+    const numerator = parseInt(mixedMatch[3], 10);
+    const denominator = parseInt(mixedMatch[4], 10);
     if (!denominator) return null;
-    return whole + (numerator / denominator);
+    return sign * (whole + (numerator / denominator));
   }
 
-  const fractionMatch = normalized.match(/^(\d+)\/(\d+)$/);
+  const fractionMatch = normalized.match(/^([+-])?(\d+)\/(\d+)$/);
   if (fractionMatch) {
-    const numerator = parseInt(fractionMatch[1], 10);
-    const denominator = parseInt(fractionMatch[2], 10);
+    const sign = fractionMatch[1] === '-' ? -1 : 1;
+    const numerator = parseInt(fractionMatch[2], 10);
+    const denominator = parseInt(fractionMatch[3], 10);
     if (!denominator) return null;
-    return numerator / denominator;
+    return sign * (numerator / denominator);
   }
 
   return null;
 }
 
 
+if (measurementToolbarButtonEls.length) {
+  measurementToolbarButtonEls.forEach((button) => {
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+    });
+    button.addEventListener('click', () => {
+      const action = button.dataset.measurementToolbar;
+      if (action === 'space') {
+        insertIntoMeasurementField(' ');
+        return;
+      }
+      if (action === 'slash') {
+        insertIntoMeasurementField('/');
+        return;
+      }
+      if (action === 'dash') {
+        insertIntoMeasurementField('-');
+        return;
+      }
+      if (action === 'backspace') {
+        backspaceMeasurementField();
+        return;
+      }
+      if (action === 'done') {
+        if (activeMeasurementField) {
+          normalizeMeasurementField(activeMeasurementField, { force: true });
+          activeMeasurementField.blur();
+        }
+      }
+    });
+  });
+}
+
+if (measurementInputToolbarEl) {
+  measurementInputToolbarEl.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+  });
+}
+
 if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openDecimalModal);
 
+
+document.addEventListener('focusin', (event) => {
+  const field = event.target;
+  if (isToolbarEligibleField(field)) showMeasurementInputToolbar(field);
+});
+
+document.addEventListener('focusout', (event) => {
+  if (isToolbarEligibleField(event.target)) hideMeasurementInputToolbar();
+});
 
 const ETA_FEED_RATE = 0.004;
 const etaMachineEl = document.getElementById('etaMachine');
