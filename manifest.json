@@ -1,7 +1,7 @@
 {
   "name": "TapCalc",
   "short_name": "TapCalc",
-  "description": "TapCalc Dev v2.26d1",
+  "description": "TapCalc Dev v2.28b4",
   "start_url": "./measurement-card.html?v=2.26d1",
   "display": "standalone",
   "background_color": "#00468b",

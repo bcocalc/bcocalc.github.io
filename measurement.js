@@ -92,6 +92,7 @@ modeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
     setMode(btn.dataset.mode);
+    if (typeof persistCurrentJob === 'function') persistCurrentJob();
   });
 });
 
@@ -989,7 +990,158 @@ let firebaseModuleCache = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
+const JOB_BUNDLE_VERSION = 2;
+const jobOperationSelectEl = document.getElementById('jobOperationSelect');
+const jobOperationLabelEl = document.getElementById('jobOperationLabel');
+const jobOperationStatusEl = document.getElementById('jobOperationStatus');
+const addHotTapOpBtnEl = document.getElementById('addHotTapOpBtn');
+const addLineStopOpBtnEl = document.getElementById('addLineStopOpBtn');
+const duplicateOperationBtnEl = document.getElementById('duplicateOperationBtn');
+const deleteOperationBtnEl = document.getElementById('deleteOperationBtn');
+const SHARED_JOB_FIELD_IDS = [...jobInfoFieldIds, 'geometryLockToggle'];
+const DEFAULT_STATE_VALUES = {
+  geometryLockToggle: false,
+  bcoPipeMaterial: 'CarbonSteel',
+  bcoSchedule: 'STD',
+  ldSign: '+',
+  lsLdSign: '+',
+  lugs: 'Y',
+  lsLiManualToggle: false,
+  cpLiManualToggle: false,
+  activeMode: 'bco',
+  lineStopMdUserEdited: false
+};
+let currentJobBundle = null;
+let suppressJobBundleUiSync = false;
 
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value ?? null));
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function createBundleId(prefix = 'op') {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function pluralizeOperationType(type = 'Operation', count = 2) {
+  const map = {
+    'Hot Tap': count === 1 ? 'Hot Tap' : 'Hot Taps',
+    'Line Stop': count === 1 ? 'Line Stop' : 'Line Stops',
+    'Completion Plug': count === 1 ? 'Completion Plug' : 'Completion Plugs',
+    'BCO / Geometry': count === 1 ? 'BCO / Geometry' : 'BCO / Geometry Sets'
+  };
+  return map[type] || (count === 1 ? type : `${type}s`);
+}
+
+function buildOperationCountsSummary(operations = []) {
+  const counts = new Map();
+  operations.forEach((operation) => {
+    const type = operation?.operationType || 'Operation';
+    counts.set(type, (counts.get(type) || 0) + 1);
+  });
+  const parts = Array.from(counts.entries()).map(([type, count]) => `${count} ${pluralizeOperationType(type, count)}`);
+  return parts.length ? parts.join(' • ') : 'No operations yet';
+}
+
+function extractSharedStateFromLegacyState(state = {}) {
+  const shared = {};
+  SHARED_JOB_FIELD_IDS.forEach((id) => {
+    if (id in state) shared[id] = state[id];
+  });
+  return shared;
+}
+
+function extractOperationStateFromLegacyState(state = {}) {
+  const operationState = {};
+  getStateFields().forEach((id) => {
+    if (SHARED_JOB_FIELD_IDS.includes(id)) return;
+    if (id in state) operationState[id] = state[id];
+  });
+  if ('activeMode' in state) operationState.activeMode = state.activeMode;
+  if ('lineStopMdUserEdited' in state) operationState.lineStopMdUserEdited = state.lineStopMdUserEdited;
+  return operationState;
+}
+
+function mapRecordJobToSharedState(record = {}) {
+  const job = record?.job || {};
+  return {
+    jobClient: job.client || '',
+    jobDescription: job.description || '',
+    jobNumber: job.jobNumber || '',
+    jobPressure: job.pressure || '',
+    jobTemperature: job.temperature || '',
+    jobDate: job.date || '',
+    jobProduct: job.product || '',
+    jobLocation: job.location || '',
+    jobTechnician: job.technician || '',
+    jobNotes: job.notes || '',
+    geometryLockToggle: false
+  };
+}
+
+function buildCombinedState(sharedState = {}, operationState = {}) {
+  return { ...sharedState, ...operationState };
+}
+
+function buildOperationSummaryFromItem(item = {}) {
+  const state = item?.state || {};
+  const operationType = item?.operationType || inferOperationType(state);
+  const details = [];
+  if (operationType === 'Hot Tap') {
+    if (String(state.md || '').trim()) details.push(`MD ${state.md}`);
+    if (String(state.ptc || '').trim()) details.push(`PTC ${state.ptc}`);
+  } else if (operationType === 'Line Stop') {
+    if (String(state.lsMd || '').trim()) details.push(`MD ${state.lsMd}`);
+    if (String(state.lsTravel || '').trim()) details.push(`Travel ${state.lsTravel}`);
+  } else if (operationType === 'Completion Plug') {
+    if (String(state.cpStart || '').trim()) details.push(`Start ${state.cpStart}`);
+    if (String(state.cpJbf || '').trim()) details.push(`JBF ${state.cpJbf}`);
+  }
+  return {
+    label: item?.label || '',
+    operationType,
+    nominalSize: state.bcoPipeOD || '',
+    material: state.bcoPipeMaterial || '',
+    cutterOd: state.bcoCutterOD || '',
+    details: details.join(' • ')
+  };
+}
+
+function buildPersistedJobBundlePayload(bundle = currentJobBundle) {
+  const normalized = normalizeJobBundle(bundle);
+  return {
+    version: JOB_BUNDLE_VERSION,
+    selectedOperationId: normalized.selectedOperationId,
+    sharedState: cloneJson(normalized.sharedState) || {},
+    operations: normalized.operations.map((operation) => ({
+      id: operation.id,
+      label: operation.label,
+      operationType: operation.operationType,
+      mode: operation.mode,
+      createdAtIso: operation.createdAtIso,
+      updatedAtIso: operation.updatedAtIso,
+      summary: buildOperationSummaryFromItem(operation),
+      state: cloneJson(operation.state) || {}
+    }))
+  };
+}
+
+function getRecordOperations(record = {}) {
+  const rawOperations = Array.isArray(record?.jobBundle?.operations)
+    ? record.jobBundle.operations
+    : record?.state
+      ? [normalizeBundleItem({ state: extractOperationStateFromLegacyState(record.state), label: record?.meta?.title || '' })]
+      : [];
+  return rawOperations.map((operation, index) => normalizeBundleItem(operation, index));
+}
 
 
 function buildBcoResultMarkup(payload = {}) {
@@ -1456,12 +1608,36 @@ function getStateFields() {
   ];
 }
 
-function collectJobState() {
-  const state = {};
-  getStateFields().forEach(id => {
+function getOperationStateFields() {
+  return getStateFields().filter((id) => !SHARED_JOB_FIELD_IDS.includes(id));
+}
+
+function getDefaultStateValue(id) {
+  if (id in DEFAULT_STATE_VALUES) return DEFAULT_STATE_VALUES[id];
+  const el = document.getElementById(id);
+  if (!el) return '';
+  if (el.type === 'checkbox') return !!el.defaultChecked;
+  if (el.tagName === 'SELECT') return el.options?.[0]?.value ?? '';
+  return '';
+}
+
+function collectSharedJobState() {
+  const sharedState = {};
+  SHARED_JOB_FIELD_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (!el) return;
-    if (el.type === 'checkbox') state[id] = el.checked;
+    if (el.type === 'checkbox') sharedState[id] = !!el.checked;
+    else sharedState[id] = el.value;
+  });
+  return sharedState;
+}
+
+function collectOperationState() {
+  const state = {};
+  getOperationStateFields().forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') state[id] = !!el.checked;
     else state[id] = el.value;
   });
   state.activeMode = document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
@@ -1469,9 +1645,218 @@ function collectJobState() {
   return state;
 }
 
+function buildBlankOperationState(mode = 'hotTap', baseState = collectOperationState()) {
+  const blankState = {};
+  getOperationStateFields().forEach((id) => {
+    blankState[id] = getDefaultStateValue(id);
+  });
+  ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','etaMachine','etaCutterSize','etaBco'].forEach((id) => {
+    if (baseState && baseState[id] !== undefined && baseState[id] !== '') blankState[id] = baseState[id];
+  });
+  blankState.activeMode = mode;
+  blankState.lineStopMdUserEdited = false;
+  if (mode === 'hotTap') {
+    blankState.ldSign = baseState?.ldSign || '+';
+    blankState.lugs = baseState?.lugs || 'Y';
+  }
+  if (mode === 'lineStop') {
+    blankState.lsLdSign = baseState?.lsLdSign || '+';
+    blankState.lsLiManualToggle = false;
+    blankState.lsLiManual = '';
+  }
+  if (mode === 'completionPlug') {
+    blankState.cpLiManualToggle = false;
+    blankState.cpLiManual = '';
+  }
+  return blankState;
+}
+
+function normalizeBundleItem(rawItem = {}, index = 0) {
+  const operationState = rawItem?.state ? cloneJson(rawItem.state) : extractOperationStateFromLegacyState(rawItem);
+  const mode = operationState.activeMode && panels[operationState.activeMode] ? operationState.activeMode : rawItem.mode || 'hotTap';
+  operationState.activeMode = mode;
+  if (!('lineStopMdUserEdited' in operationState)) operationState.lineStopMdUserEdited = false;
+  const operationType = rawItem.operationType || inferOperationType(operationState);
+  return {
+    id: rawItem.id || createBundleId(`op${index + 1}`),
+    label: String(rawItem.label || '').trim(),
+    operationType,
+    mode,
+    summary: rawItem.summary || null,
+    createdAtIso: rawItem.createdAtIso || new Date().toISOString(),
+    updatedAtIso: rawItem.updatedAtIso || new Date().toISOString(),
+    state: operationState
+  };
+}
+
+function createOperationLabel(operationType = 'Operation', existingOperations = []) {
+  const sameTypeCount = existingOperations.filter((operation) => (operation?.operationType || 'Operation') === operationType).length;
+  return `${operationType} ${sameTypeCount + 1}`;
+}
+
+function isAutoOperationLabel(label = '') {
+  return /^(Hot Tap|Line Stop|Completion Plug|BCO \/ Geometry) \d+$/.test(String(label).trim());
+}
+
+function normalizeJobBundle(rawBundle, record = null) {
+  const legacyState = rawBundle && !Array.isArray(rawBundle?.operations) ? (rawBundle.state || rawBundle) : null;
+  const sharedState = {
+    ...mapRecordJobToSharedState(record),
+    ...(legacyState ? extractSharedStateFromLegacyState(legacyState) : {}),
+    ...(rawBundle?.sharedState || {})
+  };
+
+  let operations = [];
+  if (Array.isArray(rawBundle?.operations)) {
+    operations = rawBundle.operations.map((operation, index) => normalizeBundleItem(operation, index));
+  } else if (legacyState && typeof legacyState === 'object') {
+    operations = [normalizeBundleItem({ state: extractOperationStateFromLegacyState(legacyState), label: rawBundle?.label || '' })];
+  }
+
+  if (!operations.length) {
+    operations = [normalizeBundleItem({ state: collectOperationState(), label: '' })];
+  }
+
+  operations = operations.map((operation, index) => {
+    const normalized = normalizeBundleItem(operation, index);
+    if (!normalized.label) normalized.label = createOperationLabel(normalized.operationType, operations.slice(0, index));
+    normalized.summary = buildOperationSummaryFromItem(normalized);
+    return normalized;
+  });
+
+  const selectedOperationId = operations.some((operation) => operation.id === rawBundle?.selectedOperationId)
+    ? rawBundle.selectedOperationId
+    : operations[0].id;
+
+  return {
+    version: JOB_BUNDLE_VERSION,
+    selectedOperationId,
+    sharedState,
+    operations
+  };
+}
+
+function ensureJobBundleInitialized() {
+  if (currentJobBundle?.operations?.length) return currentJobBundle;
+  currentJobBundle = normalizeJobBundle({
+    sharedState: collectSharedJobState(),
+    operations: [{ state: collectOperationState(), label: '' }]
+  });
+  return currentJobBundle;
+}
+
+function getSelectedOperationItem(bundle = currentJobBundle) {
+  const activeBundle = bundle || ensureJobBundleInitialized();
+  return activeBundle.operations.find((operation) => operation.id === activeBundle.selectedOperationId) || activeBundle.operations[0] || null;
+}
+
+function renderOperationManager() {
+  if (!jobOperationSelectEl || !jobOperationLabelEl || !jobOperationStatusEl) return;
+  const bundle = ensureJobBundleInitialized();
+  const selectedOperation = getSelectedOperationItem(bundle);
+  const optionsHtml = bundle.operations.map((operation) => {
+    const summary = buildOperationSummaryFromItem(operation);
+    const label = summary.label || createOperationLabel(summary.operationType, []);
+    const descriptor = summary.nominalSize ? ` • ${summary.nominalSize}` : '';
+    const typeLabel = summary.operationType || 'Operation';
+    const selected = operation.id === bundle.selectedOperationId ? ' selected' : '';
+    return `<option value="${escapeHtml(operation.id)}"${selected}>${escapeHtml(label)} • ${escapeHtml(typeLabel)}${escapeHtml(descriptor)}</option>`;
+  }).join('');
+  jobOperationSelectEl.innerHTML = optionsHtml;
+  if (selectedOperation) jobOperationSelectEl.value = selectedOperation.id;
+  jobOperationLabelEl.value = selectedOperation?.label || '';
+  const total = bundle.operations.length;
+  jobOperationStatusEl.textContent = `${total} operation${total === 1 ? '' : 's'} in this job • ${buildOperationCountsSummary(bundle.operations)}`;
+  if (duplicateOperationBtnEl) duplicateOperationBtnEl.disabled = !selectedOperation;
+  if (deleteOperationBtnEl) deleteOperationBtnEl.disabled = !selectedOperation;
+}
+
+function syncCurrentOperationItemFromUi(options = {}) {
+  if (suppressJobBundleUiSync) return currentJobBundle;
+  const bundle = ensureJobBundleInitialized();
+  bundle.sharedState = collectSharedJobState();
+  let selectedOperation = getSelectedOperationItem(bundle);
+  if (!selectedOperation) {
+    selectedOperation = normalizeBundleItem({ state: collectOperationState(), label: '' }, bundle.operations.length);
+    bundle.operations.push(selectedOperation);
+    bundle.selectedOperationId = selectedOperation.id;
+  }
+  selectedOperation.state = cloneJson(collectOperationState()) || {};
+  selectedOperation.mode = selectedOperation.state.activeMode || selectedOperation.mode || 'hotTap';
+  selectedOperation.operationType = inferOperationType(buildCombinedState(bundle.sharedState, selectedOperation.state));
+  selectedOperation.updatedAtIso = new Date().toISOString();
+  if (!String(selectedOperation.label || '').trim() || isAutoOperationLabel(selectedOperation.label)) {
+    selectedOperation.label = createOperationLabel(selectedOperation.operationType, bundle.operations.filter((operation) => operation.id !== selectedOperation.id));
+  }
+  selectedOperation.summary = buildOperationSummaryFromItem(selectedOperation);
+  if (options.render !== false) renderOperationManager();
+  return bundle;
+}
+
+function selectOperationById(operationId, options = {}) {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  if (!bundle.operations.some((operation) => operation.id === operationId)) return;
+  bundle.selectedOperationId = operationId;
+  const selectedOperation = getSelectedOperationItem(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  if (options.persist !== false) persistCurrentJob();
+}
+
+function addOperationForMode(mode, options = {}) {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const currentOperation = getSelectedOperationItem(bundle);
+  const nextState = options.duplicateCurrent && currentOperation
+    ? cloneJson(currentOperation.state)
+    : buildBlankOperationState(mode, currentOperation?.state || collectOperationState());
+  if (!options.duplicateCurrent) nextState.activeMode = mode;
+  const nextOperation = normalizeBundleItem({ state: nextState, label: '' }, bundle.operations.length);
+  nextOperation.label = createOperationLabel(nextOperation.operationType, bundle.operations);
+  nextOperation.summary = buildOperationSummaryFromItem(nextOperation);
+  bundle.operations.push(nextOperation);
+  bundle.selectedOperationId = nextOperation.id;
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, nextOperation.state));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  persistCurrentJob();
+}
+
+function deleteCurrentOperationItem() {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const currentOperation = getSelectedOperationItem(bundle);
+  if (!currentOperation) return;
+  if (bundle.operations.length === 1) {
+    const replacementState = buildBlankOperationState(currentOperation.mode || 'hotTap', currentOperation.state || collectOperationState());
+    const replacement = normalizeBundleItem({ state: replacementState, label: currentOperation.label || '' }, 0);
+    replacement.label = currentOperation.label || createOperationLabel(replacement.operationType, []);
+    replacement.summary = buildOperationSummaryFromItem(replacement);
+    bundle.operations = [replacement];
+    bundle.selectedOperationId = replacement.id;
+  } else {
+    const currentIndex = bundle.operations.findIndex((operation) => operation.id === currentOperation.id);
+    bundle.operations = bundle.operations.filter((operation) => operation.id !== currentOperation.id);
+    const fallback = bundle.operations[Math.max(0, currentIndex - 1)] || bundle.operations[0];
+    bundle.selectedOperationId = fallback.id;
+  }
+  const selectedOperation = getSelectedOperationItem(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  persistCurrentJob();
+}
+
+function collectJobState() {
+  return buildCombinedState(collectSharedJobState(), collectOperationState());
+}
+
 function persistCurrentJob() {
   try {
-    localStorage.setItem(JOB_STATE_KEY, JSON.stringify(collectJobState()));
+    const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+    localStorage.setItem(JOB_STATE_KEY, JSON.stringify(buildPersistedJobBundlePayload(bundle)));
   } catch {}
 }
 
@@ -1493,17 +1878,28 @@ function applyJobState(state) {
   updateJobInfoSummary();
 }
 
+function applyJobBundle(bundle, options = {}) {
+  suppressJobBundleUiSync = true;
+  currentJobBundle = normalizeJobBundle(bundle, options.record || null);
+  const selectedOperation = getSelectedOperationItem(currentJobBundle);
+  applyJobState(buildCombinedState(currentJobBundle.sharedState, selectedOperation?.state || {}));
+  renderOperationManager();
+  suppressJobBundleUiSync = false;
+}
+
 function restoreCurrentJob() {
   try {
     const raw = localStorage.getItem(JOB_STATE_KEY);
     if (!raw) return;
-    applyJobState(JSON.parse(raw));
+    applyJobBundle(JSON.parse(raw));
   } catch {}
 }
 
 function loadRecordIntoCalculator(record, options = {}) {
-  if (!record?.state) return;
-  applyJobState(record.state);
+  if (!record) return;
+  if (record?.jobBundle?.operations?.length) applyJobBundle(record.jobBundle, { record });
+  else if (record?.state) applyJobBundle(record.state, { record });
+  else return;
   refreshBcoState();
   updateBcoDisplays();
   calculateIntegratedBco({ silent: true });
@@ -1523,17 +1919,19 @@ function loadRecordIntoCalculator(record, options = {}) {
     calcCompletionPlug();
     syncBcoToEta({ force: true });
     updateEtaEstimate();
+    renderOperationManager();
   }, 80);
   persistCurrentJob();
   if (jobsCloudStatusEl && options.message !== false) {
     jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
   }
-  const targetMode = record?.state?.activeMode || 'bco';
+  const targetMode = getSelectedOperationItem(currentJobBundle)?.state?.activeMode || record?.state?.activeMode || 'bco';
   if (targetMode) setMode(targetMode);
   try {
     document.getElementById('bcoPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch {}
 }
+
 
 
 function getHistory() {
@@ -1567,10 +1965,14 @@ function inferOperationType(state = collectJobState()) {
 
 function buildJobRecord(state = collectJobState()) {
   refreshBcoState();
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const persistedBundle = buildPersistedJobBundlePayload(bundle);
   const materialLabel = bcoMaterialEl?.selectedOptions?.[0]?.textContent || state.bcoPipeMaterial || '—';
   const nominal = state.bcoPipeOD || '—';
   const machineLabelMap = { '360': '360 / 152', '660': '660 / 760', '1200': '1200-M120' };
-  const operationType = inferOperationType(state);
+  const operationType = persistedBundle.operations.length > 1
+    ? buildOperationCountsSummary(persistedBundle.operations)
+    : persistedBundle.operations[0]?.operationType || inferOperationType(state);
   const savedAtIso = new Date().toISOString();
   const etaRpm = etaRpmDisplayEl?.textContent?.trim() || '—';
   const etaRange = etaRangeDisplayEl?.textContent?.trim() || '—';
@@ -1585,10 +1987,11 @@ function buildJobRecord(state = collectJobState()) {
     meta: {
       title,
       operationType,
+      operationCount: persistedBundle.operations.length,
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.28b2'
+      version: 'v2.28b4'
     },
     job: {
       client: state.jobClient || '',
@@ -1602,6 +2005,7 @@ function buildJobRecord(state = collectJobState()) {
       technician: state.jobTechnician || '',
       notes: state.jobNotes || ''
     },
+    jobBundle: persistedBundle,
     pipe: {
       material: materialLabel,
       nominalSize: nominal,
@@ -1658,6 +2062,7 @@ function buildHistorySnapshot() {
   const record = buildJobRecord(state);
   const material = bcoMaterialEl?.selectedOptions?.[0]?.textContent || bcoMaterialEl?.value || '—';
   const nominal = bcoPipeOdEl?.value || '—';
+  const operationCount = record?.jobBundle?.operations?.length || 1;
   return {
     id: `${Date.now()}`,
     savedAt: record.meta.savedAtDisplay,
@@ -1668,6 +2073,7 @@ function buildHistorySnapshot() {
     summary: {
       title: record.meta.title,
       operationType: record.meta.operationType,
+      operationCount,
       pipe: `${material} ${nominal}`.trim(),
       bco: record.calculations.bco,
       hotTapLi: record.calculations.hotTapLi,
@@ -1818,6 +2224,27 @@ function renderJobRecordDetails(record) {
     ...(record?.warnings?.lineStop || []),
     ...(record?.warnings?.completionPlug || [])
   ].filter(Boolean);
+  const operations = getRecordOperations(record);
+  const operationsHtml = operations.length ? `
+    <div class="job-operation-list">
+      ${operations.map((operation) => {
+        const summary = operation?.summary || buildOperationSummaryFromItem(operation);
+        const label = summary.label || operation.label || operation.operationType || 'Operation';
+        const subtitle = summary.operationType || operation.operationType || 'Operation';
+        const pipeText = [summary.material, summary.nominalSize].filter(Boolean).join(' ');
+        const detailText = summary.details || 'No extra details saved.';
+        return `
+          <div class="job-operation-card">
+            <div class="job-operation-card-title">${escapeHtml(label)}</div>
+            <div class="job-operation-card-subtitle">${escapeHtml(subtitle)}</div>
+            <div class="job-operation-card-meta">
+              <div><strong>Pipe:</strong> ${escapeHtml(pipeText || '—')}</div>
+              <div><strong>Cutter:</strong> ${escapeHtml(summary.cutterOd || '—')}</div>
+              <div><strong>Notes:</strong> ${escapeHtml(detailText)}</div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>` : '';
   return `
     <div class="job-detail-grid">
       <div><strong>Customer:</strong> ${record?.job?.client || '—'}</div>
@@ -1830,7 +2257,8 @@ function renderJobRecordDetails(record) {
       <div><strong>Machine:</strong> ${record?.machine?.machine || '—'}</div>
       <div><strong>BCO:</strong> ${record?.calculations?.bco || '—'}</div>
       <div><strong>ETA:</strong> ${record?.machine?.etaRange || '—'}</div>
-      <div><strong>Operation:</strong> ${record?.meta?.operationType || '—'}</div>
+      <div><strong>Operation Mix:</strong> ${record?.meta?.operationType || '—'}</div>
+      <div><strong>Operations:</strong> ${operations.length || 1}</div>
       <div><strong>Notes:</strong> ${record?.job?.notes || '—'}</div>
     </div>
     <div class="job-detail-grid">
@@ -1838,7 +2266,8 @@ function renderJobRecordDetails(record) {
       <div><strong>Line Stop LI:</strong> ${record?.calculations?.lineStopLi || '—'}</div>
       <div><strong>Completion Plug LI:</strong> ${record?.calculations?.completionPlugLi || '—'}</div>
       <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
-    </div>`;
+    </div>
+    ${operationsHtml}`;
 }
 
 function getCombinedJobsForDisplay() {
@@ -1856,7 +2285,7 @@ function getCombinedJobsForDisplay() {
     jobs = jobs.filter(({ record }) => {
       const haystack = [
         record?.meta?.title, record?.meta?.operationType, record?.job?.client, record?.job?.location, record?.job?.technician,
-        record?.job?.jobNumber, record?.job?.date, record?.job?.notes, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd, record?.meta?.savedAtDisplay
+        record?.job?.jobNumber, record?.job?.date, record?.job?.notes, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd, record?.meta?.savedAtDisplay, ...(record?.jobBundle?.operations || []).map((operation) => operation?.label || ''), ...(record?.jobBundle?.operations || []).map((operation) => operation?.operationType || '')
       ].join(' ').toLowerCase();
       return haystack.includes(term);
     });
@@ -2068,6 +2497,7 @@ function renderHistory() {
       </div>
       <div class="history-meta">
         <span>${item.summary.operationType || 'Job'}</span>
+        <span>${item.summary.operationCount || 1} op${(item.summary.operationCount || 1) === 1 ? '' : 's'}</span>
         <span>BCO ${item.summary.bco}</span>
         <span>Wall ${item.summary.wall || '—'}</span>
         <span>${item.cloudId ? 'Synced' : 'Local only'}</span>
@@ -2153,6 +2583,29 @@ jobInfoFieldIds.forEach((id) => {
   el.addEventListener('input', updateJobInfoSummary);
   el.addEventListener('change', updateJobInfoSummary);
 });
+if (jobOperationSelectEl) {
+  jobOperationSelectEl.addEventListener('change', (event) => {
+    selectOperationById(event.target.value);
+  });
+}
+if (jobOperationLabelEl) {
+  jobOperationLabelEl.addEventListener('input', (event) => {
+    const bundle = ensureJobBundleInitialized();
+    const selectedOperation = getSelectedOperationItem(bundle);
+    if (!selectedOperation) return;
+    selectedOperation.label = event.target.value;
+    selectedOperation.summary = buildOperationSummaryFromItem(selectedOperation);
+    renderOperationManager();
+    persistCurrentJob();
+  });
+}
+if (addHotTapOpBtnEl) addHotTapOpBtnEl.addEventListener('click', () => addOperationForMode('hotTap'));
+if (addLineStopOpBtnEl) addLineStopOpBtnEl.addEventListener('click', () => addOperationForMode('lineStop'));
+if (duplicateOperationBtnEl) duplicateOperationBtnEl.addEventListener('click', () => {
+  const currentOperation = getSelectedOperationItem(ensureJobBundleInitialized());
+  addOperationForMode(currentOperation?.mode || currentOperation?.state?.activeMode || 'hotTap', { duplicateCurrent: true });
+});
+if (deleteOperationBtnEl) deleteOperationBtnEl.addEventListener('click', deleteCurrentOperationItem);
 if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
   const collapsed = !jobInfoSectionEl?.classList.contains('collapsed');
   setJobInfoCollapsed(collapsed);
@@ -2240,6 +2693,8 @@ window.addEventListener('load', () => {
   enableMixedMeasurementInputs();
   hydrateBcoInputsFromSavedData();
   restoreCurrentJob();
+  ensureJobBundleInitialized();
+  renderOperationManager();
   initJobInfoSection();
   try {
     const savedMode = localStorage.getItem(ACTIVE_MODE_KEY);

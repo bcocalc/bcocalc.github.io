@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=2.27d9">
+  <link rel="stylesheet" href="styles.css?v=2.28b4">
 </head>
 <body class="measurement-page">
 <div class="card">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">TapCalc Dev v2.28b3 · 2026-04-06</span>
+      <span class="version-badge">TapCalc Dev v2.28b4 · 2026-05-06</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -52,6 +52,22 @@
         <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
         <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
         <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="3" placeholder="Notes"></textarea></div>
+      </div>
+
+      <div class="job-info-subtitle">Job Operations</div>
+      <div class="job-operations-card">
+        <p class="job-operations-note">Keep one job together even when it has multiple hot taps and line stops. Job info stays shared while each operation keeps its own calculator values.</p>
+        <div class="job-operations-grid">
+          <div class="row"><label>Current Operation</label><select id="jobOperationSelect"></select></div>
+          <div class="row"><label>Operation Name</label><input id="jobOperationLabel" type="text" placeholder="Hot Tap 1"></div>
+        </div>
+        <div class="job-operations-actions">
+          <button type="button" id="addHotTapOpBtn" class="secondary-btn">Add Hot Tap</button>
+          <button type="button" id="addLineStopOpBtn" class="secondary-btn">Add Line Stop</button>
+          <button type="button" id="duplicateOperationBtn" class="secondary-btn">Duplicate Current</button>
+          <button type="button" id="deleteOperationBtn" class="secondary-btn danger-btn">Delete Current</button>
+        </div>
+        <p id="jobOperationStatus" class="note job-operations-status">1 operation in this job.</p>
       </div>
     </div>
   </section>
