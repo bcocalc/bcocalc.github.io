@@ -431,6 +431,33 @@ function isToolbarEligibleField(field) {
   return Boolean(field && field.dataset.measurementToolbarEligible === 'true' && !field.disabled);
 }
 
+function updateMeasurementToolbarViewport() {
+  if (!measurementInputToolbarEl) return;
+
+  if (measurementInputToolbarEl.hidden) {
+    measurementInputToolbarEl.style.left = '';
+    measurementInputToolbarEl.style.right = '';
+    measurementInputToolbarEl.style.bottom = '';
+    measurementInputToolbarEl.style.width = '';
+    return;
+  }
+
+  const viewport = window.visualViewport;
+  if (!viewport) {
+    measurementInputToolbarEl.style.left = '';
+    measurementInputToolbarEl.style.right = '';
+    measurementInputToolbarEl.style.bottom = '';
+    measurementInputToolbarEl.style.width = '';
+    return;
+  }
+
+  const keyboardOffset = Math.max(0, window.innerHeight - (viewport.height + viewport.offsetTop));
+  measurementInputToolbarEl.style.left = `${Math.max(0, viewport.offsetLeft)}px`;
+  measurementInputToolbarEl.style.right = `${Math.max(0, window.innerWidth - (viewport.width + viewport.offsetLeft))}px`;
+  measurementInputToolbarEl.style.bottom = `${keyboardOffset}px`;
+  measurementInputToolbarEl.style.width = `${viewport.width}px`;
+}
+
 function showMeasurementInputToolbar(field) {
   if (!measurementInputToolbarEl || !isToolbarEligibleField(field)) return;
   activeMeasurementField = field;
@@ -440,6 +467,7 @@ function showMeasurementInputToolbar(field) {
   }
   measurementInputToolbarEl.hidden = false;
   document.body.classList.add('measurement-toolbar-open');
+  updateMeasurementToolbarViewport();
 }
 
 function hideMeasurementInputToolbar() {
@@ -450,6 +478,7 @@ function hideMeasurementInputToolbar() {
     activeMeasurementField = null;
     measurementInputToolbarEl.hidden = true;
     document.body.classList.remove('measurement-toolbar-open');
+    updateMeasurementToolbarViewport();
   }, 120);
 }
 
@@ -717,6 +746,15 @@ if (measurementInputToolbarEl) {
   measurementInputToolbarEl.addEventListener('pointerdown', (event) => {
     event.preventDefault();
   });
+}
+
+if (window.visualViewport) {
+  const syncMeasurementToolbarToViewport = () => updateMeasurementToolbarViewport();
+  window.visualViewport.addEventListener('resize', syncMeasurementToolbarToViewport);
+  window.visualViewport.addEventListener('scroll', syncMeasurementToolbarToViewport);
+  window.addEventListener('orientationchange', syncMeasurementToolbarToViewport);
+  window.addEventListener('resize', syncMeasurementToolbarToViewport);
+  document.addEventListener('scroll', syncMeasurementToolbarToViewport, { passive: true });
 }
 
 if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openDecimalModal);
