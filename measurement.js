@@ -391,6 +391,11 @@ function formatDecimal(value, digits = 4) {
   return value.toFixed(digits);
 }
 
+function formatNormalizedMeasurement(value, digits = 4) {
+  if (!Number.isFinite(value)) return '—';
+  const normalized = value.toFixed(digits).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+  return normalized === '-0' ? '0' : normalized;
+}
 
 function shouldNormalizeMeasurement(rawValue) {
   return /[\/\s-]/.test(String(rawValue || '').trim());
@@ -410,7 +415,7 @@ function normalizeMeasurementField(field, options = {}) {
   if (!Number.isFinite(parsed)) return;
   const shouldNormalize = options.force || shouldNormalizeMeasurement(rawValue);
   if (!shouldNormalize) return;
-  const normalized = formatDecimal(parsed);
+  const normalized = formatNormalizedMeasurement(parsed);
   if (field.value === normalized) return;
   field.value = normalized;
   field.dispatchEvent(new Event('input', { bubbles: true }));
@@ -418,20 +423,24 @@ function normalizeMeasurementField(field, options = {}) {
 }
 
 function enableMixedMeasurementInputs() {
-  const measurementFieldIds = [
-    'bcoPipeID','bcoCutterOD','md','ld','ptc','pod','start','mt','valveBore','gtf',
-    'lsMd','lsLd','lsPod','lsLiManual','lsTravel','lsMachineTravel',
-    'cpStart','cpJbf','cpLd','cpPt','cpLiManual',
-    'fractionNumerator','fractionDenominator','decimalInput','etaBco'
+  const measurementSelectors = [
+    'input[type="number"][step="any"]',
+    '#fractionNumerator',
+    '#fractionDenominator',
+    '#decimalInput'
   ];
-  measurementFieldIds.forEach((id) => {
-    const field = document.getElementById(id);
-    if (!field) return;
+  const fields = Array.from(new Set(
+    measurementSelectors.flatMap((selector) => Array.from(document.querySelectorAll(selector)))
+  ));
+  fields.forEach((field) => {
+    if (!field || field.dataset.mixedMeasurementEnabled === 'true') return;
+    const prefersWholeNumbers = field.id === 'fractionNumerator' || field.id === 'fractionDenominator';
     try { field.type = 'text'; } catch {}
-    field.setAttribute('inputmode', 'decimal');
+    field.setAttribute('inputmode', prefersWholeNumbers ? 'numeric' : 'decimal');
     field.setAttribute('autocomplete', 'off');
     field.setAttribute('autocorrect', 'off');
     field.setAttribute('spellcheck', 'false');
+    field.dataset.mixedMeasurementEnabled = 'true';
     field.addEventListener('blur', () => normalizeMeasurementField(field, { force: true }));
     field.addEventListener('change', () => normalizeMeasurementField(field, { force: true }));
     field.addEventListener('input', () => {
@@ -1991,7 +2000,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.28b4'
+      version: 'v2.28b5'
     },
     job: {
       client: state.jobClient || '',
