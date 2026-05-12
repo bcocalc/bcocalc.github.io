@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha158';
+﻿const BUILD_VERSION = '3.0.0-alpha159';
 
 (function(){
 
@@ -34,7 +34,98 @@ const BUILD_VERSION = '3.0.0-alpha158';
   });
 })();
 
-/* ===== 3.0.0-alpha158 mobile workflow/tools interaction guard ===== */
+const TAP_MACHINE_OPTIONS = [
+  '360 / 152',
+  '660 / 760',
+  '1200-M120',
+  'HTM 360',
+  'HTM 660',
+  'HTM 760',
+  'HTM 1200',
+  'HTM M120',
+  'HTM 18 T101',
+  'HTM 24 T101',
+  'HTM 28 T101',
+  'HTM C1-25',
+  'HTM C1-36',
+  'IP 304 / 406 / 508',
+  'IP 914XL',
+  'IPSCO IP100',
+  'Series 1-4 Hydraulic Actuator'
+];
+
+function machineKey(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function normalizeMachineType(value) {
+  const raw = String(value ?? '').trim().replace(/\s+/g, ' ');
+  if (!raw) return '';
+  const key = machineKey(raw);
+  const exact = TAP_MACHINE_OPTIONS.find(option => machineKey(option) === key);
+  if (exact) return exact;
+  const aliases = new Map([
+    ['360152', '360 / 152'],
+    ['152360', '360 / 152'],
+    ['660760', '660 / 760'],
+    ['760660', '660 / 760'],
+    ['1200m120', '1200-M120'],
+    ['m1201200', '1200-M120'],
+    ['ip304406508', 'IP 304 / 406 / 508'],
+    ['ip304406510', 'IP 304 / 406 / 508'],
+    ['ip914xlnewmanual', 'IP 914XL'],
+    ['ipscoip100manual', 'IPSCO IP100'],
+    ['series1to4hydraulicactuator', 'Series 1-4 Hydraulic Actuator']
+  ]);
+  if (aliases.has(key)) return aliases.get(key);
+  if (key === '360' || key === '152') return '360 / 152';
+  if (key === '660' || key === '760') return '660 / 760';
+  if (key === '1200' || key === 'm120') return '1200-M120';
+  return raw;
+}
+
+function ensureMachineTypeOption(value) {
+  const el = document.getElementById('machineType');
+  const normalized = normalizeMachineType(value);
+  if (!el || el.tagName !== 'SELECT' || !normalized) return normalized;
+  const exists = Array.from(el.options || []).some(option => option.value === normalized);
+  if (!exists) {
+    const option = document.createElement('option');
+    option.value = normalized;
+    option.textContent = normalized;
+    el.appendChild(option);
+  }
+  return normalized;
+}
+
+function setMachineTypeValue(value, options = {}) {
+  const el = document.getElementById('machineType');
+  if (!el) return false;
+  const normalized = normalizeMachineType(value);
+  if (el.tagName === 'SELECT') ensureMachineTypeOption(normalized);
+  if (el.type === 'checkbox') el.checked = !!normalized;
+  else el.value = normalized;
+  if (options.dispatch !== false) {
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+  return true;
+}
+
+function deriveEtaMachineFromMachine(value) {
+  const key = machineKey(value);
+  if (key.includes('360') || key.includes('152')) return '360';
+  if (key.includes('660') || key.includes('760')) return '660';
+  if (key.includes('1200') || key.includes('m120')) return '1200';
+  return '';
+}
+
+window.tapCalcMachineOptions = TAP_MACHINE_OPTIONS;
+window.tapCalcNormalizeMachineType = normalizeMachineType;
+window.tapCalcSetMachineTypeValue = setMachineTypeValue;
+window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
+
+/* ===== 3.0.0-alpha159 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -277,11 +368,11 @@ syncWorkflowModeButtons(getStoredWorkflowMode());
       if (mcoRow) {
         const pipeIdRow = document.createElement("div");
         pipeIdRow.className = "row pipe-support";
-        pipeIdRow.innerHTML = '<label>Pipe I.D.</label><div id="pipeId" class="display-geometry">—</div><span class="from-bco">From BCO Calculator</span>';
+        pipeIdRow.innerHTML = '<label>Pipe I.D.</label><div id="pipeId" class="display-geometry">â€”</div><span class="from-bco">From BCO Calculator</span>';
 
         const wallRow = document.createElement("div");
         wallRow.className = "row pipe-support";
-        wallRow.innerHTML = '<label>Wall Thickness</label><div id="wallThk" class="display-geometry">—</div><span class="from-bco">From BCO Calculator</span>';
+        wallRow.innerHTML = '<label>Wall Thickness</label><div id="wallThk" class="display-geometry">â€”</div><span class="from-bco">From BCO Calculator</span>';
 
         mcoRow.after(pipeIdRow);
         pipeIdRow.after(wallRow);
@@ -297,8 +388,8 @@ syncWorkflowModeButtons(getStoredWorkflowMode());
       lsWallDisplay && (lsWallDisplay.textContent = geometry.wall.toFixed(4));
       hsWallDisplay && (hsWallDisplay.textContent = geometry.wall.toFixed(4));
     } else {
-      lsWallDisplay && (lsWallDisplay.textContent = "—");
-      hsWallDisplay && (hsWallDisplay.textContent = "—");
+      lsWallDisplay && (lsWallDisplay.textContent = "â€”");
+      hsWallDisplay && (hsWallDisplay.textContent = "â€”");
     }
   }
 
@@ -381,8 +472,8 @@ function updateBcoDisplays() {
   const pipeOD = parseFloat(trueOD?.[material]?.[nominal]);
   const pipeID = getMeasurementValue(bcoPipeIdEl);
   const wall = Number.isFinite(pipeOD) && Number.isFinite(pipeID) ? (pipeOD - pipeID) / 2 : NaN;
-  if (bcoTrueOdDisplayEl) bcoTrueOdDisplayEl.textContent = Number.isFinite(pipeOD) ? pipeOD.toFixed(4) : '—';
-  if (bcoWallDisplayEl) bcoWallDisplayEl.textContent = Number.isFinite(wall) ? wall.toFixed(4) : '—';
+  if (bcoTrueOdDisplayEl) bcoTrueOdDisplayEl.textContent = Number.isFinite(pipeOD) ? pipeOD.toFixed(4) : 'â€”';
+  if (bcoWallDisplayEl) bcoWallDisplayEl.textContent = Number.isFinite(wall) ? wall.toFixed(4) : 'â€”';
 }
 
 function updateBcoPipeId() {
@@ -419,13 +510,13 @@ function hydrateBcoInputsFromSavedData() {
 function applyBcoToMeasurementCard() {
   refreshBcoState();
   const pipeOD = Number.isFinite(geometry.pipeOD) ? geometry.pipeOD.toFixed(4) : '';
-  const wall = Number.isFinite(geometry.wall) ? geometry.wall.toFixed(4) : '—';
+  const wall = Number.isFinite(geometry.wall) ? geometry.wall.toFixed(4) : 'â€”';
   if (podEl && pipeOD) podEl.value = pipeOD;
   if (lsPodEl && pipeOD) lsPodEl.value = pipeOD;
   const pipeId = document.getElementById('pipeId');
   const wallThk = document.getElementById('wallThk');
   const lsWallDisplay = document.getElementById('lsWallDisplay');
-  if (pipeId) pipeId.textContent = Number.isFinite(geometry.pipeID) ? geometry.pipeID.toFixed(4) : '—';
+  if (pipeId) pipeId.textContent = Number.isFinite(geometry.pipeID) ? geometry.pipeID.toFixed(4) : 'â€”';
   if (wallThk) wallThk.textContent = wall;
   if (lsWallDisplay) lsWallDisplay.textContent = wall;
   calcHotTap();
@@ -548,7 +639,7 @@ function gcd(a, b) {
 }
 
 function formatDecimal(value, digits = 4) {
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return 'â€”';
   return value.toFixed(digits);
 }
 
@@ -649,7 +740,7 @@ function updateFractionToDecimal() {
   const numerator = parseFloat(fractionNumeratorEl.value);
   const denominator = parseFloat(fractionDenominatorEl.value);
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
-    fractionToDecimalResultEl.textContent = '—';
+    fractionToDecimalResultEl.textContent = 'â€”';
     return;
   }
   fractionToDecimalResultEl.textContent = formatDecimal(numerator / denominator);
@@ -660,7 +751,7 @@ function updateDecimalToFraction() {
   const value = parseFloat(decimalInputEl.value);
   const maxDenominator = parseInt(fractionPrecisionEl.value, 10) || 64;
   if (!Number.isFinite(value)) {
-    decimalToFractionResultEl.textContent = '—';
+    decimalToFractionResultEl.textContent = 'â€”';
     return;
   }
   const whole = Math.floor(value);
@@ -680,7 +771,7 @@ function updateDecimalToFraction() {
 
   const simplified = simplifyFraction(numerator, denominator);
   if (!simplified) {
-    decimalToFractionResultEl.textContent = '—';
+    decimalToFractionResultEl.textContent = 'â€”';
     return;
   }
   numerator = simplified.numerator;
@@ -695,8 +786,8 @@ function parseMixedMeasurement(rawValue) {
   if (typeof rawValue !== 'string') return null;
   const normalized = rawValue
     .trim()
-    .replace(/[?”]/g, '')
-    .replace(/[–—]/g, '-')
+    .replace(/[?â€]/g, '')
+    .replace(/[â€“â€”]/g, '-')
     .replace(/\s+/g, ' ');
   if (!normalized) return null;
 
@@ -853,14 +944,14 @@ if (referenceBackToTopBtnEl) {
 
 
 const htpChartData = {
-  '3': { branch: '6"', head: '3" – 4"', cutter: 5.500, bco: 3.000 },
-  '4': { branch: '6" – 8"', head: '4" – 6"', cutter: 7.468, bco: 4.000 },
-  '6': { branch: '8" – 12"', head: '6" – 8"', cutter: 9.968, bco: 6.000 },
-  '8': { branch: '12"', head: '6" – 8"', cutter: 9.968, bco: 8.000 },
-  '10': { branch: '16"', head: '10" – 12"', cutter: 14.468, bco: 10.000 },
-  '12': { branch: '16"', head: '10" – 12"', cutter: 14.468, bco: 12.000 },
-  '14': { branch: '20"', head: '14" – 16"', cutter: 18.468, bco: 14.000 },
-  '16': { branch: '20"', head: '14" – 16"', cutter: 18.468, bco: 16.000 }
+  '3': { branch: '6"', head: '3" â€“ 4"', cutter: 5.500, bco: 3.000 },
+  '4': { branch: '6" â€“ 8"', head: '4" â€“ 6"', cutter: 7.468, bco: 4.000 },
+  '6': { branch: '8" â€“ 12"', head: '6" â€“ 8"', cutter: 9.968, bco: 6.000 },
+  '8': { branch: '12"', head: '6" â€“ 8"', cutter: 9.968, bco: 8.000 },
+  '10': { branch: '16"', head: '10" â€“ 12"', cutter: 14.468, bco: 10.000 },
+  '12': { branch: '16"', head: '10" â€“ 12"', cutter: 14.468, bco: 12.000 },
+  '14': { branch: '20"', head: '14" â€“ 16"', cutter: 18.468, bco: 14.000 },
+  '16': { branch: '20"', head: '14" â€“ 16"', cutter: 18.468, bco: 16.000 }
 };
 
 const plant150Data = [
@@ -923,14 +1014,14 @@ function updateGarlock600Summary() {
   const activeSize = garlock600SizeSelectEl?.value || garlock600Data[0]?.size;
   const match = garlock600Data.find((row) => row.size === activeSize) || garlock600Data[0];
   if (!match) return;
-  const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value || '—'; };
+  const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value || 'â€”'; };
   setText('garlock600BoltCount', match.bolts);
   setText('garlock600BoltSize', match.boltSize);
   setText('garlock600MinTorque', `${match.minTorque} ft lbs`);
   setText('garlock600PreferredTorque', `${match.preferredTorque} ft lbs`);
   setText('garlock600Torque60', `${match.torque60} ft lbs`);
   setText('garlock600StressValue', `${match.maxRecStress} psi`);
-  setText('garlock600ContactArea', `${match.area} in²`);
+  setText('garlock600ContactArea', `${match.area} inÂ²`);
 }
 
 function filterGarlock600Rows(query) {
@@ -955,9 +1046,9 @@ function updatePlantSummary(seriesKey) {
   const activeSize = selectEl?.value || rows[0]?.[0];
   const match = rows.find((row) => row[0] === activeSize) || rows[0];
   if (!match) return;
-  if (jackEl) jackEl.textContent = match[1] || '—';
-  if (packingEl) packingEl.textContent = match[2] || '—';
-  if (countEl) countEl.textContent = match[3] || '—';
+  if (jackEl) jackEl.textContent = match[1] || 'â€”';
+  if (packingEl) packingEl.textContent = match[2] || 'â€”';
+  if (countEl) countEl.textContent = match[3] || 'â€”';
 }
 
 function filterPlantRows(seriesKey, query) {
@@ -1020,7 +1111,7 @@ const etaRpmChart = {
 };
 
 function formatEtaMinutes(minutes) {
-  if (!Number.isFinite(minutes) || minutes < 0) return '—';
+  if (!Number.isFinite(minutes) || minutes < 0) return 'â€”';
   const totalSeconds = Math.round(minutes * 60);
   const hours = Math.floor(totalSeconds / 3600);
   const mins = Math.floor((totalSeconds % 3600) / 60);
@@ -1140,12 +1231,12 @@ function updateEtaEstimate() {
   if (etaRpmDisplayEl) {
     etaRpmDisplayEl.textContent = rpmValues.length > 1
       ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}`
-      : (rpmValues[0] ? `${rpmValues[0]}` : '—');
+      : (rpmValues[0] ? `${rpmValues[0]}` : 'â€”');
   }
 
   if (!rpmValues.length || !Number.isFinite(bco) || bco <= 0) {
-    if (etaFeedSpeedDisplayEl) etaFeedSpeedDisplayEl.textContent = '—';
-    if (etaRangeDisplayEl) etaRangeDisplayEl.textContent = '—';
+    if (etaFeedSpeedDisplayEl) etaFeedSpeedDisplayEl.textContent = 'â€”';
+    if (etaRangeDisplayEl) etaRangeDisplayEl.textContent = 'â€”';
     if (etaInlineStatusEl) etaInlineStatusEl.textContent = 'Enter a valid BCO and cutter size to calculate estimated time to BCO.';
     return;
   }
@@ -1295,7 +1386,7 @@ function getWrenchSizeForDiameter(diameter) {
     '4.00': '6-1/8',
     '4.12': '6-1/4'
   };
-  return wrenchMap[dia] || '—';
+  return wrenchMap[dia] || 'â€”';
 }
 
 
@@ -1337,19 +1428,19 @@ function updateBoltingSummary() {
   const row = getBoltingRowsForClass(flangeClass).find((entry) => entry.size === boltingSizeSelectEl.value);
   const isDual = config?.type === 'dual';
   if (!row) {
-    if (boltingBoltCountEl) boltingBoltCountEl.textContent = '—';
-    if (boltingDiameterEl) boltingDiameterEl.textContent = '—';
-    if (boltingStudRfEl) boltingStudRfEl.textContent = '—';
-    if (boltingStudRtjEl) boltingStudRtjEl.textContent = '—';
-    if (boltingWrenchEl) boltingWrenchEl.textContent = '—';
+    if (boltingBoltCountEl) boltingBoltCountEl.textContent = 'â€”';
+    if (boltingDiameterEl) boltingDiameterEl.textContent = 'â€”';
+    if (boltingStudRfEl) boltingStudRfEl.textContent = 'â€”';
+    if (boltingStudRtjEl) boltingStudRtjEl.textContent = 'â€”';
+    if (boltingWrenchEl) boltingWrenchEl.textContent = 'â€”';
     if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
     return;
   }
-  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts || '—';
-  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter || '—';
+  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts || 'â€”';
+  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter || 'â€”';
   if (boltingWrenchEl) boltingWrenchEl.textContent = row.wrench || getWrenchSizeForDiameter(row.diameter);
-  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? (row.stud_rf || '—') : (row.stud || '—');
-  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? (row.stud_rtj || '—') : '—';
+  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? (row.stud_rf || 'â€”') : (row.stud || 'â€”');
+  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? (row.stud_rtj || 'â€”') : 'â€”';
   if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
 }
 
@@ -1400,7 +1491,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha158', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha159', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1421,7 +1512,7 @@ const htpEtaRpmEl = document.getElementById('htpEtaRpm');
 const htpEtaFeedSpeedEl = document.getElementById('htpEtaFeedSpeed');
 const htpEtaRangeEl = document.getElementById('htpEtaRange');
 const htpStatusEl = document.getElementById('htpStatus');
-let lastHtp = { tco: NaN, eta: '—', cutter: NaN, bco: NaN, warnings: [] };
+let lastHtp = { tco: NaN, eta: 'â€”', cutter: NaN, bco: NaN, warnings: [] };
 
 function calcHtp() {
   if (!htpPipeSizeEl) return;
@@ -1441,20 +1532,20 @@ function calcHtp() {
   const bco = Number(config.bco) || 0;
   const tco = md + ld + ptc + bco;
 
-  if (htpTcoEl) htpTcoEl.textContent = Number.isFinite(tco) ? tco.toFixed(4) : '—';
+  if (htpTcoEl) htpTcoEl.textContent = Number.isFinite(tco) ? tco.toFixed(4) : 'â€”';
 
   const machine = htpMachineEl?.value || '360';
   const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, config.cutter);
 
   if (htpEtaRpmEl) {
-    htpEtaRpmEl.textContent = rpmValues.length > 1 ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}` : (rpmValues[0] ? `${rpmValues[0]}` : '—');
+    htpEtaRpmEl.textContent = rpmValues.length > 1 ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}` : (rpmValues[0] ? `${rpmValues[0]}` : 'â€”');
   }
 
   if (!rpmValues.length || !bco) {
-    if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = '—';
-    if (htpEtaRangeEl) htpEtaRangeEl.textContent = '—';
+    if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = 'â€”';
+    if (htpEtaRangeEl) htpEtaRangeEl.textContent = 'â€”';
     if (htpStatusEl) htpStatusEl.textContent = 'HTP ETA is waiting on chart data.';
-    lastHtp = { tco, eta: '—', cutter: config.cutter, bco, warnings: [] };
+    lastHtp = { tco, eta: 'â€”', cutter: config.cutter, bco, warnings: [] };
     updateSummary();
     return;
   }
@@ -1494,7 +1585,7 @@ const lineStopVariantBtnEls = Array.from(document.querySelectorAll('[data-line-s
 const lineStopVariantPanelEls = Array.from(document.querySelectorAll('[data-line-stop-variant-panel]'));
 const lineStopVariantNoteEl = document.getElementById('lineStopVariantNote');
 const lineStopVariantCopy = {
-  standard: 'Standard line stop math uses LI = MD ± LD + POD - Wall.',
+  standard: 'Standard line stop math uses LI = MD Â± LD + POD - Wall.',
   htp: 'HTP uses the training chart for branch size, head, cutter, and pipe-size BCO.',
   hiStop: 'Hi-Stop keeps cutout and plug-set math separate so PSD and Plug Set stay visible.'
 };
@@ -1630,9 +1721,9 @@ Object.defineProperty(window, 'currentJobBundle', {
 
 
 function buildBcoResultMarkup(payload = {}) {
-  const pipeOD = Number.isFinite(payload.pipeOD) ? payload.pipeOD.toFixed(3) : '—';
-  const pipeID = Number.isFinite(payload.pipeID) ? payload.pipeID.toFixed(3) : '—';
-  const cutterOD = Number.isFinite(payload.cutterOD) ? payload.cutterOD.toFixed(3) : '—';
+  const pipeOD = Number.isFinite(payload.pipeOD) ? payload.pipeOD.toFixed(3) : 'â€”';
+  const pipeID = Number.isFinite(payload.pipeID) ? payload.pipeID.toFixed(3) : 'â€”';
+  const cutterOD = Number.isFinite(payload.cutterOD) ? payload.cutterOD.toFixed(3) : 'â€”';
   const bco = Number.isFinite(payload.bco) ? payload.bco.toFixed(3) : null;
   const error = payload.error || '';
   if (error) {
@@ -1645,7 +1736,7 @@ function buildBcoResultMarkup(payload = {}) {
       <div><span>Pipe ID</span><strong>${pipeID}</strong></div>
       <div><span>Cutter OD</span><strong>${cutterOD}</strong></div>
     </div>
-    <div class="bco-result-main">${bco ? `BCO = ${bco} in` : 'BCO: —'}</div>
+    <div class="bco-result-main">${bco ? `BCO = ${bco} in` : 'BCO: â€”'}</div>
     <div class="bco-result-actions">
       <button type="button" class="secondary-btn bco-inline-copy" ${bco ? '' : 'disabled'}>Copy</button>
     </div>
@@ -1729,7 +1820,7 @@ function buildOperationCountsSummary(operations = []) {
     counts.set(type, (counts.get(type) || 0) + 1);
   });
   const parts = Array.from(counts.entries()).map(([type, count]) => `${count} ${pluralizeOperationType(type, count)}`);
-  return parts.length ? parts.join(' • ') : 'No operations yet';
+  return parts.length ? parts.join(' â€¢ ') : 'No operations yet';
 }
 
 function buildCombinedState(sharedState = {}, operationState = {}) {
@@ -1859,7 +1950,7 @@ function formatOperationOptionLabel(label = '', operationType = 'Operation') {
   const safeType = formatOperationType(operationType);
   if (!safeLabel) return safeType;
   if (safeLabel === safeType || safeLabel.startsWith(`${safeType} `)) return safeLabel;
-  return `${safeLabel} • ${safeType}`;
+  return `${safeLabel} â€¢ ${safeType}`;
 }
 
 function buildOperationSummaryFromItem(item = {}) {
@@ -1884,7 +1975,7 @@ function buildOperationSummaryFromItem(item = {}) {
   return {
     label: item?.label || '',
     operationType,
-    details: details.join(' • ') || 'No measurements yet'
+    details: details.join(' â€¢ ') || 'No measurements yet'
   };
 }
 
@@ -1983,7 +2074,7 @@ function renderOperationManager() {
   }
   jobOperationLabelEl.value = selectedOperation?.label || '';
   const total = bundle.operations.length;
-  jobOperationStatusEl.textContent = `${total} operation${total === 1 ? '' : 's'} in this job • ${buildOperationCountsSummary(bundle.operations)}`;
+  jobOperationStatusEl.textContent = `${total} operation${total === 1 ? '' : 's'} in this job â€¢ ${buildOperationCountsSummary(bundle.operations)}`;
   if (duplicateOperationBtnEl) duplicateOperationBtnEl.disabled = !selectedOperation;
   if (deleteOperationBtnEl) deleteOperationBtnEl.disabled = !selectedOperation;
   renderOperationPreview(bundle);
@@ -2155,10 +2246,7 @@ function buildStateFromRecord(record = {}) {
   if (!state.etaCutterSize && record?.machine?.cutterOd) state.etaCutterSize = record.machine.cutterOd;
   if (!state.etaPtc && record?.measurements?.hotTap?.ptc) state.etaPtc = record.measurements.hotTap.ptc;
   if (!state.etaMachine && machine) {
-    if (machine.includes('360')) state.etaMachine = '360';
-    else if (machine.includes('660') || machine.includes('760')) state.etaMachine = '660';
-    else if (machine.includes('1200')) state.etaMachine = '1200';
-    else state.etaMachine = machine;
+    state.etaMachine = deriveEtaMachineFromMachine(machine);
   }
   if (!state.pipeOD && record?.pipe?.trueOd) state.pipeOD = record.pipe.trueOd;
   if (!state.pipeID && record?.pipe?.pipeId) state.pipeID = record.pipe.pipeId;
@@ -2299,7 +2387,7 @@ function initAccordionSections() {
 
 function calcHotTap() {
   if (!data) {
-    if (rbcoGeomEl) rbcoGeomEl.textContent = "—";
+    if (rbcoGeomEl) rbcoGeomEl.textContent = "â€”";
     return;
   }
 
@@ -2484,7 +2572,7 @@ function calcLineStop() {
     }
   }
 
-  let travelMarginText = '—';
+  let travelMarginText = 'â€”';
   if (isFinite(lineStopTravel) && isFinite(machineTravel)) {
     travelMarginText = (machineTravel - lineStopTravel).toFixed(4);
   } else if (!isFinite(lineStopTravel) && isFinite(machineTravel)) {
@@ -2565,14 +2653,14 @@ function calcCompletionPlug() {
 
 
 function formatValue(value) {
-  return Number.isFinite(value) ? value.toFixed(4) : '—';
+  return Number.isFinite(value) ? value.toFixed(4) : 'â€”';
 }
 
 function updateSummary() {
   if (summaryEls.pipe) {
     const odText = formatValue(geometry.pipeOD);
     const wallText = formatValue(geometry.wall);
-    summaryEls.pipe.textContent = odText === '—' ? '—' : `OD ${odText} • Wall ${wallText}`;
+    summaryEls.pipe.textContent = odText === 'â€”' ? 'â€”' : `OD ${odText} â€¢ Wall ${wallText}`;
   }
 
   if (summaryEls.cutter) {
@@ -2589,8 +2677,8 @@ function updateSummary() {
     const li = lastHotTap.li;
     const ttd = lastHotTap.ttd;
     summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
-      ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
-      : '—';
+      ? `MD ${formatValue(md)} â€¢ LI ${formatValue(li)} â€¢ TTD ${formatValue(ttd)}`
+      : 'â€”';
   }
 
   if (summaryEls.lineStopLi) {
@@ -2638,7 +2726,7 @@ function buildJobInfoSummary() {
   if ((info.jobDate || '').trim()) parts.push(formatJobDateForSummary(info.jobDate.trim()));
   if ((info.jobTechnician || '').trim()) parts.push(info.jobTechnician.trim());
   if ((info.jobLocation || '').trim()) parts.push(info.jobLocation.trim());
-  return parts.length ? parts.join(' • ') : 'No job info yet.';
+  return parts.length ? parts.join(' â€¢ ') : 'No job info yet.';
 }
 
 function updateJobInfoSummary() {
@@ -2734,12 +2822,12 @@ function buildExportText() {
     infoLines.forEach(([label, value]) => lines.push(`${label}: ${value}`));
     lines.push('');
   }
-  lines.push(`Pipe: ${summaryEls.pipe?.textContent || '—'}`);
-  lines.push(`Cutter: ${summaryEls.cutter?.textContent || '—'}`);
-  lines.push(`BCO: ${summaryEls.bco?.textContent || '—'}`);
-  lines.push(`Hot Tap: ${summaryEls.hotTap?.textContent || '—'}`);
-  lines.push(`Line Stop LI: ${summaryEls.lineStopLi?.textContent || '—'}`);
-  lines.push(`Completion Plug LI: ${summaryEls.completionLi?.textContent || '—'}`);
+  lines.push(`Pipe: ${summaryEls.pipe?.textContent || 'â€”'}`);
+  lines.push(`Cutter: ${summaryEls.cutter?.textContent || 'â€”'}`);
+  lines.push(`BCO: ${summaryEls.bco?.textContent || 'â€”'}`);
+  lines.push(`Hot Tap: ${summaryEls.hotTap?.textContent || 'â€”'}`);
+  lines.push(`Line Stop LI: ${summaryEls.lineStopLi?.textContent || 'â€”'}`);
+  lines.push(`Completion Plug LI: ${summaryEls.completionLi?.textContent || 'â€”'}`);
   lines.push(`Warnings: ${summaryEls.warnings?.textContent || 'None'}`);
   return lines.join('\n');
 }
@@ -2813,6 +2901,10 @@ function applyJobState(state) {
   getStateFields().forEach(id => {
     const el = document.getElementById(id);
     if (!el || !(id in state)) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(state[id], { dispatch: false });
+      return;
+    }
     if (el.type === 'checkbox') el.checked = !!state[id];
     else el.value = state[id] ?? '';
   });
@@ -2918,6 +3010,10 @@ function loadRecordIntoCalculator(record, options = {}) {
   Object.entries(directMap).forEach(([id, value]) => {
     const el = document.getElementById(id);
     if (el && value != null && value !== '') {
+      if (id === 'machineType') {
+        setMachineTypeValue(value);
+        return;
+      }
       el.value = value;
       try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
       try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
@@ -3032,16 +3128,16 @@ function buildJobRecord(state = collectJobState()) {
   refreshBcoState();
   const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
   const persistedBundle = buildPersistedJobBundlePayload(bundle);
-  const materialLabel = bcoMaterialEl?.selectedOptions?.[0]?.textContent || state.bcoPipeMaterial || '—';
-  const nominal = state.bcoPipeOD || '—';
+  const materialLabel = bcoMaterialEl?.selectedOptions?.[0]?.textContent || state.bcoPipeMaterial || 'â€”';
+  const nominal = state.bcoPipeOD || 'â€”';
   const machineLabelMap = { '360': '360 / 152', '660': '660 / 760', '1200': '1200-M120' };
   const operationType = persistedBundle.operations.length > 1
     ? buildOperationCountsSummary(persistedBundle.operations)
     : persistedBundle.operations[0]?.operationType || inferOperationType(state);
   const savedAtIso = new Date().toISOString();
-  const etaRpm = etaRpmDisplayEl?.textContent?.trim() || '—';
-  const etaRange = etaRangeDisplayEl?.textContent?.trim() || '—';
-  const etaFeedSpeed = etaFeedSpeedDisplayEl?.textContent?.trim() || '—';
+  const etaRpm = etaRpmDisplayEl?.textContent?.trim() || 'â€”';
+  const etaRange = etaRangeDisplayEl?.textContent?.trim() || 'â€”';
+  const etaFeedSpeed = etaFeedSpeedDisplayEl?.textContent?.trim() || 'â€”';
   const wallText = Number.isFinite(geometry.wall) ? geometry.wall.toFixed(4) : '';
   const pipeOdText = Number.isFinite(geometry.pipeOD) ? geometry.pipeOD.toFixed(4) : '';
   const pipeIdText = Number.isFinite(geometry.pipeID) ? geometry.pipeID.toFixed(4) : '';
@@ -3087,7 +3183,7 @@ function buildJobRecord(state = collectJobState()) {
       etaRange,
       feedSpeed: etaFeedSpeed,
       htpMachine: htpMachineEl?.selectedOptions?.[0]?.textContent || state.htpMachine || '',
-      htpEtaRange: lastHtp.eta || '—'
+      htpEtaRange: lastHtp.eta || 'â€”'
     },
     calculations: {
       bco: formatValue(parseFloat(data?.bco)),
@@ -3111,7 +3207,7 @@ function buildJobRecord(state = collectJobState()) {
         pipeSize: state.htpPipeSize || '', branchSize: htpBranchSizeEl?.textContent?.trim() || '',
         head: htpHeadEl?.textContent?.trim() || '', cutterSize: htpCutterSizeEl?.textContent?.trim() || '',
         bco: htpBcoEl?.textContent?.trim() || '', md: state.htpMd || '', ld: state.htpLd || '',
-        ldSign: state.htpLdSign || '+', ptc: state.htpPtc || '', tco: formatValue(lastHtp.tco), eta: lastHtp.eta || '—'
+        ldSign: state.htpLdSign || '+', ptc: state.htpPtc || '', tco: formatValue(lastHtp.tco), eta: lastHtp.eta || 'â€”'
       },
       lineStop: {
         variant: state.lineStopVariant || getLineStopVariant(),
@@ -3144,8 +3240,8 @@ function buildJobRecord(state = collectJobState()) {
 function buildHistorySnapshot() {
   const state = collectJobState();
   const record = buildJobRecord(state);
-  const material = bcoMaterialEl?.selectedOptions?.[0]?.textContent || bcoMaterialEl?.value || '—';
-  const nominal = bcoPipeOdEl?.value || '—';
+  const material = bcoMaterialEl?.selectedOptions?.[0]?.textContent || bcoMaterialEl?.value || 'â€”';
+  const nominal = bcoPipeOdEl?.value || 'â€”';
   return {
     id: `${Date.now()}`,
     savedAt: record.meta.savedAtDisplay,
@@ -3161,9 +3257,9 @@ function buildHistorySnapshot() {
       hotTapLi: record.calculations.hotTapLi,
       lineStopLi: record.calculations.lineStopLi,
       completionLi: record.calculations.completionPlugLi,
-      wall: record.pipe.wallThickness || '—',
-      location: record.job.location || '—',
-      technician: record.job.technician || '—'
+      wall: record.pipe.wallThickness || 'â€”',
+      location: record.job.location || 'â€”',
+      technician: record.job.technician || 'â€”'
     }
   };
 }
@@ -3189,7 +3285,7 @@ async function ensureFirebaseReady(options = {}) {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase config is missing in this build.';
     return { enabled: false };
   }
-  if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connecting…';
+  if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connectingâ€¦';
   if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Connecting to shared job database...';
   firebaseInitPromise = (async () => {
     try {
@@ -3232,7 +3328,7 @@ function formatFirebaseError(error) {
   const parts = [];
   if (error.code) parts.push(String(error.code));
   if (error.message) parts.push(String(error.message));
-  return parts.join(' — ') || String(error);
+  return parts.join(' â€” ') || String(error);
 }
 
 
@@ -3335,24 +3431,24 @@ function renderJobRecordDetails(record) {
   ].filter(Boolean);
   return `
     <div class="job-detail-grid">
-      <div><strong>Customer:</strong> ${record?.job?.client || '—'}</div>
-      <div><strong>Location:</strong> ${record?.job?.location || '—'}</div>
-      <div><strong>Technician:</strong> ${record?.job?.technician || '—'}</div>
-      <div><strong>Job #:</strong> ${record?.job?.jobNumber || '—'}</div>
-      <div><strong>Pipe:</strong> ${record?.pipe?.material || '—'} ${record?.pipe?.nominalSize || ''}</div>
-      <div><strong>Wall:</strong> ${record?.pipe?.wallThickness || '—'}</div>
-      <div><strong>Cutter:</strong> ${record?.machine?.cutterOd || '—'}</div>
-      <div><strong>Machine:</strong> ${record?.machine?.machine || '—'}</div>
-      <div><strong>BCO:</strong> ${record?.calculations?.bco || '—'}</div>
-      <div><strong>ETA:</strong> ${record?.machine?.etaRange || '—'}</div>
-      <div><strong>HTP TCO:</strong> ${record?.calculations?.htpTco || '—'}</div>
-      <div><strong>Operation:</strong> ${record?.meta?.operationType || '—'}</div>
-      <div><strong>Notes:</strong> ${record?.job?.notes || '—'}</div>
+      <div><strong>Customer:</strong> ${record?.job?.client || 'â€”'}</div>
+      <div><strong>Location:</strong> ${record?.job?.location || 'â€”'}</div>
+      <div><strong>Technician:</strong> ${record?.job?.technician || 'â€”'}</div>
+      <div><strong>Job #:</strong> ${record?.job?.jobNumber || 'â€”'}</div>
+      <div><strong>Pipe:</strong> ${record?.pipe?.material || 'â€”'} ${record?.pipe?.nominalSize || ''}</div>
+      <div><strong>Wall:</strong> ${record?.pipe?.wallThickness || 'â€”'}</div>
+      <div><strong>Cutter:</strong> ${record?.machine?.cutterOd || 'â€”'}</div>
+      <div><strong>Machine:</strong> ${record?.machine?.machine || 'â€”'}</div>
+      <div><strong>BCO:</strong> ${record?.calculations?.bco || 'â€”'}</div>
+      <div><strong>ETA:</strong> ${record?.machine?.etaRange || 'â€”'}</div>
+      <div><strong>HTP TCO:</strong> ${record?.calculations?.htpTco || 'â€”'}</div>
+      <div><strong>Operation:</strong> ${record?.meta?.operationType || 'â€”'}</div>
+      <div><strong>Notes:</strong> ${record?.job?.notes || 'â€”'}</div>
     </div>
     <div class="job-detail-grid">
-      <div><strong>Hot Tap LI:</strong> ${record?.calculations?.hotTapLi || '—'}</div>
-      <div><strong>Line Stop LI:</strong> ${record?.calculations?.lineStopLi || '—'}</div>
-      <div><strong>Completion Plug LI:</strong> ${record?.calculations?.completionPlugLi || '—'}</div>
+      <div><strong>Hot Tap LI:</strong> ${record?.calculations?.hotTapLi || 'â€”'}</div>
+      <div><strong>Line Stop LI:</strong> ${record?.calculations?.lineStopLi || 'â€”'}</div>
+      <div><strong>Completion Plug LI:</strong> ${record?.calculations?.completionPlugLi || 'â€”'}</div>
       <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
     </div>`;
 }
@@ -3431,7 +3527,7 @@ function renderSelectedJobDetails(jobs = null) {
   const record = selectedJob.record;
   const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
   const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
-  const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+  const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || 'â€”';
   const warnings = [
     ...(record?.warnings?.hotTap || []),
     ...(record?.warnings?.lineStop || []),
@@ -3442,7 +3538,7 @@ function renderSelectedJobDetails(jobs = null) {
     <div class="job-detail-header">
       <div>
         <div class="job-detail-title">${title}</div>
-        <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+        <div class="job-detail-subtitle">${savedAtDisplay} â€¢ ${record?.meta?.operationType || 'Job'} â€¢ ${sourceLabel}</div>
       </div>
       <div class="job-record-badges">
         <span class="job-source-badge ${selectedJob.source}">${sourceLabel}</span>
@@ -3454,8 +3550,8 @@ function renderSelectedJobDetails(jobs = null) {
     ${renderJobRecordDetails(record)}
     <div class="job-detail-grid">
       <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-      <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-      <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+      <div><strong>Date:</strong> ${record?.job?.date || 'â€”'}</div>
+      <div><strong>Job Description:</strong> ${record?.job?.description || 'â€”'}</div>
       <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
     </div>`;
   const loadBtn = document.getElementById('jobsLoadSelectedBtn');
@@ -3474,7 +3570,7 @@ function renderJobsList() {
   if (jobsResultsMetaEl) {
     const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
     const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
-    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for â€œ${jobsSearchTerm}â€ â€¢ ${modeLabel} view` : `${countText} â€¢ ${modeLabel} view`;
   }
 
   if (!jobs.length) {
@@ -3503,7 +3599,7 @@ function renderJobsList() {
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
       const op = record?.meta?.operationType || 'Job';
-      const nominalSize = record?.pipe?.nominalSize || '—';
+      const nominalSize = record?.pipe?.nominalSize || 'â€”';
       const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
       const groupPrefix = jobsBrowseMode === 'customer'
         ? `Customer: ${client}`
@@ -3521,7 +3617,7 @@ function renderJobsList() {
       item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
       item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
       item.querySelector('.jobs-list-title').textContent = title;
-      item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
+      item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} â€¢ ${client} â€¢ ${op} â€¢ ${nominalSize} â€¢ ${sourceLabel}`;
       const selectThis = (event) => {
         if (event) { event.preventDefault(); event.stopPropagation(); }
         selectedJobId = String(id);
@@ -3656,7 +3752,7 @@ function renderHistory() {
       <div class="history-meta">
         <span>${item.summary.operationType || 'Job'}</span>
         <span>BCO ${item.summary.bco}</span>
-        <span>Wall ${item.summary.wall || '—'}</span>
+        <span>Wall ${item.summary.wall || 'â€”'}</span>
         <span>${item.cloudId ? 'Synced' : 'Local only'}</span>
       </div>
     </div>
@@ -4007,27 +4103,27 @@ window.addEventListener('load', async () => {
   initAlpha8WorkspaceActions();
   initAlpha18CoreActions();
 
-  function getText(id){ return document.getElementById(id)?.textContent?.trim() || '—'; }
+  function getText(id){ return document.getElementById(id)?.textContent?.trim() || 'â€”'; }
   function hasValue(id){ const v=document.getElementById(id)?.value; return !!String(v ?? '').trim(); }
 
   function updateCurrentWorkspaceLive(){
     const client=document.getElementById('jobClient')?.value?.trim() || '';
     const location=document.getElementById('jobLocation')?.value?.trim() || '';
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
-    const machine=document.getElementById('machineType')?.value?.trim() || '—';
+    const machine=document.getElementById('machineType')?.value?.trim() || 'â€”';
     const selectedOperation=window.tapCalcGetSelectedOperation?.() || null;
     const operation=selectedOperation?.label || selectedOperation?.operationType || document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
-    const jobNumber=document.getElementById('jobNumber')?.value?.trim() || '—';
-    const technician=document.getElementById('jobTechnician')?.value?.trim() || '—';
+    const jobNumber=document.getElementById('jobNumber')?.value?.trim() || 'â€”';
+    const technician=document.getElementById('jobTechnician')?.value?.trim() || 'â€”';
     const pipe=getText('summaryPipe');
     const cutter=getText('summaryCutter');
     const bco=getText('summaryBco');
     const titleEl=document.getElementById('currentSnapshotTitle');
     if(titleEl) titleEl.textContent=client || description || 'No active job';
     const metaEl=document.getElementById('currentSnapshotMeta');
-    if(metaEl) metaEl.textContent=[location, machine !== '—' ? machine : '', description].filter(Boolean).join(' • ') || 'Start with customer and location, then add machine and pipe setup.';
-    const ids={currentMachineStat:machine,currentOperationStat:operation,currentPipeStat:pipe,currentBcoStat:bco,currentPipeSetup:pipe,currentCutterSetup:cutter,currentClientStat:client || '—',currentLocationStat:location || '—',currentJobNumberStat:jobNumber,currentTechStat:technician};
-    Object.entries(ids).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.textContent=val || '—'; });
+    if(metaEl) metaEl.textContent=[location, machine !== 'â€”' ? machine : '', description].filter(Boolean).join(' â€¢ ') || 'Start with customer and location, then add machine and pipe setup.';
+    const ids={currentMachineStat:machine,currentOperationStat:operation,currentPipeStat:pipe,currentBcoStat:bco,currentPipeSetup:pipe,currentCutterSetup:cutter,currentClientStat:client || 'â€”',currentLocationStat:location || 'â€”',currentJobNumberStat:jobNumber,currentTechStat:technician};
+    Object.entries(ids).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.textContent=val || 'â€”'; });
   }
 
   function updateCardStageChecks(){
@@ -4037,25 +4133,25 @@ window.addEventListener('load', async () => {
     const summaryBco = getText('summaryBco');
     const summaryPipe = getText('summaryPipe');
     const summaryCutter = getText('summaryCutter');
-    const geometryReady = summaryBco !== '—' && summaryPipe !== '—' && summaryCutter !== '—';
+    const geometryReady = summaryBco !== 'â€”' && summaryPipe !== 'â€”' && summaryCutter !== 'â€”';
     const baseReady = hasMachine;
     const readOut = (id) => {
       const el = document.getElementById(id);
-      if (!el) return '—';
+      if (!el) return 'â€”';
       const raw = 'value' in el ? String(el.value ?? '').trim() : String(el.textContent ?? '').trim();
-      return raw && raw !== '—' ? raw : '—';
+      return raw && raw !== 'â€”' ? raw : 'â€”';
     };
 
     const stageChecks = {
       hotTap: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('md') && hasValue('ptc') && hasValue('mt'),
-        output: readOut('ttd') !== '—'
+        output: readOut('ttd') !== 'â€”'
       },
       htp: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
-        output: readOut('htpTco') !== '—'
+        output: readOut('htpTco') !== 'â€”'
       },
       lineStop: (() => {
         const variant = getLineStopVariant();
@@ -4063,26 +4159,26 @@ window.addEventListener('load', async () => {
           return {
             geometry: baseReady,
             inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
-            output: readOut('htpTco') !== '—'
+            output: readOut('htpTco') !== 'â€”'
           };
         }
         if (variant === 'hiStop') {
           return {
             geometry: baseReady && geometryReady,
             inputs: hasValue('hsMd') && hasValue('hsRl') && hasValue('hsCl') && hasValue('hsRcd') && hasValue('hsPb') && hasValue('hsPtp'),
-            output: readOut('hsPlugSet') !== '—'
+            output: readOut('hsPlugSet') !== 'â€”'
           };
         }
         return {
           geometry: baseReady && geometryReady,
           inputs: hasValue('lsMd'),
-          output: readOut('lsLiManual') !== '—'
+          output: readOut('lsLiManual') !== 'â€”'
         };
       })(),
       completionPlug: {
         geometry: baseReady && geometryReady,
         inputs: hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt'),
-        output: readOut('cpLiManual') !== '—'
+        output: readOut('cpLiManual') !== 'â€”'
       }
     };
 
@@ -4100,9 +4196,9 @@ window.addEventListener('load', async () => {
     const missingSetup = [];
     if (!hasMachine) missingSetup.push('machine');
     const needsGeometryBundle = !(safeActiveMode === 'lineStop' && activeVariant === 'htp');
-    if (needsGeometryBundle && getText('summaryPipe') === '—') missingSetup.push('pipe');
-    if (needsGeometryBundle && getText('summaryCutter') === '—') missingSetup.push('cutter');
-    if (needsGeometryBundle && getText('summaryBco') === '—') missingSetup.push('BCO');
+    if (needsGeometryBundle && getText('summaryPipe') === 'â€”') missingSetup.push('pipe');
+    if (needsGeometryBundle && getText('summaryCutter') === 'â€”') missingSetup.push('cutter');
+    if (needsGeometryBundle && getText('summaryBco') === 'â€”') missingSetup.push('BCO');
 
     const geometryLabel = current.geometry
       ? 'Ready'
@@ -4139,43 +4235,43 @@ window.addEventListener('load', async () => {
     const technician=document.getElementById('jobTechnician')?.value?.trim() || '';
     const jobNumber=document.getElementById('jobNumber')?.value?.trim() || '';
     const date=document.getElementById('jobDate')?.value?.trim() || '';
-    const pipeLabel=document.getElementById('summaryPipe')?.textContent?.trim() || '—';
-    const bcoLabel=document.getElementById('summaryBco')?.textContent?.trim() || '—';
+    const pipeLabel=document.getElementById('summaryPipe')?.textContent?.trim() || 'â€”';
+    const bcoLabel=document.getElementById('summaryBco')?.textContent?.trim() || 'â€”';
     const parts=[client, location].filter(Boolean);
     const topLabel=document.getElementById('topCurrentJobLabel');
-    if(topLabel) topLabel.textContent=parts.length?parts.join(' • '):(description || 'No current job');
+    if(topLabel) topLabel.textContent=parts.length?parts.join(' â€¢ '):(description || 'No current job');
     const homeTitle=document.getElementById('homeCurrentJobTitle');
     if(homeTitle) homeTitle.textContent=client || description || 'No active job yet';
     const homeSubtitle=document.getElementById('homeCurrentJobSubtitle');
-    if(homeSubtitle) homeSubtitle.textContent=[location, jobNumber ? 'Job ' + jobNumber : '', technician ? 'Tech ' + technician : ''].filter(Boolean).join(' • ') || (description || 'Set up a customer and location to get rolling.');
+    if(homeSubtitle) homeSubtitle.textContent=[location, jobNumber ? 'Job ' + jobNumber : '', technician ? 'Tech ' + technician : ''].filter(Boolean).join(' â€¢ ') || (description || 'Set up a customer and location to get rolling.');
     const jobOverviewName=document.getElementById('jobOverviewName');
     if(jobOverviewName) jobOverviewName.textContent=client || description || 'No active job';
     const jobOverviewMeta=document.getElementById('jobOverviewMeta');
-    if(jobOverviewMeta) jobOverviewMeta.textContent=location ? `${location}${description ? ' • ' + description : ''}` : 'Add customer and location details to start.';
+    if(jobOverviewMeta) jobOverviewMeta.textContent=location ? `${location}${description ? ' â€¢ ' + description : ''}` : 'Add customer and location details to start.';
     const homePipe=document.getElementById('homePipeStat');
-    if(homePipe) homePipe.textContent=pipeLabel || '—';
+    if(homePipe) homePipe.textContent=pipeLabel || 'â€”';
     const homeMachine=document.getElementById('homeMachineStat');
-    if(homeMachine) homeMachine.textContent=machine || '—';
+    if(homeMachine) homeMachine.textContent=machine || 'â€”';
     const homeBco=document.getElementById('homeBcoStat');
-    if(homeBco) homeBco.textContent=bcoLabel || '—';
+    if(homeBco) homeBco.textContent=bcoLabel || 'â€”';
     const homeStatus=document.getElementById('homeStatusStat');
     if(homeStatus) homeStatus.textContent=client || location ? 'In Progress' : 'Draft';
     const calcBco=document.getElementById('calcCurrentBco');
-    if(calcBco) calcBco.textContent=bcoLabel || '—';
+    if(calcBco) calcBco.textContent=bcoLabel || 'â€”';
     const calcMachine=document.getElementById('calcCurrentMachine');
-    if(calcMachine) calcMachine.textContent=machine || '—';
+    if(calcMachine) calcMachine.textContent=machine || 'â€”';
     const cardJob=document.getElementById('cardCurrentJob');
     if(cardJob) cardJob.textContent=client || description || 'No active job';
     const cardPipe=document.getElementById('cardCurrentPipe');
-    if(cardPipe) cardPipe.textContent=pipeLabel || '—';
+    if(cardPipe) cardPipe.textContent=pipeLabel || 'â€”';
     const cardMeta=document.getElementById('cardCurrentMeta');
     if(cardMeta) {
       const missing=[];
       if(!(client || description)) missing.push('job');
       if(!machine) missing.push('machine');
-      if(pipeLabel === '—') missing.push('pipe');
-      if(bcoLabel === '—') missing.push('BCO');
-      const context=[location, date, technician].filter(Boolean).join(' • ');
+      if(pipeLabel === 'â€”') missing.push('pipe');
+      if(bcoLabel === 'â€”') missing.push('BCO');
+      const context=[location, date, technician].filter(Boolean).join(' â€¢ ');
       cardMeta.textContent = missing.length ? `Missing ${missing.join(', ')}. Fill out Current and Calc ? BCO to unlock the card workflow.` : (context || 'Card workflow is ready for stage inputs.');
     }
     const activeMode=getActiveWorkflowMode();
@@ -4185,15 +4281,15 @@ window.addEventListener('load', async () => {
     const focusStage=document.getElementById('cardFocusStage');
     if(focusStage) focusStage.textContent=activeLabel;
     const focusMachine=document.getElementById('cardFocusMachine');
-    if(focusMachine) focusMachine.textContent=machine || '—';
+    if(focusMachine) focusMachine.textContent=machine || 'â€”';
     const focusBco=document.getElementById('cardFocusBco');
-    if(focusBco) focusBco.textContent=bcoLabel || '—';
+    if(focusBco) focusBco.textContent=bcoLabel || 'â€”';
     const focusOutput=document.getElementById('cardFocusOutput');
     const readCardOutput=(id)=>{
       const el=document.getElementById(id);
-      if(!el) return '—';
+      if(!el) return 'â€”';
       const raw=('value' in el ? String(el.value ?? '') : String(el.textContent ?? '')).trim();
-      return raw || '—';
+      return raw || 'â€”';
     };
     const hotTapTtd=readCardOutput('ttd');
     const htpTco=readCardOutput('htpTco');
@@ -4203,13 +4299,13 @@ window.addEventListener('load', async () => {
     if(focusOutput){
       const activeVariant = getLineStopVariant();
       const lineStopOutput = activeVariant === 'htp'
-        ? (htpTco !== '' ? htpTco : '—')
+        ? (htpTco !== '' ? htpTco : 'â€”')
         : activeVariant === 'hiStop'
-          ? (hsPlugSet !== '' ? hsPlugSet : '—')
-          : (lsLi !== '' ? lsLi : '—');
-      const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '—', lineStop: lineStopOutput, completionPlug: cpLi !== '' ? cpLi : '—'};
+          ? (hsPlugSet !== '' ? hsPlugSet : 'â€”')
+          : (lsLi !== '' ? lsLi : 'â€”');
+      const map={hotTap: hotTapTtd !== '' ? hotTapTtd : 'â€”', lineStop: lineStopOutput, completionPlug: cpLi !== '' ? cpLi : 'â€”'};
       const safeOutputMode = map[activeMode] ? activeMode : 'hotTap';
-      focusOutput.textContent = map[safeOutputMode] || '—';
+      focusOutput.textContent = map[safeOutputMode] || 'â€”';
     }
     const focusTitle=document.getElementById('cardFocusTitle');
     const focusDesc=document.getElementById('cardFocusDesc');
@@ -4239,7 +4335,7 @@ window.addEventListener('load', async () => {
     const location=document.getElementById('jobLocation')?.value?.trim() || '';
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
     const title = client || description || 'No active job yet';
-    const meta = location ? `${location}${description ? ' • ' + description : ''}` : 'Start a job in the Current screen, then save locally or sync to shared.';
+    const meta = location ? `${location}${description ? ' â€¢ ' + description : ''}` : 'Start a job in the Current screen, then save locally or sync to shared.';
     const currentTitle=document.getElementById('jobsCurrentTitle');
     if(currentTitle) currentTitle.textContent=title;
     const currentMeta=document.getElementById('jobsCurrentMeta');
@@ -4285,7 +4381,11 @@ window.addEventListener('load', async () => {
     if(active !== target) window.setMode(target);
   }
   document.getElementById('operationType')?.addEventListener('change', syncOperationSelection);
-  ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','hsMd','hsRl','hsCl','hsRcd','hsPb','hsPtp','cpStart','cpJbf','cpPt','lineStopVariant'].forEach(id=>document.getElementById(id)?.addEventListener('input',updateCurrentJobLabel));
+  ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','hsMd','hsRl','hsCl','hsRcd','hsPb','hsPtp','cpStart','cpJbf','cpPt','lineStopVariant'].forEach(id=>{
+    const el = document.getElementById(id);
+    el?.addEventListener('input', updateCurrentJobLabel);
+    el?.addEventListener('change', updateCurrentJobLabel);
+  });
   syncOperationSelection();
   updateCurrentJobLabel();
   window.addEventListener('load', async () => { syncOperationSelection(); updateCurrentJobLabel(); });
@@ -4373,12 +4473,12 @@ window.addEventListener('load', async () => {
     const record = selected.record || {};
     const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
     const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || selected.savedAt || '—';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || selected.savedAt || 'â€”';
     jobsListEl.innerHTML = `
       <div class="job-detail-header">
         <div>
           <div class="job-detail-title">${alpha47Escape(title)}</div>
-          <div class="job-detail-subtitle">${alpha47Escape(savedAtDisplay)} • ${alpha47Escape(record?.meta?.operationType || 'Job')} • ${alpha47Escape(sourceLabel)}</div>
+          <div class="job-detail-subtitle">${alpha47Escape(savedAtDisplay)} â€¢ ${alpha47Escape(record?.meta?.operationType || 'Job')} â€¢ ${alpha47Escape(sourceLabel)}</div>
         </div>
         <div class="job-record-badges"><span class="job-source-badge ${alpha47Escape(selected.source)}">${alpha47Escape(sourceLabel)}</span></div>
       </div>
@@ -4398,7 +4498,7 @@ window.addEventListener('load', async () => {
     if (jobsResultsMetaEl) {
       const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
       const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
-      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for â€œ${jobsSearchTerm}â€ â€¢ ${modeLabel} view` : `${countText} â€¢ ${modeLabel} view`;
     }
     if (!jobs.length) {
       jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
@@ -4415,7 +4515,7 @@ window.addEventListener('load', async () => {
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
       const op = record?.meta?.operationType || 'Job';
-      const nominalSize = record?.pipe?.nominalSize || '—';
+      const nominalSize = record?.pipe?.nominalSize || 'â€”';
       const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
       const groupPrefix = jobsBrowseMode === 'customer'
         ? `Customer: ${client}`
@@ -4429,7 +4529,7 @@ window.addEventListener('load', async () => {
       return `
         <div class="jobs-list-item${active ? ' active' : ''}" role="button" tabindex="0" data-job-id="${escapedId}" data-job-index="${index}" aria-pressed="${active ? 'true' : 'false'}" aria-selected="${active ? 'true' : 'false'}">
           <span class="jobs-list-title">${alpha47Escape(title)}</span>
-          <span class="jobs-list-meta">${alpha47Escape(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`)}</span>
+          <span class="jobs-list-meta">${alpha47Escape(`${groupPrefix} â€¢ ${client} â€¢ ${op} â€¢ ${nominalSize} â€¢ ${sourceLabel}`)}</span>
         </div>`;
     }).join('');
     jobsSelectEl.scrollTop = previousScrollTop;
@@ -4521,13 +4621,13 @@ window.addEventListener('load', async () => {
     }
     const record = selected.record || {};
     const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || 'â€”';
     const op = record?.meta?.operationType || 'Job';
     jobsListEl.innerHTML = `
       <div class="job-detail-header">
         <div>
           <div class="job-detail-title">${esc(title)}</div>
-          <div class="job-detail-subtitle">${esc(savedAtDisplay)} • ${esc(op)} • ${esc(sourceLabel(selected.source))} DB</div>
+          <div class="job-detail-subtitle">${esc(savedAtDisplay)} â€¢ ${esc(op)} â€¢ ${esc(sourceLabel(selected.source))} DB</div>
         </div>
         <div class="job-record-badges"><span class="job-source-badge ${esc(selected.source)}">${esc(sourceLabel(selected.source))} DB</span></div>
       </div>
@@ -4593,8 +4693,8 @@ window.addEventListener('load', async () => {
         ? jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1)
         : 'Search';
       jobsResultsMetaEl.textContent = (typeof jobsSearchTerm === 'string' && jobsSearchTerm)
-        ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view`
-        : `${countText} • ${modeLabel} view`;
+        ? `${countText} for â€œ${jobsSearchTerm}â€ â€¢ ${modeLabel} view`
+        : `${countText} â€¢ ${modeLabel} view`;
     }
     if (!list.length) {
       jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
@@ -4607,7 +4707,7 @@ window.addEventListener('load', async () => {
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
       const op = record?.meta?.operationType || 'Job';
-      const nominalSize = record?.pipe?.nominalSize || '—';
+      const nominalSize = record?.pipe?.nominalSize || 'â€”';
       const groupPrefix = jobsBrowseMode === 'customer'
         ? `Customer: ${client}`
         : jobsBrowseMode === 'location'
@@ -4619,7 +4719,7 @@ window.addEventListener('load', async () => {
       return `
         <button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${esc(id)}" data-job-index="${index}" aria-selected="${active ? 'true' : 'false'}" aria-pressed="${active ? 'true' : 'false'}" onclick="window.tapCalcLibrarySelect(${index})">
           <span class="jobs-list-title">${esc(title)}</span>
-          <span class="jobs-list-meta">${esc(`${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel(source)}`)}</span>
+          <span class="jobs-list-meta">${esc(`${groupPrefix} â€¢ ${client} â€¢ ${op} â€¢ ${nominalSize} â€¢ ${sourceLabel(source)}`)}</span>
         </button>`;
     }).join('');
     renderAlpha56SelectionUI(list);
@@ -4663,6 +4763,10 @@ window.addEventListener('load', async () => {
   function setFieldValue(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
     if (el.type === 'checkbox') {
       el.checked = !!value;
     } else {
@@ -4681,11 +4785,7 @@ window.addEventListener('load', async () => {
   }
 
   function deriveEtaMachine(machine) {
-    const m = String(machine || '');
-    if (m.includes('360')) return '360';
-    if (m.includes('660') || m.includes('760')) return '660';
-    if (m.includes('1200')) return '1200';
-    return m;
+    return deriveEtaMachineFromMachine(machine);
   }
 
   function hydrateVisibleFields(record) {
@@ -4809,6 +4909,10 @@ window.addEventListener('load', async () => {
   function alpha58Set(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
     const v = value == null ? '' : String(value);
     if (el.type === 'checkbox') el.checked = !!value;
     else el.value = v;
@@ -4843,7 +4947,7 @@ window.addEventListener('load', async () => {
     alpha58Set('bcoSchedule', pipe.schedule || '');
     alpha58Set('bcoPipeID', pipe.pipeId || '');
     alpha58Set('bcoCutterOD', machine.cutterOd || '');
-    alpha58Set('etaMachine', String(machine.machine || '').includes('360') ? '360' : (String(machine.machine || '').includes('660') || String(machine.machine || '').includes('760')) ? '660' : (String(machine.machine || '').includes('1200') ? '1200' : ''));
+    alpha58Set('etaMachine', deriveEtaMachineFromMachine(machine.machine || ''));
     alpha58Set('etaCutterSize', machine.cutterOd || '');
     alpha58Set('etaBco', calc.bco || '');
     alpha58Set('md', h.md || ''); alpha58Set('ld', h.ld || ''); alpha58Set('ldSign', h.ldSign || '+'); alpha58Set('ptc', h.ptc || ''); alpha58Set('pod', h.pod || pipe.trueOd || ''); alpha58Set('mt', h.mt || ''); alpha58Set('start', h.rodStart || '');
@@ -4915,6 +5019,10 @@ window.addEventListener('load', async () => {
   function a59SetField(id, value){
     const el = document.getElementById(id);
     if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
     const v = value == null ? '' : value;
     if (el.type === 'checkbox') el.checked = !!v;
     else el.value = String(v);
@@ -4934,11 +5042,7 @@ window.addEventListener('load', async () => {
     return list[0] || null;
   }
   function a59DeriveEtaMachine(machine){
-    const m = String(machine || '');
-    if (m.includes('360')) return '360';
-    if (m.includes('660') || m.includes('760')) return '660';
-    if (m.includes('1200')) return '1200';
-    return '';
+    return deriveEtaMachineFromMachine(machine);
   }
   function a59ApplyVisibleFields(record){
     const job = record?.job || {};
@@ -5012,12 +5116,12 @@ window.addEventListener('load', async () => {
     const record = entry.record;
     const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
     const sourceLabel = entry.source === 'local' ? 'Local only' : entry.source === 'synced' ? 'Synced' : 'Shared DB';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || entry.savedAt || '—';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || entry.savedAt || 'â€”';
     detailsEl.innerHTML = `
       <div class="job-detail-header">
         <div>
           <div class="job-detail-title">${a59Esc(title)}</div>
-          <div class="job-detail-subtitle">${a59Esc(savedAtDisplay)} • ${a59Esc(record?.meta?.operationType || 'Job')} • ${a59Esc(sourceLabel)}</div>
+          <div class="job-detail-subtitle">${a59Esc(savedAtDisplay)} â€¢ ${a59Esc(record?.meta?.operationType || 'Job')} â€¢ ${a59Esc(sourceLabel)}</div>
         </div>
         <div class="job-record-badges"><span class="job-source-badge ${a59Esc(entry.source)}">${a59Esc(sourceLabel)}</span></div>
       </div>
@@ -5047,7 +5151,7 @@ window.addEventListener('load', async () => {
       const active = String(job.id) === String(window.__tapcalcLibrarySelectedId || '');
       const record = job.record || {};
       const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
-      const sub = [record?.job?.client || '—', record?.job?.location || '—', record?.meta?.savedAtDisplay || job.savedAt || '—'].join(' • ');
+      const sub = [record?.job?.client || 'â€”', record?.job?.location || 'â€”', record?.meta?.savedAtDisplay || job.savedAt || 'â€”'].join(' â€¢ ');
       return `<button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${a59Esc(job.id)}" aria-selected="${active ? 'true' : 'false'}"><span class="jobs-list-item-title">${a59Esc(title)}</span><span class="jobs-list-item-meta">${a59Esc(sub)}</span></button>`;
     }).join('');
     listEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach(btn => {
@@ -5154,6 +5258,10 @@ window.addEventListener('load', async () => {
   function tc61Set(id, value){
     const el = document.getElementById(id);
     if (!el) return false;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return true;
+    }
     if (el.type === 'checkbox') el.checked = !!value;
     else el.value = value ?? '';
     try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
@@ -5346,11 +5454,15 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha158';
+const TC63_VERSION = '3.0.0-alpha159';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
     if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
     if (el.type === 'checkbox') {
       el.checked = !!value;
     } else {
@@ -5588,7 +5700,7 @@ const TC63_VERSION = '3.0.0-alpha158';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha158';
+const VERSION = '3.0.0-alpha159';
 
   function tc65GetJobs() {
     try {
@@ -5681,7 +5793,7 @@ const VERSION = '3.0.0-alpha158';
     const record = entry.record || {};
     const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
     const sourceLabel = entry.source === 'local' ? 'Local only' : entry.source === 'synced' ? 'Synced' : 'Shared DB';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || 'â€”';
     const warnings = [
       ...(record?.warnings?.hotTap || []),
       ...(record?.warnings?.lineStop || []),
@@ -5693,7 +5805,7 @@ const VERSION = '3.0.0-alpha158';
       <div class="job-detail-header">
         <div>
           <div class="job-detail-title">${title}</div>
-          <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay} â€¢ ${record?.meta?.operationType || 'Job'} â€¢ ${sourceLabel}</div>
         </div>
         <div class="job-record-badges">
           <span class="job-source-badge ${entry.source}">${sourceLabel}</span>
@@ -5705,8 +5817,8 @@ const VERSION = '3.0.0-alpha158';
       ${detailsHtml}
       <div class="job-detail-grid">
         <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || 'â€”'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || 'â€”'}</div>
         <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
       </div>`;
     tc65BindLoadButton();
@@ -5750,9 +5862,9 @@ const VERSION = '3.0.0-alpha158';
   setTimeout(() => {
     try {
       const badge = document.querySelector('.version-badge');
-      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-11`;
+      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-12`;
       const title = document.querySelector('.top-app-title');
-      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-11`;
+      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-12`;
       tc65RenderDetails();
     } catch {}
   }, 0);
@@ -5954,9 +6066,9 @@ const VERSION = '3.0.0-alpha158';
     try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
   }
   function tc85GarlockSelect(){ return document.getElementById('garlock600SizeSelect'); }
-  function tc85SetText(id, value){ const el = document.getElementById(id); if (el) el.textContent = value || '—'; }
+  function tc85SetText(id, value){ const el = document.getElementById(id); if (el) el.textContent = value || 'â€”'; }
   function tc85NormalizeSize(value){
-    return String(value || '').replace(/["”]/g, '').replace(/\s+/g, '').toLowerCase();
+    return String(value || '').replace(/["â€]/g, '').replace(/\s+/g, '').toLowerCase();
   }
   function tc85UpdateGarlock(){
     try {
@@ -5970,7 +6082,7 @@ const VERSION = '3.0.0-alpha158';
       tc85SetText('garlock600PreferredTorque', `${match.preferredTorque} ft lbs`);
       tc85SetText('garlock600Torque60', `${match.torque60} ft lbs`);
       tc85SetText('garlock600StressValue', `${match.maxRecStress} psi`);
-      tc85SetText('garlock600ContactArea', `${match.area} in²`);
+      tc85SetText('garlock600ContactArea', `${match.area} inÂ²`);
     } catch {}
   }
   function tc85InitGarlock(){
@@ -6073,7 +6185,7 @@ const VERSION = '3.0.0-alpha158';
   ];
   const $ = (id) => document.getElementById(id);
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
-  function setText(id, value){ const el=$(id); if(el) el.textContent = value || '—'; }
+  function setText(id, value){ const el=$(id); if(el) el.textContent = value || 'â€”'; }
   function renderGarlockTable(rows){ const body=$('garlock600Body'); if(!body) return; body.innerHTML = rows.map(r=>`<tr><td>${r.size}</td><td>${r.bolts}</td><td>${r.boltSize}</td><td>${r.torque60}</td><td>${r.minTorque}</td><td>${r.preferredTorque}</td><td>${r.maxRecStress}</td><td>${r.area}</td></tr>`).join(''); }
   function garlockUpdate(){
     const sel=$('garlock600SizeSelect');
@@ -6085,7 +6197,7 @@ const VERSION = '3.0.0-alpha158';
     setText('garlock600PreferredTorque', `${row.preferredTorque} ft lbs`);
     setText('garlock600Torque60', `${row.torque60} ft lbs`);
     setText('garlock600StressValue', `${row.maxRecStress} psi`);
-    setText('garlock600ContactArea', `${row.area} in²`);
+    setText('garlock600ContactArea', `${row.area} inÂ²`);
   }
   function garlockFilter(){
     const q = String($('garlock600SearchInput')?.value || '').trim().toLowerCase();
@@ -6209,7 +6321,7 @@ const VERSION = '3.0.0-alpha158';
   const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
   const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', ref:'refScreen', jobs:'jobsScreen' };
 
-  function setText(id, value){ const el=$(id); if(el) el.textContent = value || '—'; }
+  function setText(id, value){ const el=$(id); if(el) el.textContent = value || 'â€”'; }
   function showScreen(name){
     document.querySelectorAll('.screen-tab[data-screen]').forEach((tab)=>{
       const active = tab.dataset.screen === name;
@@ -6303,7 +6415,7 @@ const VERSION = '3.0.0-alpha158';
     setText('garlock600PreferredTorque', `${row.preferredTorque} ft lbs`);
     setText('garlock600Torque60', `${row.torque60} ft lbs`);
     setText('garlock600StressValue', `${row.maxRecStress} psi`);
-    setText('garlock600ContactArea', `${row.area} in²`);
+    setText('garlock600ContactArea', `${row.area} inÂ²`);
   }
   function filterGarlockTable(){
     const q = String($('garlock600SearchInput')?.value || '').trim().toLowerCase();
@@ -8316,7 +8428,7 @@ const VERSION = '3.0.0-alpha158';
     const record = selected.record || {};
     const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
     const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || 'â€”';
     const warnings = [
       ...((record?.warnings?.hotTap) || []),
       ...((record?.warnings?.lineStop) || []),
@@ -8327,7 +8439,7 @@ const VERSION = '3.0.0-alpha158';
       <div class="job-detail-header">
         <div>
           <div class="job-detail-title">${title}</div>
-          <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay} â€¢ ${record?.meta?.operationType || 'Job'} â€¢ ${sourceLabel}</div>
         </div>
         <div class="job-record-badges"><span class="job-source-badge ${selected.source}">${sourceLabel}</span></div>
       </div>
@@ -8335,8 +8447,8 @@ const VERSION = '3.0.0-alpha158';
       ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
       <div class="job-detail-grid">
         <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || 'â€”'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || 'â€”'}</div>
         <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
       </div>`;
     const btn = document.getElementById('jobsLoadSelectedBtn');
@@ -8353,7 +8465,7 @@ const VERSION = '3.0.0-alpha158';
     if (jobsResultsMetaEl) {
       const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
       const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
-      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for â€œ${jobsSearchTerm}â€ â€¢ ${modeLabel} view` : `${countText} â€¢ ${modeLabel} view`;
     }
     if (!jobs.length) {
       if (jobsSelectEl) jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
@@ -8373,7 +8485,7 @@ const VERSION = '3.0.0-alpha158';
         const client = record?.job?.client || 'No customer';
         const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
         const op = record?.meta?.operationType || 'Job';
-        const nominalSize = record?.pipe?.nominalSize || '—';
+        const nominalSize = record?.pipe?.nominalSize || 'â€”';
         const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
         const groupPrefix = jobsBrowseMode === 'customer'
           ? `Customer: ${client}`
@@ -8391,7 +8503,7 @@ const VERSION = '3.0.0-alpha158';
         item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
         item.querySelector('.jobs-list-title').textContent = title;
-        item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
+        item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} â€¢ ${client} â€¢ ${op} â€¢ ${nominalSize} â€¢ ${sourceLabel}`;
         const selectThis = (event) => {
           if (event) { event.preventDefault(); event.stopPropagation(); }
           selectedJobId = String(id);
@@ -8624,7 +8736,7 @@ const VERSION = '3.0.0-alpha158';
     const record = selected.record || {};
     const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
     const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || 'â€”';
     const warnings = [
       ...(record?.warnings?.hotTap || []),
       ...(record?.warnings?.lineStop || []),
@@ -8635,7 +8747,7 @@ const VERSION = '3.0.0-alpha158';
       <div class="job-detail-header">
         <div>
           <div class="job-detail-title">${title}</div>
-          <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay} â€¢ ${record?.meta?.operationType || 'Job'} â€¢ ${sourceLabel}</div>
         </div>
         <div class="job-record-badges">
           <span class="job-source-badge ${selected.source}">${sourceLabel}</span>
@@ -8647,8 +8759,8 @@ const VERSION = '3.0.0-alpha158';
       ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
       <div class="job-detail-grid">
         <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || 'â€”'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || 'â€”'}</div>
         <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
       </div>`;
     const btn = $('jobsLoadSelectedBtnFinal');
@@ -8667,7 +8779,7 @@ const VERSION = '3.0.0-alpha158';
     if (typeof jobsResultsMetaEl !== 'undefined' && jobsResultsMetaEl) {
       const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
       const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
-      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for â€œ${jobsSearchTerm}â€ â€¢ ${modeLabel} view` : `${countText} â€¢ ${modeLabel} view`;
     }
     if (!jobs.length) {
       if (listEl) listEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
@@ -8692,7 +8804,7 @@ const VERSION = '3.0.0-alpha158';
         const client = record?.job?.client || 'No customer';
         const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
         const op = record?.meta?.operationType || 'Job';
-        const nominalSize = record?.pipe?.nominalSize || '—';
+        const nominalSize = record?.pipe?.nominalSize || 'â€”';
         const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
         const groupPrefix = jobsBrowseMode === 'customer'
           ? `Customer: ${client}`
@@ -8710,7 +8822,7 @@ const VERSION = '3.0.0-alpha158';
         item.setAttribute('aria-pressed', active ? 'true' : 'false');
         item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
         item.querySelector('.jobs-list-title').textContent = title;
-        item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
+        item.querySelector('.jobs-list-meta').textContent = `${groupPrefix} â€¢ ${client} â€¢ ${op} â€¢ ${nominalSize} â€¢ ${sourceLabel}`;
         const selectThis = (event) => {
           if (event) {
             try { event.preventDefault(); } catch {}
@@ -8801,7 +8913,7 @@ const VERSION = '3.0.0-alpha158';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha158';
+const VERSION = '3.0.0-alpha159';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -8934,6 +9046,10 @@ const VERSION = '3.0.0-alpha158';
   const dispatchValue = (id, value) => {
     const el = $(id);
     if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
     if (el.type === 'checkbox') {
       el.checked = !!value;
     } else {
@@ -9033,7 +9149,7 @@ const VERSION = '3.0.0-alpha158';
     try { window.__tapcalcVisibleDetailRecord = record; } catch {}
     const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
     const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || 'â€”';
     const warnings = [
       ...(record?.warnings?.hotTap || []),
       ...(record?.warnings?.lineStop || []),
@@ -9044,7 +9160,7 @@ const VERSION = '3.0.0-alpha158';
       <div class="job-detail-header">
         <div>
           <div class="job-detail-title">${title}</div>
-          <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay} â€¢ ${record?.meta?.operationType || 'Job'} â€¢ ${sourceLabel}</div>
         </div>
         <div class="job-record-badges">
           <span class="job-source-badge ${selected.source}">${sourceLabel}</span>
@@ -9056,8 +9172,8 @@ const VERSION = '3.0.0-alpha158';
       ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
       <div class="job-detail-grid">
         <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-        <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-        <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || 'â€”'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || 'â€”'}</div>
         <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
       </div>`;
     const btn = $('jobsLoadSelectedBtnFinal');
@@ -9163,6 +9279,10 @@ const VERSION = '3.0.0-alpha158';
     Object.entries(map).forEach(([id, value]) => {
       const el = $(id);
       if (!el) return;
+      if (id === 'machineType') {
+        setMachineTypeValue(value);
+        return;
+      }
       if (el.type === 'checkbox') {
         el.checked = !!value;
       } else if (value != null && value !== '') {
@@ -9387,6 +9507,10 @@ const VERSION = '3.0.0-alpha158';
     Object.entries(directMap).forEach(([id,val]) => {
       const el = $(id);
       if (!el) return;
+      if (id === 'machineType') {
+        setMachineTypeValue(val);
+        return;
+      }
       el.value = val == null ? '' : String(val);
       try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
       try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
@@ -9830,42 +9954,42 @@ const VERSION = '3.0.0-alpha158';
   };
   const STAGE_META = {
     setup: {
-      title: 'Step 1 · Job Setup',
+      title: 'Step 1 Â· Job Setup',
       lead: 'Confirm who, where, and what kind of job this is before you jump into measurements.',
       short: 'Job Setup',
       eyebrow: 'Step 1',
       copy: 'Start with the basics so the workflow can guide the rest of the job.'
     },
     pipe: {
-      title: 'Step 2 · Pipe / Cutter Setup',
+      title: 'Step 2 Â· Pipe / Cutter Setup',
       lead: 'Lock in pipe geometry, cutter size, and BCO first so the stage math has the right numbers to work from.',
       short: 'Pipe / Cutter',
       eyebrow: 'Step 2',
       copy: 'Use Tools ? BCO, then come right back here.'
     },
     hotTap: {
-      title: 'Step 3 · Hot Tap',
+      title: 'Step 3 Â· Hot Tap',
       lead: 'Enter the hot tap measurements here and verify the output before moving forward.',
       short: 'Hot Tap',
       eyebrow: 'Step 3',
       copy: 'This is the first active calculation stage.'
     },
     lineStop: {
-      title: 'Step 4 · Line Stop',
+      title: 'Step 4 Â· Line Stop',
       lead: 'Now calculate lower-in, travel margin, and stop-specific checks.',
       short: 'Line Stop',
       eyebrow: 'Step 4',
       copy: 'Only appears on Line Stop jobs.'
     },
     completionPlug: {
-      title: 'Step 5 · Completion Plug',
+      title: 'Step 5 Â· Completion Plug',
       lead: 'Finish the job with the plug measurements and completion checks.',
       short: 'Completion Plug',
       eyebrow: 'Step 5',
       copy: 'Only appears on Line Stop jobs.'
     },
     review: {
-      title: 'Final Step · Review & Save',
+      title: 'Final Step Â· Review & Save',
       lead: 'Check stage status, confirm BCO and ETA, then save or sync the job.',
       short: 'Review',
       eyebrow: 'Final Step',
@@ -9897,10 +10021,10 @@ const VERSION = '3.0.0-alpha158';
       return machine ? 'Ready' : (touched ? 'In Progress' : 'Waiting');
     }
     if (stage === 'pipe') {
-      const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || '—';
-      const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || '—';
-      const bco = document.getElementById('summaryBco')?.textContent?.trim() || '—';
-      return pipe !== '—' && cutter !== '—' && bco !== '—' ? 'Ready' : ((pipe !== '—' || cutter !== '—' || bco !== '—') ? 'In Progress' : 'Waiting');
+      const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || 'â€”';
+      const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || 'â€”';
+      const bco = document.getElementById('summaryBco')?.textContent?.trim() || 'â€”';
+      return pipe !== 'â€”' && cutter !== 'â€”' && bco !== 'â€”' ? 'Ready' : ((pipe !== 'â€”' || cutter !== 'â€”' || bco !== 'â€”') ? 'In Progress' : 'Waiting');
     }
     if (stage === 'review') {
       return getStages().filter(s => MODE_STAGES.has(s)).every(s => stageStatusText(s) === 'Ready') ? 'Ready' : 'Review';
@@ -9941,7 +10065,7 @@ const VERSION = '3.0.0-alpha158';
       const meta = STAGE_META[stage] || { short: stage, eyebrow: `Step ${index+1}`, copy: '' };
       const status = stageStatusText(stage);
       const state = index < currentIndex ? 'done' : (index === currentIndex ? 'current' : 'upcoming');
-      return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-stage-state="${state}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}" ${stage===current ? 'aria-current="step"' : ''}><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${state === 'current' ? `Current · ${status}` : state === 'done' ? `Done · ${status}` : `Up Next · ${status}`}</em></button>`;
+      return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-stage-state="${state}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}" ${stage===current ? 'aria-current="step"' : ''}><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${state === 'current' ? `Current Â· ${status}` : state === 'done' ? `Done Â· ${status}` : `Up Next Â· ${status}`}</em></button>`;
     }).join('');
     nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
   }
@@ -9961,14 +10085,14 @@ const VERSION = '3.0.0-alpha158';
     nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
   }
   function updateHelperSummaries(){
-    const customer = document.getElementById('jobClient')?.value?.trim() || '—';
-    const location = document.getElementById('jobLocation')?.value?.trim() || '—';
-    const machine = document.getElementById('machineType')?.value?.trim() || '—';
+    const customer = document.getElementById('jobClient')?.value?.trim() || 'â€”';
+    const location = document.getElementById('jobLocation')?.value?.trim() || 'â€”';
+    const machine = document.getElementById('machineType')?.value?.trim() || 'â€”';
     const jobType = getJobType();
-    const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || '—';
-    const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || '—';
-    const bco = document.getElementById('summaryBco')?.textContent?.trim() || '—';
-    const eta = document.getElementById('etaRangeDisplay')?.textContent?.trim() || '—';
+    const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || 'â€”';
+    const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || 'â€”';
+    const bco = document.getElementById('summaryBco')?.textContent?.trim() || 'â€”';
+    const eta = document.getElementById('etaRangeDisplay')?.textContent?.trim() || 'â€”';
     const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
     setText('workflowSetupCustomer', customer);
     setText('workflowSetupLocation', location);
@@ -9977,18 +10101,18 @@ const VERSION = '3.0.0-alpha158';
     setText('workflowPipeSummary', pipe);
     setText('workflowCutterSummary', cutter);
     setText('workflowBcoSummary', bco);
-    setText('workflowPipeStatus', bco !== '—' ? 'Ready' : ((pipe !== '—' || cutter !== '—') ? 'In Progress' : 'Waiting on BCO'));
+    setText('workflowPipeStatus', bco !== 'â€”' ? 'Ready' : ((pipe !== 'â€”' || cutter !== 'â€”') ? 'In Progress' : 'Waiting on BCO'));
     setText('workflowReviewBco', bco);
     setText('workflowReviewEta', eta);
     setText('workflowReviewHotTap', stageStatusText('hotTap'));
     setText('workflowReviewLineStop', stageStatusText('lineStop'));
     setText('workflowReviewCompletionPlug', stageStatusText('completionPlug'));
     const setupNote = document.getElementById('workflowSetupNote');
-    if (setupNote) setupNote.textContent = (customer !== '—' && location !== '—' && machine !== '—')
+    if (setupNote) setupNote.textContent = (customer !== 'â€”' && location !== 'â€”' && machine !== 'â€”')
       ? 'Setup is ready. Move on to pipe and cutter so the job math has a solid base.'
       : 'Add the basics on the Job screen, then come back here to keep moving.';
     const pipeNote = document.getElementById('workflowPipeNote');
-    if (pipeNote) pipeNote.textContent = bco !== '—'
+    if (pipeNote) pipeNote.textContent = bco !== 'â€”'
       ? 'BCO is ready. The active workflow stages can use that number now.'
       : 'Once BCO is calculated, the workflow can carry that number into the stages that need it.';
     const reviewNote = document.getElementById('workflowReviewNote');
@@ -10331,10 +10455,10 @@ const VERSION = '3.0.0-alpha158';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha158 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha159 preserve multi-operation bundles on load ===== */
 (function(){
-  if (window.__tapcalcAlpha158BundleLoadReady) return;
-  window.__tapcalcAlpha158BundleLoadReady = true;
+  if (window.__tapcalcalpha159BundleLoadReady) return;
+  window.__tapcalcalpha159BundleLoadReady = true;
 
   function hasSavedOperationBundle(record) {
     return Array.isArray(record?.jobBundle?.operations) && record.jobBundle.operations.length > 1;
@@ -10444,7 +10568,7 @@ const VERSION = '3.0.0-alpha158';
         return merged;
       }
     } catch (error) {
-      console.warn('alpha158 full shared job fetch failed', error);
+      console.warn('alpha159 full shared job fetch failed', error);
     }
 
     return previewRecord;
@@ -10460,7 +10584,7 @@ const VERSION = '3.0.0-alpha158';
 
   function hasEnteredValue(value) {
     const text = String(value ?? '').trim();
-    if (!text || text === '—' || text === '-') return false;
+    if (!text || text === 'â€”' || text === '-') return false;
     return !/^[-+]?0(?:\.0+)?$/.test(text);
   }
 
@@ -10638,7 +10762,7 @@ const VERSION = '3.0.0-alpha158';
       scheduleLoadedJobWorkflow(record, { quick: true });
       return true;
     } catch (error) {
-      console.error('alpha158 bundle restore failed', error);
+      console.error('alpha159 bundle restore failed', error);
       return false;
     }
   }
@@ -10652,7 +10776,7 @@ const VERSION = '3.0.0-alpha158';
   }
 
   const previousLoader = window.loadRecordIntoCalculator || (typeof loadRecordIntoCalculator === 'function' ? loadRecordIntoCalculator : null);
-  function alpha158LoadRecord(record, options = {}) {
+  function alpha159LoadRecord(record, options = {}) {
     if (!record) return false;
     let result = false;
     if (typeof previousLoader === 'function') {
@@ -10668,8 +10792,8 @@ const VERSION = '3.0.0-alpha158';
     return result;
   }
 
-  window.loadRecordIntoCalculator = alpha158LoadRecord;
-  try { loadRecordIntoCalculator = alpha158LoadRecord; } catch {}
+  window.loadRecordIntoCalculator = alpha159LoadRecord;
+  try { loadRecordIntoCalculator = alpha159LoadRecord; } catch {}
   window.tapCalcRestoreOperationBundle = restoreOperationBundleFromRecord;
 
   function getJobs() {
@@ -10722,7 +10846,7 @@ const VERSION = '3.0.0-alpha158';
     return null;
   }
 
-  function alpha158LoadSelected(event) {
+  function alpha159LoadSelected(event) {
     if (event) {
       try { event.preventDefault(); } catch {}
       try { event.stopPropagation(); } catch {}
@@ -10741,7 +10865,7 @@ const VERSION = '3.0.0-alpha158';
     try { window.__tapcalcLibrarySelectedId = String(selected.id || ''); } catch {}
 
     const loadToken = `${String(selected.id || getRecordId(selected.record) || 'selected')}:${Date.now()}`;
-    window.__tapcalcAlpha158ActiveLoadToken = loadToken;
+    window.__tapcalcalpha159ActiveLoadToken = loadToken;
     (async () => {
       try {
         const statusEl = document.getElementById('jobsCloudStatus');
@@ -10749,9 +10873,9 @@ const VERSION = '3.0.0-alpha158';
       } catch {}
 
       const fullRecord = await resolveFullOperationRecord(selected);
-      if (window.__tapcalcAlpha158ActiveLoadToken !== loadToken) return;
+      if (window.__tapcalcalpha159ActiveLoadToken !== loadToken) return;
 
-      alpha158LoadRecord(fullRecord || selected.record, { message: true, switchScreen: true, skipPersist: false });
+      alpha159LoadRecord(fullRecord || selected.record, { message: true, switchScreen: true, skipPersist: false });
       scheduleBundleRestore(fullRecord || selected.record, { focus: true });
       scheduleLoadedJobWorkflow(fullRecord || selected.record);
       try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
@@ -10760,15 +10884,15 @@ const VERSION = '3.0.0-alpha158';
     return false;
   }
 
-  window.tapCalcForceLoadSelectedJob = alpha158LoadSelected;
-  window.tapCalcLibraryLoadSelected = alpha158LoadSelected;
-  window.loadSelectedLibraryJob = alpha158LoadSelected;
-  window.alpha47LoadSelectedLibraryJob = alpha158LoadSelected;
+  window.tapCalcForceLoadSelectedJob = alpha159LoadSelected;
+  window.tapCalcLibraryLoadSelected = alpha159LoadSelected;
+  window.loadSelectedLibraryJob = alpha159LoadSelected;
+  window.alpha47LoadSelectedLibraryJob = alpha159LoadSelected;
 
   function bindLoadButtonCapture(event) {
     const button = findLoadButtonFromEvent(event);
     if (!button) return;
-    alpha158LoadSelected(event);
+    alpha159LoadSelected(event);
   }
 
   window.addEventListener('click', bindLoadButtonCapture, true);

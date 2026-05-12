@@ -1,4 +1,4 @@
-window.TAPCALC_FIREBASE_CONFIG = {
+﻿window.TAPCALC_FIREBASE_CONFIG = {
   apiKey: "AIzaSyBth_tthBmg3o_VEJ3NgKlSj1coXIcHvSo",
   authDomain: "tapcalc-afc92.firebaseapp.com",
   projectId: "tapcalc-afc92",

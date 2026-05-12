@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha158">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha159">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha158 - 2026-05-12</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha159 - 2026-05-12</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha158 - 2026-05-12</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha159 - 2026-05-12</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -179,7 +179,34 @@
               <span>Choose the job type, machine, and field notes</span>
             </div>
             <div class="job-info-grid job-info-grid-secondary">
-              <div class="row"><label>Machine</label><input id="machineType" type="text" placeholder="Machine type"></div>
+              <div class="row"><label>Machine</label>
+                <select id="machineType">
+                  <option value="">Select tap machine</option>
+                  <optgroup label="TapCalc Groups">
+                    <option value="360 / 152">360 / 152</option>
+                    <option value="660 / 760">660 / 760</option>
+                    <option value="1200-M120">1200-M120</option>
+                  </optgroup>
+                  <optgroup label="HTM Stack-Ups">
+                    <option value="HTM 360">HTM 360</option>
+                    <option value="HTM 660">HTM 660</option>
+                    <option value="HTM 760">HTM 760</option>
+                    <option value="HTM 1200">HTM 1200</option>
+                    <option value="HTM M120">HTM M120</option>
+                    <option value="HTM 18 T101">HTM 18 T101</option>
+                    <option value="HTM 24 T101">HTM 24 T101</option>
+                    <option value="HTM 28 T101">HTM 28 T101</option>
+                    <option value="HTM C1-25">HTM C1-25</option>
+                    <option value="HTM C1-36">HTM C1-36</option>
+                  </optgroup>
+                  <optgroup label="IP / Series Manuals">
+                    <option value="IP 304 / 406 / 508">IP 304 / 406 / 508</option>
+                    <option value="IP 914XL">IP 914XL</option>
+                    <option value="IPSCO IP100">IPSCO IP100</option>
+                    <option value="Series 1-4 Hydraulic Actuator">Series 1-4 Hydraulic Actuator</option>
+                  </optgroup>
+                </select>
+              </div>
               <div class="row"><label>Job Type</label>
                 <select id="operationType">
                   <option value="Hot Tap">Hot Tap</option>
@@ -400,7 +427,7 @@
     <div class="workflow-guided-head">
       <div>
         <div class="hero-eyebrow">Guided Step</div>
-        <h4 id="workflowStageTitle">Step 1 · Job Setup</h4>
+        <h4 id="workflowStageTitle">Step 1 Â· Job Setup</h4>
         <p id="workflowStageLead">Confirm who, where, and what kind of job this is before you jump into measurements.</p>
         <div class="workflow-guided-meta">
           <span id="workflowStepProgress">Step 1 of 4</span>
@@ -600,7 +627,7 @@
           <button type="button" class="variant-chip" data-line-stop-variant="hiStop">Hi-Stop</button>
         </div>
       </div>
-      <div class="variant-inline-note" id="lineStopVariantNote">Standard line stop math uses LI = MD ± LD + POD - Wall.</div>
+      <div class="variant-inline-note" id="lineStopVariantNote">Standard line stop math uses LI = MD Â± LD + POD - Wall.</div>
     </div>
 
     <div class="line-stop-variant-panel active" data-line-stop-variant-panel="standard">
@@ -628,7 +655,7 @@
 
           <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
 
-          <p class="formula-note">Auto formula: LI = MD ± LD + POD - Wall</p>
+          <p class="formula-note">Auto formula: LI = MD Â± LD + POD - Wall</p>
         </div>
 
         <div class="section">
@@ -647,7 +674,7 @@
       <div class="measurement-grid">
         <div class="section">
           <h3>HTP Stop</h3>
-          <p class="formula-note">Training formula: TCO = MD ± LD + PTC + BCO. For HTP, BCO matches the host pipe size from the chart.</p>
+          <p class="formula-note">Training formula: TCO = MD Â± LD + PTC + BCO. For HTP, BCO matches the host pipe size from the chart.</p>
 
           <div class="row"><label>Pipe Size</label>
             <select id="htpPipeSize">
@@ -699,7 +726,7 @@
       <div class="measurement-grid">
         <div class="section">
           <h3>Hi-Stop Cutout</h3>
-          <p class="formula-note">Training formulas: LI = MD ± LD and TCO = (RL/2) + (POD/2) + CL + PTC.</p>
+          <p class="formula-note">Training formulas: LI = MD Â± LD and TCO = (RL/2) + (POD/2) + CL + PTC.</p>
 
           <div class="row"><label>MD</label><input id="hsMd" type="number" step="any"></div>
           <div class="row row-split">
@@ -718,7 +745,7 @@
 
         <div class="section">
           <h3>Hi-Stop Plug Set</h3>
-          <p class="formula-note">PSD = ((RCD - PB) / (2 × Plug Taper)) + 0.25 and Plug Set = PSD + MD ± LD + ½ POD.</p>
+          <p class="formula-note">PSD = ((RCD - PB) / (2 Ã— Plug Taper)) + 0.25 and Plug Set = PSD + MD Â± LD + Â½ POD.</p>
           <div class="row"><label>RCD</label><input id="hsRcd" type="number" step="any"></div>
           <div class="row"><label>PB (Plug Bottom)</label><input id="hsPb" type="number" step="any"></div>
           <div class="row"><label>Plug Taper</label><input id="hsPtp" type="number" step="any"></div>
@@ -927,9 +954,9 @@
           <div class="reference-card plant-summary-card">
             <h4>HTP Quick Rules</h4>
             <div class="reference-formula-grid">
-              <div class="formula-card"><strong>Hot Tap Cutout</strong><span>TCO = MD ± LD + PTC + BCO</span><small>HTP training uses pipe size as the HTP BCO value.</small></div>
-              <div class="formula-card"><strong>Plug Set</strong><span>Plug Set = PSD ± LD</span><small>Used when setting the HTP plug after the hot tap is complete.</small></div>
-              <div class="formula-card"><strong>Service Range</strong><span>3? through 16? pipe</span><small>The training deck lists up to 1480 PSI and 900°F capability for HTP service.</small></div>
+              <div class="formula-card"><strong>Hot Tap Cutout</strong><span>TCO = MD Â± LD + PTC + BCO</span><small>HTP training uses pipe size as the HTP BCO value.</small></div>
+              <div class="formula-card"><strong>Plug Set</strong><span>Plug Set = PSD Â± LD</span><small>Used when setting the HTP plug after the hot tap is complete.</small></div>
+              <div class="formula-card"><strong>Service Range</strong><span>3? through 16? pipe</span><small>The training deck lists up to 1480 PSI and 900Â°F capability for HTP service.</small></div>
             </div>
           </div>
         </div>
@@ -941,13 +968,13 @@
         <div class="reference-formula-grid reference-formula-grid-wide">
           <div class="formula-card">
             <strong>Standard Line Stop</strong>
-            <span>Set Point = MD ± LD + POD - Wall</span>
+            <span>Set Point = MD Â± LD + POD - Wall</span>
             <small>Use for conventional line stop heads when you need lower-in from the training set-point method.</small>
           </div>
           <div class="formula-card">
             <strong>HTP Stop</strong>
-            <span>TCO = MD ± LD + PTC + BCO</span>
-            <small>HTP BCO follows the pipe size chart. Plug Set uses PSD ± LD.</small>
+            <span>TCO = MD Â± LD + PTC + BCO</span>
+            <small>HTP BCO follows the pipe size chart. Plug Set uses PSD Â± LD.</small>
           </div>
           <div class="formula-card">
             <strong>Hi-Stop Cutout</strong>
@@ -956,8 +983,8 @@
           </div>
           <div class="formula-card">
             <strong>Hi-Stop Plug Set</strong>
-            <span>Plug Set = PSD + MD ± LD + ½ POD</span>
-            <small>PSD = ((RCD - PB) / (2 × Plug Taper)) + 0.25.</small>
+            <span>Plug Set = PSD + MD Â± LD + Â½ POD</span>
+            <small>PSD = ((RCD - PB) / (2 Ã— Plug Taper)) + 0.25.</small>
           </div>
           <div class="formula-card">
             <strong>Hi-Stop Notes</strong>
@@ -967,7 +994,7 @@
           <div class="formula-card">
             <strong>Completion Plug</strong>
             <span>Pipeline LI = JBF + LD</span>
-            <small>Pipeline side-outlet completion plug training also uses LI = FTD - TMU ± LD.</small>
+            <small>Pipeline side-outlet completion plug training also uses LI = FTD - TMU Â± LD.</small>
           </div>
         </div>
       </div>
@@ -1196,7 +1223,7 @@
           <h3 id="decimalModalTitle">Decimal Equivalent Chart</h3>
           <p class="modal-subtitle">Fractions in 1/64 increments from 1/64 to 1.</p>
         </div>
-        <button type="button" id="closeDecimalModalBtn" class="modal-close-btn" aria-label="Close decimal chart">×</button>
+        <button type="button" id="closeDecimalModalBtn" class="modal-close-btn" aria-label="Close decimal chart">Ã—</button>
       </div>
       <div class="modal-search-row">
         <input id="decimalChartSearch" type="text" placeholder="Search fraction or decimal (example: 3/16 or 0.1875)">
@@ -1229,8 +1256,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha158"></script>
-<script src="measurement.js?v=3.0.0-alpha158"></script>
+<script src="firebase-config.js?v=3.0.0-alpha159"></script>
+<script src="measurement.js?v=3.0.0-alpha159"></script>
   </section>
 </body>
 </html>

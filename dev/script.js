@@ -1,4 +1,4 @@
-
+﻿
 // ===== GLOBAL THEME TOGGLE FACTORY =====
 (function () {
   if (window.__BCO_THEME_READY__) return;
@@ -250,7 +250,7 @@ window.addEventListener("load", () => {
   if (!od.querySelector('option[value=""]')) {
     const ph = document.createElement("option");
     ph.value = "";
-    ph.textContent = "Select pipe size�";
+    ph.textContent = "Select pipe size…";
     ph.disabled = true;
     ph.selected = true;
     od.prepend(ph);
