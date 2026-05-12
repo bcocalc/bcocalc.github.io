@@ -7,7 +7,7 @@
   const btn = document.createElement('button');
   btn.id = 'themeToggle';
   btn.className = 'theme-btn';
-  btn.innerHTML = '🌓';
+  btn.innerHTML = '??';
   btn.style.position = 'fixed';
   btn.style.top = '16px';
   btn.style.right = '16px';
@@ -124,7 +124,7 @@ function updatePipeID() {
 }
 
 function calculateBCO() {
-  // ✅ FIX: Use TRUE OD, not nominal size
+  // ? FIX: Use TRUE OD, not nominal size
   const material = document.getElementById("pipeMaterial").value;
   const nominal = document.getElementById("pipeOD").value;
 
@@ -203,11 +203,11 @@ function initTheme() {
   const isDark = saved === "dark";
 
   document.body.classList.toggle("dark", isDark);
-  toggleBtn.textContent = isDark ? "☀️" : "🌙";
+  toggleBtn.textContent = isDark ? "??" : "??";
 
   toggleBtn.addEventListener("click", () => {
     const nowDark = document.body.classList.toggle("dark");
-    toggleBtn.textContent = nowDark ? "☀️" : "🌙";
+    toggleBtn.textContent = nowDark ? "??" : "??";
     localStorage.setItem("theme", nowDark ? "dark" : "light");
   });
 }
@@ -250,7 +250,7 @@ window.addEventListener("load", () => {
   if (!od.querySelector('option[value=""]')) {
     const ph = document.createElement("option");
     ph.value = "";
-    ph.textContent = "Select pipe size…";
+    ph.textContent = "Select pipe size�";
     ph.disabled = true;
     ph.selected = true;
     od.prepend(ph);
