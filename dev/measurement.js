@@ -1,4 +1,4 @@
-﻿const BUILD_VERSION = '3.0.0-alpha159';
+﻿const BUILD_VERSION = '3.0.0-alpha160';
 
 (function(){
 
@@ -125,7 +125,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha159 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha160 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -883,6 +883,39 @@ const plant150SearchInputEl = document.getElementById('plant150SearchInput');
 const plant600SearchInputEl = document.getElementById('plant600SearchInput');
 const garlock600SizeSelectEl = document.getElementById('garlock600SizeSelect');
 const garlock600SearchInputEl = document.getElementById('garlock600SearchInput');
+const machineReferenceSelectEl = document.getElementById('machineReferenceSelect');
+const machineReferenceSearchInputEl = document.getElementById('machineReferenceSearchInput');
+const machineReferenceBodyEl = document.getElementById('machineReferenceBody');
+const machineReferenceTotalChipEl = document.getElementById('machineReferenceTotalChip');
+const machineReferenceVisibleChipEl = document.getElementById('machineReferenceVisibleChip');
+const machineReferenceHotTapChipEl = document.getElementById('machineReferenceHotTapChip');
+const machineReferenceData = [
+  { name: 'HTM 360', type: 'Hot Tap Machine', range: '360 / 152 group', use: 'Tap machine stack-up source for smaller and mid-size hot taps.', source: 'HTM 360.pdf' },
+  { name: 'HTM 660', type: 'Hot Tap Machine', range: '660 group', use: 'Tap machine stack-up source for 660 machine setups.', source: 'HTM 660 (4).pdf' },
+  { name: 'HTM 760', type: 'Hot Tap Machine', range: '760 group', use: 'Tap machine stack-up source for 760 machine setups.', source: 'HTM 760 (7).pdf' },
+  { name: 'HTM 1200', type: 'Hot Tap Machine', range: '1200 group', use: 'Large hot tap machine stack-up reference.', source: 'HTM 1200 (11).pdf' },
+  { name: 'HTM M120', type: 'Hot Tap Machine', range: 'M120 group', use: 'M120 stack-up reference for large hot tap setup checks.', source: 'HTM M120 (8).pdf' },
+  { name: 'HTM 18 T101', type: 'Hot Tap Machine', range: '18 inch T101', use: 'Dedicated T101 stack-up reference.', source: 'HTM 18 T101.pdf' },
+  { name: 'HTM 24 T101', type: 'Hot Tap Machine', range: '24 inch T101', use: 'Dedicated T101 stack-up reference.', source: 'HTM 24 T101 (1).pdf' },
+  { name: 'HTM 28 T101', type: 'Hot Tap Machine', range: '28 inch T101', use: 'Dedicated T101 stack-up reference.', source: 'HTM 28 T101 (3).pdf' },
+  { name: 'HTM C1-25', type: 'Hot Tap Machine', range: 'C1-25', use: 'C1-25 hot tap stack-up reference.', source: 'HTM C1-25 (1).pdf' },
+  { name: 'HTM C1-36', type: 'Hot Tap Machine', range: 'C1-36', use: 'C1-36 hot tap stack-up reference.', source: 'HTM C1-36 (2).pdf' },
+  { name: 'LSM Hydraulic 4-12', type: 'Line Stop Machine', range: '4 through 12 inch', use: 'Hydraulic line stop machine stack-up reference.', source: 'LSM Hydraulic 4-12.pdf' },
+  { name: 'LSM Hydraulic 14-20', type: 'Line Stop Machine', range: '14 through 20 inch', use: 'Hydraulic line stop machine stack-up reference.', source: 'LSM Hydraulic 14-20 (12).pdf' },
+  { name: 'LSM Hydraulic 24-36', type: 'Line Stop Machine', range: '24 through 36 inch', use: 'Hydraulic line stop machine stack-up reference.', source: 'LSM Hydraulic 24-36 (4).pdf' },
+  { name: 'LSM Jackscrew 48', type: 'Line Stop Machine', range: '48 inch', use: 'Jackscrew line stop stack-up reference.', source: 'LSM Jackscrew 48 (1).pdf' },
+  { name: 'LSM Jackscrew 52', type: 'Line Stop Machine', range: '52 inch', use: 'Jackscrew line stop stack-up reference.', source: 'LSM Jackscrew 52.pdf' },
+  { name: 'LSM Jackscrew 72', type: 'Line Stop Machine', range: '72 inch', use: 'Jackscrew line stop stack-up reference.', source: 'LSM Jackscrew 72 (5).pdf' },
+  { name: 'LSM MA140', type: 'Line Stop Machine', range: 'MA140', use: 'MA140 line stop machine stack-up reference.', source: 'LSM MA140 (10).pdf' },
+  { name: 'Hi-Stops', type: 'Hi-Stop / Plug', range: 'Hi-Stop family', use: 'Hi-Stop reference source for the alternate stop workflow.', source: 'Hi Stops (7).pdf' },
+  { name: 'Hi-Stop Plug Setter 102in', type: 'Hi-Stop / Plug', range: '102 inch plug setter', use: 'Plug setter reference for Hi-Stop completion work.', source: 'Hi-Stop Plug Setter 102in.pdf' },
+  { name: 'Plug Setter 1200', type: 'Completion Plug', range: '1200 plug setter', use: 'Completion plug stack-up reference.', source: 'Plug Setter 1200 (2).pdf' },
+  { name: 'IP 304 / 406 / 508 Manual', type: 'Manual', range: 'IP 304, 406, 508', use: 'Uploaded tapping-machine manual reference.', source: 'IP304 406 508, 2009.pdf' },
+  { name: 'IP 914XL Manual', type: 'Manual', range: 'IP 914XL', use: 'Uploaded tapping-machine manual reference.', source: 'IP914XL new manual.pdf' },
+  { name: 'IPSCO IP100 Manual', type: 'Manual', range: 'IP100', use: 'Uploaded tapping-machine manual reference.', source: 'ipsco ip100.pdf' },
+  { name: 'Series 1-4 Hydraulic Actuator Manual', type: 'Manual', range: 'Series 1 through 4', use: 'Uploaded hydraulic actuator manual reference.', source: 'Series 1 to 4 hydraulic actuator manual.pdf' },
+  { name: '72 Jack Screw Actuator', type: 'Manual', range: '72 inch actuator', use: 'Uploaded jack screw actuator document reference.', source: '72Jack Screw Actuator-R2-furmanite.doc' }
+];
 const glossaryRowsData = [
   ['MD', 'Measured Distance'],
   ['LD', 'Lost Distance'],
@@ -915,7 +948,12 @@ const glossaryRowsData = [
   ['Completion Plug', 'Plug used to seal the branch after the tapping / stopping work is complete'],
   ['FHL', 'Folding Head Line Stop'],
   ['Coupon', 'The cutout removed by the cutter during a hot tap'],
-  ['Plant Series', 'Reference chart for jack-bolt wrench size, packing nut wrench size, and jack-bolt count']
+  ['Plant Series', 'Reference chart for jack-bolt wrench size, packing nut wrench size, and jack-bolt count'],
+  ['HTM', 'Hot Tap Machine stack-up reference'],
+  ['LSM', 'Line Stop Machine stack-up reference'],
+  ['Stack-Up', 'Machine setup/reference document used to confirm the physical arrangement'],
+  ['IP Manual', 'Uploaded tapping-machine manual reference'],
+  ['MA140', 'Line stop machine family listed in the uploaded stack-up references']
 ];
 
 function renderGlossaryRows(rows) {
@@ -938,9 +976,69 @@ renderGlossaryRows(glossaryRowsData);
 
 if (referenceBackToTopBtnEl) {
   referenceBackToTopBtnEl.addEventListener('click', () => {
-    document.querySelector('#refScreen .screen-intro-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.querySelector('#refScreen .ref-screen-topbar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 }
+
+function getMachineReferenceText(row) {
+  return `${row?.name || ''} ${row?.type || ''} ${row?.range || ''} ${row?.use || ''} ${row?.source || ''}`.toLowerCase();
+}
+
+function setMachineReferenceText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value || '-';
+}
+
+function renderMachineReferenceRows(rows = machineReferenceData) {
+  if (!machineReferenceBodyEl) return;
+  const safeRows = Array.isArray(rows) ? rows : [];
+  machineReferenceBodyEl.innerHTML = safeRows.length
+    ? safeRows.map((row) => `<tr><td>${escapeHtml(row.name)}</td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.range)}</td><td>${escapeHtml(row.use)}</td><td>${escapeHtml(row.source)}</td></tr>`).join('')
+    : '<tr><td colspan="5">No machine references match that search.</td></tr>';
+  if (machineReferenceTotalChipEl) machineReferenceTotalChipEl.textContent = String(machineReferenceData.length);
+  if (machineReferenceVisibleChipEl) machineReferenceVisibleChipEl.textContent = String(safeRows.length);
+  if (machineReferenceHotTapChipEl) {
+    machineReferenceHotTapChipEl.textContent = String(machineReferenceData.filter((row) => row.type === 'Hot Tap Machine').length);
+  }
+}
+
+function populateMachineReferenceSelect() {
+  if (!machineReferenceSelectEl) return;
+  const previous = machineReferenceSelectEl.value;
+  machineReferenceSelectEl.innerHTML = machineReferenceData
+    .map((row) => `<option value="${escapeHtml(row.name)}">${escapeHtml(row.name)}</option>`)
+    .join('');
+  if (previous && machineReferenceData.some((row) => row.name === previous)) machineReferenceSelectEl.value = previous;
+  if (!machineReferenceSelectEl.value && machineReferenceData[0]) machineReferenceSelectEl.value = machineReferenceData[0].name;
+}
+
+function updateMachineReferenceSummary() {
+  const activeName = machineReferenceSelectEl?.value || machineReferenceData[0]?.name || '';
+  const match = machineReferenceData.find((row) => row.name === activeName) || machineReferenceData[0];
+  if (!match) return;
+  setMachineReferenceText('machineReferenceType', match.type);
+  setMachineReferenceText('machineReferenceRange', match.range);
+  setMachineReferenceText('machineReferenceUse', match.use);
+  setMachineReferenceText('machineReferenceSource', match.source);
+}
+
+function filterMachineReferenceRows(query) {
+  const needle = String(query || '').trim().toLowerCase();
+  const filtered = !needle
+    ? machineReferenceData
+    : machineReferenceData.filter((row) => getMachineReferenceText(row).includes(needle));
+  renderMachineReferenceRows(filtered);
+}
+
+function initMachineReference() {
+  populateMachineReferenceSelect();
+  renderMachineReferenceRows(machineReferenceData);
+  updateMachineReferenceSummary();
+}
+
+if (machineReferenceSelectEl) machineReferenceSelectEl.addEventListener('change', updateMachineReferenceSummary);
+if (machineReferenceSearchInputEl) machineReferenceSearchInputEl.addEventListener('input', () => filterMachineReferenceRows(machineReferenceSearchInputEl.value));
+initMachineReference();
 
 
 const htpChartData = {
@@ -1466,6 +1564,7 @@ function initReferenceWorkspaceHard() {
     filterGlossaryRows(glossarySearchInputEl?.value || '');
     renderSimpleTableRows('plant150Body', plant150Data);
     renderSimpleTableRows('plant600Body', plant600Data);
+    if (typeof initMachineReference === 'function') initMachineReference();
     if (typeof initBoltingReference === 'function') initBoltingReference();
     const safeView = getSafeReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl?.value || 'converter');
     setReferenceView(safeView);
@@ -1491,7 +1590,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha159', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha160', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5454,7 +5553,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha159';
+const TC63_VERSION = '3.0.0-alpha160';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -5700,7 +5799,7 @@ const TC63_VERSION = '3.0.0-alpha159';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha159';
+const VERSION = '3.0.0-alpha160';
 
   function tc65GetJobs() {
     try {
@@ -8913,7 +9012,7 @@ const VERSION = '3.0.0-alpha159';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha159';
+const VERSION = '3.0.0-alpha160';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10455,10 +10554,10 @@ const VERSION = '3.0.0-alpha159';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha159 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha160 preserve multi-operation bundles on load ===== */
 (function(){
-  if (window.__tapcalcalpha159BundleLoadReady) return;
-  window.__tapcalcalpha159BundleLoadReady = true;
+  if (window.__tapcalcalpha160BundleLoadReady) return;
+  window.__tapcalcalpha160BundleLoadReady = true;
 
   function hasSavedOperationBundle(record) {
     return Array.isArray(record?.jobBundle?.operations) && record.jobBundle.operations.length > 1;
@@ -10568,7 +10667,7 @@ const VERSION = '3.0.0-alpha159';
         return merged;
       }
     } catch (error) {
-      console.warn('alpha159 full shared job fetch failed', error);
+      console.warn('alpha160 full shared job fetch failed', error);
     }
 
     return previewRecord;
@@ -10762,7 +10861,7 @@ const VERSION = '3.0.0-alpha159';
       scheduleLoadedJobWorkflow(record, { quick: true });
       return true;
     } catch (error) {
-      console.error('alpha159 bundle restore failed', error);
+      console.error('alpha160 bundle restore failed', error);
       return false;
     }
   }
@@ -10776,7 +10875,7 @@ const VERSION = '3.0.0-alpha159';
   }
 
   const previousLoader = window.loadRecordIntoCalculator || (typeof loadRecordIntoCalculator === 'function' ? loadRecordIntoCalculator : null);
-  function alpha159LoadRecord(record, options = {}) {
+  function alpha160LoadRecord(record, options = {}) {
     if (!record) return false;
     let result = false;
     if (typeof previousLoader === 'function') {
@@ -10792,8 +10891,8 @@ const VERSION = '3.0.0-alpha159';
     return result;
   }
 
-  window.loadRecordIntoCalculator = alpha159LoadRecord;
-  try { loadRecordIntoCalculator = alpha159LoadRecord; } catch {}
+  window.loadRecordIntoCalculator = alpha160LoadRecord;
+  try { loadRecordIntoCalculator = alpha160LoadRecord; } catch {}
   window.tapCalcRestoreOperationBundle = restoreOperationBundleFromRecord;
 
   function getJobs() {
@@ -10846,7 +10945,7 @@ const VERSION = '3.0.0-alpha159';
     return null;
   }
 
-  function alpha159LoadSelected(event) {
+  function alpha160LoadSelected(event) {
     if (event) {
       try { event.preventDefault(); } catch {}
       try { event.stopPropagation(); } catch {}
@@ -10865,7 +10964,7 @@ const VERSION = '3.0.0-alpha159';
     try { window.__tapcalcLibrarySelectedId = String(selected.id || ''); } catch {}
 
     const loadToken = `${String(selected.id || getRecordId(selected.record) || 'selected')}:${Date.now()}`;
-    window.__tapcalcalpha159ActiveLoadToken = loadToken;
+    window.__tapcalcalpha160ActiveLoadToken = loadToken;
     (async () => {
       try {
         const statusEl = document.getElementById('jobsCloudStatus');
@@ -10873,9 +10972,9 @@ const VERSION = '3.0.0-alpha159';
       } catch {}
 
       const fullRecord = await resolveFullOperationRecord(selected);
-      if (window.__tapcalcalpha159ActiveLoadToken !== loadToken) return;
+      if (window.__tapcalcalpha160ActiveLoadToken !== loadToken) return;
 
-      alpha159LoadRecord(fullRecord || selected.record, { message: true, switchScreen: true, skipPersist: false });
+      alpha160LoadRecord(fullRecord || selected.record, { message: true, switchScreen: true, skipPersist: false });
       scheduleBundleRestore(fullRecord || selected.record, { focus: true });
       scheduleLoadedJobWorkflow(fullRecord || selected.record);
       try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
@@ -10884,15 +10983,15 @@ const VERSION = '3.0.0-alpha159';
     return false;
   }
 
-  window.tapCalcForceLoadSelectedJob = alpha159LoadSelected;
-  window.tapCalcLibraryLoadSelected = alpha159LoadSelected;
-  window.loadSelectedLibraryJob = alpha159LoadSelected;
-  window.alpha47LoadSelectedLibraryJob = alpha159LoadSelected;
+  window.tapCalcForceLoadSelectedJob = alpha160LoadSelected;
+  window.tapCalcLibraryLoadSelected = alpha160LoadSelected;
+  window.loadSelectedLibraryJob = alpha160LoadSelected;
+  window.alpha47LoadSelectedLibraryJob = alpha160LoadSelected;
 
   function bindLoadButtonCapture(event) {
     const button = findLoadButtonFromEvent(event);
     if (!button) return;
-    alpha159LoadSelected(event);
+    alpha160LoadSelected(event);
   }
 
   window.addEventListener('click', bindLoadButtonCapture, true);

@@ -6142,3 +6142,124 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-chip.active{background:#eaf2ff;border-color:rgba(49,104,206,.38);}
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
+
+/* ===== 3.0.0-alpha160 reference buildout ===== */
+.machine-reference-grid,
+.checklist-reference-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.machine-summary-card,
+.field-check-card {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.machine-select-row {
+  align-items: start;
+}
+
+.machine-select-row select {
+  width: 100%;
+  min-width: 0;
+}
+
+.machine-summary-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.machine-summary-grid .bolting-summary-item:nth-child(3),
+.machine-summary-grid .bolting-summary-item:nth-child(4) {
+  grid-column: span 2;
+}
+
+.machine-table-wrap {
+  max-height: 480px;
+  overflow: auto;
+}
+
+.machine-reference-table th,
+.machine-reference-table td {
+  vertical-align: top;
+}
+
+.machine-reference-table td:nth-child(4),
+.machine-reference-table td:nth-child(5) {
+  min-width: 190px;
+}
+
+.reference-note-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  display: grid;
+  gap: 8px;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.field-check-step {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 900;
+  color: #fff;
+  background: linear-gradient(180deg, #3d77ea 0%, #275fcd 100%);
+  box-shadow: 0 10px 20px rgba(39, 95, 205, 0.24);
+}
+
+.field-check-card h4 {
+  margin: 0;
+}
+
+:root[data-theme="dark"] body.measurement-page .reference-note-list,
+body.dark .reference-note-list {
+  color: #d9e6f8;
+}
+
+:root[data-theme="light"] body.measurement-page .reference-note-list,
+body.light .reference-note-list {
+  color: #31455f;
+}
+
+#machineReferenceSelect,
+#machineReferenceSearchInput {
+  color: var(--text-main) !important;
+  background: var(--input-bg) !important;
+}
+
+#machineReferenceSelect option {
+  color: #111 !important;
+  background: #fff !important;
+}
+
+:root[data-theme="dark"] #machineReferenceSelect option,
+body.dark #machineReferenceSelect option {
+  color: #f4f7fb !important;
+  background: #1f2937 !important;
+}
+
+@media (max-width: 900px) {
+  .machine-reference-grid,
+  .checklist-reference-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .machine-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .machine-summary-grid .bolting-summary-item:nth-child(3),
+  .machine-summary-grid .bolting-summary-item:nth-child(4) {
+    grid-column: auto;
+  }
+
+  .machine-table-wrap {
+    max-height: 360px;
+  }
+}
