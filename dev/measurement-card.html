@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha153">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha154">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha153 - 2026-04-19</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha154 - 2026-05-11</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha153 - 2026-04-19</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha154 - 2026-05-11</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -190,6 +190,27 @@
               <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
               <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
               <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="4" placeholder="Notes"></textarea></div>
+            </div>
+            <div class="job-operations-card">
+              <div class="job-operations-head">
+                <div>
+                  <h5>Job Operations</h5>
+                  <p>Keep one job together even when it includes multiple hot taps, line stops, or completion plug steps.</p>
+                </div>
+              </div>
+              <div class="job-operations-grid">
+                <div class="row"><label>Current Operation</label><select id="jobOperationSelect"></select></div>
+                <div class="row"><label>Operation Name</label><input id="jobOperationLabel" type="text" placeholder="Hot Tap 1"></div>
+              </div>
+              <div class="job-operations-actions">
+                <button type="button" id="addHotTapOpBtn" class="secondary-btn">Add Hot Tap</button>
+                <button type="button" id="addLineStopOpBtn" class="secondary-btn">Add Line Stop</button>
+                <button type="button" id="addCompletionOpBtn" class="secondary-btn">Add Completion</button>
+                <button type="button" id="duplicateOperationBtn" class="secondary-btn">Duplicate Current</button>
+                <button type="button" id="deleteOperationBtn" class="secondary-btn danger-btn">Delete Current</button>
+              </div>
+              <p id="jobOperationStatus" class="note job-operations-status">1 operation in this job.</p>
+              <div id="jobOperationPreviewList" class="job-operation-preview" aria-live="polite"></div>
             </div>
             <div class="job-jump-actions">
               <button type="button" class="secondary-btn" data-go-screen="calc">Pipe / Cutter in Tools</button>
@@ -1218,8 +1239,8 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha153"></script>
-<script src="measurement.js?v=3.0.0-alpha153"></script>
+<script src="firebase-config.js?v=3.0.0-alpha154"></script>
+<script src="measurement.js?v=3.0.0-alpha154"></script>
   </section>
 </body>
 </html>

@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha153';
+const BUILD_VERSION = '3.0.0-alpha154';
 
 (function(){
 
@@ -31,6 +31,91 @@ const BUILD_VERSION = '3.0.0-alpha153';
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     syncThemeState(t);
     localStorage.setItem('theme', t);
+  });
+})();
+
+/* ===== 3.0.0-alpha154 mobile workflow/tools interaction guard ===== */
+(function(){
+  let lastHandledKey = '';
+  let lastHandledAt = 0;
+
+  function touchHandledRecently(key, eventType) {
+    const now = Date.now();
+    if (eventType === 'click' && lastHandledKey === key && (now - lastHandledAt) < 450) return true;
+    if (eventType !== 'click') {
+      lastHandledKey = key;
+      lastHandledAt = now;
+    }
+    return false;
+  }
+
+  function stopEvent(event) {
+    try { if (event.cancelable) event.preventDefault(); } catch {}
+    try { event.stopPropagation(); } catch {}
+    try { if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation(); } catch {}
+  }
+
+  function handleInteractiveTap(target) {
+    if (!target || target.disabled) return false;
+    if (target.matches('.calc-submode-btn[data-mode]')) {
+      try { window.tapCalcSetScreen?.('calc'); } catch {}
+      try { window.setMode?.(target.dataset.mode || 'bco'); } catch {}
+      return true;
+    }
+    if (target.matches('.workflow-card[data-workflow-target], .workflow-submode-btn[data-mode]')) {
+      const nextMode = target.dataset.workflowTarget || target.dataset.mode || 'hotTap';
+      try { window.tapCalcSetScreen?.('card'); } catch {}
+      try { window.tapCalcSetWorkflowStage?.(nextMode); } catch {}
+      try { window.setMode?.(nextMode); } catch {}
+      return true;
+    }
+    if (target.matches('[data-workflow-stage]')) {
+      try { window.tapCalcSetScreen?.('card'); } catch {}
+      try { window.tapCalcSetWorkflowStage?.(target.dataset.workflowStage || 'setup'); } catch {}
+      return true;
+    }
+    switch (target.id) {
+      case 'workflowPrevBtn':
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowJump?.(-1); } catch {}
+        return true;
+      case 'workflowNextBtn':
+      case 'workflowNextPrimaryBtn':
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowJump?.(1); } catch {}
+        return true;
+      case 'workflowSetupNextBtn':
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowGo?.('pipe'); } catch {}
+        return true;
+      case 'workflowPipeNextBtn': {
+        const nextMode = String(window.getActiveWorkflowMode?.() || 'hotTap');
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowGo?.(nextMode); } catch {}
+        return true;
+      }
+      default:
+        return false;
+    }
+  }
+
+  function interactionHandler(event) {
+    const target = event.target && event.target.closest
+      ? event.target.closest('.calc-submode-btn[data-mode], .workflow-submode-btn[data-mode], .workflow-card[data-workflow-target], [data-workflow-stage], #workflowPrevBtn, #workflowNextBtn, #workflowSetupNextBtn, #workflowPipeNextBtn, #workflowNextPrimaryBtn')
+      : null;
+    if (!target) return;
+    const key = target.id || target.dataset.mode || target.dataset.workflowTarget || target.dataset.workflowStage || '';
+    if (touchHandledRecently(key, event.type)) {
+      stopEvent(event);
+      return false;
+    }
+    if (!handleInteractiveTap(target)) return;
+    stopEvent(event);
+    return false;
+  }
+
+  ['pointerdown', 'touchstart', 'click'].forEach((eventName) => {
+    document.addEventListener(eventName, interactionHandler, true);
   });
 })();
 // ===== END THEME TOGGLE FACTORY =====
@@ -149,9 +234,14 @@ function setMode(mode) {
 }
 
 window.setMode = setMode;
+window.getStoredCalcMode = getStoredCalcMode;
+window.getStoredWorkflowMode = getStoredWorkflowMode;
 window.getActiveCalcMode = getActiveCalcMode;
 window.getActiveWorkflowMode = getActiveWorkflowMode;
 window.getActiveWorkflowLabel = getActiveWorkflowLabel;
+window.normalizeMode = normalizeMode;
+window.CALC_SCREEN_MODES = CALC_SCREEN_MODES;
+window.WORKFLOW_SCREEN_MODES = WORKFLOW_SCREEN_MODES;
 
 calcModeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -1311,7 +1401,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha153', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha154', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -1413,6 +1503,7 @@ function getLineStopVariant(){
   const raw = String(lineStopVariantInputEl?.value || 'standard').trim();
   return ['standard','htp','hiStop'].includes(raw) ? raw : 'standard';
 }
+window.getLineStopVariant = getLineStopVariant;
 function setLineStopVariant(variant){
   const next = ['standard','htp','hiStop'].includes(String(variant || '').trim()) ? String(variant).trim() : 'standard';
   if (lineStopVariantInputEl) {
@@ -1480,6 +1571,33 @@ const jobInfoToggleBtnEl = document.getElementById('jobInfoToggleBtn');
 const JOB_INFO_COLLAPSED_KEY = 'measurementCardJobInfoCollapsedV1';
 const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType'];
 const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD'];
+const JOB_BUNDLE_VERSION = 3;
+const jobOperationSelectEl = document.getElementById('jobOperationSelect');
+const jobOperationLabelEl = document.getElementById('jobOperationLabel');
+const jobOperationStatusEl = document.getElementById('jobOperationStatus');
+const jobOperationPreviewListEl = document.getElementById('jobOperationPreviewList');
+const addHotTapOpBtnEl = document.getElementById('addHotTapOpBtn');
+const addLineStopOpBtnEl = document.getElementById('addLineStopOpBtn');
+const addCompletionOpBtnEl = document.getElementById('addCompletionOpBtn');
+const duplicateOperationBtnEl = document.getElementById('duplicateOperationBtn');
+const deleteOperationBtnEl = document.getElementById('deleteOperationBtn');
+const SHARED_JOB_FIELD_IDS = [...jobInfoFieldIds, 'geometryLockToggle'];
+const DEFAULT_STATE_VALUES = {
+  geometryLockToggle: false,
+  bcoPipeMaterial: 'CarbonSteel',
+  bcoSchedule: 'STD',
+  ldSign: '+',
+  htpLdSign: '+',
+  lsLdSign: '+',
+  hsLdSign: '+',
+  lugs: 'Y',
+  lineStopVariant: 'standard',
+  lsLiManualToggle: false,
+  cpLiManualToggle: false,
+  activeMode: 'hotTap',
+  calcMode: 'bco',
+  lineStopMdUserEdited: false
+};
 const syncJobsBtnEl = document.getElementById('syncJobsBtn');
 const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
 const testFirestoreBtnEl = document.getElementById('testFirestoreBtn');
@@ -1500,7 +1618,15 @@ let firebaseInitPromise = null;
 let cloudJobsCache = [];
 let jobsSearchTerm = '';
 let jobsBrowseMode = 'all';
+let currentJobBundle = null;
+let suppressJobBundleUiSync = false;
 let selectedJobId = '';
+
+Object.defineProperty(window, 'currentJobBundle', {
+  configurable: true,
+  get() { return currentJobBundle; },
+  set(value) { currentJobBundle = value; }
+});
 
 
 
@@ -1534,7 +1660,434 @@ function renderBcoResult(payload = {}) {
   try { updateEtaEstimate(); } catch {}
 }
 
+function cloneJson(value) {
+  try {
+    return JSON.parse(JSON.stringify(value ?? null));
+  } catch {
+    return value ?? null;
+  }
+}
+
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function createBundleId(prefix = 'op') {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function pickStateFields(source = {}, ids = []) {
+  const picked = {};
+  ids.forEach((id) => {
+    if (id in source) picked[id] = source[id];
+  });
+  return picked;
+}
+
+function formatOperationType(type = 'Hot Tap') {
+  const value = String(type || '').trim().toLowerCase();
+  const compact = value.replace(/[\s_-]+/g, '');
+  if (compact === 'completionplug') return 'Completion Plug';
+  if (compact === 'histop') return 'Hi-Stop';
+  if (compact === 'htphottap') return 'HTP Hot Tap';
+  if (compact === 'linestop') return 'Line Stop';
+  if (compact === 'hottap') return 'Hot Tap';
+  if (value.includes('completion')) return 'Completion Plug';
+  if (value.includes('hi-stop') || value.includes('histop')) return 'Hi-Stop';
+  if (value.includes('htp')) return 'HTP Hot Tap';
+  if (value.includes('line stop')) return 'Line Stop';
+  return 'Hot Tap';
+}
+
+function modeForOperationType(type = 'Hot Tap') {
+  const value = formatOperationType(type);
+  if (value === 'Completion Plug') return 'completionPlug';
+  if (value === 'Line Stop' || value === 'Hi-Stop' || value === 'HTP Hot Tap') return 'lineStop';
+  return 'hotTap';
+}
+
+function pluralizeOperationType(type = 'Operation', count = 2) {
+  const safeType = formatOperationType(type);
+  const irregular = {
+    'Hot Tap': count === 1 ? 'Hot Tap' : 'Hot Taps',
+    'Line Stop': count === 1 ? 'Line Stop' : 'Line Stops',
+    'Completion Plug': count === 1 ? 'Completion Plug' : 'Completion Plugs',
+    'Hi-Stop': count === 1 ? 'Hi-Stop' : 'Hi-Stops',
+    'HTP Hot Tap': count === 1 ? 'HTP Hot Tap' : 'HTP Hot Taps'
+  };
+  return irregular[safeType] || (count === 1 ? safeType : `${safeType}s`);
+}
+
+function buildOperationCountsSummary(operations = []) {
+  const counts = new Map();
+  operations.forEach((operation) => {
+    const type = formatOperationType(operation?.operationType || operation?.mode || operation?.state?.activeMode);
+    counts.set(type, (counts.get(type) || 0) + 1);
+  });
+  const parts = Array.from(counts.entries()).map(([type, count]) => `${count} ${pluralizeOperationType(type, count)}`);
+  return parts.length ? parts.join(' • ') : 'No operations yet';
+}
+
+function buildCombinedState(sharedState = {}, operationState = {}) {
+  return { ...sharedState, ...operationState };
+}
+
+function getOperationStateFields() {
+  return getStateFields().filter((id) => !SHARED_JOB_FIELD_IDS.includes(id));
+}
+
+function getDefaultStateValue(id) {
+  if (id in DEFAULT_STATE_VALUES) return DEFAULT_STATE_VALUES[id];
+  const el = document.getElementById(id);
+  if (!el) return '';
+  if (el.type === 'checkbox') return !!el.defaultChecked;
+  if (el.tagName === 'SELECT') return el.options?.[0]?.value ?? '';
+  return '';
+}
+
+function collectSharedJobState() {
+  const sharedState = {};
+  SHARED_JOB_FIELD_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') sharedState[id] = !!el.checked;
+    else sharedState[id] = el.value;
+  });
+  return sharedState;
+}
+
+function collectOperationState() {
+  const state = {};
+  getOperationStateFields().forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') state[id] = !!el.checked;
+    else state[id] = el.value;
+  });
+  state.activeMode = WORKFLOW_SCREEN_MODES.has(normalizeMode(getActiveWorkflowMode())) ? normalizeMode(getActiveWorkflowMode()) : 'hotTap';
+  state.calcMode = CALC_SCREEN_MODES.has(normalizeMode(getActiveCalcMode())) ? normalizeMode(getActiveCalcMode()) : 'bco';
+  state.lineStopMdUserEdited = lsMdEl?.dataset.userEdited === 'true';
+  return state;
+}
+
+function buildBlankOperationState(mode = 'hotTap', baseState = collectOperationState()) {
+  const nextMode = modeForOperationType(mode);
+  const blankState = {};
+  getOperationStateFields().forEach((id) => {
+    blankState[id] = getDefaultStateValue(id);
+  });
+  ['bcoPipeMaterial', 'bcoPipeOD', 'bcoSchedule', 'bcoPipeID', 'bcoCutterOD', 'etaMachine', 'etaCutterSize', 'etaBco', 'etaRpmOverride'].forEach((id) => {
+    if (baseState && baseState[id] !== undefined && baseState[id] !== '') blankState[id] = baseState[id];
+  });
+  blankState.activeMode = nextMode;
+  blankState.calcMode = CALC_SCREEN_MODES.has(normalizeMode(baseState?.calcMode)) ? normalizeMode(baseState.calcMode) : 'bco';
+  blankState.lineStopMdUserEdited = false;
+  if (nextMode === 'lineStop') blankState.lineStopVariant = baseState?.lineStopVariant || 'standard';
+  return blankState;
+}
+
+function mapRecordJobToSharedState(record = {}) {
+  const state = record?.state || {};
+  const metaOperation = String(record?.meta?.operationType || '').toLowerCase();
+  return {
+    jobClient: state.jobClient || record?.job?.client || '',
+    jobDescription: state.jobDescription || record?.job?.description || '',
+    jobNumber: state.jobNumber || record?.job?.jobNumber || '',
+    jobPressure: state.jobPressure || record?.job?.pressure || '',
+    jobTemperature: state.jobTemperature || record?.job?.temperature || '',
+    jobDate: state.jobDate || record?.job?.date || '',
+    jobProduct: state.jobProduct || record?.job?.product || '',
+    jobLocation: state.jobLocation || record?.job?.location || '',
+    jobTechnician: state.jobTechnician || record?.job?.technician || '',
+    jobNotes: state.jobNotes || record?.job?.notes || '',
+    machineType: state.machineType || record?.machine?.machine || '',
+    operationType: state.operationType || ((metaOperation.includes('line stop') || metaOperation.includes('completion') || metaOperation.includes('hi-stop') || metaOperation.includes('histop') || metaOperation.includes('htp')) ? 'Line Stop' : 'Hot Tap'),
+    geometryLockToggle: !!state.geometryLockToggle
+  };
+}
+
+function getBundleJobType(operations = []) {
+  return operations.some((operation) => modeForOperationType(operation?.operationType || operation?.mode || operation?.state?.activeMode) !== 'hotTap')
+    ? 'Line Stop'
+    : 'Hot Tap';
+}
+
+function syncBundleJobType(bundle) {
+  if (!bundle) return 'Hot Tap';
+  const nextType = getBundleJobType(bundle.operations);
+  bundle.sharedState.operationType = nextType;
+  return nextType;
+}
+
+function normalizeBundleItem(rawItem = {}, index = 0) {
+  const state = rawItem?.state && typeof rawItem.state === 'object'
+    ? cloneJson(rawItem.state)
+    : pickStateFields(rawItem || {}, getOperationStateFields());
+  const mode = WORKFLOW_SCREEN_MODES.has(normalizeMode(state.activeMode))
+    ? normalizeMode(state.activeMode)
+    : modeForOperationType(rawItem.operationType || rawItem.mode || inferOperationType(state));
+  state.activeMode = mode;
+  state.calcMode = CALC_SCREEN_MODES.has(normalizeMode(state.calcMode)) ? normalizeMode(state.calcMode) : 'bco';
+  if (!('lineStopMdUserEdited' in state)) state.lineStopMdUserEdited = false;
+  return {
+    id: rawItem.id || createBundleId(`op${index + 1}`),
+    label: String(rawItem.label || '').trim(),
+    operationType: formatOperationType(rawItem.operationType || inferOperationType(state)),
+    mode,
+    createdAtIso: rawItem.createdAtIso || new Date().toISOString(),
+    updatedAtIso: rawItem.updatedAtIso || new Date().toISOString(),
+    state
+  };
+}
+
+function createOperationLabel(operationType = 'Operation', existingOperations = []) {
+  const safeType = formatOperationType(operationType);
+  const sameTypeCount = existingOperations.filter((operation) => formatOperationType(operation?.operationType) === safeType).length;
+  return `${safeType} ${sameTypeCount + 1}`;
+}
+
+function isAutoOperationLabel(label = '') {
+  return /^(Hot Tap|Line Stop|Completion Plug|Hi-Stop|HTP Hot Tap) \d+$/.test(String(label).trim());
+}
+
+function buildOperationSummaryFromItem(item = {}) {
+  const state = item?.state || {};
+  const operationType = formatOperationType(item?.operationType || inferOperationType(state));
+  const details = [];
+  if (String(state.bcoPipeOD || '').trim()) details.push(`${state.bcoPipeOD} pipe`);
+  if (String(state.bcoCutterOD || '').trim()) details.push(`Cutter ${state.bcoCutterOD}`);
+  if (operationType === 'Hot Tap' || operationType === 'HTP Hot Tap') {
+    if (String(state.md || state.htpMd || '').trim()) details.push(`MD ${state.md || state.htpMd}`);
+    if (String(state.ptc || state.htpPtc || '').trim()) details.push(`PTC ${state.ptc || state.htpPtc}`);
+  } else if (operationType === 'Hi-Stop') {
+    if (String(state.hsMd || '').trim()) details.push(`MD ${state.hsMd}`);
+    if (String(state.hsCl || '').trim()) details.push(`CL ${state.hsCl}`);
+  } else if (operationType === 'Line Stop') {
+    if (String(state.lsMd || '').trim()) details.push(`MD ${state.lsMd}`);
+    if (String(state.lsTravel || '').trim()) details.push(`Travel ${state.lsTravel}`);
+  } else if (operationType === 'Completion Plug') {
+    if (String(state.cpStart || '').trim()) details.push(`Start ${state.cpStart}`);
+    if (String(state.cpJbf || '').trim()) details.push(`JBF ${state.cpJbf}`);
+  }
+  return {
+    label: item?.label || '',
+    operationType,
+    details: details.join(' • ') || 'No measurements yet'
+  };
+}
+
+function normalizeJobBundle(rawBundle, record = null) {
+  const legacyState = rawBundle && !Array.isArray(rawBundle?.operations) ? (rawBundle.state || rawBundle) : null;
+  const sharedState = {
+    ...mapRecordJobToSharedState(record),
+    ...(legacyState && typeof legacyState === 'object' ? pickStateFields(legacyState, SHARED_JOB_FIELD_IDS) : {}),
+    ...(rawBundle?.sharedState || {})
+  };
+
+  let operations = [];
+  if (Array.isArray(rawBundle?.operations)) {
+    operations = rawBundle.operations.map((operation, index) => normalizeBundleItem(operation, index));
+  } else if (legacyState && typeof legacyState === 'object') {
+    operations = [normalizeBundleItem({ state: pickStateFields(legacyState, getOperationStateFields()), label: rawBundle?.label || '' })];
+  }
+
+  if (!operations.length) {
+    operations = [normalizeBundleItem({ state: collectOperationState(), label: '' })];
+  }
+
+  operations = operations.map((operation, index) => {
+    const normalized = normalizeBundleItem(operation, index);
+    if (!normalized.label) normalized.label = createOperationLabel(normalized.operationType, operations.slice(0, index));
+    return normalized;
+  });
+
+  const selectedOperationId = operations.some((operation) => operation.id === rawBundle?.selectedOperationId)
+    ? rawBundle.selectedOperationId
+    : operations[0].id;
+
+  const bundle = {
+    version: JOB_BUNDLE_VERSION,
+    selectedOperationId,
+    sharedState,
+    operations
+  };
+  syncBundleJobType(bundle);
+  return bundle;
+}
+
+function ensureJobBundleInitialized() {
+  if (currentJobBundle?.operations?.length) return currentJobBundle;
+  currentJobBundle = normalizeJobBundle({
+    sharedState: collectSharedJobState(),
+    operations: [{ state: collectOperationState(), label: '' }]
+  });
+  return currentJobBundle;
+}
+window.ensureJobBundleInitialized = ensureJobBundleInitialized;
+
+function getSelectedOperationItem(bundle = currentJobBundle) {
+  const activeBundle = bundle || ensureJobBundleInitialized();
+  return activeBundle.operations.find((operation) => operation.id === activeBundle.selectedOperationId) || activeBundle.operations[0] || null;
+}
+window.getSelectedOperationItem = getSelectedOperationItem;
+window.tapCalcGetSelectedOperation = function() {
+  return getSelectedOperationItem(currentJobBundle || ensureJobBundleInitialized());
+};
+
+function renderOperationPreview(bundle = ensureJobBundleInitialized()) {
+  if (!jobOperationPreviewListEl) return;
+  jobOperationPreviewListEl.innerHTML = bundle.operations.map((operation) => {
+    const active = operation.id === bundle.selectedOperationId;
+    const summary = buildOperationSummaryFromItem(operation);
+    return `<button type="button" class="job-operation-card${active ? ' active' : ''}" data-operation-id="${escapeHtml(operation.id)}" aria-pressed="${active ? 'true' : 'false'}"><small>${escapeHtml(summary.operationType)}</small><strong>${escapeHtml(operation.label || summary.operationType)}</strong><span>${escapeHtml(summary.details)}</span></button>`;
+  }).join('');
+  jobOperationPreviewListEl.querySelectorAll('[data-operation-id]').forEach((button) => {
+    button.addEventListener('click', () => selectOperationById(button.dataset.operationId || ''));
+  });
+}
+
+function renderOperationManager() {
+  if (!jobOperationSelectEl || !jobOperationLabelEl || !jobOperationStatusEl) return;
+  const bundle = ensureJobBundleInitialized();
+  syncBundleJobType(bundle);
+  const selectedOperation = getSelectedOperationItem(bundle);
+  const optionsHtml = bundle.operations.map((operation) => {
+    const summary = buildOperationSummaryFromItem(operation);
+    const selected = operation.id === bundle.selectedOperationId ? ' selected' : '';
+    return `<option value="${escapeHtml(operation.id)}"${selected}>${escapeHtml(operation.label || summary.operationType)} • ${escapeHtml(summary.operationType)}</option>`;
+  }).join('');
+  jobOperationSelectEl.innerHTML = optionsHtml;
+  if (selectedOperation) jobOperationSelectEl.value = selectedOperation.id;
+  jobOperationLabelEl.value = selectedOperation?.label || '';
+  const total = bundle.operations.length;
+  jobOperationStatusEl.textContent = `${total} operation${total === 1 ? '' : 's'} in this job • ${buildOperationCountsSummary(bundle.operations)}`;
+  if (duplicateOperationBtnEl) duplicateOperationBtnEl.disabled = !selectedOperation;
+  if (deleteOperationBtnEl) deleteOperationBtnEl.disabled = !selectedOperation;
+  renderOperationPreview(bundle);
+}
+
+function syncCurrentOperationItemFromUi(options = {}) {
+  if (suppressJobBundleUiSync) return currentJobBundle || ensureJobBundleInitialized();
+  const bundle = ensureJobBundleInitialized();
+  bundle.sharedState = collectSharedJobState();
+  let selectedOperation = getSelectedOperationItem(bundle);
+  if (!selectedOperation) {
+    selectedOperation = normalizeBundleItem({ state: collectOperationState(), label: '' }, bundle.operations.length);
+    bundle.operations.push(selectedOperation);
+    bundle.selectedOperationId = selectedOperation.id;
+  }
+  selectedOperation.state = cloneJson(collectOperationState()) || {};
+  selectedOperation.mode = selectedOperation.state.activeMode || selectedOperation.mode || 'hotTap';
+  selectedOperation.operationType = formatOperationType(inferOperationType(buildCombinedState(bundle.sharedState, selectedOperation.state)));
+  selectedOperation.updatedAtIso = new Date().toISOString();
+  const typedLabel = String(jobOperationLabelEl?.value || selectedOperation.label || '').trim();
+  if (typedLabel) {
+    selectedOperation.label = typedLabel;
+  } else if (!selectedOperation.label || isAutoOperationLabel(selectedOperation.label)) {
+    selectedOperation.label = createOperationLabel(selectedOperation.operationType, bundle.operations.filter((operation) => operation.id !== selectedOperation.id));
+  }
+  syncBundleJobType(bundle);
+  if (options.render !== false) renderOperationManager();
+  return bundle;
+}
+
+function buildPersistedJobBundlePayload(bundle = currentJobBundle) {
+  const normalized = normalizeJobBundle(bundle);
+  return {
+    version: JOB_BUNDLE_VERSION,
+    selectedOperationId: normalized.selectedOperationId,
+    sharedState: cloneJson(normalized.sharedState) || {},
+    operations: normalized.operations.map((operation) => ({
+      id: operation.id,
+      label: operation.label,
+      operationType: operation.operationType,
+      mode: operation.mode,
+      createdAtIso: operation.createdAtIso,
+      updatedAtIso: operation.updatedAtIso,
+      state: cloneJson(operation.state) || {}
+    }))
+  };
+}
+
+function applyJobBundle(bundle, options = {}) {
+  suppressJobBundleUiSync = true;
+  currentJobBundle = normalizeJobBundle(bundle, options.record || null);
+  const selectedOperation = getSelectedOperationItem(currentJobBundle);
+  applyJobState(buildCombinedState(currentJobBundle.sharedState, selectedOperation?.state || {}));
+  renderOperationManager();
+  suppressJobBundleUiSync = false;
+}
+
+function selectOperationById(operationId, options = {}) {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  if (!bundle.operations.some((operation) => operation.id === operationId)) return;
+  bundle.selectedOperationId = operationId;
+  const selectedOperation = getSelectedOperationItem(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  if (options.persist !== false) persistCurrentJob({ render: false });
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+}
+
+function addOperationForMode(mode, options = {}) {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const currentOperation = getSelectedOperationItem(bundle);
+  const nextState = options.duplicateCurrent && currentOperation
+    ? cloneJson(currentOperation.state)
+    : buildBlankOperationState(mode, currentOperation?.state || collectOperationState());
+  if (!options.duplicateCurrent) nextState.activeMode = modeForOperationType(mode);
+  const nextOperation = normalizeBundleItem({ state: nextState, label: '' }, bundle.operations.length);
+  nextOperation.label = createOperationLabel(nextOperation.operationType, bundle.operations);
+  bundle.operations.push(nextOperation);
+  bundle.selectedOperationId = nextOperation.id;
+  syncBundleJobType(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, nextOperation.state));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  persistCurrentJob({ render: false });
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+}
+
+function deleteCurrentOperationItem() {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const currentOperation = getSelectedOperationItem(bundle);
+  if (!currentOperation) return;
+  if (bundle.operations.length === 1) {
+    const replacementState = buildBlankOperationState(currentOperation.mode || 'hotTap', currentOperation.state || collectOperationState());
+    const replacement = normalizeBundleItem({ state: replacementState, label: currentOperation.label || '' }, 0);
+    replacement.label = currentOperation.label || createOperationLabel(replacement.operationType, []);
+    bundle.operations = [replacement];
+    bundle.selectedOperationId = replacement.id;
+  } else {
+    const currentIndex = bundle.operations.findIndex((operation) => operation.id === currentOperation.id);
+    bundle.operations = bundle.operations.filter((operation) => operation.id !== currentOperation.id);
+    const fallback = bundle.operations[Math.max(0, currentIndex - 1)] || bundle.operations[0];
+    bundle.selectedOperationId = fallback.id;
+  }
+  syncBundleJobType(bundle);
+  const selectedOperation = getSelectedOperationItem(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  persistCurrentJob({ render: false });
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+}
+
 function buildStateFromRecord(record = {}) {
+  if (record?.jobBundle?.operations?.length) {
+    const bundle = normalizeJobBundle(record.jobBundle, record);
+    const selectedOperation = getSelectedOperationItem(bundle);
+    return buildCombinedState(bundle.sharedState, selectedOperation?.state || {});
+  }
   const state = { ...(record.state || {}) };
   const opRaw = String(record?.meta?.operationType || '').trim();
   const op = opRaw.toLowerCase();
@@ -2189,22 +2742,15 @@ function getStateFields() {
 }
 
 function collectJobState() {
-  const state = {};
-  getStateFields().forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (el.type === 'checkbox') state[id] = el.checked;
-    else state[id] = el.value;
-  });
-  state.activeMode = getActiveWorkflowMode();
-  state.calcMode = getActiveCalcMode();
-  state.lineStopMdUserEdited = lsMdEl?.dataset.userEdited === 'true';
-  return state;
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const selectedOperation = getSelectedOperationItem(bundle);
+  return buildCombinedState(bundle.sharedState, selectedOperation?.state || {});
 }
 
-function persistCurrentJob() {
+function persistCurrentJob(options = {}) {
   try {
-    localStorage.setItem(JOB_STATE_KEY, JSON.stringify(collectJobState()));
+    const bundle = syncCurrentOperationItemFromUi({ render: options.render !== false }) || ensureJobBundleInitialized();
+    localStorage.setItem(JOB_STATE_KEY, JSON.stringify(buildPersistedJobBundlePayload(bundle)));
   } catch {}
 }
 
@@ -2221,12 +2767,17 @@ function applyJobState(state) {
     else delete lsMdEl.dataset.userEdited;
   }
   if (CALC_SCREEN_MODES.has(normalizeMode(state.calcMode))) {
-    try { localStorage.setItem(CALC_MODE_KEY, normalizeMode(state.calcMode)); } catch {}
+    const calcMode = normalizeMode(state.calcMode);
+    try { localStorage.setItem(CALC_MODE_KEY, calcMode); } catch {}
+    syncCalcModeButtons(calcMode);
+    if (document.body.dataset.activeScreen === 'calc') setMode(calcMode);
   }
   if (WORKFLOW_SCREEN_MODES.has(normalizeMode(state.activeMode))) {
     setMode(state.activeMode);
   }
   setLineStopVariant(state.lineStopVariant || 'standard');
+  const operationTypeEl = document.getElementById('operationType');
+  if (operationTypeEl && state.operationType) operationTypeEl.value = state.operationType;
   updateJobInfoSummary();
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
 }
@@ -2235,7 +2786,9 @@ function restoreCurrentJob() {
   try {
     const raw = localStorage.getItem(JOB_STATE_KEY);
     if (!raw) return;
-    applyJobState(JSON.parse(raw));
+    const parsed = JSON.parse(raw);
+    if (parsed?.operations?.length || parsed?.sharedState) applyJobBundle(parsed);
+    else applyJobState(parsed);
     if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   } catch {}
 }
@@ -2249,7 +2802,9 @@ function sanitizeLoadedJobState(state) {
   }
   if (!next.activeMode) {
     const op = String(next.operationType || '').toLowerCase();
-    next.activeMode = op === 'linestop' ? 'hotTap' : 'hotTap';
+    if (op.includes('completion')) next.activeMode = 'completionPlug';
+    else if (op.includes('line stop') || op.includes('hi-stop') || op.includes('histop') || op.includes('htp')) next.activeMode = 'lineStop';
+    else next.activeMode = 'hotTap';
   }
   return next;
 }
@@ -2280,7 +2835,8 @@ function loadRecordIntoCalculator(record, options = {}) {
     const jobsPanelEl = document.getElementById('jobsPanel');
     if (jobsPanelEl) jobsPanelEl.classList.remove('active');
   } catch {}
-  applyJobState(state);
+  if (record?.jobBundle?.operations?.length) applyJobBundle(record.jobBundle, { record });
+  else applyJobState(state);
 
   const directMap = {
     jobClient: record?.job?.client,
@@ -2348,6 +2904,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   }, 80);
 
   persistCurrentJob();
+  renderOperationManager();
   updateJobInfoSummary();
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   if (jobsCloudStatusEl && options.message !== false) {
@@ -2392,8 +2949,13 @@ function saveHistory(items) {
 }
 
 function inferOperationType(state = collectJobState()) {
-  const activeMode = state.activeMode || document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
-  if (activeMode === 'lineStop') return 'Line Stop';
+  const activeMode = state.activeMode || document.querySelector('.workflow-submode-btn.active')?.dataset.mode || document.querySelector('.calc-submode-btn.active')?.dataset.mode || 'bco';
+  if (activeMode === 'lineStop') {
+    const variant = String(state.lineStopVariant || getLineStopVariant() || '').trim();
+    if (variant === 'htp') return 'HTP Hot Tap';
+    if (variant === 'hiStop') return 'Hi-Stop';
+    return 'Line Stop';
+  }
   if (activeMode === 'completionPlug') return 'Completion Plug';
   if (activeMode === 'htp') return 'HTP Hot Tap';
   if (activeMode === 'hotTap' || activeMode === 'eta') return 'Hot Tap';
@@ -2410,10 +2972,14 @@ function inferOperationType(state = collectJobState()) {
 
 function buildJobRecord(state = collectJobState()) {
   refreshBcoState();
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const persistedBundle = buildPersistedJobBundlePayload(bundle);
   const materialLabel = bcoMaterialEl?.selectedOptions?.[0]?.textContent || state.bcoPipeMaterial || '—';
   const nominal = state.bcoPipeOD || '—';
   const machineLabelMap = { '360': '360 / 152', '660': '660 / 760', '1200': '1200-M120' };
-  const operationType = inferOperationType(state);
+  const operationType = persistedBundle.operations.length > 1
+    ? buildOperationCountsSummary(persistedBundle.operations)
+    : persistedBundle.operations[0]?.operationType || inferOperationType(state);
   const savedAtIso = new Date().toISOString();
   const etaRpm = etaRpmDisplayEl?.textContent?.trim() || '—';
   const etaRange = etaRangeDisplayEl?.textContent?.trim() || '—';
@@ -2428,6 +2994,7 @@ function buildJobRecord(state = collectJobState()) {
     meta: {
       title,
       operationType,
+      operationCount: persistedBundle.operations.length,
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
@@ -2445,6 +3012,7 @@ function buildJobRecord(state = collectJobState()) {
       technician: state.jobTechnician || '',
       notes: state.jobNotes || ''
     },
+    jobBundle: persistedBundle,
     pipe: {
       material: materialLabel,
       nominalSize: nominal,
@@ -3040,6 +3608,7 @@ function renderHistory() {
 window.ensureFirebaseReady = ensureFirebaseReady;
 
 async function saveCurrentJobToHistory() {
+  persistCurrentJob({ render: false });
   const items = getHistory();
   const snapshot = buildHistorySnapshot();
   items.unshift(snapshot);
@@ -3073,6 +3642,7 @@ async function saveCurrentJobToHistory() {
 }
 
 function resetCurrentJob() {
+  currentJobBundle = null;
   localStorage.removeItem(JOB_STATE_KEY);
   sessionStorage.removeItem('bcoCalculated');
   localStorage.removeItem('bcoData');
@@ -3119,6 +3689,33 @@ if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
   const collapsed = !jobInfoSectionEl?.classList.contains('collapsed');
   setJobInfoCollapsed(collapsed);
 });
+
+if (jobOperationSelectEl) {
+  jobOperationSelectEl.addEventListener('change', (event) => {
+    selectOperationById(event.target.value);
+  });
+}
+
+if (jobOperationLabelEl) {
+  const syncOperationLabel = () => {
+    const bundle = ensureJobBundleInitialized();
+    const selectedOperation = getSelectedOperationItem(bundle);
+    if (!selectedOperation) return;
+    selectedOperation.label = String(jobOperationLabelEl.value || '').trim();
+    selectedOperation.updatedAtIso = new Date().toISOString();
+    renderOperationManager();
+    persistCurrentJob({ render: false });
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+  };
+  jobOperationLabelEl.addEventListener('input', syncOperationLabel);
+  jobOperationLabelEl.addEventListener('change', syncOperationLabel);
+}
+
+if (addHotTapOpBtnEl) addHotTapOpBtnEl.addEventListener('click', () => addOperationForMode('hotTap'));
+if (addLineStopOpBtnEl) addLineStopOpBtnEl.addEventListener('click', () => addOperationForMode('lineStop'));
+if (addCompletionOpBtnEl) addCompletionOpBtnEl.addEventListener('click', () => addOperationForMode('completionPlug'));
+if (duplicateOperationBtnEl) duplicateOperationBtnEl.addEventListener('click', () => addOperationForMode(getSelectedOperationItem()?.mode || 'hotTap', { duplicateCurrent: true }));
+if (deleteOperationBtnEl) deleteOperationBtnEl.addEventListener('click', deleteCurrentOperationItem);
 
 [...document.querySelectorAll('input, select, textarea')].forEach(el => {
   el.addEventListener('input', persistCurrentJob);
@@ -3237,6 +3834,7 @@ window.addEventListener('load', async () => {
   calcHiStop();
   calcCompletionPlug();
   initEtaCalculator();
+  renderOperationManager();
   persistCurrentJob();
   renderHistory();
   updateUnsyncedCount();
@@ -3349,7 +3947,8 @@ window.addEventListener('load', async () => {
     const location=document.getElementById('jobLocation')?.value?.trim() || '';
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
     const machine=document.getElementById('machineType')?.value?.trim() || '—';
-    const operation=document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
+    const selectedOperation=window.tapCalcGetSelectedOperation?.() || null;
+    const operation=selectedOperation?.label || selectedOperation?.operationType || document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
     const jobNumber=document.getElementById('jobNumber')?.value?.trim() || '—';
     const technician=document.getElementById('jobTechnician')?.value?.trim() || '—';
     const pipe=getText('summaryPipe');
@@ -3514,7 +4113,7 @@ window.addEventListener('load', async () => {
     const activeMode=getActiveWorkflowMode();
     const activeLabel=getActiveWorkflowLabel();
     const stage=document.getElementById('cardStageStat');
-    if(stage) stage.textContent=operation === 'Hot Tap' ? activeLabel : operation;
+    if(stage) stage.textContent=activeLabel;
     const focusStage=document.getElementById('cardFocusStage');
     if(focusStage) focusStage.textContent=activeLabel;
     const focusMachine=document.getElementById('cardFocusMachine');
@@ -3610,9 +4209,10 @@ window.addEventListener('load', async () => {
     document.getElementById('cardFocusJumpBtn')?.addEventListener('click', ()=>focusActiveCardPanel(getActiveWorkflowMode()));
   }
   function syncOperationSelection(){
+    const selectedMode = normalizeMode(window.tapCalcGetSelectedOperation?.()?.state?.activeMode);
     const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
     const map={'Hot Tap':'hotTap','Line Stop':'lineStop','Completion Plug':'completionPlug'};
-    const target=map[operation] || 'hotTap';
+    const target=WORKFLOW_SCREEN_MODES.has(selectedMode) ? selectedMode : (map[operation] || 'hotTap');
     const active=getActiveWorkflowMode();
     if(active !== target) window.setMode(target);
   }
@@ -4678,7 +5278,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha153';
+const TC63_VERSION = '3.0.0-alpha154';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -4920,7 +5520,7 @@ const TC63_VERSION = '3.0.0-alpha153';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha153';
+const VERSION = '3.0.0-alpha154';
 
   function tc65GetJobs() {
     try {
@@ -5082,9 +5682,9 @@ const VERSION = '3.0.0-alpha153';
   setTimeout(() => {
     try {
       const badge = document.querySelector('.version-badge');
-      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-04-19`;
+      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-11`;
       const title = document.querySelector('.top-app-title');
-      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-04-19`;
+      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-11`;
       tc65RenderDetails();
     } catch {}
   }, 0);
@@ -5457,8 +6057,14 @@ const VERSION = '3.0.0-alpha153';
     } catch {}
   }
   function hardShowScreen(name){
+    if (typeof window.tapCalcSetScreen === 'function') {
+      const result = window.tapCalcSetScreen(name);
+      if (name === 'jobs') clearLibraryTrap();
+      return result;
+    }
     const views={home:$('homeScreen'),job:$('jobScreen'),calc:$('calcScreen'),card:$('cardScreen'),jobs:$('jobsScreen'),ref:$('refScreen')};
     document.querySelectorAll('.screen-tab[data-screen]').forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
+    document.body.dataset.activeScreen = name;
     Object.entries(views).forEach(([k,v])=>{ if(v){ const on=k===name; v.classList.toggle('active', on); v.style.pointerEvents = on ? 'auto' : 'none'; if(!on && k==='jobs'){ v.style.zIndex='0'; } else if(on && k==='jobs'){ v.style.zIndex=''; } } });
     document.body.classList.toggle('show-library-screen', name==='jobs');
     try { localStorage.setItem('tapcalcV3Screen', name); } catch {}
@@ -5686,7 +6292,16 @@ const VERSION = '3.0.0-alpha153';
     const loadBtn = e.target.closest('#jobsLoadSelectedBtn');
     if(loadBtn){ e.preventDefault(); e.stopPropagation(); if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation(); hardLoadSelectedJob(); return; }
     const tab = e.target.closest('.screen-tab[data-screen]');
-    if(tab && tab.dataset.screen === 'jobs'){ setTimeout(()=>{ forceLocalLibrary(); bindLoadButton(); }, 0); }
+    if(tab && tab.dataset.screen === 'jobs'){
+      setTimeout(()=>{
+        try {
+          if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('jobs');
+          else if (typeof showScreen === 'function') showScreen('jobs');
+        } catch {}
+        forceLocalLibrary();
+        bindLoadButton();
+      }, 0);
+    }
     if(tab && tab.dataset.screen !== 'jobs'){ setTimeout(()=> showScreen(tab.dataset.screen), 0); }
     if(e.target.closest('[data-reference-target="garlock600"]') || (e.target.id === 'referenceViewSelect' && $('referenceViewSelect')?.value === 'garlock600')) setTimeout(initGarlock, 0);
   }, true);
@@ -8118,7 +8733,7 @@ const VERSION = '3.0.0-alpha153';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha153';
+const VERSION = '3.0.0-alpha154';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -9408,7 +10023,7 @@ const VERSION = '3.0.0-alpha153';
         setWorkflowStage('pipe');
         break;
       case 'workflowPipeNextBtn':
-        setWorkflowStage('hotTap');
+        setWorkflowStage(normalizeMode(window.getActiveWorkflowMode?.() || 'hotTap'));
         break;
       default:
         return false;
@@ -9483,7 +10098,7 @@ const VERSION = '3.0.0-alpha153';
   function calcModeForEntry(preferredMode){
     const preferred = String(preferredMode || '').trim();
     if (calcModes.has(preferred)) return preferred;
-    return getStoredCalcMode();
+    return typeof window.getStoredCalcMode === 'function' ? window.getStoredCalcMode() : 'bco';
   }
 
   function applyCalcMode(preferredMode){
