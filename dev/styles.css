@@ -3696,7 +3696,8 @@ body.measurement-page {
 
 
 /* ===== 3.0.0-alpha11 library + reference pass ===== */
-.ref-screen-topbar{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:14px 16px;margin-bottom:12px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:18px;}
+.ref-screen-topbar{padding:16px 18px;margin-bottom:14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:18px;}
+.ref-screen-topbar h3{margin:4px 0 0;}
 .ref-top-actions{display:flex;gap:8px;flex-wrap:wrap;}
 .ref-category-strip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:12px;}
 .ref-category-card{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;border-radius:16px;border:1px solid rgba(255,255,255,.1);background:#101a2a;color:#eef5ff;}
@@ -3704,7 +3705,7 @@ body.measurement-page {
 .ref-category-card.active{background:#204a9c;color:#fff;border-color:rgba(255,255,255,.18);}
 .reference-workspace-card{padding-top:16px !important;}
 .reference-screen-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08);}
-.compact-reference-picker{min-width:220px;max-width:280px;margin-bottom:0 !important;}
+.compact-reference-picker{display:none;min-width:220px;max-width:280px;margin-bottom:0 !important;}
 .compact-reference-picker label{margin-bottom:6px;}
 .library-lane-switch{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
 .library-lane-btn{padding:11px 12px;border-radius:14px;border:1px solid rgba(255,255,255,.1);background:#101a2a;color:#dbe7ff;font-weight:700;}
@@ -3715,7 +3716,7 @@ body.measurement-page {
 .jobs-status-strip{margin-bottom:12px;}
 @media (min-width:901px){.jobs-workspace-grid{grid-template-columns:1fr;}.library-lane-switch{max-width:320px;}}
 @media (max-width:900px){.ref-screen-topbar{flex-direction:column;}.ref-top-actions{width:100%;}.ref-top-actions button{flex:1;min-width:0;}.ref-category-strip{grid-template-columns:1fr 1fr;}}
-@media (max-width:700px){.ref-category-strip{grid-template-columns:1fr;}.reference-screen-head{align-items:flex-start;}.compact-reference-picker{min-width:0;max-width:none;width:100%;}.library-lane-switch{position:sticky;top:58px;z-index:35;background:#081a30;padding:8px 0 4px;}}
+@media (max-width:700px){.ref-category-strip{grid-template-columns:1fr;}.reference-screen-head{align-items:flex-start;}.compact-reference-picker{display:block;min-width:0;max-width:none;width:100%;}.library-lane-switch{position:sticky;top:58px;z-index:35;background:#081a30;padding:8px 0 4px;}}
 
 
 /* ===== 3.0.0-alpha12 card workflow pass ===== */
