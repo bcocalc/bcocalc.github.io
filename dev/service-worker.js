@@ -1,13 +1,13 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha154';
+﻿const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha155';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha154",
-  "./measurement.js?v=3.0.0-alpha154",
+  "./styles.css?v=3.0.0-alpha155",
+  "./measurement.js?v=3.0.0-alpha155",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha154",
+  "./firebase-config.js?v=3.0.0-alpha155",
   "./team-logo.png"
 ];
 
@@ -52,3 +52,5 @@ self.addEventListener("fetch", (event) => {
     }))
   );
 });
+
+
