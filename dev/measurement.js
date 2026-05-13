@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha176';
+const BUILD_VERSION = '3.0.0-alpha177';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha176 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha177 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -858,6 +858,7 @@ const referenceLibraryItems = [
   { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
   { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
   { id: 'plant600', group: 'Field Reference', label: '600# Plant Series', description: 'Higher class flange reference', keywords: '600 plant flange jack bolt packing wrench' },
+  { id: 'gaskettorque', group: 'Field Reference', label: 'Gasket Torque', description: 'Garlock RF torque by class, size, and gasket type', keywords: 'garlock gasket torque raised face flange flexseal edge kammprofile cmg jacketed 150 300 400 600' },
   { id: 'garlock600', group: 'Field Reference', label: 'Graphonic 600# Torque', description: 'Garlock preferred and minimum torque lookup', keywords: 'garlock graphonic 600 torque gasket stress preferred minimum' }
 ];
 
@@ -1034,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha176';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha176';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha177';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha177';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2399,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha176', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha177', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6368,7 +6369,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha176';
+const TC63_VERSION = '3.0.0-alpha177';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6614,7 +6615,7 @@ const TC63_VERSION = '3.0.0-alpha176';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha176';
+const VERSION = '3.0.0-alpha177';
 
   function tc65GetJobs() {
     try {
@@ -9827,7 +9828,7 @@ const VERSION = '3.0.0-alpha176';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha176';
+const VERSION = '3.0.0-alpha177';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11567,7 +11568,7 @@ const VERSION = '3.0.0-alpha176';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha176 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha177 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12023,5 +12024,250 @@ const VERSION = '3.0.0-alpha176';
     if (event.target?.id !== 'jobOperationSelect') return;
     setTimeout(() => scheduleLoadedJobWorkflow(window.__tapcalcLastBundledLoadRecord || null, { quick: true }), 30);
   });
-  window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
+window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
+})();
+
+
+/* ===== 3.0.0-alpha177 gasket torque reference ===== */
+(function(){
+  const CE = 'Contact Engineering';
+  const GASKET_TORQUE_TYPES = [
+    { key: 'flexseal', label: 'FLEXSEAL' },
+    { key: 'edge', label: 'EDGE' },
+    { key: 'kammprofile', label: 'Kammprofile' },
+    { key: 'cmg', label: 'CMG' },
+    { key: 'jacketed', label: 'Jacketed Gasket' }
+  ];
+  const RAW_GASKET_TORQUE_DATA = {
+    '150': [
+      ['1/2','4','0.50',[16,47],[9,52],[8,42],[7,37],[18,53]],
+      ['3/4','4','0.50',[22,60],[12,60],[11,54],[10,60],[25,60]],
+      ['1','4','0.50',[30,60],[15,60],[13,60],[13,60],[27,60]],
+      ['1-1/4','4','0.50',[33,60],[16,60],[24,60],[20,60],[42,60]],
+      ['1-1/2','4','0.50',[47,60],[23,60],[31,60],[26,60],[59,60]],
+      ['2','4','0.63',[74,120],[36,120],[55,120],[52,120],[94,120]],
+      ['2-1/2','4','0.63',[87,120],[43,120],[63,120],[61,120],[108,120]],
+      ['3','4','0.63',[120,120],[63,120],[102,120],[89,120],[120,120]],
+      ['4','8','0.63',[92,120],[47,120],[76,120],[63,120],[111,120]],
+      ['5','8','0.75',[124,200],[63,200],[106,200],[88,200],[189,200]],
+      ['6','8','0.75',[178,200],[89,200],[137,200],[111,200],[173,200]],
+      ['8','8','0.75',[200,200],[128,200],[190,200],[150,200],[200,200]],
+      ['10','12','0.88',[236,320],[120,320],[178,320],[141,320],[300,320]],
+      ['12','12','0.88',[320,320],[163,320],[178,320],[187,320],[320,320]],
+      ['14','12','1.00',[408,490],[209,490],[268,490],[238,490],[451,490]],
+      ['16','16','1.00',[412,490],[210,490],[267,490],[226,490],[449,490]],
+      ['18','16','1.13',[649,710],[328,710],[381,710],[336,710],[562,710]],
+      ['20','20','1.13',[572,710],[289,710],[335,710],[296,710],[562,710]],
+      ['24','20','1.25',[820,1000],[415,1000],[438,1000],[422,1000],[740,1000]]
+    ],
+    '300': [
+      ['1/2','4','0.50',[16,47],[9,52],[8,42],[9,37],[18,53]],
+      ['3/4','4','0.63',[28,84],[15,88],[14,68],[16,67],[31,92]],
+      ['1','4','0.63',[38,114],[19,115],[17,84],[21,89],[34,102]],
+      ['1-1/4','4','0.63',[41,120],[20,120],[30,120],[33,120],[53,120]],
+      ['1-1/2','4','0.75',[66,198],[32,191],[43,200],[48,200],[81,200]],
+      ['2','8','0.63',[37,112],[18,109],[27,120],[35,120],[47,120]],
+      ['2-1/2','8','0.75',[48,145],[24,144],[35,177],[45,188],[60,180]],
+      ['3','8','0.75',[71,200],[35,200],[57,200],[66,200],[75,200]],
+      ['4','8','0.75',[103,200],[52,200],[84,200],[94,200],[123,200]],
+      ['5','8','0.75',[124,200],[63,200],[106,200],[117,200],[189,200]],
+      ['6','12','0.75',[118,200],[60,200],[92,200],[99,200],[116,200]],
+      ['8','12','0.88',[194,320],[98,320],[146,320],[154,320],[207,320]],
+      ['10','16','1.00',[206,490],[105,490],[155,490],[164,490],[262,490]],
+      ['12','16','1.13',[309,710],[156,710],[171,710],[239,710],[341,710]],
+      ['14','20','1.13',[269,710],[138,710],[177,710],[209,710],[297,710]],
+      ['16','20','1.25',[399,1000],[203,1000],[259,1000],[292,1000],[435,1000]],
+      ['18','24','1.25',[478,1000],[241,1000],[280,1000],[330,1000],[414,1000]],
+      ['20','24','1.25',[526,1000],[266,1000],[308,1000],[364,1000],[517,1000]],
+      ['24','24','1.50',[723,1600],[366,1600],[386,1600],[497,1600],[652,1600]]
+    ],
+    '400': [
+      ['1/2','4','0.50',[16,47],[17,52],[8,42],CE,[18,53]],
+      ['3/4','4','0.63',[28,84],[29,88],[14,68],CE,[31,92]],
+      ['1','4','0.63',[38,114],[38,115],[17,84],CE,[34,102]],
+      ['1-1/4','4','0.63',[41,120],[40,120],[30,120],CE,[53,120]],
+      ['1-1/2','4','0.75',[66,198],[64,191],[43,200],CE,[81,200]],
+      ['2','8','0.63',[37,112],[36,109],[27,120],CE,[47,120]],
+      ['2-1/2','8','0.75',[48,145],[48,144],[35,177],CE,[60,180]],
+      ['3','8','0.75',[71,200],[71,200],[57,200],CE,[75,200]],
+      ['4','8','0.88',[149,320],[120,320],[97,320],CE,[142,320]],
+      ['5','8','0.88',[190,320],[146,320],[123,320],CE,[218,320]],
+      ['6','12','0.88',[173,320],[138,320],[106,320],CE,[133,320]],
+      ['8','12','1.00',[280,490],[229,490],[170,490],CE,[241,490]],
+      ['10','16','1.13',[314,710],[230,691],[170,710],CE,[287,710]],
+      ['12','16','1.25',[456,1000],[345,1000],[188,941],CE,[376,1000]],
+      ['14','20','1.25',[373,1000],[304,911],[195,975],CE,[328,983]],
+      ['16','20','1.38',[532,1360],[445,1335],[283,1360],CE,[475,1360]],
+      ['18','24','1.38',[567,1360],[527,1360],[306,1360],CE,[452,1357]],
+      ['20','24','1.50',[604,1600],[563,1600],[326,1600],CE,[547,1600]],
+      ['24','24','1.75',[962,2887],[975,2924],[513,2566],CE,[868,2603]]
+    ],
+    '600': [
+      ['1/2','4','0.50',[16,47],[17,52],[8,42],CE,[18,53]],
+      ['3/4','4','0.63',[28,84],[29,88],[14,68],CE,[31,92]],
+      ['1','4','0.63',[38,114],[38,115],[17,84],CE,[34,102]],
+      ['1-1/4','4','0.63',[41,120],[40,120],[30,120],CE,[53,120]],
+      ['1-1/2','4','0.75',[66,198],[64,191],[43,200],CE,[81,200]],
+      ['2','8','0.63',[37,112],[36,109],[27,120],CE,[47,120]],
+      ['2-1/2','8','0.75',[48,145],[48,144],[35,177],CE,[60,180]],
+      ['3','8','0.75',[71,200],[71,200],[57,200],CE,[75,200]],
+      ['4','8','0.88',[149,320],[120,320],[97,320],CE,[142,320]],
+      ['5','8','1.00',[221,490],[170,490],[143,490],CE,[254,490]],
+      ['6','12','1.00',[202,490],[160,480],[123,490],CE,[155,466]],
+      ['8','12','1.13',[307,710],[251,710],[187,710],CE,[264,710]],
+      ['10','16','1.25',[346,1000],[254,763],[188,938],CE,[317,951]],
+      ['12','20','1.25',[365,1000],[276,829],[151,753],CE,[301,904]],
+      ['14','20','1.38',[408,1224],[332,996],[213,1066],CE,[358,1075]],
+      ['16','20','1.50',[514,1543],[430,1291],[274,1370],CE,[460,1379]],
+      ['18','20','1.63',[757,2200],[704,2112],[409,2044],CE,[604,1811]],
+      ['20','24','1.63',[695,2085],[647,1941],[375,1875],CE,[629,1886]],
+      ['24','24','1.88',[1103,3308],[1117,3350],[588,2940],CE,[994,2983]]
+    ]
+  };
+  const GASKET_TORQUE_DATA = Object.fromEntries(Object.entries(RAW_GASKET_TORQUE_DATA).map(([flangeClass, rows]) => [
+    flangeClass,
+    rows.map((row) => ({
+      flangeClass,
+      size: row[0],
+      bolts: row[1],
+      boltSize: row[2],
+      flexseal: row[3],
+      edge: row[4],
+      kammprofile: row[5],
+      cmg: row[6],
+      jacketed: row[7],
+      source: flangeClass === '150' || flangeClass === '300' ? 'Scan p.2' : 'Scan p.3'
+    }))
+  ]));
+
+  function gasketTorqueEl(id) {
+    return document.getElementById(id);
+  }
+
+  function gasketTorqueEscape(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function gasketTorqueType() {
+    const key = gasketTorqueEl('gasketTorqueTypeSelect')?.value || 'flexseal';
+    return GASKET_TORQUE_TYPES.find((type) => type.key === key) || GASKET_TORQUE_TYPES[0];
+  }
+
+  function gasketTorqueClass() {
+    return gasketTorqueEl('gasketTorqueClassSelect')?.value || '150';
+  }
+
+  function gasketTorqueRows() {
+    return GASKET_TORQUE_DATA[gasketTorqueClass()] || GASKET_TORQUE_DATA['150'] || [];
+  }
+
+  function formatGasketTorque(value, mode) {
+    if (Array.isArray(value)) return `${mode === 'min' ? value[0] : value[1]} ft-lbs`;
+    return value || '-';
+  }
+
+  function getGasketTorqueNote(value, type) {
+    if (value === CE) return `${type.label} torque is listed as Contact Engineering for this flange class.`;
+    return `${type.label} torque per bolt.`;
+  }
+
+  function populateGasketTorqueSizeSelect() {
+    const select = gasketTorqueEl('gasketTorqueSizeSelect');
+    if (!select) return;
+    const rows = gasketTorqueRows();
+    const previous = select.value;
+    select.innerHTML = rows.map((row) => `<option value="${gasketTorqueEscape(row.size)}">${gasketTorqueEscape(row.size)}"</option>`).join('');
+    if (previous && rows.some((row) => row.size === previous)) select.value = previous;
+    if (!select.value && rows[0]?.size) select.value = rows[0].size;
+  }
+
+  function renderGasketTorqueTable() {
+    const body = gasketTorqueEl('gasketTorqueBody');
+    if (!body) return;
+    const type = gasketTorqueType();
+    const query = String(gasketTorqueEl('gasketTorqueSearchInput')?.value || '').trim().toLowerCase();
+    const rows = gasketTorqueRows().filter((row) => {
+      if (!query) return true;
+      const value = row[type.key];
+      const torqueText = Array.isArray(value) ? value.join(' ') : value;
+      return `${row.flangeClass} ${row.size} ${row.bolts} ${row.boltSize} ${torqueText} ${type.label} ${row.source}`.toLowerCase().includes(query);
+    });
+    body.innerHTML = rows.map((row) => {
+      const torque = row[type.key];
+      const note = getGasketTorqueNote(torque, type);
+      const rowClass = torque === CE ? ' class="gasket-torque-contact-row"' : '';
+      return `<tr${rowClass}><td>${gasketTorqueEscape(row.size)}"</td><td>${gasketTorqueEscape(row.bolts)}</td><td>${gasketTorqueEscape(row.boltSize)}</td><td>${gasketTorqueEscape(formatGasketTorque(torque, 'min'))}</td><td>${gasketTorqueEscape(formatGasketTorque(torque, 'preferred'))}</td><td>${gasketTorqueEscape(note)}</td></tr>`;
+    }).join('');
+  }
+
+  function updateGasketTorqueSummary() {
+    const rows = gasketTorqueRows();
+    const size = gasketTorqueEl('gasketTorqueSizeSelect')?.value || rows[0]?.size || '';
+    const row = rows.find((item) => item.size === size) || rows[0];
+    const type = gasketTorqueType();
+    if (!row) return;
+    const torque = row[type.key];
+    const setText = (id, value) => { const el = gasketTorqueEl(id); if (el) el.textContent = value || '-'; };
+    setText('gasketTorqueBoltCount', row.bolts);
+    setText('gasketTorqueBoltSize', row.boltSize);
+    setText('gasketTorqueMinTorque', formatGasketTorque(torque, 'min'));
+    setText('gasketTorquePreferredTorque', formatGasketTorque(torque, 'preferred'));
+    setText('gasketTorqueSource', row.source);
+    const note = gasketTorqueEl('gasketTorqueNote');
+    if (note) {
+      note.textContent = torque === CE
+        ? `${type.label} values for ${gasketTorqueClass()}# class say Contact Engineering. Use another listed gasket type or confirm with engineering before using CMG.`
+        : `${gasketTorqueClass()}# RF, ${row.size}" pipe, ${type.label}: minimum ${formatGasketTorque(torque, 'min')} and preferred ${formatGasketTorque(torque, 'preferred')} per bolt.`;
+      note.dataset.state = torque === CE ? 'warn' : 'ok';
+    }
+  }
+
+  function updateGasketTorqueReference() {
+    populateGasketTorqueSizeSelect();
+    updateGasketTorqueSummary();
+    renderGasketTorqueTable();
+  }
+
+  function initGasketTorqueReference() {
+    const classSelect = gasketTorqueEl('gasketTorqueClassSelect');
+    const sizeSelect = gasketTorqueEl('gasketTorqueSizeSelect');
+    const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
+    const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
+    if (!classSelect || !sizeSelect || !typeSelect) return;
+    if (!classSelect.dataset.alpha177Bound) {
+      classSelect.dataset.alpha177Bound = '1';
+      classSelect.addEventListener('change', updateGasketTorqueReference);
+    }
+    if (!sizeSelect.dataset.alpha177Bound) {
+      sizeSelect.dataset.alpha177Bound = '1';
+      sizeSelect.addEventListener('change', () => {
+        updateGasketTorqueSummary();
+        renderGasketTorqueTable();
+      });
+      sizeSelect.addEventListener('input', updateGasketTorqueSummary);
+    }
+    if (!typeSelect.dataset.alpha177Bound) {
+      typeSelect.dataset.alpha177Bound = '1';
+      typeSelect.addEventListener('change', () => {
+        updateGasketTorqueSummary();
+        renderGasketTorqueTable();
+      });
+    }
+    if (searchInput && !searchInput.dataset.alpha177Bound) {
+      searchInput.dataset.alpha177Bound = '1';
+      searchInput.addEventListener('input', renderGasketTorqueTable);
+    }
+    updateGasketTorqueReference();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('[data-reference-target="gaskettorque"]')) setTimeout(initGasketTorqueReference, 0);
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target?.id === 'referenceViewSelect' && event.target.value === 'gaskettorque') setTimeout(initGasketTorqueReference, 0);
+  }, true);
+  window.addEventListener('pageshow', () => setTimeout(initGasketTorqueReference, 60));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGasketTorqueReference);
+  else setTimeout(initGasketTorqueReference, 0);
+  window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
 })();

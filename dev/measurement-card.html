@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha176">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha177">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha176 - 2026-05-13</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha177 - 2026-05-13</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha176 - 2026-05-13</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha177 - 2026-05-13</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -830,7 +830,7 @@
         <strong id="referenceLibraryCurrent">Decimal / Fraction</strong>
         <small id="referenceLibraryDescription">Quick conversion and full chart</small>
       </div>
-      <span class="reference-library-count">11 refs</span>
+      <span class="reference-library-count">12 refs</span>
     </div>
     <div class="reference-library-shell">
       <button type="button" id="referenceLibraryToggle" class="reference-library-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="referenceLibraryMenu">
@@ -861,6 +861,7 @@
           <option value="fieldcheck">Field Checklists</option>
           <option value="plant150">150# Plant Series</option>
           <option value="plant600">600# Plant Series</option>
+          <option value="gaskettorque">Gasket Torque</option>
           <option value="garlock600">Graphonic 600# Torque</option>
         </optgroup>
       </select>
@@ -1400,6 +1401,62 @@
         <p class="reference-footnote">Source: Garlock Bolt Torque Values for GRAPHONIC Gaskets in ASME B16.5 Class 600# Flanges. Built as structured data, not just an image paste-in.</p>
       </div>
 
+      <div class="reference-view" data-reference-view="gaskettorque">
+        <h3 class="reference-subheading">Gasket Torque</h3>
+        <p class="reference-copy">Garlock raised-face flange torque lookup from the uploaded scan. Pick flange class, pipe size, and gasket type to see minimum and preferred torque per bolt.</p>
+        <div class="reference-grid plant-reference-grid gasket-torque-reference-grid">
+          <div class="reference-card plant-summary-card gasket-torque-summary-card">
+            <h4>Raised Face Torque Lookup</h4>
+            <div class="gasket-torque-controls">
+              <div class="converter-inline plant-select-row gasket-torque-select-row">
+                <label for="gasketTorqueClassSelect">Flange Class</label>
+                <select id="gasketTorqueClassSelect">
+                  <option value="150">150</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                  <option value="600">600</option>
+                </select>
+              </div>
+              <div class="converter-inline plant-select-row gasket-torque-select-row">
+                <label for="gasketTorqueSizeSelect">Pipe Size</label>
+                <select id="gasketTorqueSizeSelect"></select>
+              </div>
+              <div class="converter-inline plant-select-row gasket-torque-select-row">
+                <label for="gasketTorqueTypeSelect">Gasket Type</label>
+                <select id="gasketTorqueTypeSelect">
+                  <option value="flexseal">FLEXSEAL</option>
+                  <option value="edge">EDGE</option>
+                  <option value="kammprofile">Kammprofile</option>
+                  <option value="cmg">CMG</option>
+                  <option value="jacketed">Jacketed Gasket</option>
+                </select>
+              </div>
+            </div>
+            <div class="bolting-summary-grid gasket-torque-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="gasketTorqueBoltCount" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="gasketTorqueBoltSize" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Minimum / Bolt</span><span id="gasketTorqueMinTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Preferred / Bolt</span><span id="gasketTorquePreferredTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Source</span><span id="gasketTorqueSource" class="summary-value">?</span></div>
+            </div>
+            <p id="gasketTorqueNote" class="gasket-torque-note">Values are ft-lbs per bolt for ASME B16.5 raised-face flanges.</p>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row gasket-torque-search-row">
+          <label for="gasketTorqueSearchInput">Filter table</label>
+          <input id="gasketTorqueSearchInput" type="text" placeholder="Search size, bolt count, bolt size, or torque">
+        </div>
+        <div class="glossary-table-wrap bolting-table-wrap gasket-torque-table-wrap">
+          <table class="glossary-table bolting-table gasket-torque-table">
+            <thead>
+              <tr><th>Pipe Size</th><th>Bolts</th><th>Bolt Size</th><th>Min Torque</th><th>Preferred Torque</th><th>Notes</th></tr>
+            </thead>
+            <tbody id="gasketTorqueBody"></tbody>
+          </table>
+        </div>
+        <p class="reference-footnote">Source: uploaded Scan.pdf Garlock Torque Tables pages 2 and 3. Use the job gasket manufacturer's latest instructions when they differ from this field reference.</p>
+      </div>
+
     </div>
   </section>
 
@@ -1553,9 +1610,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha176"></script>
-<script src="stackup-data.js?v=3.0.0-alpha176"></script>
-<script src="measurement.js?v=3.0.0-alpha176"></script>
+<script src="firebase-config.js?v=3.0.0-alpha177"></script>
+<script src="stackup-data.js?v=3.0.0-alpha177"></script>
+<script src="measurement.js?v=3.0.0-alpha177"></script>
   </section>
 </body>
 </html>
