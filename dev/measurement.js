@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha179';
+const BUILD_VERSION = '3.0.0-alpha180';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha179 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha180 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1035,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha179';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha179';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha180';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha180';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha179', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha180', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4971,7 +4971,7 @@ window.addEventListener('load', async () => {
     setScreen(t.dataset.screen);
     if(t.dataset.screen==='card'){
       setTimeout(()=>{
-        try { window.tapCalcSetWorkflowStage?.(localStorage.getItem('tapcalcWorkflowStageV2') || 'setup'); } catch {}
+        try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
         focusActiveCardPanel(getActiveWorkflowMode());
       }, 120);
     }
@@ -4984,7 +4984,7 @@ window.addEventListener('load', async () => {
     if (targetMode) setTimeout(()=>window.setMode(targetMode), 80);
     if (screen === 'card') {
       setTimeout(() => {
-        try { window.tapCalcSetWorkflowStage?.(localStorage.getItem('tapcalcWorkflowStageV2') || 'setup'); } catch {}
+        try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
       }, 80);
     }
   }));
@@ -4992,7 +4992,7 @@ window.addEventListener('load', async () => {
   setScreen(views[saved]?saved:'home');
   if((views[saved]?saved:'home')==='card'){
     setTimeout(()=>{
-      try { window.tapCalcSetWorkflowStage?.(localStorage.getItem('tapcalcWorkflowStageV2') || 'setup'); } catch {}
+      try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
       focusActiveCardPanel(getActiveWorkflowMode());
     }, 120);
   }
@@ -6368,7 +6368,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha179';
+const TC63_VERSION = '3.0.0-alpha180';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6614,7 +6614,7 @@ const TC63_VERSION = '3.0.0-alpha179';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha179';
+const VERSION = '3.0.0-alpha180';
 
   function tc65GetJobs() {
     try {
@@ -9827,7 +9827,7 @@ const VERSION = '3.0.0-alpha179';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha179';
+const VERSION = '3.0.0-alpha180';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11286,7 +11286,7 @@ const VERSION = '3.0.0-alpha179';
       const panel = document.getElementById(panelId);
       if (!panel) return;
       const isTargetPanel = panelId === PANEL_FOR_STAGE[nextStage];
-      panel.classList.toggle('workflow-mode-shell-hidden', isModeStage ? !isTargetPanel : false);
+      panel.classList.toggle('workflow-mode-shell-hidden', !isModeStage || !isTargetPanel);
     });
     if (isModeStage && typeof window.setMode === 'function' && !opts.skipSetMode) {
       try { window.setMode(nextStage); } catch {}
@@ -11383,7 +11383,7 @@ const VERSION = '3.0.0-alpha179';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha179 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha180 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11634,12 +11634,18 @@ const VERSION = '3.0.0-alpha179';
   }
 
   function openScreenCore(name, options = {}){
+    const previousScreen = normalizeScreen(document.body.dataset.activeScreen || 'home');
     const activeScreen = normalizeScreen(name);
     syncVisibleScreens(activeScreen);
     syncTabs(activeScreen);
 
     if (activeScreen === 'calc') {
       applyCalcMode(options.mode);
+    }
+    if (activeScreen === 'card' && previousScreen !== 'card' && options.keepWorkflowStage !== true) {
+      setTimeout(() => {
+        try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
+      }, 40);
     }
     if (activeScreen === 'jobs') {
       const forcedLane = String(options.libraryLane || '').trim();
@@ -11724,7 +11730,7 @@ const VERSION = '3.0.0-alpha179';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha179 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha180 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12184,7 +12190,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha179 gasket torque reference ===== */
+/* ===== 3.0.0-alpha180 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -12390,27 +12396,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha179Bound) {
-      classSelect.dataset.alpha179Bound = '1';
+    if (!classSelect.dataset.alpha180Bound) {
+      classSelect.dataset.alpha180Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha179Bound) {
-      sizeSelect.dataset.alpha179Bound = '1';
+    if (!sizeSelect.dataset.alpha180Bound) {
+      sizeSelect.dataset.alpha180Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha179Bound) {
-      typeSelect.dataset.alpha179Bound = '1';
+    if (!typeSelect.dataset.alpha180Bound) {
+      typeSelect.dataset.alpha180Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha179Bound) {
-      searchInput.dataset.alpha179Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha180Bound) {
+      searchInput.dataset.alpha180Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();
