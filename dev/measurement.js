@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha180';
+const BUILD_VERSION = '3.0.0-alpha181';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha180 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha181 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1035,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha180';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha180';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha181';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha181';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha180', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha181', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6368,7 +6368,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha180';
+const TC63_VERSION = '3.0.0-alpha181';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6614,7 +6614,7 @@ const TC63_VERSION = '3.0.0-alpha180';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha180';
+const VERSION = '3.0.0-alpha181';
 
   function tc65GetJobs() {
     try {
@@ -9827,7 +9827,7 @@ const VERSION = '3.0.0-alpha180';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha180';
+const VERSION = '3.0.0-alpha181';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11178,7 +11178,13 @@ const VERSION = '3.0.0-alpha180';
       const status = stageStatusText(stage);
       const progress = stageStatusKey(stage);
       const state = index < currentIndex ? 'done' : (index === currentIndex ? 'current' : 'upcoming');
-      const detail = stage === current ? `Current - ${status}` : status;
+      const detail = stage === current
+        ? `Current - ${status}`
+        : state === 'done'
+          ? `Done - ${status}`
+          : index === currentIndex + 1
+            ? `Next - ${status}`
+            : `Upcoming - ${status}`;
       return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-stage-state="${state}" data-stage-progress="${progress}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}" ${stage===current ? 'aria-current="step"' : ''}><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${detail}</em></button>`;
     }).join('');
     nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
@@ -11383,7 +11389,7 @@ const VERSION = '3.0.0-alpha180';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha180 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha181 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11730,7 +11736,7 @@ const VERSION = '3.0.0-alpha180';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha180 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha181 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12190,7 +12196,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha180 gasket torque reference ===== */
+/* ===== 3.0.0-alpha181 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -12396,27 +12402,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha180Bound) {
-      classSelect.dataset.alpha180Bound = '1';
+    if (!classSelect.dataset.alpha181Bound) {
+      classSelect.dataset.alpha181Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha180Bound) {
-      sizeSelect.dataset.alpha180Bound = '1';
+    if (!sizeSelect.dataset.alpha181Bound) {
+      sizeSelect.dataset.alpha181Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha180Bound) {
-      typeSelect.dataset.alpha180Bound = '1';
+    if (!typeSelect.dataset.alpha181Bound) {
+      typeSelect.dataset.alpha181Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha180Bound) {
-      searchInput.dataset.alpha180Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha181Bound) {
+      searchInput.dataset.alpha181Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();
