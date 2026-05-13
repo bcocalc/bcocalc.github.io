@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha181">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha182">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha181 - 2026-05-13</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha182 - 2026-05-13</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha181 - 2026-05-13</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha182 - 2026-05-13</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -36,7 +36,6 @@
 
   <nav class="screen-nav" aria-label="Primary">
     <button type="button" class="screen-tab active" data-screen="home">Home</button>
-    <button type="button" class="screen-tab" data-screen="job">Job</button>
     <button type="button" class="screen-tab" data-screen="calc">Tools</button>
     <button type="button" class="screen-tab" data-screen="card">Workflow</button>
     <button type="button" class="screen-tab" data-screen="jobs">Library</button>
@@ -51,7 +50,7 @@
         <p>Start from the current job, jump into quick tools, or head straight to references and shared jobs.</p>
       </div>
       <div class="hero-actions">
-        <button type="button" class="secondary-btn" data-go-screen="job">Start New Job</button>
+        <button type="button" class="secondary-btn" data-go-screen="card">Start Workflow</button>
         <button type="button" class="secondary-btn" data-go-screen="card">Continue Workflow</button>
       </div>
     </div>
@@ -64,7 +63,7 @@
           <p id="homeCurrentJobSubtitle">Set up a customer and location to get rolling.</p>
         </div>
         <div class="home-current-job-actions">
-          <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
+          <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
           <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
         <button type="button" class="secondary-btn" id="homeOpenWorkflowBtn" data-go-screen="card">Open Workflow</button>
         </div>
@@ -514,6 +513,27 @@
         </div>
       </section>
     </div>
+    <section class="workflow-operations-card" id="workflowOperationsCard">
+      <div class="workflow-operations-head">
+        <div>
+          <div class="hero-eyebrow">Operations In This Job</div>
+          <h4>Hot taps, line stops, and completion steps</h4>
+        </div>
+        <p id="workflowJobOperationStatus">1 operation in this job.</p>
+      </div>
+      <div class="workflow-operations-grid">
+        <label class="workflow-setup-field" for="workflowJobOperationSelect"><span>Current Operation</span><select id="workflowJobOperationSelect"></select></label>
+        <label class="workflow-setup-field" for="workflowJobOperationLabel"><span>Operation Name</span><input id="workflowJobOperationLabel" type="text" placeholder="Hot Tap 1"></label>
+      </div>
+      <div class="workflow-operations-actions">
+        <button type="button" id="workflowAddHotTapOpBtn" class="secondary-btn">Add Hot Tap</button>
+        <button type="button" id="workflowAddLineStopOpBtn" class="secondary-btn">Add Line Stop</button>
+        <button type="button" id="workflowAddCompletionOpBtn" class="secondary-btn">Add Completion</button>
+        <button type="button" id="workflowDuplicateOperationBtn" class="secondary-btn">Duplicate</button>
+        <button type="button" id="workflowDeleteOperationBtn" class="secondary-btn danger-btn">Delete</button>
+      </div>
+      <div id="workflowJobOperationPreviewList" class="job-operation-preview workflow-operation-preview" aria-live="polite"></div>
+    </section>
     <div class="workflow-helper-grid workflow-setup-summary-grid">
       <div class="workflow-helper-card"><span>Customer</span><strong id="workflowSetupCustomer">?</strong></div>
       <div class="workflow-helper-card"><span>Location</span><strong id="workflowSetupLocation">?</strong></div>
@@ -528,12 +548,40 @@
       <div>
         <div class="hero-eyebrow">Step 2</div>
         <h3>Pipe / Cutter Setup</h3>
-        <p>Use Tools > BCO to lock in pipe geometry, cutter size, and the BCO result before you move into the job math.</p>
+        <p>Set the pipe, cutter, BCO, and ETA here. The standalone BCO and ETA tools are still available when you just need a quick check.</p>
       </div>
       <div class="workflow-helper-actions">
-        <button type="button" class="secondary-btn" data-go-screen="calc" data-go-mode="bco">Open Tools</button>
+        <button type="button" class="secondary-btn" data-go-screen="calc" data-go-mode="bco">Open Standalone BCO</button>
         <button type="button" id="workflowPipeNextBtn">Continue to Active Stage</button>
       </div>
+    </div>
+    <div id="workflowInlinePipeSetup" class="workflow-pipe-tools-grid">
+      <section class="workflow-setup-form-card workflow-pipe-tool-card">
+        <div class="workflow-tool-card-head">
+          <h4>BCO Setup</h4>
+          <span id="workflowBcoInlineResult">BCO: ?</span>
+        </div>
+        <div class="workflow-setup-grid">
+          <label class="workflow-setup-field" for="workflowBcoPipeMaterial"><span>Pipe Material</span><select id="workflowBcoPipeMaterial" data-workflow-tool-sync="bcoPipeMaterial"></select></label>
+          <label class="workflow-setup-field" for="workflowBcoPipeOD"><span>Pipe Size</span><select id="workflowBcoPipeOD" data-workflow-tool-sync="bcoPipeOD"></select></label>
+          <label class="workflow-setup-field" for="workflowBcoSchedule"><span>Schedule</span><select id="workflowBcoSchedule" data-workflow-tool-sync="bcoSchedule"></select></label>
+          <label class="workflow-setup-field" for="workflowBcoPipeID"><span>Pipe I.D.</span><input id="workflowBcoPipeID" type="number" step="any" placeholder="Pipe I.D." data-workflow-tool-sync="bcoPipeID"></label>
+          <label class="workflow-setup-field" for="workflowBcoCutterOD"><span>Cutter O.D.</span><input id="workflowBcoCutterOD" type="number" step="any" placeholder="Cutter O.D." data-workflow-tool-sync="bcoCutterOD"></label>
+        </div>
+      </section>
+      <section class="workflow-setup-form-card workflow-pipe-tool-card">
+        <div class="workflow-tool-card-head">
+          <h4>ETA Check</h4>
+          <span id="workflowEtaInlineResult">ETA: ?</span>
+        </div>
+        <div class="workflow-setup-grid">
+          <label class="workflow-setup-field" for="workflowEtaMachine"><span>Machine</span><select id="workflowEtaMachine" data-workflow-tool-sync="etaMachine"></select></label>
+          <label class="workflow-setup-field" for="workflowEtaCutterSize"><span>Cutter Size</span><input id="workflowEtaCutterSize" type="number" step="any" list="workflowEtaCutterSizeList" placeholder="Cutter size" data-workflow-tool-sync="etaCutterSize"></label>
+          <datalist id="workflowEtaCutterSizeList"></datalist>
+          <label class="workflow-setup-field" for="workflowEtaBco"><span>BCO</span><input id="workflowEtaBco" type="number" step="any" placeholder="Auto from BCO" data-workflow-tool-sync="etaBco"></label>
+          <label class="workflow-setup-field" for="workflowEtaRpmOverride"><span>RPM Override</span><input id="workflowEtaRpmOverride" type="number" step="any" min="0" placeholder="Optional" data-workflow-tool-sync="etaRpmOverride"></label>
+        </div>
+      </section>
     </div>
     <div class="workflow-helper-grid">
       <div class="workflow-helper-card"><span>Pipe</span><strong id="workflowPipeSummary">?</strong></div>
@@ -594,7 +642,7 @@
       </div>
       <div class="card-focus-actions">
         <button type="button" class="secondary-btn" data-go-screen="calc">Open Tools</button>
-        <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
+        <button type="button" class="secondary-btn" data-workflow-stage="setup">Job Setup</button>
         <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
         <button type="button" class="secondary-btn" id="cardFocusJumpBtn">Jump to Inputs</button>
       </div>
@@ -654,7 +702,7 @@
 
         <div class="row result-row support-result-row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
 
-        <div class="row"><label>Valve Bore</label><input id="valveBore" type="number" step="any"></div>
+        <div class="row"><label>Valve Bore <span class="optional-label">Optional</span></label><input id="valveBore" type="number" step="any" placeholder="Optional"></div>
         <div class="row"><label>GTF</label><input id="gtf" type="number" step="any"></div>
       </div>
     </div>
@@ -1503,9 +1551,8 @@
     <article class="jobs-status-card jobs-status-main">
       <span class="jobs-mini-label">Current Job</span>
       <strong id="jobsCurrentTitle">No active job yet</strong>
-      <span id="jobsCurrentMeta" class="jobs-mini-note">Start a job in the Current screen, then save locally or sync to shared.</span>
+      <span id="jobsCurrentMeta" class="jobs-mini-note">Start from Workflow, then save locally or sync to shared.</span>
       <div class="jobs-current-actions">
-        <button type="button" class="secondary-btn" data-go-screen="job">Open Job</button>
         <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
         <button type="button" id="syncJobsBtnClone">Sync Shared</button>
       </div>
@@ -1632,9 +1679,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha181"></script>
-<script src="stackup-data.js?v=3.0.0-alpha181"></script>
-<script src="measurement.js?v=3.0.0-alpha181"></script>
+<script src="firebase-config.js?v=3.0.0-alpha182"></script>
+<script src="stackup-data.js?v=3.0.0-alpha182"></script>
+<script src="measurement.js?v=3.0.0-alpha182"></script>
   </section>
 </body>
 </html>
