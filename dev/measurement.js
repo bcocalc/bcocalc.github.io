@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha167';
+const BUILD_VERSION = '3.0.0-alpha168';
 
 (function(){
 
@@ -128,7 +128,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha167 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha168 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -907,8 +907,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha167';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha167';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha168';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha168';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2023,7 +2023,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha167', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha168', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4637,6 +4637,12 @@ window.addEventListener('load', async () => {
 
   function getText(id){ return document.getElementById(id)?.textContent?.trim() || '-'; }
   function hasValue(id){ const v=document.getElementById(id)?.value; return !!String(v ?? '').trim(); }
+  function isWorkflowSummaryReady(value){
+    const text = String(value || '').trim();
+    if (!text || text === '-' || text === '?') return false;
+    if (/^OD\s+0(?:\.0+)?\s*\|\s*Wall\s+0(?:\.0+)?$/i.test(text)) return false;
+    return true;
+  }
 
   function updateCurrentWorkspaceLive(){
     const client=document.getElementById('jobClient')?.value?.trim() || '';
@@ -4665,7 +4671,7 @@ window.addEventListener('load', async () => {
     const summaryBco = getText('summaryBco');
     const summaryPipe = getText('summaryPipe');
     const summaryCutter = getText('summaryCutter');
-    const geometryReady = summaryBco !== '-' && summaryPipe !== '-' && summaryCutter !== '-';
+    const geometryReady = isWorkflowSummaryReady(summaryBco) && isWorkflowSummaryReady(summaryPipe) && isWorkflowSummaryReady(summaryCutter);
     const baseReady = hasMachine;
     const readOut = (id) => {
       const el = document.getElementById(id);
@@ -4728,9 +4734,9 @@ window.addEventListener('load', async () => {
     const missingSetup = [];
     if (!hasMachine) missingSetup.push('machine');
     const needsGeometryBundle = !(safeActiveMode === 'lineStop' && activeVariant === 'htp');
-    if (needsGeometryBundle && getText('summaryPipe') === '-') missingSetup.push('pipe');
-    if (needsGeometryBundle && getText('summaryCutter') === '-') missingSetup.push('cutter');
-    if (needsGeometryBundle && getText('summaryBco') === '-') missingSetup.push('BCO');
+    if (needsGeometryBundle && !isWorkflowSummaryReady(getText('summaryPipe'))) missingSetup.push('pipe');
+    if (needsGeometryBundle && !isWorkflowSummaryReady(getText('summaryCutter'))) missingSetup.push('cutter');
+    if (needsGeometryBundle && !isWorkflowSummaryReady(getText('summaryBco'))) missingSetup.push('BCO');
 
     const geometryLabel = current.geometry
       ? 'Ready'
@@ -5986,7 +5992,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha167';
+const TC63_VERSION = '3.0.0-alpha168';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6232,7 +6238,7 @@ const TC63_VERSION = '3.0.0-alpha167';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha167';
+const VERSION = '3.0.0-alpha168';
 
   function tc65GetJobs() {
     try {
@@ -9445,7 +9451,7 @@ const VERSION = '3.0.0-alpha167';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha167';
+const VERSION = '3.0.0-alpha168';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10547,16 +10553,18 @@ const VERSION = '3.0.0-alpha167';
     };
     if (map[stage]) return map[stage];
     if (stage === 'setup') {
+      const customer = document.getElementById('jobClient')?.value?.trim();
+      const location = document.getElementById('jobLocation')?.value?.trim();
       const machine = document.getElementById('machineType')?.value?.trim();
       const touched = ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician']
         .some((id) => !!document.getElementById(id)?.value?.trim());
-      return machine ? 'Ready' : (touched ? 'In Progress' : 'Waiting');
+      return customer && location && machine ? 'Ready' : (touched || machine ? 'In Progress' : 'Waiting');
     }
     if (stage === 'pipe') {
-      const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || '-';
-      const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || '-';
-      const bco = document.getElementById('summaryBco')?.textContent?.trim() || '-';
-      return pipe !== '-' && cutter !== '-' && bco !== '-' ? 'Ready' : ((pipe !== '-' || cutter !== '-' || bco !== '-') ? 'In Progress' : 'Waiting');
+      const pipeReady = workflowTextReady('summaryPipe');
+      const cutterReady = workflowTextReady('summaryCutter');
+      const bcoReady = workflowTextReady('summaryBco');
+      return pipeReady && cutterReady && bcoReady ? 'Ready' : ((pipeReady || cutterReady || bcoReady) ? 'In Progress' : 'Waiting');
     }
     if (stage === 'review') {
       return getStages().filter(s => MODE_STAGES.has(s)).every(s => stageStatusText(s) === 'Ready') ? 'Ready' : 'Review';
@@ -10572,6 +10580,171 @@ const VERSION = '3.0.0-alpha167';
     if (normalized.includes('review')) return 'review';
     if (normalized.includes('wait')) return 'waiting';
     return normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'waiting';
+  }
+  function workflowFieldValue(id){
+    const el = document.getElementById(id);
+    if (!el) return '';
+    return String(('value' in el ? el.value : el.textContent) || '').trim();
+  }
+  function workflowTextReady(id){
+    const value = workflowFieldValue(id);
+    if (id === 'summaryPipe' && /^OD\s+0(?:\.0+)?\s*\|\s*Wall\s+0(?:\.0+)?$/i.test(value)) return false;
+    return !!value && value !== '-' && value !== '?' && !/^not ready$/i.test(value);
+  }
+  function workflowAnyFilled(ids){
+    return ids.some((id) => !!workflowFieldValue(id));
+  }
+  function workflowMissingIf(missing, condition, label){
+    if (!condition) missing.push(label);
+  }
+  function workflowStatusFromMissing(missing, started = false){
+    if (!missing.length) return 'Ready';
+    return started ? 'In Progress' : 'Waiting';
+  }
+  function workflowStatusKeyFromText(value){
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'ready') return 'ready';
+    if (normalized.includes('progress')) return 'in-progress';
+    if (normalized.includes('review')) return 'review';
+    if (normalized.includes('not ready')) return 'not-ready';
+    if (normalized.includes('wait')) return 'waiting';
+    return normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'waiting';
+  }
+  function workflowEscape(value){
+    return String(value || '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+  }
+  function getWorkflowRequirementState(stage){
+    const pipeReady = workflowTextReady('summaryPipe');
+    const cutterReady = workflowTextReady('summaryCutter');
+    const bcoReady = workflowTextReady('summaryBco');
+    const machineReady = !!workflowFieldValue('machineType');
+    const geometryReady = pipeReady && cutterReady && bcoReady;
+    const state = {
+      status: stageStatusText(stage),
+      missing: [],
+      title: 'Keep this step moving',
+      copy: 'Fill the missing items below, then continue to the next step.'
+    };
+
+    if (stage === 'setup') {
+      workflowMissingIf(state.missing, !!workflowFieldValue('jobClient'), 'Customer');
+      workflowMissingIf(state.missing, !!workflowFieldValue('jobLocation'), 'Location');
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      state.status = workflowStatusFromMissing(state.missing, workflowAnyFilled(['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician','machineType']));
+      state.title = state.missing.length ? 'Start with the job basics' : 'Job setup is ready';
+      state.copy = state.missing.length
+        ? 'Open Job and fill the basics so the rest of the workflow has a clear setup.'
+        : 'Move to Pipe / Cutter and lock in the geometry before using job math.';
+      return state;
+    }
+
+    if (stage === 'pipe') {
+      workflowMissingIf(state.missing, pipeReady, 'Pipe size / wall');
+      workflowMissingIf(state.missing, cutterReady, 'Cutter O.D.');
+      workflowMissingIf(state.missing, bcoReady, 'BCO result');
+      state.status = workflowStatusFromMissing(state.missing, pipeReady || cutterReady || bcoReady);
+      state.title = state.missing.length ? 'Lock in pipe, cutter, and BCO' : 'Pipe / Cutter is ready';
+      state.copy = state.missing.length
+        ? 'Open BCO, enter the pipe and cutter values, then calculate BCO.'
+        : 'Use the active stage next. The workflow can now carry BCO forward.';
+      return state;
+    }
+
+    if (stage === 'hotTap') {
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      workflowMissingIf(state.missing, geometryReady, 'Pipe / Cutter / BCO');
+      workflowMissingIf(state.missing, !!workflowFieldValue('md'), 'MD');
+      workflowMissingIf(state.missing, !!workflowFieldValue('ptc'), 'PTC');
+      workflowMissingIf(state.missing, !!workflowFieldValue('mt'), 'Machine travel');
+      workflowMissingIf(state.missing, workflowTextReady('ttd'), 'Hot Tap output');
+      state.status = stageStatusText('hotTap');
+      state.title = state.missing.length ? 'Finish the Hot Tap inputs' : 'Hot Tap is ready';
+      state.copy = state.missing.length
+        ? 'Enter the Hot Tap measurements, then check the calculated output before moving on.'
+        : 'Hot Tap is ready. Continue to the next job stage or review.';
+      return state;
+    }
+
+    if (stage === 'lineStop') {
+      const variant = typeof getLineStopVariant === 'function' ? getLineStopVariant() : 'standard';
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      if (variant !== 'htp') workflowMissingIf(state.missing, geometryReady, 'Pipe / Cutter / BCO');
+      if (variant === 'htp') {
+        workflowMissingIf(state.missing, !!workflowFieldValue('htpPipeSize'), 'HTP pipe size');
+        workflowMissingIf(state.missing, !!workflowFieldValue('htpMd'), 'HTP MD');
+        workflowMissingIf(state.missing, !!workflowFieldValue('htpPtc'), 'HTP PTC');
+        workflowMissingIf(state.missing, workflowTextReady('htpTco'), 'HTP output');
+      } else if (variant === 'hiStop') {
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsMd'), 'MD');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsRl'), 'RL');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsCl'), 'CL');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsRcd'), 'RCD');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsPb'), 'PB');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsPtp'), 'PTP');
+        workflowMissingIf(state.missing, workflowTextReady('hsPlugSet'), 'Hi-Stop output');
+      } else {
+        workflowMissingIf(state.missing, !!workflowFieldValue('lsMd'), 'MD');
+        workflowMissingIf(state.missing, workflowTextReady('lsLiManual'), 'Lower-in output');
+      }
+      state.status = stageStatusText('lineStop');
+      state.title = state.missing.length ? 'Finish the Line Stop checks' : 'Line Stop is ready';
+      state.copy = state.missing.length
+        ? 'Fill the Line Stop values for the selected stop type, then verify the output.'
+        : 'Line Stop is ready. Continue to Completion Plug.';
+      return state;
+    }
+
+    if (stage === 'completionPlug') {
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      workflowMissingIf(state.missing, geometryReady, 'Pipe / Cutter / BCO');
+      workflowMissingIf(state.missing, !!workflowFieldValue('cpStart'), 'Start');
+      workflowMissingIf(state.missing, !!workflowFieldValue('cpJbf'), 'JBF');
+      workflowMissingIf(state.missing, !!workflowFieldValue('cpPt'), 'PT');
+      workflowMissingIf(state.missing, workflowTextReady('cpLiManual'), 'Completion output');
+      state.status = stageStatusText('completionPlug');
+      state.title = state.missing.length ? 'Finish the Completion Plug checks' : 'Completion Plug is ready';
+      state.copy = state.missing.length
+        ? 'Enter the plug measurements and confirm the completion output.'
+        : 'Completion Plug is ready. Move to review and save.';
+      return state;
+    }
+
+    if (stage === 'review') {
+      const activeStages = getStages().filter((item) => MODE_STAGES.has(item));
+      state.missing = activeStages
+        .filter((item) => stageStatusText(item) !== 'Ready')
+        .map((item) => (STAGE_META[item] || {}).short || item);
+      state.status = state.missing.length ? 'Review' : 'Ready';
+      state.title = state.missing.length ? 'Review what still needs attention' : 'Ready to save';
+      state.copy = state.missing.length
+        ? 'Use the step chips to jump back to any stage that is not ready yet.'
+        : 'All active stages are ready. Save locally or sync the job.';
+      return state;
+    }
+
+    return state;
+  }
+  function updateWorkflowReadiness(stage){
+    const panel = document.getElementById('workflowReadinessPanel');
+    if (!panel) return;
+    const state = getWorkflowRequirementState(stage);
+    const statusEl = document.getElementById('workflowCurrentStepStatus');
+    const titleEl = document.getElementById('workflowNextActionTitle');
+    const copyEl = document.getElementById('workflowNextActionCopy');
+    const listEl = document.getElementById('workflowMissingList');
+    const stateKey = workflowStatusKeyFromText(state.status);
+    panel.dataset.state = stateKey;
+    if (statusEl) {
+      statusEl.textContent = state.status;
+      statusEl.dataset.state = stateKey;
+    }
+    if (titleEl) titleEl.textContent = state.title;
+    if (copyEl) copyEl.textContent = state.copy;
+    if (listEl) {
+      listEl.innerHTML = state.missing.length
+        ? state.missing.map((item) => `<li>${workflowEscape(item)}</li>`).join('')
+        : '<li>Nothing missing for this step.</li>';
+    }
   }
   function activeStage(){
     const stages = getStages();
@@ -10625,20 +10798,32 @@ const VERSION = '3.0.0-alpha167';
     const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || '-';
     const bco = document.getElementById('summaryBco')?.textContent?.trim() || '-';
     const eta = document.getElementById('etaRangeDisplay')?.textContent?.trim() || '-';
-    const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value; };
-    setText('workflowSetupCustomer', customer);
-    setText('workflowSetupLocation', location);
-    setText('workflowSetupMachine', machine);
-    setText('workflowSetupType', jobType);
-    setText('workflowPipeSummary', pipe);
-    setText('workflowCutterSummary', cutter);
-    setText('workflowBcoSummary', bco);
-    setText('workflowPipeStatus', bco !== '-' ? 'Ready' : ((pipe !== '-' || cutter !== '-') ? 'In Progress' : 'Waiting on BCO'));
-    setText('workflowReviewBco', bco);
-    setText('workflowReviewEta', eta);
-    setText('workflowReviewHotTap', stageStatusText('hotTap'));
-    setText('workflowReviewLineStop', stageStatusText('lineStop'));
-    setText('workflowReviewCompletionPlug', stageStatusText('completionPlug'));
+    const pipeReady = workflowTextReady('summaryPipe');
+    const cutterReady = workflowTextReady('summaryCutter');
+    const bcoReady = workflowTextReady('summaryBco');
+    const setValue = (id, value, state = '') => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = value;
+      const safeState = state || (value && value !== '-' && value !== '?' ? 'ready' : 'waiting');
+      el.dataset.state = safeState;
+      const card = el.closest('.workflow-helper-card');
+      if (card) card.dataset.state = safeState;
+    };
+    const setStatusValue = (id, value) => setValue(id, value, workflowStatusKeyFromText(value));
+    setValue('workflowSetupCustomer', customer);
+    setValue('workflowSetupLocation', location);
+    setValue('workflowSetupMachine', machine);
+    setValue('workflowSetupType', jobType, 'ready');
+    setValue('workflowPipeSummary', pipe, pipeReady ? 'ready' : 'waiting');
+    setValue('workflowCutterSummary', cutter, cutterReady ? 'ready' : 'waiting');
+    setValue('workflowBcoSummary', bco, bcoReady ? 'ready' : 'waiting');
+    setStatusValue('workflowPipeStatus', bcoReady ? 'Ready' : ((pipeReady || cutterReady) ? 'In Progress' : 'Waiting on BCO'));
+    setValue('workflowReviewBco', bco, bcoReady ? 'ready' : 'waiting');
+    setValue('workflowReviewEta', eta);
+    setStatusValue('workflowReviewHotTap', stageStatusText('hotTap'));
+    setStatusValue('workflowReviewLineStop', stageStatusText('lineStop'));
+    setStatusValue('workflowReviewCompletionPlug', stageStatusText('completionPlug'));
     const setupNote = document.getElementById('workflowSetupNote');
     if (setupNote) setupNote.textContent = (customer !== '-' && location !== '-' && machine !== '-')
       ? 'Setup is ready. Move on to pipe and cutter so the job math has a solid base.'
@@ -10655,6 +10840,7 @@ const VERSION = '3.0.0-alpha167';
         ? 'All active stages are reading Ready. Save locally or sync the job when you are done.'
         : `You have ${readyCount} of ${modeStages.length} active stages reading Ready. Use the status chips above to see what still needs attention.`;
     }
+    updateWorkflowReadiness(activeStage());
   }
   function setWorkflowStage(stage, opts={}){
     const stages = getStages();
@@ -10987,7 +11173,7 @@ const VERSION = '3.0.0-alpha167';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha167 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha168 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;

@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha167">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha168">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha167 - 2026-05-12</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha168 - 2026-05-12</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha167 - 2026-05-12</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha168 - 2026-05-12</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -440,6 +440,20 @@
       </div>
     </div>
     <div id="workflowStageNav" class="workflow-stage-nav" aria-live="polite"></div>
+    <div class="workflow-readiness-panel" id="workflowReadinessPanel" aria-live="polite">
+      <div class="workflow-readiness-status">
+        <span>Current Step</span>
+        <strong id="workflowCurrentStepStatus">Waiting</strong>
+      </div>
+      <div class="workflow-readiness-main">
+        <h5 id="workflowNextActionTitle">Start here</h5>
+        <p id="workflowNextActionCopy">Fill the required items for this step, then move to the next step.</p>
+      </div>
+      <div class="workflow-readiness-missing">
+        <span>Missing</span>
+        <ul id="workflowMissingList"></ul>
+      </div>
+    </div>
   </section>
 
   <section class="workflow-next-banner" id="workflowNextBanner">
@@ -1401,9 +1415,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha167"></script>
-<script src="stackup-data.js?v=3.0.0-alpha167"></script>
-<script src="measurement.js?v=3.0.0-alpha167"></script>
+<script src="firebase-config.js?v=3.0.0-alpha168"></script>
+<script src="stackup-data.js?v=3.0.0-alpha168"></script>
+<script src="measurement.js?v=3.0.0-alpha168"></script>
   </section>
 </body>
 </html>

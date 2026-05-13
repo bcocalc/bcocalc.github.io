@@ -6144,6 +6144,88 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
+/* ===== 3.0.0-alpha168 workflow readiness guide ===== */
+.workflow-readiness-panel{
+  display:grid;
+  grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
+  gap:12px;
+  align-items:stretch;
+  padding:12px;
+  border-radius:14px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.10);
+}
+.workflow-readiness-status,
+.workflow-readiness-main,
+.workflow-readiness-missing{
+  min-width:0;
+  padding:12px;
+  border-radius:12px;
+  background:rgba(7,18,32,.24);
+  border:1px solid rgba(255,255,255,.08);
+}
+.workflow-readiness-status{
+  display:grid;
+  align-content:center;
+  gap:7px;
+}
+.workflow-readiness-status span,
+.workflow-readiness-missing span{
+  color:#a9c5e3;
+  font-size:.72rem;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+.workflow-readiness-status strong{
+  display:inline-flex;
+  width:max-content;
+  max-width:100%;
+  align-items:center;
+  padding:6px 10px;
+  border-radius:999px;
+  background:rgba(255,255,255,.10);
+  color:#ffffff;
+  font-size:.92rem;
+}
+.workflow-readiness-status strong[data-state="ready"]{background:rgba(57,164,91,.22);color:#c9f8d7;}
+.workflow-readiness-status strong[data-state="in-progress"]{background:rgba(214,164,56,.22);color:#ffe5ad;}
+.workflow-readiness-status strong[data-state="waiting"],
+.workflow-readiness-status strong[data-state="not-ready"],
+.workflow-readiness-status strong[data-state="review"]{background:rgba(142,168,199,.16);color:#e7f1ff;}
+.workflow-readiness-main h5{
+  margin:0 0 5px;
+  color:#ffffff;
+  font-size:1rem;
+}
+.workflow-readiness-main p{
+  margin:0;
+  color:#d5e6f7;
+  font-size:.92rem;
+  line-height:1.45;
+}
+.workflow-readiness-missing{
+  display:grid;
+  gap:7px;
+}
+.workflow-readiness-missing ul{
+  margin:0;
+  padding-left:18px;
+  color:#f0f6ff;
+  font-size:.9rem;
+  line-height:1.4;
+}
+.workflow-readiness-missing li + li{margin-top:3px;}
+.workflow-readiness-panel[data-state="ready"] .workflow-readiness-missing ul{color:#c9f8d7;}
+.workflow-helper-card[data-state="ready"]{border-color:rgba(57,164,91,.38);box-shadow:inset 0 0 0 1px rgba(57,164,91,.10);}
+.workflow-helper-card[data-state="in-progress"]{border-color:rgba(214,164,56,.42);box-shadow:inset 0 0 0 1px rgba(214,164,56,.10);}
+.workflow-helper-card[data-state="waiting"],
+.workflow-helper-card[data-state="not-ready"]{border-color:rgba(184,111,101,.34);}
+@media (max-width: 840px){
+  .workflow-readiness-panel{grid-template-columns:1fr;}
+  .workflow-readiness-status strong{width:100%;justify-content:center;}
+}
+
 
 /* ===== 3.0.0-alpha153 workflow action capture fix ===== */
 .line-stop-variant-shell{margin-bottom:16px;padding:16px 18px;border:1px solid rgba(255,255,255,.08);border-radius:18px;background:rgba(255,255,255,.03);}
@@ -6168,7 +6250,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha167 reference buildout ===== */
+/* ===== 3.0.0-alpha168 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
