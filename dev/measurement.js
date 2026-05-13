@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha178';
+const BUILD_VERSION = '3.0.0-alpha179';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha178 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha179 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1035,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha178';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha178';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha179';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha179';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha178', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha179', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2589,7 +2589,6 @@ const DEFAULT_STATE_VALUES = {
   htpLdSign: '+',
   lsLdSign: '+',
   hsLdSign: '+',
-  lugs: 'Y',
   lineStopVariant: 'standard',
   lsLiManualToggle: false,
   cpLiManualToggle: false,
@@ -3783,7 +3782,7 @@ function getStateFields() {
   return [
     'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
-    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
+    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf',
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
@@ -5913,7 +5912,7 @@ window.addEventListener('load', async () => {
   const stateFieldIdsA59 = [
     'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
-    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
+    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf',
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
@@ -6369,7 +6368,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha178';
+const TC63_VERSION = '3.0.0-alpha179';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6615,7 +6614,7 @@ const TC63_VERSION = '3.0.0-alpha178';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha178';
+const VERSION = '3.0.0-alpha179';
 
   function tc65GetJobs() {
     try {
@@ -9828,7 +9827,7 @@ const VERSION = '3.0.0-alpha178';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha178';
+const VERSION = '3.0.0-alpha179';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11028,7 +11027,7 @@ const VERSION = '3.0.0-alpha178';
       state.status = workflowStatusFromMissing(state.missing, workflowAnyFilled(['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician','machineType']));
       state.title = state.missing.length ? 'Start with the job basics' : 'Job setup is ready';
       state.copy = state.missing.length
-        ? 'Open Job and fill the basics so the rest of the workflow has a clear setup.'
+        ? 'Fill the setup fields on this step so the rest of the workflow has a clear setup.'
         : 'Move to Pipe / Cutter and lock in the geometry before using job math.';
       return state;
     }
@@ -11222,7 +11221,7 @@ const VERSION = '3.0.0-alpha178';
     const setupNote = document.getElementById('workflowSetupNote');
     if (setupNote) setupNote.textContent = (customer !== '-' && location !== '-' && machine !== '-')
       ? 'Setup is ready. Move on to pipe and cutter so the job math has a solid base.'
-      : 'Add the basics on the Job screen, then come back here to keep moving.';
+      : 'Fill the setup fields here, then continue to pipe and cutter.';
     const pipeNote = document.getElementById('workflowPipeNote');
     if (pipeNote) pipeNote.textContent = bco !== '-'
       ? 'BCO is ready. The active workflow stages can use that number now.'
@@ -11382,6 +11381,163 @@ const VERSION = '3.0.0-alpha178';
     setTimeout(()=>setWorkflowStage(activeStage()), 120);
   }, true);
   window.tapCalcSetWorkflowStage = setWorkflowStage;
+})();
+
+/* ===== 3.0.0-alpha179 inline workflow job setup ===== */
+(function(){
+  const fieldPairs = [
+    ['workflowJobClient', 'jobClient'],
+    ['workflowJobLocation', 'jobLocation'],
+    ['workflowJobDescription', 'jobDescription'],
+    ['workflowJobNumber', 'jobNumber'],
+    ['workflowJobDate', 'jobDate'],
+    ['workflowJobTechnician', 'jobTechnician'],
+    ['workflowMachineType', 'machineType'],
+    ['workflowOperationType', 'operationType'],
+    ['workflowJobPressure', 'jobPressure'],
+    ['workflowJobTemperature', 'jobTemperature'],
+    ['workflowJobProduct', 'jobProduct'],
+    ['workflowJobNotes', 'jobNotes']
+  ];
+  let syncingWorkflowSetup = false;
+  let lastWorkflowSetupSignature = '';
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function fireInputChange(el){
+    if (!el) return;
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+
+  function hasOption(select, value){
+    return Array.from(select?.options || []).some((option) => option.value === value);
+  }
+
+  function copySelectOptions(workflowEl, sourceEl){
+    if (!workflowEl || !sourceEl || workflowEl.tagName !== 'SELECT' || sourceEl.tagName !== 'SELECT') return;
+    const signature = sourceEl.innerHTML;
+    const desiredValue = sourceEl.value || workflowEl.value || '';
+    if (workflowEl.dataset.optionSignature !== signature) {
+      workflowEl.innerHTML = signature;
+      workflowEl.dataset.optionSignature = signature;
+    }
+    if (desiredValue && !hasOption(workflowEl, desiredValue)) {
+      const option = document.createElement('option');
+      option.value = desiredValue;
+      option.textContent = desiredValue;
+      workflowEl.appendChild(option);
+    }
+  }
+
+  function sourceSignature(){
+    return fieldPairs.map(([, sourceId]) => {
+      const sourceEl = byId(sourceId);
+      return `${sourceId}:${sourceEl?.type === 'checkbox' ? !!sourceEl.checked : (sourceEl?.value || '')}`;
+    }).join('|');
+  }
+
+  function syncWorkflowField(workflowId, sourceId){
+    const workflowEl = byId(workflowId);
+    const sourceEl = byId(sourceId);
+    if (!workflowEl || !sourceEl) return;
+    copySelectOptions(workflowEl, sourceEl);
+    const nextValue = sourceEl.type === 'checkbox' ? !!sourceEl.checked : (sourceEl.value || '');
+    if (workflowEl.type === 'checkbox') workflowEl.checked = !!nextValue;
+    else workflowEl.value = nextValue;
+  }
+
+  function syncAllToWorkflow(){
+    if (syncingWorkflowSetup) return;
+    syncingWorkflowSetup = true;
+    try {
+      fieldPairs.forEach(([workflowId, sourceId]) => syncWorkflowField(workflowId, sourceId));
+      lastWorkflowSetupSignature = sourceSignature();
+    } finally {
+      syncingWorkflowSetup = false;
+    }
+  }
+
+  function setSourceValue(sourceId, value){
+    const sourceEl = byId(sourceId);
+    if (!sourceEl) return false;
+    if (sourceId === 'machineType' && typeof window.tapCalcSetMachineTypeValue === 'function') {
+      window.tapCalcSetMachineTypeValue(value);
+      return true;
+    }
+    if (sourceEl.tagName === 'SELECT' && value && !hasOption(sourceEl, value)) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      sourceEl.appendChild(option);
+    }
+    if (sourceEl.type === 'checkbox') sourceEl.checked = !!value;
+    else sourceEl.value = value ?? '';
+    fireInputChange(sourceEl);
+    return true;
+  }
+
+  function refreshWorkflowAfterSetupEdit(){
+    try { window.tapCalcUpdateJobInfoSummary?.(); } catch {}
+    try { window.updateTapCalcShell?.(); } catch {}
+    try { if (typeof persistCurrentJob === 'function') persistCurrentJob({ render: true }); } catch {}
+    setTimeout(() => {
+      try { window.tapCalcSetWorkflowStage?.(window.__tapCalcWorkflowStage || 'setup'); } catch {}
+      syncAllToWorkflow();
+    }, 30);
+  }
+
+  function handleWorkflowEdit(event){
+    if (syncingWorkflowSetup) return;
+    const workflowEl = event.currentTarget;
+    const sourceId = workflowEl?.dataset?.jobSync;
+    if (!sourceId) return;
+    syncingWorkflowSetup = true;
+    try {
+      setSourceValue(sourceId, workflowEl.type === 'checkbox' ? workflowEl.checked : workflowEl.value);
+    } finally {
+      syncingWorkflowSetup = false;
+    }
+    refreshWorkflowAfterSetupEdit();
+  }
+
+  function bindWorkflowSetup(){
+    if (!byId('workflowInlineJobSetup')) return;
+    fieldPairs.forEach(([workflowId, sourceId]) => {
+      const workflowEl = byId(workflowId);
+      const sourceEl = byId(sourceId);
+      if (workflowEl && !workflowEl.dataset.workflowSetupBound) {
+        workflowEl.dataset.workflowSetupBound = '1';
+        workflowEl.addEventListener('input', handleWorkflowEdit);
+        workflowEl.addEventListener('change', handleWorkflowEdit);
+      }
+      if (sourceEl && !sourceEl.dataset.workflowSetupSourceBound) {
+        sourceEl.dataset.workflowSetupSourceBound = '1';
+        sourceEl.addEventListener('input', () => setTimeout(syncAllToWorkflow, 0));
+        sourceEl.addEventListener('change', () => setTimeout(syncAllToWorkflow, 0));
+      }
+    });
+    syncAllToWorkflow();
+  }
+
+  function watchWorkflowSetup(){
+    const signature = sourceSignature();
+    if (signature !== lastWorkflowSetupSignature) syncAllToWorkflow();
+  }
+
+  document.addEventListener('DOMContentLoaded', bindWorkflowSetup);
+  window.addEventListener('load', () => {
+    bindWorkflowSetup();
+    setTimeout(syncAllToWorkflow, 150);
+    setTimeout(syncAllToWorkflow, 600);
+  });
+  window.addEventListener('pageshow', () => setTimeout(syncAllToWorkflow, 120));
+  document.addEventListener('click', () => setTimeout(watchWorkflowSetup, 120), true);
+  document.addEventListener('change', () => setTimeout(watchWorkflowSetup, 80), true);
+  setInterval(watchWorkflowSetup, 1200);
+  window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
 
@@ -11568,7 +11724,7 @@ const VERSION = '3.0.0-alpha178';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha178 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha179 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12028,7 +12184,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha178 gasket torque reference ===== */
+/* ===== 3.0.0-alpha179 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -12234,27 +12390,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha178Bound) {
-      classSelect.dataset.alpha178Bound = '1';
+    if (!classSelect.dataset.alpha179Bound) {
+      classSelect.dataset.alpha179Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha178Bound) {
-      sizeSelect.dataset.alpha178Bound = '1';
+    if (!sizeSelect.dataset.alpha179Bound) {
+      sizeSelect.dataset.alpha179Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha178Bound) {
-      typeSelect.dataset.alpha178Bound = '1';
+    if (!typeSelect.dataset.alpha179Bound) {
+      typeSelect.dataset.alpha179Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha178Bound) {
-      searchInput.dataset.alpha178Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha179Bound) {
+      searchInput.dataset.alpha179Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();
