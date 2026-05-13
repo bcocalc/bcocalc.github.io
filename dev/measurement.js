@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha174';
+const BUILD_VERSION = '3.0.0-alpha175';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha174 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha175 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1006,6 +1006,7 @@ const pivotPipeMaterialEl = document.getElementById('pivotPipeMaterial');
 const pivotPipeSizeEl = document.getElementById('pivotPipeSize');
 const pivotWallThicknessEl = document.getElementById('pivotWallThickness');
 const pivotPipeIdOverrideEl = document.getElementById('pivotPipeIdOverride');
+const pivotPressureBandEl = document.getElementById('pivotPressureBand');
 const pivotMeasuredNoseOdEl = document.getElementById('pivotMeasuredNoseOd');
 const pivotUseCurrentPipeBtnEl = document.getElementById('pivotUseCurrentPipeBtn');
 const pivotClearOverrideBtnEl = document.getElementById('pivotClearOverrideBtn');
@@ -1033,8 +1034,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha174';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha174';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha175';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha175';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -1626,9 +1627,19 @@ function setPivotText(id, value) {
   if (el) el.textContent = value || '-';
 }
 
+function setPivotBackingStatus(state, message) {
+  if (!pivotBackingStatusEl) return;
+  pivotBackingStatusEl.textContent = message;
+  pivotBackingStatusEl.setAttribute('data-state', state || 'info');
+}
+
 function getPivotMaterial() {
   const material = pivotPipeMaterialEl?.value || 'CarbonSteel';
   return pipeData[material] ? material : 'CarbonSteel';
+}
+
+function getPivotPressureBand() {
+  return pivotPressureBandEl?.value === 'over500' ? 'over500' : 'under500';
 }
 
 function populatePivotPipeSizes() {
@@ -1653,39 +1664,31 @@ function findPivotNominalForOd(material, pipeOd) {
   return best && best.delta <= 0.08 ? best.size : '';
 }
 
-function getPivotNosePlateCheck(pipeSize, pipeId) {
+function getPivotNosePlateCheck(pipeSize, pipeId, pressureBand = 'under500') {
   const nominal = Number.parseFloat(pipeSize);
   if (!Number.isFinite(nominal) || !Number.isFinite(pipeId)) {
     return { tolerance: '-', range: '-' };
   }
+  let underId = NaN;
+  let pressureNote = '';
   if (nominal >= 3 && nominal <= 4) {
-    const minOd = pipeId - 0.25;
-    const maxOd = pipeId - 0.125;
-    return {
-      tolerance: '1/8" to 1/4" under pipe ID',
-      range: `${formatPivotInches(minOd)} to ${formatPivotInches(maxOd)}`,
-      minOd,
-      maxOd
-    };
+    underId = 7 / 16;
+  } else if (nominal >= 6 && nominal <= 12) {
+    underId = 1 / 2;
+  } else if (nominal >= 14 && nominal <= 36) {
+    underId = pressureBand === 'over500' ? 5 / 8 : 3 / 4;
+    pressureNote = pressureBand === 'over500' ? ' above 500 psi' : ' below 500 psi';
   }
-  if (nominal >= 6 && nominal <= 12) {
-    const minOd = pipeId - 0.625;
-    const maxOd = pipeId - 0.5;
+  if (Number.isFinite(underId)) {
+    const targetOd = pipeId - underId;
+    const tolerance = `${formatPivotFraction(underId)}" under pipe ID${pressureNote}`;
     return {
-      tolerance: '1/2" to 5/8" under pipe ID',
-      range: `${formatPivotInches(minOd)} to ${formatPivotInches(maxOd)}`,
-      minOd,
-      maxOd
-    };
-  }
-  if (nominal >= 14 && nominal <= 48) {
-    const minOd = pipeId - 0.75;
-    const maxOd = pipeId - 0.5;
-    return {
-      tolerance: '1/2" to 3/4" under pipe ID',
-      range: `${formatPivotInches(minOd)} to ${formatPivotInches(maxOd)}`,
-      minOd,
-      maxOd
+      tolerance,
+      range: formatPivotInches(targetOd),
+      minOd: targetOd,
+      maxOd: targetOd,
+      targetOd,
+      underId
     };
   }
   return { tolerance: 'Not listed in guide', range: '-' };
@@ -1706,28 +1709,33 @@ function renderPivotSealRows(pipeId) {
     return;
   }
   const rows = [
-    { offset: 0, label: 'Exact Pipe ID', check: 'Guide minimum' },
+    { offset: -1 / 16, label: '-1/16"', check: 'Section 7 Rev.1 minimum' },
+    { offset: -1 / 32, label: '-1/32"', check: 'Within guide tolerance' },
+    { offset: 0, label: 'Exact Pipe ID', check: 'Center of guide range' },
     { offset: 1 / 32, label: '+1/32"', check: 'Within guide tolerance' },
-    { offset: 1 / 16, label: '+1/16"', check: 'Guide upper tolerance' },
-    { offset: 3 / 32, label: '+3/32"', check: 'Field-check range' },
-    { offset: 1 / 8, label: '+1/8"', check: 'Field-check upper range' }
+    { offset: 1 / 16, label: '+1/16"', check: 'Section 7 Rev.1 maximum' },
+    { offset: 3 / 32, label: '+3/32"', check: 'Field-check only' },
+    { offset: 1 / 8, label: '+1/8"', check: 'Field-check upper only' }
   ];
   pivotSealBodyEl.innerHTML = rows.map((row) => {
     const seal = pipeId + row.offset;
-    const className = row.offset <= (1 / 16) ? 'pivot-seal-guide' : 'pivot-seal-extended';
+    const className = row.offset >= -(1 / 16) && row.offset <= (1 / 16) ? 'pivot-seal-guide' : 'pivot-seal-extended';
     return `<tr class="${className}"><td>${escapeHtml(row.label)}</td><td>${escapeHtml(formatPivotInches(seal))}</td><td>${escapeHtml(row.check)}</td></tr>`;
   }).join('');
 }
 
 function updatePivotBackingPlateHelper(pipeId, measuredNoseOd, nose) {
   const hasRange = Number.isFinite(pipeId) && Number.isFinite(nose?.minOd) && Number.isFinite(nose?.maxOd);
-  setPivotText('pivotBackingTargetOut', hasRange ? `${formatPivotInches(nose.minOd)} to ${formatPivotInches(nose.maxOd)}` : '-');
+  const targetLabel = Number.isFinite(nose?.targetOd)
+    ? formatPivotInches(nose.targetOd)
+    : `${formatPivotInches(nose.minOd)} to ${formatPivotInches(nose.maxOd)}`;
+  setPivotText('pivotBackingTargetOut', hasRange ? targetLabel : '-');
 
   if (!hasRange) {
     setPivotText('pivotBackingUnderOut', '-');
     setPivotText('pivotBackingAddOut', '-');
     setPivotText('pivotBackingPerSideOut', '-');
-    if (pivotBackingStatusEl) pivotBackingStatusEl.textContent = 'Select a listed pipe size and enter wall thickness or measured ID to calculate the backing plate target.';
+    setPivotBackingStatus('info', 'Select a listed pipe size and enter wall thickness or measured ID to calculate the backing plate target.');
     return;
   }
 
@@ -1735,7 +1743,7 @@ function updatePivotBackingPlateHelper(pipeId, measuredNoseOd, nose) {
     setPivotText('pivotBackingUnderOut', '-');
     setPivotText('pivotBackingAddOut', '-');
     setPivotText('pivotBackingPerSideOut', '-');
-    if (pivotBackingStatusEl) pivotBackingStatusEl.textContent = 'Enter the actual nose plate OD to check whether a backing plate review is needed.';
+    setPivotBackingStatus('info', 'Enter the actual nose plate OD. If it is undersized, this helper will flag the backing plate / Tech Support review before use.');
     return;
   }
 
@@ -1745,24 +1753,20 @@ function updatePivotBackingPlateHelper(pipeId, measuredNoseOd, nose) {
     const diameterAdd = nose.minOd - measuredNoseOd;
     setPivotText('pivotBackingAddOut', formatPivotInches(diameterAdd));
     setPivotText('pivotBackingPerSideOut', formatPivotInches(diameterAdd / 2));
-    if (pivotBackingStatusEl) {
-      pivotBackingStatusEl.textContent = 'Measured nose plate OD is smaller than the guide range. Treat this as a backing plate / Technical Support review before using the setup.';
-    }
+    setPivotBackingStatus('danger', `BACKING PLATE REQUIRED REVIEW: Nose plate OD is undersized for Section 7. Add about ${formatPivotInches(diameterAdd)} to OD (${formatPivotInches(diameterAdd / 2)} per side). Section 7 says Tech Support review and a 3/16" to 1/4" aluminum backing plate may be needed before using this setup.`);
     return;
   }
 
   if (measuredNoseOd > nose.maxOd) {
     setPivotText('pivotBackingAddOut', `Oversize by ${formatPivotInches(measuredNoseOd - nose.maxOd)}`);
     setPivotText('pivotBackingPerSideOut', '-');
-    if (pivotBackingStatusEl) {
-      pivotBackingStatusEl.textContent = 'Measured nose plate OD is larger than the guide range. A backing plate does not correct an oversized nose plate; verify plate selection and pipe ID.';
-    }
+    setPivotBackingStatus('danger', `STOP CHECK: Nose plate OD is larger than the Section 7 target by ${formatPivotInches(measuredNoseOd - nose.maxOd)}. A backing plate will not correct oversize; verify pipe ID and plate selection before use.`);
     return;
   }
 
   setPivotText('pivotBackingAddOut', 'None');
   setPivotText('pivotBackingPerSideOut', 'None');
-  if (pivotBackingStatusEl) pivotBackingStatusEl.textContent = 'Measured nose plate OD is inside the guide range. Backing plate review is not indicated by this check.';
+  setPivotBackingStatus('ok', 'OK: Measured nose plate OD matches the Section 7 target. Backing plate review is not indicated by this check.');
 }
 
 function updatePivotHeadSetup() {
@@ -1770,27 +1774,36 @@ function updatePivotHeadSetup() {
   const material = getPivotMaterial();
   const pipeSize = pivotPipeSizeEl.value;
   const od = Number.parseFloat(trueOD[material]?.[pipeSize]);
+  const nominal = Number.parseFloat(pipeSize);
   const wall = getMeasurementValue(pivotWallThicknessEl);
   const overrideId = getMeasurementValue(pivotPipeIdOverrideEl);
+  const pressureBand = getPivotPressureBand();
   const measuredNoseOd = getMeasurementValue(pivotMeasuredNoseOdEl);
   const calculatedId = Number.isFinite(od) && Number.isFinite(wall) ? od - (wall * 2) : NaN;
   const pipeId = Number.isFinite(overrideId) ? overrideId : calculatedId;
-  const loadPadTarget = Number.isFinite(pipeId) ? pipeId / 2 : NaN;
+  const loadPadRequired = Number.isFinite(nominal) && nominal > 4;
+  const loadPadTarget = Number.isFinite(pipeId) && loadPadRequired ? pipeId / 2 : NaN;
   const loadPadLow = Number.isFinite(loadPadTarget) ? loadPadTarget - (1 / 16) : NaN;
-  const nose = getPivotNosePlateCheck(pipeSize, pipeId);
+  const nose = getPivotNosePlateCheck(pipeSize, pipeId, pressureBand);
+  const sealGuideLow = Number.isFinite(pipeId) ? pipeId - (1 / 16) : NaN;
+  const sealGuideHigh = Number.isFinite(pipeId) ? pipeId + (1 / 16) : NaN;
+  const sealFieldHigh = Number.isFinite(pipeId) ? pipeId + (1 / 8) : NaN;
   const status = [];
 
   if (!Number.isFinite(wall) && !Number.isFinite(overrideId)) status.push('Enter wall thickness or measured ID.');
   if (Number.isFinite(wall) && wall <= 0) status.push('Wall thickness must be greater than zero.');
   if (Number.isFinite(calculatedId) && calculatedId <= 0) status.push('Calculated ID is not valid for the selected pipe size.');
   if (Number.isFinite(overrideId)) status.push('Measured ID override is being used.');
+  if (Number.isFinite(nominal) && nominal >= 14 && nominal <= 36) {
+    status.push(pressureBand === 'over500' ? 'Above 500 psi nose target selected.' : 'Below 500 psi nose target selected.');
+  }
   if (!status.length) status.push('Pivot head setup values calculated from selected pipe and wall thickness.');
 
   setPivotText('pivotPipeOdOut', formatPivotInches(od));
   setPivotText('pivotPipeIdOut', formatPivotInches(pipeId));
-  setPivotText('pivotSealRangeOut', Number.isFinite(pipeId) ? `${formatPivotInches(pipeId)} to ${formatPivotInches(pipeId + 0.125)}` : '-');
-  setPivotText('pivotLoadPadTargetOut', formatPivotInches(loadPadTarget));
-  setPivotText('pivotLoadPadRangeOut', Number.isFinite(loadPadTarget) ? `${formatPivotInches(loadPadLow)} to ${formatPivotInches(loadPadTarget)}` : '-');
+  setPivotText('pivotSealRangeOut', Number.isFinite(pipeId) ? `Guide ${formatPivotInches(sealGuideLow)} to ${formatPivotInches(sealGuideHigh)}; field max ${formatPivotInches(sealFieldHigh)}` : '-');
+  setPivotText('pivotLoadPadTargetOut', Number.isFinite(pipeId) ? (loadPadRequired ? formatPivotInches(loadPadTarget) : 'N/A for 3" and 4"') : '-');
+  setPivotText('pivotLoadPadRangeOut', Number.isFinite(pipeId) ? (loadPadRequired && Number.isFinite(loadPadTarget) ? `${formatPivotInches(loadPadLow)} to ${formatPivotInches(loadPadTarget)}` : 'No load pad required') : '-');
   setPivotText('pivotClearanceBOut', getPivotClearanceB(pipeSize));
   setPivotText('pivotNoseToleranceOut', nose.tolerance);
   setPivotText('pivotNoseRangeOut', nose.range);
@@ -1821,7 +1834,7 @@ if (pivotPipeMaterialEl) {
     updatePivotHeadSetup();
   });
 }
-[pivotPipeSizeEl, pivotWallThicknessEl, pivotPipeIdOverrideEl, pivotMeasuredNoseOdEl].forEach((el) => {
+[pivotPipeSizeEl, pivotWallThicknessEl, pivotPipeIdOverrideEl, pivotPressureBandEl, pivotMeasuredNoseOdEl].forEach((el) => {
   if (!el) return;
   el.addEventListener('input', updatePivotHeadSetup);
   el.addEventListener('change', updatePivotHeadSetup);
@@ -2386,7 +2399,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha174', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha175', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6355,7 +6368,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha174';
+const TC63_VERSION = '3.0.0-alpha175';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6601,7 +6614,7 @@ const TC63_VERSION = '3.0.0-alpha174';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha174';
+const VERSION = '3.0.0-alpha175';
 
   function tc65GetJobs() {
     try {
@@ -9814,7 +9827,7 @@ const VERSION = '3.0.0-alpha174';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha174';
+const VERSION = '3.0.0-alpha175';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11554,7 +11567,7 @@ const VERSION = '3.0.0-alpha174';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha174 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha175 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
