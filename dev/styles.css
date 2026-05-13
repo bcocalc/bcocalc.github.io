@@ -6196,7 +6196,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha183 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha184 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6302,7 +6302,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha183 reference buildout ===== */
+/* ===== 3.0.0-alpha184 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6698,7 +6698,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha183 reference library picker ===== */
+/* ===== 3.0.0-alpha184 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7044,7 +7044,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha183 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha184 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7219,7 +7219,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha183 gasket torque reference ===== */
+/* ===== 3.0.0-alpha184 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7348,7 +7348,7 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha183 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha184 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7390,7 +7390,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha183 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha184 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7511,7 +7511,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha183 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha184 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7591,7 +7591,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha183 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha184 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
@@ -7794,4 +7794,59 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   body.measurement-page .workflow-operations-actions button {
     flex: 1 1 145px;
   }
+}
+
+/* ===== 3.0.0-alpha184 neutral upcoming workflow steps ===== */
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"] {
+  background: linear-gradient(180deg, #17283d 0%, #112034 100%) !important;
+  border-color: #375474 !important;
+  box-shadow: none !important;
+  color: #eef6ff !important;
+}
+
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] small,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] span,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"] small,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"] span,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"] em,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"] small,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"] span,
+body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"] em,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] small,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] span,
+:root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] small,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] span,
+body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em {
+  color: #dbe9f8 !important;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
+body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
+body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
+body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"] {
+  background: linear-gradient(180deg, #e7edf4 0%, #dce4ed 100%) !important;
+  border-color: #bccadb !important;
+  box-shadow: none !important;
+  color: #173657 !important;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] small,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] span,
+:root[data-theme="light"] body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em,
+body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] small,
+body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] span,
+body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em {
+  color: #173657 !important;
 }

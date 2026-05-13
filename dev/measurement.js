@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha183';
+const BUILD_VERSION = '3.0.0-alpha184';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha183 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha184 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1035,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha183';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha183';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha184';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha184';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha183', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha184', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6368,7 +6368,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha183';
+const TC63_VERSION = '3.0.0-alpha184';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6614,7 +6614,7 @@ const TC63_VERSION = '3.0.0-alpha183';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha183';
+const VERSION = '3.0.0-alpha184';
 
   function tc65GetJobs() {
     try {
@@ -9827,7 +9827,7 @@ const VERSION = '3.0.0-alpha183';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha183';
+const VERSION = '3.0.0-alpha184';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11176,8 +11176,8 @@ const VERSION = '3.0.0-alpha183';
     nav.innerHTML = stages.map((stage, index) => {
       const meta = STAGE_META[stage] || { short: stage, eyebrow: `Step ${index+1}`, copy: '' };
       const status = stageStatusText(stage);
-      const progress = stageStatusKey(stage);
       const state = index < currentIndex ? 'done' : (index === currentIndex ? 'current' : 'upcoming');
+      const progress = state === 'upcoming' ? 'waiting' : stageStatusKey(stage);
       const detail = stage === current
         ? 'Current Step'
         : state === 'done'
@@ -11389,7 +11389,7 @@ const VERSION = '3.0.0-alpha183';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha183 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha184 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11546,7 +11546,7 @@ const VERSION = '3.0.0-alpha183';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha183 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha184 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -11730,7 +11730,7 @@ const VERSION = '3.0.0-alpha183';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha183 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha184 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -11911,7 +11911,7 @@ const VERSION = '3.0.0-alpha183';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha183 workflow save actions ===== */
+/* ===== 3.0.0-alpha184 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12200,7 +12200,7 @@ const VERSION = '3.0.0-alpha183';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha183 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha184 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12660,7 +12660,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha183 gasket torque reference ===== */
+/* ===== 3.0.0-alpha184 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -12866,27 +12866,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha183Bound) {
-      classSelect.dataset.alpha183Bound = '1';
+    if (!classSelect.dataset.alpha184Bound) {
+      classSelect.dataset.alpha184Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha183Bound) {
-      sizeSelect.dataset.alpha183Bound = '1';
+    if (!sizeSelect.dataset.alpha184Bound) {
+      sizeSelect.dataset.alpha184Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha183Bound) {
-      typeSelect.dataset.alpha183Bound = '1';
+    if (!typeSelect.dataset.alpha184Bound) {
+      typeSelect.dataset.alpha184Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha183Bound) {
-      searchInput.dataset.alpha183Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha184Bound) {
+      searchInput.dataset.alpha184Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();
