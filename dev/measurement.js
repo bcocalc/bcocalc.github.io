@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha164';
+const BUILD_VERSION = '3.0.0-alpha165';
 
 (function(){
 
@@ -128,7 +128,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha164 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha165 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -907,8 +907,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha164';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha164';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha165';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha165';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -925,6 +925,7 @@ const machineReferenceData = bundledStackupReferences.length
   : machineManualIndexData;
 machineReferenceData.forEach((row, index) => {
   if (row && !row.id) row.id = `machine-reference-${index}`;
+  if (row) row.displayName = buildMachineReferenceDisplayName(row);
 });
 let machineReferenceFilteredData = machineReferenceData.slice();
 const glossaryRowsData = [
@@ -1000,8 +1001,132 @@ function normalizeMachineReferenceSearchText(value) {
     .trim();
 }
 
+function normalizeMachineReferenceDisplayText(value) {
+  return String(value || '')
+    .replace(/\b(?:1|I)\s+P\s*-\s*(\d+)/gi, 'IP-$1')
+    .replace(/\bIP\s+(\d+)/gi, 'IP-$1')
+    .replace(/\bIP\s*-\s*(\d+)/gi, 'IP-$1')
+    .replace(/\bT\s*-\s*(\d+)/gi, 'T-$1')
+    .replace(/#(?=(?:Gate|Housing|Valve|Line|Tapping|Machine))/gi, '# ')
+    .replace(/#(?=\d+")/g, '# ')
+    .replace(/\s*-\s*/g, ' - ')
+    .replace(/\s+/g, ' ')
+    .replace(/\bIP\s*-\s*(\d+)/gi, 'IP-$1')
+    .replace(/\bT\s*-\s*(\d+)/gi, 'T-$1')
+    .replace(/\bHI\s*-\s*STOP\b/gi, 'HI-STOP')
+    .replace(/\bSTACK\s*-\s*UP\b/gi, 'STACK-UP')
+    .replace(/\s+\.$/g, '.')
+    .trim();
+}
+
+function normalizeStackupSourceText(value) {
+  return normalizeMachineReferenceDisplayText(value)
+    .replace(/ALWAYSHI-STOP/gi, 'ALWAYS HI-STOP')
+    .replace(/FMaximum/gi, 'F Maximum')
+    .replace(/PSIMaximum/gi, 'PSI Maximum')
+    .replace(/600#Normal/gi, '600# Normal')
+    .replace(/situations\)Size/gi, 'situations) Size')
+    .replace(/BLine Stop/gi, 'B Line Stop')
+    .replace(/#Housing/gi, '# Housing')
+    .replace(/#Gate/gi, '# Gate');
+}
+
+function getMachineReferenceDisplayName(row) {
+  return row?.displayName || row?.name || 'Selected Stack-Up';
+}
+
+function sourceFamilyLabel(source = '') {
+  const name = String(source || '').replace(/\.pdf$/i, '').trim();
+  const labels = [
+    [/Series 1 Hyd Stack ups gate valve/i, 'Series 1 Hydraulic Gate Valve'],
+    [/Series 1 Hyd Stack ups stv/i, 'Series 1 Hydraulic STV'],
+    [/Series 1 Jackscrew Stack ups gate valve/i, 'Series 1 Jackscrew Gate Valve'],
+    [/Series 1 Jackscrew Stack ups stv/i, 'Series 1 Jackscrew STV'],
+    [/Series 2 hyd gate valve/i, 'Series 2 Hydraulic Gate Valve'],
+    [/Series 2 hyd stv/i, 'Series 2 Hydraulic STV'],
+    [/Series 2 mechanical gate valve/i, 'Series 2 Mechanical Gate Valve'],
+    [/Series 3 hyd gate valve/i, 'Series 3 Hydraulic Gate Valve'],
+    [/Series 3 hyd stv/i, 'Series 3 Hydraulic STV'],
+    [/Series 3 Mechanical gate valve/i, 'Series 3 Mechanical Gate Valve']
+  ];
+  const match = labels.find(([pattern]) => pattern.test(name));
+  return match ? match[1] : name || 'Stack-Up';
+}
+
+function firstStackupPatternMatch(text, patterns) {
+  for (const pattern of patterns) {
+    const matches = Array.from(text.matchAll(pattern));
+    if (matches.length) return normalizeMachineReferenceDisplayText(matches[matches.length - 1][0]);
+  }
+  return '';
+}
+
+function extractHotTapDisplayName(row) {
+  const text = normalizeStackupSourceText(row?.text);
+  return firstStackupPatternMatch(text, [
+    /\d+(?:\.\d+)?"\s+(?:150#|300#|600#|300#\/600#)\s+(?:THREADED\s+)?HOT TAP\s+\d+(?:\.\d+)?"\s+(?:IP|T)\s*-?\s*\d+(?:\s*\(\d+"\s*TRAVEL\))?/gi,
+    /\d+(?:\.\d+)?"\s+(?:THREADED\s+)?HOT TAP\s+\d+(?:\.\d+)?"\s+(?:IP|T)\s*-?\s*\d+(?:\s*\(\d+"\s*TRAVEL\))?/gi,
+    /\d+(?:\.\d+)?"\s+(?:150#|300#|600#|300#\/600#)\s+HOT TAP\s+(?:IP|T)\s*-?\s*\d+(?:\s*\(\d+"\s*TRAVEL\))?/gi
+  ]);
+}
+
+function extractHiStopDisplayName(row) {
+  const text = normalizeStackupSourceText(row?.text);
+  return firstStackupPatternMatch(text, [
+    /\d+(?:\.\d+)?"\s+\.\d+"\s+600#\s+HI-STOP/gi,
+    /\d+(?:\.\d+)?"\s+600#\s+HI-STOP/gi,
+    /\.\d+"\s+600#\s+HI-STOP/gi
+  ]);
+}
+
+function extractQualitechDisplayName(row) {
+  const text = normalizeStackupSourceText(row?.text);
+  if (/3\s*"?\s+SHORTCUT VALVE/i.test(text)) return '3" Shortcut Valve Stack-Up';
+  if (/PLUG SETTER/i.test(text)) return 'Qualitech Plug Setter';
+  if (/3"\s+150#\s+FLANGE VALVE/i.test(text)) return '3" 150# Qualitech Flange Valve';
+  if (/ACTUATOR WEIGHT/i.test(text)) return 'Qualitech Actuator';
+  if (/HOT TAP QUALITECH VALVE/i.test(text) && /QUALITECH LINE STOP/i.test(text)) return '2" Qualitech Hot Tap / Line Stop Overview';
+  return '';
+}
+
+function buildMachineReferenceDisplayName(row) {
+  const current = normalizeMachineReferenceDisplayText(row?.name);
+  const type = String(row?.type || '');
+  const source = String(row?.source || '');
+  const text = normalizeStackupSourceText(row?.text);
+  let extracted = '';
+
+  if (/Hot Tap/i.test(type)) extracted = extractHotTapDisplayName(row);
+  if (!extracted && /Hi-Stop/i.test(type)) extracted = extractHiStopDisplayName(row);
+  if (!extracted && /Qualitech/i.test(source)) extracted = extractQualitechDisplayName(row);
+
+  if (!extracted && /Rating\/Operating Dimensions|Function Rating\/Operating Dimensions/i.test(current)) {
+    extracted = `${sourceFamilyLabel(source)} Ratings / Operating Dimensions`;
+  }
+  if (!extracted && /LINE STOP MACHINE/i.test(current) && /Travel/i.test(current) && current.length > 80) {
+    extracted = `${sourceFamilyLabel(source)} Machine Range`;
+  }
+  if (!extracted && /Normal Line Stop Range/i.test(current)) {
+    extracted = `${sourceFamilyLabel(source)} Normal Line Stop Range`;
+  }
+
+  const genericName = /^(?:HOT TAP|HI-STOP|STACK-UP|Qualitech Stackup|THE HOT TAP\.?|FOR \d+" HOT TAP WHEN)$/i.test(current);
+  if (extracted && (genericName || current.length > 95 || /THE HOT TAP|FOR \d+" HOT TAP WHEN|Rating\/Operating Dimensions/i.test(current))) {
+    return extracted;
+  }
+  if (extracted && /(?:1|I)\s+P|IP\s+\d|#(?:Gate|Housing)|#\d+"/i.test(row?.name || '')) return extracted;
+  if (genericName && extracted) return extracted;
+  if (genericName && /Qualitech/i.test(source)) return `Qualitech Stack-Up p. ${row?.sourcePage || '-'}`;
+  if (genericName && /Hi-Stop/i.test(type)) return `Hi-Stop Stack-Up p. ${row?.sourcePage || '-'}`;
+  if (genericName && /Hot Tap/i.test(type)) return `Hot Tap Stack-Up p. ${row?.sourcePage || '-'}`;
+  if (/Rating\/Operating Dimensions/i.test(current)) return `${sourceFamilyLabel(source)} Ratings / Operating Dimensions`;
+  if (/LINE STOP MACHINE/i.test(text) && /Travel/i.test(text) && current.length > 95) return `${sourceFamilyLabel(source)} Machine Range`;
+  return current || `Stack-Up p. ${row?.sourcePage || '-'}`;
+}
+
 function getMachineReferenceText(row) {
   return normalizeMachineReferenceSearchText([
+    getMachineReferenceDisplayName(row),
     row?.name,
     row?.type,
     row?.range,
@@ -1174,7 +1299,7 @@ function updateMachineReferenceVisual(row) {
 function updateMachineReferenceDetail(row) {
   if (!row) return;
   const sourcePage = row.sourcePage && row.sourcePage !== '-' ? `Page ${row.sourcePage}` : 'Indexed';
-  if (machineReferenceDetailTitleEl) machineReferenceDetailTitleEl.textContent = row.name || 'Selected Stack-Up';
+  if (machineReferenceDetailTitleEl) machineReferenceDetailTitleEl.textContent = getMachineReferenceDisplayName(row);
   if (machineReferenceDetailMetaEl) {
     machineReferenceDetailMetaEl.textContent = `${row.type || 'Reference'} | ${row.range || 'Range not listed'} | ${row.source || 'Source not listed'}`;
   }
@@ -1212,7 +1337,7 @@ function renderMachineReferenceRows(rows = machineReferenceData) {
         const details = detailBits.length ? detailBits.join(' | ') : row.use || row.text || '-';
         const sourcePage = row.sourcePage && row.sourcePage !== '-' ? `p. ${row.sourcePage}` : 'index';
         const rowKey = getMachineReferenceKey(row);
-        return `<tr class="${rowKey === activeKey ? 'is-selected' : ''}"><td><button type="button" class="machine-reference-row-btn" data-machine-reference="${escapeHtml(rowKey)}">${escapeHtml(row.name)}</button></td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.range)}</td><td>${escapeHtml(details)}</td><td>${escapeHtml(row.source)}<span class="machine-file-badge">${escapeHtml(sourcePage)}</span></td></tr>`;
+        return `<tr class="${rowKey === activeKey ? 'is-selected' : ''}"><td><button type="button" class="machine-reference-row-btn" data-machine-reference="${escapeHtml(rowKey)}">${escapeHtml(getMachineReferenceDisplayName(row))}</button></td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.range)}</td><td>${escapeHtml(details)}</td><td>${escapeHtml(row.source)}<span class="machine-file-badge">${escapeHtml(sourcePage)}</span></td></tr>`;
       }).join('')
     : '<tr><td colspan="5">No machine references match that search.</td></tr>';
   if (machineReferenceTotalChipEl) machineReferenceTotalChipEl.textContent = String(machineReferenceData.length);
@@ -1275,7 +1400,7 @@ function populateMachineReferenceSelect(rows = machineReferenceFilteredData) {
   }
   machineReferenceSelectEl.disabled = false;
   machineReferenceSelectEl.innerHTML = safeRows
-    .map((row) => `<option value="${escapeHtml(getMachineReferenceKey(row))}">${escapeHtml(row.type)} - ${escapeHtml(row.name)}</option>`)
+    .map((row) => `<option value="${escapeHtml(getMachineReferenceKey(row))}">${escapeHtml(row.type)} - ${escapeHtml(getMachineReferenceDisplayName(row))}</option>`)
     .join('');
   const nextKey = previous && safeRows.some((row) => getMachineReferenceKey(row) === previous) ? previous : getMachineReferenceKey(safeRows[0]);
   if (nextKey) machineReferenceSelectEl.value = nextKey;
@@ -1884,7 +2009,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha164', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha165', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5847,7 +5972,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha164';
+const TC63_VERSION = '3.0.0-alpha165';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6093,7 +6218,7 @@ const TC63_VERSION = '3.0.0-alpha164';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha164';
+const VERSION = '3.0.0-alpha165';
 
   function tc65GetJobs() {
     try {
@@ -9306,7 +9431,7 @@ const VERSION = '3.0.0-alpha164';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha164';
+const VERSION = '3.0.0-alpha165';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10848,7 +10973,7 @@ const VERSION = '3.0.0-alpha164';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha164 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha165 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
