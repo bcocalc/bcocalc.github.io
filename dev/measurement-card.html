@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha187">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha188">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha187 - 2026-05-13</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha188 - 2026-05-13</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha187 - 2026-05-13</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha188 - 2026-05-13</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -626,6 +626,30 @@
       <div class="workflow-helper-card"><span>Hot Tap</span><strong id="workflowReviewHotTap">Not Ready</strong></div>
       <div class="workflow-helper-card" data-jobtype-only="lineStop"><span>Line Stop</span><strong id="workflowReviewLineStop">Not Ready</strong></div>
       <div class="workflow-helper-card" data-jobtype-only="lineStop"><span>Completion Plug</span><strong id="workflowReviewCompletionPlug">Not Ready</strong></div>
+    </div>
+    <div class="workflow-review-status-card" id="workflowReviewStatusCard" data-state="review">
+      <div>
+        <div class="hero-eyebrow">Final Status</div>
+        <h4 id="workflowReviewStatusTitle">Review the job before saving</h4>
+        <p id="workflowReviewStatusCopy">Use this final check to see what will save with the job and what still needs attention.</p>
+      </div>
+      <div class="workflow-review-status-pill" id="workflowReviewStatusPill">Review</div>
+    </div>
+    <div class="workflow-review-detail-grid">
+      <section class="workflow-review-detail-card">
+        <div class="workflow-review-detail-head">
+          <h4>Ready Checklist</h4>
+          <span id="workflowReviewChecklistCount">0 ready</span>
+        </div>
+        <div id="workflowReviewChecklist" class="workflow-review-checklist" aria-live="polite"></div>
+      </section>
+      <section class="workflow-review-detail-card">
+        <div class="workflow-review-detail-head">
+          <h4>Operations Saved</h4>
+          <span id="workflowReviewOperationCount">1 operation</span>
+        </div>
+        <div id="workflowReviewOperationsList" class="workflow-review-operations-list" aria-live="polite"></div>
+      </section>
     </div>
     <div class="workflow-helper-note" id="workflowReviewNote">Save the job once the stages you need read Ready or In Progress with a confirmed output.</div>
   </section>
@@ -1695,9 +1719,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha187"></script>
-<script src="stackup-data.js?v=3.0.0-alpha187"></script>
-<script src="measurement.js?v=3.0.0-alpha187"></script>
+<script src="firebase-config.js?v=3.0.0-alpha188"></script>
+<script src="stackup-data.js?v=3.0.0-alpha188"></script>
+<script src="measurement.js?v=3.0.0-alpha188"></script>
   </section>
 </body>
 </html>
