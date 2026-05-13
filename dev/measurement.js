@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha168';
+const BUILD_VERSION = '3.0.0-alpha169';
 
 (function(){
 
@@ -38,23 +38,10 @@ const BUILD_VERSION = '3.0.0-alpha168';
 })();
 
 const TAP_MACHINE_OPTIONS = [
+  '412',
   '360 / 152',
   '660 / 760',
-  '1200-M120',
-  'HTM 360',
-  'HTM 660',
-  'HTM 760',
-  'HTM 1200',
-  'HTM M120',
-  'HTM 18 T101',
-  'HTM 24 T101',
-  'HTM 28 T101',
-  'HTM C1-25',
-  'HTM C1-36',
-  'IP 304 / 406 / 508',
-  'IP 914XL',
-  'IPSCO IP100',
-  'Series 1-4 Hydraulic Actuator'
+  '1200-M120'
 ];
 
 function machineKey(value) {
@@ -74,11 +61,13 @@ function normalizeMachineType(value) {
     ['760660', '660 / 760'],
     ['1200m120', '1200-M120'],
     ['m1201200', '1200-M120'],
-    ['ip304406508', 'IP 304 / 406 / 508'],
-    ['ip304406510', 'IP 304 / 406 / 508'],
-    ['ip914xlnewmanual', 'IP 914XL'],
-    ['ipscoip100manual', 'IPSCO IP100'],
-    ['series1to4hydraulicactuator', 'Series 1-4 Hydraulic Actuator']
+    ['tap412', '412'],
+    ['htm412', '412'],
+    ['htm360', '360 / 152'],
+    ['htm660', '660 / 760'],
+    ['htm760', '660 / 760'],
+    ['htm1200', '1200-M120'],
+    ['htmm120', '1200-M120']
   ]);
   if (aliases.has(key)) return aliases.get(key);
   if (key === '360' || key === '152') return '360 / 152';
@@ -128,7 +117,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha168 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha169 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -907,8 +896,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha168';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha168';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha169';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha169';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2023,7 +2012,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha168', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha169', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2907,7 +2896,7 @@ function initAccordionSections() {
     }
     section.appendChild(body);
     heading.classList.add('accordion-heading');
-    heading.insertAdjacentHTML('beforeend', '<span class="accordion-caret">?</span>');
+    heading.insertAdjacentHTML('beforeend', '<span class="accordion-caret" aria-hidden="true"></span>');
     heading.addEventListener('click', () => {
       section.classList.toggle('collapsed');
     });
@@ -5992,7 +5981,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha168';
+const TC63_VERSION = '3.0.0-alpha169';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6238,7 +6227,7 @@ const TC63_VERSION = '3.0.0-alpha168';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha168';
+const VERSION = '3.0.0-alpha169';
 
   function tc65GetJobs() {
     try {
@@ -6400,9 +6389,9 @@ const VERSION = '3.0.0-alpha168';
   setTimeout(() => {
     try {
       const badge = document.querySelector('.version-badge');
-      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-12`;
+      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-13`;
       const title = document.querySelector('.top-app-title');
-      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-12`;
+      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-13`;
       tc65RenderDetails();
     } catch {}
   }, 0);
@@ -9451,7 +9440,7 @@ const VERSION = '3.0.0-alpha168';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha168';
+const VERSION = '3.0.0-alpha169';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10359,6 +10348,9 @@ const VERSION = '3.0.0-alpha168';
       copy: 'Keep it simple: set the job, confirm pipe and cutter, run the hot tap, then review ETA and output.',
       shellTitle: 'Hot Tap job selected',
       shellCopy: 'Only the Hot Tap workflow stays on screen so the crew does not have to sort through Line Stop or Plug fields.',
+      choiceTitle: 'Selected path: Hot Tap',
+      choiceCopy: 'Use this path when the job only needs Job Setup, Pipe / Cutter, Hot Tap, and review.',
+      startLabel: 'Start Hot Tap Workflow',
       steps: ['1 Job Setup','2 Pipe / Cutter','3 Hot Tap','4 ETA / Review']
     },
     'Line Stop': {
@@ -10366,6 +10358,9 @@ const VERSION = '3.0.0-alpha168';
       copy: 'Run the full sequence in order: job setup, pipe and cutter, hot tap, line stop, completion plug, then review.',
       shellTitle: 'Line Stop job selected',
       shellCopy: 'This job shows the full path: Hot Tap, Line Stop, and Completion Plug, in one guided sequence.',
+      choiceTitle: 'Selected path: Line Stop',
+      choiceCopy: 'Use this path when the job needs Hot Tap, Line Stop, Completion Plug, and final review in order.',
+      startLabel: 'Start Line Stop Workflow',
       steps: ['1 Job Setup','2 Pipe / Cutter','3 Hot Tap','4 Line Stop','5 Completion Plug','6 ETA / Review']
     }
   };
@@ -10389,15 +10384,27 @@ const VERSION = '3.0.0-alpha168';
     if (select.value !== jobType) select.value = jobType;
     const config = JOB_TYPES[jobType] || JOB_TYPES['Hot Tap'];
     document.querySelectorAll('[data-jobtype-choice]').forEach((button) => {
-      button.classList.toggle('active', button.dataset.jobtypeChoice === jobType);
-      button.setAttribute('aria-pressed', button.dataset.jobtypeChoice === jobType ? 'true' : 'false');
+      const selected = button.dataset.jobtypeChoice === jobType;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      button.setAttribute('aria-label', selected ? `${button.dataset.jobtypeChoice} selected path` : `Switch to ${button.dataset.jobtypeChoice} path`);
+      const state = button.querySelector('.workflow-jobtype-state');
+      if (state) state.textContent = selected ? 'Selected path' : 'Tap to switch';
     });
     const shellTitle = document.getElementById('workflowShellTitle');
     const shellCopy = document.getElementById('workflowShellCopy');
+    const choiceAlert = document.getElementById('workflowChoiceAlert');
+    const choiceTitle = document.getElementById('workflowChoiceTitle');
+    const choiceCopy = document.getElementById('workflowChoiceCopy');
+    const startButton = document.getElementById('workflowStartBtn');
     const phaseTitle = document.getElementById('workflowPhaseTitle');
     const phaseCopy = document.getElementById('workflowPhaseCopy');
     if (shellTitle) shellTitle.textContent = config.shellTitle;
     if (shellCopy) shellCopy.textContent = config.shellCopy;
+    if (choiceAlert) choiceAlert.dataset.jobtype = jobType === 'Line Stop' ? 'line-stop' : 'hot-tap';
+    if (choiceTitle) choiceTitle.textContent = config.choiceTitle;
+    if (choiceCopy) choiceCopy.textContent = config.choiceCopy;
+    if (startButton) startButton.textContent = config.startLabel;
     if (phaseTitle) phaseTitle.textContent = config.title;
     if (phaseCopy) phaseCopy.textContent = config.copy;
     renderStepPills('workflowStageRoadmap', config.steps);
@@ -11173,7 +11180,7 @@ const VERSION = '3.0.0-alpha168';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha168 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha169 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
