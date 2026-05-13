@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha163';
+const BUILD_VERSION = '3.0.0-alpha164';
 
 (function(){
 
@@ -128,7 +128,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha163 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha164 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -902,12 +902,13 @@ const machineReferenceDimensionsEl = document.getElementById('machineReferenceDi
 const machineReferenceWeightsEl = document.getElementById('machineReferenceWeights');
 const machineReferencePageTextEl = document.getElementById('machineReferencePageText');
 const machineReferenceVisualCanvasEl = document.getElementById('machineReferenceVisualCanvas');
+const machineReferenceVisualFrameEl = document.getElementById('machineReferenceVisualFrame');
 const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.stackup-visual-frame-wrap') || null;
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs';
-const STACKUP_PDFJS_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha164';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha164';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -1074,13 +1075,32 @@ async function getStackupPdfJs() {
 async function getStackupPdfDocument(pdfUrl) {
   if (!stackupPdfDocumentCache.has(pdfUrl)) {
     const pdfjsLib = await getStackupPdfJs();
-    stackupPdfDocumentCache.set(pdfUrl, pdfjsLib.getDocument({ url: pdfUrl }).promise);
+    const docPromise = pdfjsLib.getDocument({ url: pdfUrl }).promise.catch((error) => {
+      stackupPdfDocumentCache.delete(pdfUrl);
+      throw error;
+    });
+    stackupPdfDocumentCache.set(pdfUrl, docPromise);
   }
   return stackupPdfDocumentCache.get(pdfUrl);
 }
 
+function hideMachineReferenceNativePreview() {
+  if (!machineReferenceVisualFrameEl) return;
+  machineReferenceVisualFrameEl.hidden = true;
+  machineReferenceVisualFrameEl.removeAttribute('src');
+}
+
+function showMachineReferenceNativePreview(source) {
+  if (!machineReferenceVisualFrameEl || !source?.openUrl) return false;
+  machineReferenceVisualFrameEl.src = source.openUrl;
+  machineReferenceVisualFrameEl.hidden = false;
+  setMachineReferenceVisualMessage('', false);
+  return true;
+}
+
 async function renderMachineReferenceVisualPage(source, token) {
   if (!machineReferenceVisualCanvasEl || !machineReferenceVisualWrapEl || !source) return;
+  hideMachineReferenceNativePreview();
   const pdf = await getStackupPdfDocument(source.pdfUrl);
   if (token !== machineReferenceVisualRenderToken) return;
 
@@ -1107,6 +1127,7 @@ async function renderMachineReferenceVisualPage(source, token) {
   const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
   await page.render({ canvasContext: context, viewport, transform }).promise;
   if (token !== machineReferenceVisualRenderToken) return;
+  hideMachineReferenceNativePreview();
   canvas.hidden = false;
   setMachineReferenceVisualMessage('', false);
 }
@@ -1128,11 +1149,14 @@ function updateMachineReferenceVisual(row) {
     }
   }
   if (!machineReferenceVisualCanvasEl) {
-    setMachineReferenceVisualMessage('Open the PDF to view the selected stack-up drawing.', !visualUrl);
+    if (!showMachineReferenceNativePreview(visualSource)) {
+      setMachineReferenceVisualMessage('Open the PDF to view the selected stack-up drawing.', !visualUrl);
+    }
     return;
   }
   if (!visualSource) {
     machineReferenceVisualCanvasEl.hidden = true;
+    hideMachineReferenceNativePreview();
     setMachineReferenceVisualMessage('This reference is indexed only; no stack-up drawing is bundled for this entry yet.', true);
     return;
   }
@@ -1141,7 +1165,9 @@ function updateMachineReferenceVisual(row) {
   renderMachineReferenceVisualPage(visualSource, renderToken).catch(() => {
     if (renderToken !== machineReferenceVisualRenderToken) return;
     machineReferenceVisualCanvasEl.hidden = true;
-    setMachineReferenceVisualMessage('The inline preview could not load. Use Open PDF to view the drawing.', true);
+    if (!showMachineReferenceNativePreview(visualSource)) {
+      setMachineReferenceVisualMessage('The inline preview could not load. Use Open PDF to view the drawing.', true);
+    }
   });
 }
 
@@ -1858,7 +1884,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha163', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha164', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5821,7 +5847,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha163';
+const TC63_VERSION = '3.0.0-alpha164';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6067,7 +6093,7 @@ const TC63_VERSION = '3.0.0-alpha163';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha163';
+const VERSION = '3.0.0-alpha164';
 
   function tc65GetJobs() {
     try {
@@ -9280,7 +9306,7 @@ const VERSION = '3.0.0-alpha163';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha163';
+const VERSION = '3.0.0-alpha164';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10822,7 +10848,7 @@ const VERSION = '3.0.0-alpha163';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha163 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha164 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;

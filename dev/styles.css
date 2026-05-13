@@ -6168,10 +6168,10 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha163 reference buildout ===== */
+/* ===== 3.0.0-alpha164 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
   align-items: stretch;
 }
 
@@ -6180,6 +6180,10 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   display: grid;
   gap: 12px;
   align-content: start;
+}
+
+.machine-reference-grid .machine-summary-card:first-child {
+  grid-column: 1 / -1;
 }
 
 .machine-search-row {
