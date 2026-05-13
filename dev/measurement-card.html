@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha173">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha174">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha173 - 2026-05-13</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha174 - 2026-05-13</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha173 - 2026-05-13</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha174 - 2026-05-13</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -1046,7 +1046,7 @@
       </div>
       <div class="reference-view" data-reference-view="pivothead">
         <h3 class="reference-subheading">Pivot Head Setup</h3>
-        <p class="reference-copy">Use pipe size and wall thickness to check the sealing element range, load pad measurement, nose plate OD, and Clearance B for a conventional pivot head line stop.</p>
+        <p class="reference-copy">Use pipe size and wall thickness to check the sealing element range, load pad measurement, nose/backing plate OD, and Clearance B for a conventional pivot head line stop.</p>
         <div class="reference-grid pivot-reference-grid">
           <div class="reference-card pivot-input-card">
             <h4>Pipe Setup</h4>
@@ -1120,12 +1120,26 @@
               <div class="bolting-summary-item"><span class="summary-label">Tolerance</span><span id="pivotNoseToleranceOut" class="summary-value">?</span></div>
               <div class="bolting-summary-item"><span class="summary-label">OD Range</span><span id="pivotNoseRangeOut" class="summary-value">?</span></div>
             </div>
+            <div class="pivot-backing-helper">
+              <div class="pivot-backing-input-row">
+                <label for="pivotMeasuredNoseOd">Measured Nose Plate OD</label>
+                <input id="pivotMeasuredNoseOd" type="text" inputmode="decimal" placeholder="Optional">
+              </div>
+              <div class="bolting-summary-grid plant-summary-grid pivot-backing-grid">
+                <div class="bolting-summary-item"><span class="summary-label">Measured Under ID</span><span id="pivotBackingUnderOut" class="summary-value">?</span></div>
+                <div class="bolting-summary-item"><span class="summary-label">Backing OD Target</span><span id="pivotBackingTargetOut" class="summary-value">?</span></div>
+                <div class="bolting-summary-item"><span class="summary-label">Diameter Add Needed</span><span id="pivotBackingAddOut" class="summary-value">?</span></div>
+                <div class="bolting-summary-item"><span class="summary-label">Per-Side Add</span><span id="pivotBackingPerSideOut" class="summary-value">?</span></div>
+              </div>
+              <p id="pivotBackingStatus" class="reference-footnote">Enter the actual nose plate OD to check whether a backing plate review is needed.</p>
+            </div>
           </div>
           <div class="reference-card">
             <h4>Source Notes</h4>
             <ul class="reference-note-list">
               <li>Line Stop Equipment Set Up guide: sealing elements, load pad, head assembly, and Clearance B.</li>
               <li>General Line Stop guide: pivot head measurement checks and set point formula.</li>
+              <li>If the nose plate OD is too small for the listed guide range, the setup guide points to Technical Support for potential backing plate options.</li>
               <li>Verify material compatibility, temperature, pressure class, and condition of the sealing element before use.</li>
             </ul>
           </div>
@@ -1530,9 +1544,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha173"></script>
-<script src="stackup-data.js?v=3.0.0-alpha173"></script>
-<script src="measurement.js?v=3.0.0-alpha173"></script>
+<script src="firebase-config.js?v=3.0.0-alpha174"></script>
+<script src="stackup-data.js?v=3.0.0-alpha174"></script>
+<script src="measurement.js?v=3.0.0-alpha174"></script>
   </section>
 </body>
 </html>

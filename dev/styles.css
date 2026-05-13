@@ -6188,7 +6188,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha173 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha174 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6294,7 +6294,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha173 reference buildout ===== */
+/* ===== 3.0.0-alpha174 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6690,7 +6690,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha173 reference library picker ===== */
+/* ===== 3.0.0-alpha174 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -6975,7 +6975,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha173 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha174 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7030,6 +7030,41 @@ body.light .reference-library-option.active {
 
 .pivot-summary-grid .summary-value {
   line-height: 1.28;
+}
+
+.pivot-backing-helper {
+  border-top: 1px solid rgba(148, 163, 184, 0.22);
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+}
+
+.pivot-backing-input-row {
+  display: grid;
+  gap: 7px;
+}
+
+.pivot-backing-input-row label {
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.pivot-backing-input-row input {
+  min-height: 44px;
+  min-width: 0;
+  padding-left: 12px;
+  padding-right: 12px;
+  width: 100%;
+}
+
+.pivot-backing-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+#pivotBackingStatus {
+  margin: 0;
 }
 
 .pivot-detail-card {

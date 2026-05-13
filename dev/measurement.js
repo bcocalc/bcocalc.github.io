@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha173';
+const BUILD_VERSION = '3.0.0-alpha174';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha173 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha174 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -853,7 +853,7 @@ const referenceLibraryItems = [
   { id: 'glossary', group: 'Charts', label: 'Glossary', description: 'Abbreviations and field meanings', keywords: 'glossary abbreviations terms field meanings' },
   { id: 'htp', group: 'Charts', label: 'HTP Chart', description: 'Pipe size, branch, head, and cutter lookup', keywords: 'htp pipe branch head cutter bco' },
   { id: 'stopmath', group: 'Charts', label: 'Stop Math', description: 'Standard, HTP, and Hi-Stop formulas', keywords: 'line stop math htp hi stop formula tco plug set' },
-  { id: 'pivothead', group: 'Setup Guides', label: 'Pivot Head Setup', description: 'Seal size, load pad, nose plate, and Clearance B', keywords: 'pivot head line stop setup sealing element seal load pad nose plate clearance b wall thickness' },
+  { id: 'pivothead', group: 'Setup Guides', label: 'Pivot Head Setup', description: 'Seal size, load pad, nose/backing plate, and Clearance B', keywords: 'pivot head line stop setup sealing element seal load pad nose plate backing plate clearance b wall thickness' },
   { id: 'machines', group: 'Machine Reference', label: 'Machine Stack-Ups', description: 'Tap, stop, plug, and manual index', keywords: 'machine stack ups hot tap line stop completion plug manuals' },
   { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
   { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
@@ -1006,9 +1006,11 @@ const pivotPipeMaterialEl = document.getElementById('pivotPipeMaterial');
 const pivotPipeSizeEl = document.getElementById('pivotPipeSize');
 const pivotWallThicknessEl = document.getElementById('pivotWallThickness');
 const pivotPipeIdOverrideEl = document.getElementById('pivotPipeIdOverride');
+const pivotMeasuredNoseOdEl = document.getElementById('pivotMeasuredNoseOd');
 const pivotUseCurrentPipeBtnEl = document.getElementById('pivotUseCurrentPipeBtn');
 const pivotClearOverrideBtnEl = document.getElementById('pivotClearOverrideBtn');
 const pivotInputStatusEl = document.getElementById('pivotInputStatus');
+const pivotBackingStatusEl = document.getElementById('pivotBackingStatus');
 const pivotSealBodyEl = document.getElementById('pivotSealBody');
 const machineReferenceSelectEl = document.getElementById('machineReferenceSelect');
 const machineReferenceSearchInputEl = document.getElementById('machineReferenceSearchInput');
@@ -1031,8 +1033,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha173';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha173';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha174';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha174';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -1657,21 +1659,33 @@ function getPivotNosePlateCheck(pipeSize, pipeId) {
     return { tolerance: '-', range: '-' };
   }
   if (nominal >= 3 && nominal <= 4) {
+    const minOd = pipeId - 0.25;
+    const maxOd = pipeId - 0.125;
     return {
       tolerance: '1/8" to 1/4" under pipe ID',
-      range: `${formatPivotInches(pipeId - 0.25)} to ${formatPivotInches(pipeId - 0.125)}`
+      range: `${formatPivotInches(minOd)} to ${formatPivotInches(maxOd)}`,
+      minOd,
+      maxOd
     };
   }
   if (nominal >= 6 && nominal <= 12) {
+    const minOd = pipeId - 0.625;
+    const maxOd = pipeId - 0.5;
     return {
       tolerance: '1/2" to 5/8" under pipe ID',
-      range: `${formatPivotInches(pipeId - 0.625)} to ${formatPivotInches(pipeId - 0.5)}`
+      range: `${formatPivotInches(minOd)} to ${formatPivotInches(maxOd)}`,
+      minOd,
+      maxOd
     };
   }
   if (nominal >= 14 && nominal <= 48) {
+    const minOd = pipeId - 0.75;
+    const maxOd = pipeId - 0.5;
     return {
       tolerance: '1/2" to 3/4" under pipe ID',
-      range: `${formatPivotInches(pipeId - 0.75)} to ${formatPivotInches(pipeId - 0.5)}`
+      range: `${formatPivotInches(minOd)} to ${formatPivotInches(maxOd)}`,
+      minOd,
+      maxOd
     };
   }
   return { tolerance: 'Not listed in guide', range: '-' };
@@ -1705,6 +1719,52 @@ function renderPivotSealRows(pipeId) {
   }).join('');
 }
 
+function updatePivotBackingPlateHelper(pipeId, measuredNoseOd, nose) {
+  const hasRange = Number.isFinite(pipeId) && Number.isFinite(nose?.minOd) && Number.isFinite(nose?.maxOd);
+  setPivotText('pivotBackingTargetOut', hasRange ? `${formatPivotInches(nose.minOd)} to ${formatPivotInches(nose.maxOd)}` : '-');
+
+  if (!hasRange) {
+    setPivotText('pivotBackingUnderOut', '-');
+    setPivotText('pivotBackingAddOut', '-');
+    setPivotText('pivotBackingPerSideOut', '-');
+    if (pivotBackingStatusEl) pivotBackingStatusEl.textContent = 'Select a listed pipe size and enter wall thickness or measured ID to calculate the backing plate target.';
+    return;
+  }
+
+  if (!Number.isFinite(measuredNoseOd)) {
+    setPivotText('pivotBackingUnderOut', '-');
+    setPivotText('pivotBackingAddOut', '-');
+    setPivotText('pivotBackingPerSideOut', '-');
+    if (pivotBackingStatusEl) pivotBackingStatusEl.textContent = 'Enter the actual nose plate OD to check whether a backing plate review is needed.';
+    return;
+  }
+
+  setPivotText('pivotBackingUnderOut', formatPivotInches(pipeId - measuredNoseOd));
+
+  if (measuredNoseOd < nose.minOd) {
+    const diameterAdd = nose.minOd - measuredNoseOd;
+    setPivotText('pivotBackingAddOut', formatPivotInches(diameterAdd));
+    setPivotText('pivotBackingPerSideOut', formatPivotInches(diameterAdd / 2));
+    if (pivotBackingStatusEl) {
+      pivotBackingStatusEl.textContent = 'Measured nose plate OD is smaller than the guide range. Treat this as a backing plate / Technical Support review before using the setup.';
+    }
+    return;
+  }
+
+  if (measuredNoseOd > nose.maxOd) {
+    setPivotText('pivotBackingAddOut', `Oversize by ${formatPivotInches(measuredNoseOd - nose.maxOd)}`);
+    setPivotText('pivotBackingPerSideOut', '-');
+    if (pivotBackingStatusEl) {
+      pivotBackingStatusEl.textContent = 'Measured nose plate OD is larger than the guide range. A backing plate does not correct an oversized nose plate; verify plate selection and pipe ID.';
+    }
+    return;
+  }
+
+  setPivotText('pivotBackingAddOut', 'None');
+  setPivotText('pivotBackingPerSideOut', 'None');
+  if (pivotBackingStatusEl) pivotBackingStatusEl.textContent = 'Measured nose plate OD is inside the guide range. Backing plate review is not indicated by this check.';
+}
+
 function updatePivotHeadSetup() {
   if (!pivotPipeSizeEl) return;
   const material = getPivotMaterial();
@@ -1712,6 +1772,7 @@ function updatePivotHeadSetup() {
   const od = Number.parseFloat(trueOD[material]?.[pipeSize]);
   const wall = getMeasurementValue(pivotWallThicknessEl);
   const overrideId = getMeasurementValue(pivotPipeIdOverrideEl);
+  const measuredNoseOd = getMeasurementValue(pivotMeasuredNoseOdEl);
   const calculatedId = Number.isFinite(od) && Number.isFinite(wall) ? od - (wall * 2) : NaN;
   const pipeId = Number.isFinite(overrideId) ? overrideId : calculatedId;
   const loadPadTarget = Number.isFinite(pipeId) ? pipeId / 2 : NaN;
@@ -1735,6 +1796,7 @@ function updatePivotHeadSetup() {
   setPivotText('pivotNoseRangeOut', nose.range);
   if (pivotInputStatusEl) pivotInputStatusEl.textContent = status.join(' ');
   renderPivotSealRows(pipeId);
+  updatePivotBackingPlateHelper(pipeId, measuredNoseOd, nose);
 }
 
 function useCurrentPipeForPivotHead() {
@@ -1759,7 +1821,7 @@ if (pivotPipeMaterialEl) {
     updatePivotHeadSetup();
   });
 }
-[pivotPipeSizeEl, pivotWallThicknessEl, pivotPipeIdOverrideEl].forEach((el) => {
+[pivotPipeSizeEl, pivotWallThicknessEl, pivotPipeIdOverrideEl, pivotMeasuredNoseOdEl].forEach((el) => {
   if (!el) return;
   el.addEventListener('input', updatePivotHeadSetup);
   el.addEventListener('change', updatePivotHeadSetup);
@@ -2324,7 +2386,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha173', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha174', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6293,7 +6355,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha173';
+const TC63_VERSION = '3.0.0-alpha174';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6539,7 +6601,7 @@ const TC63_VERSION = '3.0.0-alpha173';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha173';
+const VERSION = '3.0.0-alpha174';
 
   function tc65GetJobs() {
     try {
@@ -9752,7 +9814,7 @@ const VERSION = '3.0.0-alpha173';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha173';
+const VERSION = '3.0.0-alpha174';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11492,7 +11554,7 @@ const VERSION = '3.0.0-alpha173';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha173 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha174 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
