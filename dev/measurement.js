@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha171';
+const BUILD_VERSION = '3.0.0-alpha172';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha171 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha172 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -691,7 +691,8 @@ function enableMixedMeasurementInputs() {
     'bcoPipeID','bcoCutterOD','md','ld','ptc','pod','start','mt','valveBore','gtf',
     'lsMd','lsLd','lsPod','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManual',
-    'fractionNumerator','fractionDenominator','decimalInput','etaBco'
+    'fractionNumerator','fractionDenominator','decimalInput','etaBco',
+    'pivotWallThickness','pivotPipeIdOverride'
   ];
   measurementFieldIds.forEach((id) => {
     const field = document.getElementById(id);
@@ -852,6 +853,7 @@ const referenceLibraryItems = [
   { id: 'glossary', group: 'Charts', label: 'Glossary', description: 'Abbreviations and field meanings', keywords: 'glossary abbreviations terms field meanings' },
   { id: 'htp', group: 'Charts', label: 'HTP Chart', description: 'Pipe size, branch, head, and cutter lookup', keywords: 'htp pipe branch head cutter bco' },
   { id: 'stopmath', group: 'Charts', label: 'Stop Math', description: 'Standard, HTP, and Hi-Stop formulas', keywords: 'line stop math htp hi stop formula tco plug set' },
+  { id: 'pivothead', group: 'Setup Guides', label: 'Pivot Head Setup', description: 'Seal size, load pad, nose plate, and Clearance B', keywords: 'pivot head line stop setup sealing element seal load pad nose plate clearance b wall thickness' },
   { id: 'machines', group: 'Machine Reference', label: 'Machine Stack-Ups', description: 'Tap, stop, plug, and manual index', keywords: 'machine stack ups hot tap line stop completion plug manuals' },
   { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
   { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
@@ -1000,6 +1002,14 @@ const plant150SearchInputEl = document.getElementById('plant150SearchInput');
 const plant600SearchInputEl = document.getElementById('plant600SearchInput');
 const garlock600SizeSelectEl = document.getElementById('garlock600SizeSelect');
 const garlock600SearchInputEl = document.getElementById('garlock600SearchInput');
+const pivotPipeMaterialEl = document.getElementById('pivotPipeMaterial');
+const pivotPipeSizeEl = document.getElementById('pivotPipeSize');
+const pivotWallThicknessEl = document.getElementById('pivotWallThickness');
+const pivotPipeIdOverrideEl = document.getElementById('pivotPipeIdOverride');
+const pivotUseCurrentPipeBtnEl = document.getElementById('pivotUseCurrentPipeBtn');
+const pivotClearOverrideBtnEl = document.getElementById('pivotClearOverrideBtn');
+const pivotInputStatusEl = document.getElementById('pivotInputStatus');
+const pivotSealBodyEl = document.getElementById('pivotSealBody');
 const machineReferenceSelectEl = document.getElementById('machineReferenceSelect');
 const machineReferenceSearchInputEl = document.getElementById('machineReferenceSearchInput');
 const machineReferenceSearchClearEl = document.getElementById('machineReferenceSearchClear');
@@ -1021,8 +1031,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha171';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha171';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha172';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha172';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -1587,6 +1597,183 @@ if (machineReferenceBodyEl) {
 }
 initMachineReference();
 
+function formatPivotFraction(value, denominator = 64) {
+  if (!Number.isFinite(value)) return '-';
+  const sign = value < 0 ? '-' : '';
+  const absValue = Math.abs(value);
+  const whole = Math.floor(absValue);
+  let numerator = Math.round((absValue - whole) * denominator);
+  let den = denominator;
+  if (numerator === den) {
+    return `${sign}${whole + 1}`;
+  }
+  if (numerator === 0) return `${sign}${whole}`;
+  const simplified = simplifyFraction(numerator, den);
+  numerator = simplified?.numerator || numerator;
+  den = simplified?.denominator || den;
+  return `${sign}${whole ? `${whole} ` : ''}${numerator}/${den}`;
+}
+
+function formatPivotInches(value, digits = 4) {
+  if (!Number.isFinite(value)) return '-';
+  return `${value.toFixed(digits)}" (${formatPivotFraction(value)})`;
+}
+
+function setPivotText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value || '-';
+}
+
+function getPivotMaterial() {
+  const material = pivotPipeMaterialEl?.value || 'CarbonSteel';
+  return pipeData[material] ? material : 'CarbonSteel';
+}
+
+function populatePivotPipeSizes() {
+  if (!pivotPipeSizeEl) return;
+  const material = getPivotMaterial();
+  const previous = pivotPipeSizeEl.value;
+  pivotPipeSizeEl.innerHTML = Object.keys(pipeData[material] || {})
+    .map((size) => `<option value="${escapeHtml(size)}">${escapeHtml(size)}" (${formatDecimal(trueOD[material]?.[size], 3)} OD)</option>`)
+    .join('');
+  if (previous && pipeData[material]?.[previous]) pivotPipeSizeEl.value = previous;
+  if (!pivotPipeSizeEl.value) pivotPipeSizeEl.value = Object.keys(pipeData[material] || {})[0] || '';
+}
+
+function findPivotNominalForOd(material, pipeOd) {
+  if (!Number.isFinite(pipeOd)) return '';
+  const entries = Object.entries(trueOD[material] || {});
+  let best = null;
+  entries.forEach(([size, od]) => {
+    const delta = Math.abs(Number(od) - pipeOd);
+    if (!best || delta < best.delta) best = { size, delta };
+  });
+  return best && best.delta <= 0.08 ? best.size : '';
+}
+
+function getPivotNosePlateCheck(pipeSize, pipeId) {
+  const nominal = Number.parseFloat(pipeSize);
+  if (!Number.isFinite(nominal) || !Number.isFinite(pipeId)) {
+    return { tolerance: '-', range: '-' };
+  }
+  if (nominal >= 3 && nominal <= 4) {
+    return {
+      tolerance: '1/8" to 1/4" under pipe ID',
+      range: `${formatPivotInches(pipeId - 0.25)} to ${formatPivotInches(pipeId - 0.125)}`
+    };
+  }
+  if (nominal >= 6 && nominal <= 12) {
+    return {
+      tolerance: '1/2" to 5/8" under pipe ID',
+      range: `${formatPivotInches(pipeId - 0.625)} to ${formatPivotInches(pipeId - 0.5)}`
+    };
+  }
+  if (nominal >= 14 && nominal <= 48) {
+    return {
+      tolerance: '1/2" to 3/4" under pipe ID',
+      range: `${formatPivotInches(pipeId - 0.75)} to ${formatPivotInches(pipeId - 0.5)}`
+    };
+  }
+  return { tolerance: 'Not listed in guide', range: '-' };
+}
+
+function getPivotClearanceB(pipeSize) {
+  const nominal = Number.parseFloat(pipeSize);
+  if (!Number.isFinite(nominal)) return '-';
+  if (nominal >= 3 && nominal <= 12) return '1/4" to 1/2"';
+  if (nominal >= 14) return '3/8" to 9/16"';
+  return 'Not listed';
+}
+
+function renderPivotSealRows(pipeId) {
+  if (!pivotSealBodyEl) return;
+  if (!Number.isFinite(pipeId)) {
+    pivotSealBodyEl.innerHTML = '<tr><td colspan="3">Enter pipe size and wall thickness to calculate seal sizes.</td></tr>';
+    return;
+  }
+  const rows = [
+    { offset: 0, label: 'Exact Pipe ID', check: 'Guide minimum' },
+    { offset: 1 / 32, label: '+1/32"', check: 'Within guide tolerance' },
+    { offset: 1 / 16, label: '+1/16"', check: 'Guide upper tolerance' },
+    { offset: 3 / 32, label: '+3/32"', check: 'Field-check range' },
+    { offset: 1 / 8, label: '+1/8"', check: 'Field-check upper range' }
+  ];
+  pivotSealBodyEl.innerHTML = rows.map((row) => {
+    const seal = pipeId + row.offset;
+    const className = row.offset <= (1 / 16) ? 'pivot-seal-guide' : 'pivot-seal-extended';
+    return `<tr class="${className}"><td>${escapeHtml(row.label)}</td><td>${escapeHtml(formatPivotInches(seal))}</td><td>${escapeHtml(row.check)}</td></tr>`;
+  }).join('');
+}
+
+function updatePivotHeadSetup() {
+  if (!pivotPipeSizeEl) return;
+  const material = getPivotMaterial();
+  const pipeSize = pivotPipeSizeEl.value;
+  const od = Number.parseFloat(trueOD[material]?.[pipeSize]);
+  const wall = getMeasurementValue(pivotWallThicknessEl);
+  const overrideId = getMeasurementValue(pivotPipeIdOverrideEl);
+  const calculatedId = Number.isFinite(od) && Number.isFinite(wall) ? od - (wall * 2) : NaN;
+  const pipeId = Number.isFinite(overrideId) ? overrideId : calculatedId;
+  const loadPadTarget = Number.isFinite(pipeId) ? pipeId / 2 : NaN;
+  const loadPadLow = Number.isFinite(loadPadTarget) ? loadPadTarget - (1 / 16) : NaN;
+  const nose = getPivotNosePlateCheck(pipeSize, pipeId);
+  const status = [];
+
+  if (!Number.isFinite(wall) && !Number.isFinite(overrideId)) status.push('Enter wall thickness or measured ID.');
+  if (Number.isFinite(wall) && wall <= 0) status.push('Wall thickness must be greater than zero.');
+  if (Number.isFinite(calculatedId) && calculatedId <= 0) status.push('Calculated ID is not valid for the selected pipe size.');
+  if (Number.isFinite(overrideId)) status.push('Measured ID override is being used.');
+  if (!status.length) status.push('Pivot head setup values calculated from selected pipe and wall thickness.');
+
+  setPivotText('pivotPipeOdOut', formatPivotInches(od));
+  setPivotText('pivotPipeIdOut', formatPivotInches(pipeId));
+  setPivotText('pivotSealRangeOut', Number.isFinite(pipeId) ? `${formatPivotInches(pipeId)} to ${formatPivotInches(pipeId + 0.125)}` : '-');
+  setPivotText('pivotLoadPadTargetOut', formatPivotInches(loadPadTarget));
+  setPivotText('pivotLoadPadRangeOut', Number.isFinite(loadPadTarget) ? `${formatPivotInches(loadPadLow)} to ${formatPivotInches(loadPadTarget)}` : '-');
+  setPivotText('pivotClearanceBOut', getPivotClearanceB(pipeSize));
+  setPivotText('pivotNoseToleranceOut', nose.tolerance);
+  setPivotText('pivotNoseRangeOut', nose.range);
+  if (pivotInputStatusEl) pivotInputStatusEl.textContent = status.join(' ');
+  renderPivotSealRows(pipeId);
+}
+
+function useCurrentPipeForPivotHead() {
+  const geometry = getCurrentPipeGeometry();
+  const material = localStorage.getItem('pipeMaterial') || 'CarbonSteel';
+  if (pivotPipeMaterialEl && pipeData[material]) pivotPipeMaterialEl.value = material;
+  populatePivotPipeSizes();
+  const nominal = findPivotNominalForOd(getPivotMaterial(), geometry.pipeOD);
+  if (nominal && pivotPipeSizeEl) pivotPipeSizeEl.value = nominal;
+  if (pivotWallThicknessEl && Number.isFinite(geometry.wall) && geometry.wall > 0) {
+    pivotWallThicknessEl.value = geometry.wall.toFixed(4);
+  }
+  if (pivotPipeIdOverrideEl && Number.isFinite(geometry.pipeID) && geometry.pipeID > 0) {
+    pivotPipeIdOverrideEl.value = geometry.pipeID.toFixed(4);
+  }
+  updatePivotHeadSetup();
+}
+
+if (pivotPipeMaterialEl) {
+  pivotPipeMaterialEl.addEventListener('change', () => {
+    populatePivotPipeSizes();
+    updatePivotHeadSetup();
+  });
+}
+[pivotPipeSizeEl, pivotWallThicknessEl, pivotPipeIdOverrideEl].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', updatePivotHeadSetup);
+  el.addEventListener('change', updatePivotHeadSetup);
+});
+if (pivotUseCurrentPipeBtnEl) pivotUseCurrentPipeBtnEl.addEventListener('click', useCurrentPipeForPivotHead);
+if (pivotClearOverrideBtnEl) {
+  pivotClearOverrideBtnEl.addEventListener('click', () => {
+    if (pivotPipeIdOverrideEl) pivotPipeIdOverrideEl.value = '';
+    updatePivotHeadSetup();
+  });
+}
+populatePivotPipeSizes();
+updatePivotHeadSetup();
+
 
 const htpChartData = {
   '3': { branch: '6"', head: '3" - 4"', cutter: 5.500, bco: 3.000 },
@@ -2137,7 +2324,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha171', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha172', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6106,7 +6293,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha171';
+const TC63_VERSION = '3.0.0-alpha172';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6352,7 +6539,7 @@ const TC63_VERSION = '3.0.0-alpha171';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha171';
+const VERSION = '3.0.0-alpha172';
 
   function tc65GetJobs() {
     try {
@@ -9565,7 +9752,7 @@ const VERSION = '3.0.0-alpha171';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha171';
+const VERSION = '3.0.0-alpha172';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11305,7 +11492,7 @@ const VERSION = '3.0.0-alpha171';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha171 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha172 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;

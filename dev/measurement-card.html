@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha171">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha172">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha171 - 2026-05-13</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha172 - 2026-05-13</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha171 - 2026-05-13</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha172 - 2026-05-13</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -830,7 +830,7 @@
         <strong id="referenceLibraryCurrent">Decimal / Fraction</strong>
         <small id="referenceLibraryDescription">Quick conversion and full chart</small>
       </div>
-      <span class="reference-library-count">10 refs</span>
+      <span class="reference-library-count">11 refs</span>
     </div>
     <div class="reference-library-shell">
       <button type="button" id="referenceLibraryToggle" class="reference-library-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="referenceLibraryMenu">
@@ -850,6 +850,9 @@
           <option value="glossary">Glossary</option>
           <option value="htp">HTP Chart</option>
           <option value="stopmath">Stop Math</option>
+        </optgroup>
+        <optgroup label="Setup Guides">
+          <option value="pivothead">Pivot Head Setup</option>
         </optgroup>
         <optgroup label="Machine Reference">
           <option value="machines">Machine Stack-Ups</option>
@@ -1038,6 +1041,93 @@
             <strong>Completion Plug</strong>
             <span>Pipeline LI = JBF + LD</span>
             <small>Pipeline side-outlet completion plug training also uses LI = FTD - TMU +/- LD.</small>
+          </div>
+        </div>
+      </div>
+      <div class="reference-view" data-reference-view="pivothead">
+        <h3 class="reference-subheading">Pivot Head Setup</h3>
+        <p class="reference-copy">Use pipe size and wall thickness to check the sealing element range, load pad measurement, nose plate OD, and Clearance B for a conventional pivot head line stop.</p>
+        <div class="reference-grid pivot-reference-grid">
+          <div class="reference-card pivot-input-card">
+            <h4>Pipe Setup</h4>
+            <div class="pivot-input-grid">
+              <div class="row">
+                <label for="pivotPipeMaterial">Pipe Material</label>
+                <select id="pivotPipeMaterial">
+                  <option value="CarbonSteel">Carbon Steel</option>
+                  <option value="DuctileIron">Ductile Iron</option>
+                </select>
+              </div>
+              <div class="row">
+                <label for="pivotPipeSize">Pipe Size</label>
+                <select id="pivotPipeSize"></select>
+              </div>
+              <div class="row">
+                <label for="pivotWallThickness">Wall Thickness</label>
+                <input id="pivotWallThickness" type="text" inputmode="decimal" placeholder="0.375">
+              </div>
+              <div class="row">
+                <label for="pivotPipeIdOverride">Measured ID Override</label>
+                <input id="pivotPipeIdOverride" type="text" inputmode="decimal" placeholder="Optional">
+              </div>
+            </div>
+            <div class="button-row reference-actions pivot-actions">
+              <button type="button" id="pivotUseCurrentPipeBtn" class="secondary-btn">Use Current Pipe</button>
+              <button type="button" id="pivotClearOverrideBtn" class="secondary-btn">Clear Override</button>
+            </div>
+            <p id="pivotInputStatus" class="reference-footnote">Enter wall thickness, or use the current BCO pipe setup if it is already filled out.</p>
+          </div>
+
+          <div class="reference-card pivot-source-card">
+            <h4>Guide Checks</h4>
+            <ul class="reference-note-list">
+              <li>Load pad target is 1/2 Pipe ID with +0.00" / -1/16" tolerance.</li>
+              <li>Guide sealing element leading edge tolerance is Pipe ID to Pipe ID + 1/16".</li>
+              <li>The seal table also shows up to Pipe ID + 1/8" so available elements can be checked against the requested field range.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="bolting-summary-grid pivot-summary-grid">
+          <div class="bolting-summary-item"><span class="summary-label">Pipe OD</span><span id="pivotPipeOdOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Pipe ID</span><span id="pivotPipeIdOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Seal Range</span><span id="pivotSealRangeOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Load Pad Target</span><span id="pivotLoadPadTargetOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Load Pad Acceptable</span><span id="pivotLoadPadRangeOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Clearance B</span><span id="pivotClearanceBOut" class="summary-value">?</span></div>
+        </div>
+
+        <div class="reference-card pivot-detail-card">
+          <div class="stackup-detail-head">
+            <div>
+              <h4>Suggested Sealing Elements</h4>
+              <p class="reference-copy">Check the leading edge diameter against the calculated Pipe ID. Green rows stay within the guide tolerance; the last rows show the larger +1/8" field-check window.</p>
+            </div>
+            <span id="pivotSourcePill" class="stackup-source-pill">Level II Setup Guide</span>
+          </div>
+          <div class="glossary-table-wrap pivot-table-wrap">
+            <table class="glossary-table pivot-seal-table">
+              <thead><tr><th>Offset Over ID</th><th>Seal Diameter</th><th>Check</th></tr></thead>
+              <tbody id="pivotSealBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="reference-grid pivot-reference-grid">
+          <div class="reference-card">
+            <h4>Nose Plate OD Check</h4>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Tolerance</span><span id="pivotNoseToleranceOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">OD Range</span><span id="pivotNoseRangeOut" class="summary-value">?</span></div>
+            </div>
+          </div>
+          <div class="reference-card">
+            <h4>Source Notes</h4>
+            <ul class="reference-note-list">
+              <li>Line Stop Equipment Set Up guide: sealing elements, load pad, head assembly, and Clearance B.</li>
+              <li>General Line Stop guide: pivot head measurement checks and set point formula.</li>
+              <li>Verify material compatibility, temperature, pressure class, and condition of the sealing element before use.</li>
+            </ul>
           </div>
         </div>
       </div>
@@ -1440,9 +1530,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha171"></script>
-<script src="stackup-data.js?v=3.0.0-alpha171"></script>
-<script src="measurement.js?v=3.0.0-alpha171"></script>
+<script src="firebase-config.js?v=3.0.0-alpha172"></script>
+<script src="stackup-data.js?v=3.0.0-alpha172"></script>
+<script src="measurement.js?v=3.0.0-alpha172"></script>
   </section>
 </body>
 </html>
