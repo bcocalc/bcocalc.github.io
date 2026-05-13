@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha170';
+const BUILD_VERSION = '3.0.0-alpha171';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha170 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha171 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -838,7 +838,26 @@ if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openD
 
 const referenceViewSelectEl = document.getElementById('referenceViewSelect');
 const referenceViewEls = Array.from(document.querySelectorAll('.reference-view[data-reference-view]'));
-const referenceShortcutEls = Array.from(document.querySelectorAll('[data-reference-target]'));
+const referenceLibraryToggleEl = document.getElementById('referenceLibraryToggle');
+const referenceLibraryMenuEl = document.getElementById('referenceLibraryMenu');
+const referenceLibrarySearchEl = document.getElementById('referenceLibrarySearch');
+const referenceLibraryOptionsEl = document.getElementById('referenceLibraryOptions');
+const referenceLibraryEmptyEl = document.getElementById('referenceLibraryEmpty');
+const referenceLibraryCurrentEl = document.getElementById('referenceLibraryCurrent');
+const referenceLibraryDescriptionEl = document.getElementById('referenceLibraryDescription');
+const referenceLibraryGroupEl = document.getElementById('referenceLibraryGroup');
+const referenceLibraryItems = [
+  { id: 'converter', group: 'Charts', label: 'Decimal / Fraction', description: 'Quick conversion and full chart', keywords: 'decimal fraction conversion chart' },
+  { id: 'bolting', group: 'Charts', label: 'Bolting Chart', description: 'Flange class, stud, wrench, counts', keywords: 'bolting flange class stud wrench count asme' },
+  { id: 'glossary', group: 'Charts', label: 'Glossary', description: 'Abbreviations and field meanings', keywords: 'glossary abbreviations terms field meanings' },
+  { id: 'htp', group: 'Charts', label: 'HTP Chart', description: 'Pipe size, branch, head, and cutter lookup', keywords: 'htp pipe branch head cutter bco' },
+  { id: 'stopmath', group: 'Charts', label: 'Stop Math', description: 'Standard, HTP, and Hi-Stop formulas', keywords: 'line stop math htp hi stop formula tco plug set' },
+  { id: 'machines', group: 'Machine Reference', label: 'Machine Stack-Ups', description: 'Tap, stop, plug, and manual index', keywords: 'machine stack ups hot tap line stop completion plug manuals' },
+  { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
+  { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
+  { id: 'plant600', group: 'Field Reference', label: '600# Plant Series', description: 'Higher class flange reference', keywords: '600 plant flange jack bolt packing wrench' },
+  { id: 'garlock600', group: 'Field Reference', label: 'Graphonic 600# Torque', description: 'Garlock preferred and minimum torque lookup', keywords: 'garlock graphonic 600 torque gasket stress preferred minimum' }
+];
 
 function getSafeReferenceView(view) {
   const requested = String(view || referenceViewSelectEl?.value || '').trim();
@@ -848,8 +867,24 @@ function getSafeReferenceView(view) {
   return referenceViewEls[0]?.dataset.referenceView || 'converter';
 }
 
+function getReferenceLibraryItem(view) {
+  return referenceLibraryItems.find((item) => item.id === view) || referenceLibraryItems[0] || null;
+}
+
+function syncReferenceLibraryLabels(view) {
+  const item = getReferenceLibraryItem(view);
+  if (!item) return;
+  if (referenceLibraryCurrentEl) referenceLibraryCurrentEl.textContent = item.label;
+  if (referenceLibraryDescriptionEl) referenceLibraryDescriptionEl.textContent = item.description;
+  if (referenceLibraryGroupEl) referenceLibraryGroupEl.textContent = item.group;
+}
+
 function syncReferenceShortcutState(view) {
-  referenceShortcutEls.forEach((el) => el.classList.toggle('active', el.dataset.referenceTarget === view));
+  document.querySelectorAll('[data-reference-target]').forEach((el) => {
+    const isActive = el.dataset.referenceTarget === view;
+    el.classList.toggle('active', isActive);
+    if (el.getAttribute('role') === 'option') el.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
 }
 
 function setReferenceView(view) {
@@ -865,18 +900,83 @@ function setReferenceView(view) {
   }
   if (referenceViewSelectEl && referenceViewSelectEl.value !== nextView) referenceViewSelectEl.value = nextView;
   syncReferenceShortcutState(nextView);
+  syncReferenceLibraryLabels(nextView);
   try { localStorage.setItem('tapcalcReferenceViewV1', nextView); } catch {}
   try {
     document.querySelector(`.reference-view[data-reference-view="${nextView}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   } catch {}
 }
 
-referenceShortcutEls.forEach((el) => {
-  el.addEventListener('click', () => {
-    const view = el.dataset.referenceTarget || 'converter';
-    setReferenceView(view);
+function getReferenceLibraryFilteredItems(query) {
+  const needle = String(query || '').trim().toLowerCase();
+  if (!needle) return referenceLibraryItems.slice();
+  const tokens = needle.split(/\s+/).filter(Boolean);
+  return referenceLibraryItems.filter((item) => {
+    const haystack = `${item.group} ${item.label} ${item.description} ${item.keywords}`.toLowerCase();
+    return tokens.every((token) => haystack.includes(token));
   });
+}
+
+function renderReferenceLibraryOptions(query = '') {
+  if (!referenceLibraryOptionsEl) return;
+  const items = getReferenceLibraryFilteredItems(query);
+  const currentView = getSafeReferenceView(referenceViewSelectEl?.value || localStorage.getItem('tapcalcReferenceViewV1') || 'converter');
+  let currentGroup = '';
+  referenceLibraryOptionsEl.innerHTML = items.map((item) => {
+    const groupHeader = item.group !== currentGroup
+      ? `<div class="reference-library-group-label">${escapeHtml(item.group)}</div>`
+      : '';
+    currentGroup = item.group;
+    return `${groupHeader}<button type="button" class="reference-library-option${item.id === currentView ? ' active' : ''}" data-reference-target="${escapeHtml(item.id)}" role="option" aria-selected="${item.id === currentView ? 'true' : 'false'}"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.description)}</span></button>`;
+  }).join('');
+  if (referenceLibraryEmptyEl) referenceLibraryEmptyEl.hidden = items.length > 0;
+}
+
+function setReferenceLibraryOpen(isOpen) {
+  if (!referenceLibraryMenuEl || !referenceLibraryToggleEl) return;
+  referenceLibraryMenuEl.hidden = !isOpen;
+  referenceLibraryToggleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  referenceLibraryToggleEl.classList.toggle('is-open', isOpen);
+  if (isOpen) {
+    renderReferenceLibraryOptions(referenceLibrarySearchEl?.value || '');
+    setTimeout(() => referenceLibrarySearchEl?.focus(), 0);
+  }
+}
+
+if (referenceLibraryToggleEl) {
+  referenceLibraryToggleEl.addEventListener('click', () => {
+    setReferenceLibraryOpen(referenceLibraryMenuEl?.hidden !== false);
+  });
+}
+
+if (referenceLibrarySearchEl) {
+  referenceLibrarySearchEl.addEventListener('input', () => renderReferenceLibraryOptions(referenceLibrarySearchEl.value));
+}
+
+if (referenceLibraryOptionsEl) {
+  referenceLibraryOptionsEl.addEventListener('click', (event) => {
+    const trigger = event.target?.closest?.('[data-reference-target]');
+    if (!trigger) return;
+    setReferenceView(trigger.dataset.referenceTarget || 'converter');
+    if (referenceLibrarySearchEl) referenceLibrarySearchEl.value = '';
+    setReferenceLibraryOpen(false);
+  });
+}
+
+document.addEventListener('click', (event) => {
+  if (!referenceLibraryMenuEl || referenceLibraryMenuEl.hidden) return;
+  if (event.target?.closest?.('.reference-library-panel')) return;
+  setReferenceLibraryOpen(false);
 });
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && referenceLibraryMenuEl && !referenceLibraryMenuEl.hidden) {
+    setReferenceLibraryOpen(false);
+    referenceLibraryToggleEl?.focus();
+  }
+});
+
+renderReferenceLibraryOptions();
 
 if (referenceViewSelectEl) {
   referenceViewSelectEl.addEventListener('change', () => setReferenceView(referenceViewSelectEl.value));
@@ -921,8 +1021,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha170';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha170';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha171';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha171';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2037,7 +2137,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha170', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha171', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6006,7 +6106,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha170';
+const TC63_VERSION = '3.0.0-alpha171';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6252,7 +6352,7 @@ const TC63_VERSION = '3.0.0-alpha170';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha170';
+const VERSION = '3.0.0-alpha171';
 
   function tc65GetJobs() {
     try {
@@ -9465,7 +9565,7 @@ const VERSION = '3.0.0-alpha170';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha170';
+const VERSION = '3.0.0-alpha171';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11205,7 +11305,7 @@ const VERSION = '3.0.0-alpha170';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha170 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha171 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
