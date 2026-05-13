@@ -6188,7 +6188,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha177 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha178 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6294,7 +6294,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha177 reference buildout ===== */
+/* ===== 3.0.0-alpha178 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6690,7 +6690,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha177 reference library picker ===== */
+/* ===== 3.0.0-alpha178 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7036,7 +7036,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha177 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha178 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7211,7 +7211,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha177 gasket torque reference ===== */
+/* ===== 3.0.0-alpha178 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7337,5 +7337,47 @@ body.light .gasket-torque-contact-row td {
 
   .reference-view[data-reference-view="gaskettorque"] .gasket-torque-table {
     min-width: 680px;
+  }
+}
+
+/* ===== 3.0.0-alpha178 desktop reference picker row fix ===== */
+body.measurement-page .reference-library-options {
+  align-items: stretch;
+}
+
+body.measurement-page .reference-library-option {
+  align-items: start !important;
+  box-sizing: border-box;
+  display: grid !important;
+  gap: 5px !important;
+  grid-template-columns: minmax(0, 1fr);
+  height: auto !important;
+  justify-items: stretch;
+  line-height: normal !important;
+  min-height: 58px !important;
+  overflow: visible !important;
+  padding: 10px 12px 11px !important;
+}
+
+body.measurement-page .reference-library-option strong,
+body.measurement-page .reference-library-option span {
+  margin: 0 !important;
+  max-width: 100%;
+  min-width: 0;
+  position: static !important;
+  transform: none !important;
+}
+
+body.measurement-page .reference-library-option strong {
+  line-height: 1.18 !important;
+}
+
+body.measurement-page .reference-library-option span {
+  line-height: 1.25 !important;
+}
+
+@media (max-width: 700px) {
+  body.measurement-page .reference-library-option {
+    min-height: 84px !important;
   }
 }
