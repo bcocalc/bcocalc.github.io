@@ -1,4 +1,4 @@
-﻿const BUILD_VERSION = '3.0.0-alpha162';
+const BUILD_VERSION = '3.0.0-alpha163';
 
 (function(){
 
@@ -128,7 +128,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha162 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha163 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -888,6 +888,8 @@ const garlock600SizeSelectEl = document.getElementById('garlock600SizeSelect');
 const garlock600SearchInputEl = document.getElementById('garlock600SearchInput');
 const machineReferenceSelectEl = document.getElementById('machineReferenceSelect');
 const machineReferenceSearchInputEl = document.getElementById('machineReferenceSearchInput');
+const machineReferenceSearchClearEl = document.getElementById('machineReferenceSearchClear');
+const machineReferenceSearchMetaEl = document.getElementById('machineReferenceSearchMeta');
 const machineReferenceBodyEl = document.getElementById('machineReferenceBody');
 const machineReferenceTotalChipEl = document.getElementById('machineReferenceTotalChip');
 const machineReferenceVisibleChipEl = document.getElementById('machineReferenceVisibleChip');
@@ -920,6 +922,10 @@ const machineManualIndexData = [
 const machineReferenceData = bundledStackupReferences.length
   ? bundledStackupReferences.concat(machineManualIndexData)
   : machineManualIndexData;
+machineReferenceData.forEach((row, index) => {
+  if (row && !row.id) row.id = `machine-reference-${index}`;
+});
+let machineReferenceFilteredData = machineReferenceData.slice();
 const glossaryRowsData = [
   ['MD', 'Measured Distance'],
   ['LD', 'Lost Distance'],
@@ -984,8 +990,17 @@ if (referenceBackToTopBtnEl) {
   });
 }
 
+function normalizeMachineReferenceSearchText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[#/\\.,:;()[\]{}"'`]+/g, ' ')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 function getMachineReferenceText(row) {
-  return [
+  return normalizeMachineReferenceSearchText([
     row?.name,
     row?.type,
     row?.range,
@@ -996,11 +1011,15 @@ function getMachineReferenceText(row) {
     ...(Array.isArray(row?.dimensions) ? row.dimensions : []),
     ...(Array.isArray(row?.weights) ? row.weights : []),
     ...(Array.isArray(row?.notes) ? row.notes : [])
-  ].filter(Boolean).join(' ').toLowerCase();
+  ].filter(Boolean).join(' '));
 }
 
-function getMachineReferenceByName(name) {
-  return machineReferenceData.find((row) => row.name === name) || machineReferenceData[0] || null;
+function getMachineReferenceKey(row) {
+  return String(row?.id || row?.name || '');
+}
+
+function getMachineReferenceByKey(key) {
+  return machineReferenceData.find((row) => getMachineReferenceKey(row) === key) || machineReferenceData[0] || null;
 }
 
 function setMachineReferenceText(id, value) {
@@ -1158,7 +1177,7 @@ function updateMachineReferenceDetail(row) {
 function renderMachineReferenceRows(rows = machineReferenceData) {
   if (!machineReferenceBodyEl) return;
   const safeRows = Array.isArray(rows) ? rows : [];
-  const activeName = machineReferenceSelectEl?.value || machineReferenceData[0]?.name || '';
+  const activeKey = machineReferenceSelectEl?.value || getMachineReferenceKey(machineReferenceData[0]);
   machineReferenceBodyEl.innerHTML = safeRows.length
     ? safeRows.map((row) => {
         const detailBits = []
@@ -1166,7 +1185,8 @@ function renderMachineReferenceRows(rows = machineReferenceData) {
           .concat((row.weights || []).slice(0, 2));
         const details = detailBits.length ? detailBits.join(' | ') : row.use || row.text || '-';
         const sourcePage = row.sourcePage && row.sourcePage !== '-' ? `p. ${row.sourcePage}` : 'index';
-        return `<tr class="${row.name === activeName ? 'is-selected' : ''}"><td><button type="button" class="machine-reference-row-btn" data-machine-reference="${escapeHtml(row.name)}">${escapeHtml(row.name)}</button></td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.range)}</td><td>${escapeHtml(details)}</td><td>${escapeHtml(row.source)}<span class="machine-file-badge">${escapeHtml(sourcePage)}</span></td></tr>`;
+        const rowKey = getMachineReferenceKey(row);
+        return `<tr class="${rowKey === activeKey ? 'is-selected' : ''}"><td><button type="button" class="machine-reference-row-btn" data-machine-reference="${escapeHtml(rowKey)}">${escapeHtml(row.name)}</button></td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.range)}</td><td>${escapeHtml(details)}</td><td>${escapeHtml(row.source)}<span class="machine-file-badge">${escapeHtml(sourcePage)}</span></td></tr>`;
       }).join('')
     : '<tr><td colspan="5">No machine references match that search.</td></tr>';
   if (machineReferenceTotalChipEl) machineReferenceTotalChipEl.textContent = String(machineReferenceData.length);
@@ -1176,51 +1196,112 @@ function renderMachineReferenceRows(rows = machineReferenceData) {
   }
 }
 
-function populateMachineReferenceSelect() {
-  if (!machineReferenceSelectEl) return;
+function getFilteredMachineReferences(query) {
+  const needle = normalizeMachineReferenceSearchText(query);
+  const tokens = needle ? needle.split(' ').filter(Boolean) : [];
+  return !tokens.length
+    ? machineReferenceData.slice()
+    : machineReferenceData
+        .map((row, index) => ({ row, index, score: getMachineReferenceSearchScore(row, tokens, needle) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map((item) => item.row);
+}
+
+function getMachineReferenceSearchScore(row, tokens, phrase) {
+  const haystack = getMachineReferenceText(row);
+  if (!tokens.every((token) => haystack.includes(token))) return 0;
+  const name = normalizeMachineReferenceSearchText(row?.name);
+  const type = normalizeMachineReferenceSearchText(row?.type);
+  const range = normalizeMachineReferenceSearchText(row?.range);
+  const use = normalizeMachineReferenceSearchText(row?.use);
+  const source = normalizeMachineReferenceSearchText(row?.source);
+  let score = phrase && name.includes(phrase) ? 80 : 0;
+  tokens.forEach((token) => {
+    if (name.includes(token)) score += 24;
+    if (type.includes(token)) score += 14;
+    if (range.includes(token)) score += 10;
+    if (use.includes(token)) score += 6;
+    if (source.includes(token)) score += 4;
+    if (haystack.includes(token)) score += 1;
+  });
+  return score;
+}
+
+function updateMachineReferenceSearchMeta(rows, query) {
+  if (!machineReferenceSearchMetaEl) return;
+  const count = Array.isArray(rows) ? rows.length : 0;
+  const needle = String(query || '').trim();
+  machineReferenceSearchMetaEl.textContent = needle
+    ? `${count} match${count === 1 ? '' : 'es'}`
+    : `Showing ${count} stack-ups`;
+}
+
+function populateMachineReferenceSelect(rows = machineReferenceFilteredData) {
+  if (!machineReferenceSelectEl) return '';
+  const safeRows = Array.isArray(rows) ? rows : [];
   const previous = machineReferenceSelectEl.value;
-  machineReferenceSelectEl.innerHTML = machineReferenceData
-    .map((row) => `<option value="${escapeHtml(row.name)}">${escapeHtml(row.type)} - ${escapeHtml(row.name)}</option>`)
+  if (!safeRows.length) {
+    machineReferenceSelectEl.innerHTML = '<option value="">No stack-ups match that search</option>';
+    machineReferenceSelectEl.value = '';
+    machineReferenceSelectEl.disabled = true;
+    return '';
+  }
+  machineReferenceSelectEl.disabled = false;
+  machineReferenceSelectEl.innerHTML = safeRows
+    .map((row) => `<option value="${escapeHtml(getMachineReferenceKey(row))}">${escapeHtml(row.type)} - ${escapeHtml(row.name)}</option>`)
     .join('');
-  if (previous && machineReferenceData.some((row) => row.name === previous)) machineReferenceSelectEl.value = previous;
-  if (!machineReferenceSelectEl.value && machineReferenceData[0]) machineReferenceSelectEl.value = machineReferenceData[0].name;
+  const nextKey = previous && safeRows.some((row) => getMachineReferenceKey(row) === previous) ? previous : getMachineReferenceKey(safeRows[0]);
+  if (nextKey) machineReferenceSelectEl.value = nextKey;
+  return nextKey;
 }
 
 function updateMachineReferenceSummary() {
-  const activeName = machineReferenceSelectEl?.value || machineReferenceData[0]?.name || '';
-  const match = getMachineReferenceByName(activeName);
+  const activeKey = machineReferenceSelectEl?.value || getMachineReferenceKey(machineReferenceData[0]);
+  const match = getMachineReferenceByKey(activeKey);
   if (!match) return;
   setMachineReferenceText('machineReferenceType', match.type);
   setMachineReferenceText('machineReferenceRange', match.range);
   setMachineReferenceText('machineReferenceUse', match.use);
   setMachineReferenceText('machineReferenceSource', match.sourcePage && match.sourcePage !== '-' ? `${match.source} p. ${match.sourcePage}` : match.source);
   updateMachineReferenceDetail(match);
-  filterMachineReferenceRows(machineReferenceSearchInputEl?.value);
+  renderMachineReferenceRows(machineReferenceFilteredData);
 }
 
 function filterMachineReferenceRows(query) {
-  const needle = String(query || '').trim().toLowerCase();
-  const filtered = !needle
-    ? machineReferenceData
-    : machineReferenceData.filter((row) => getMachineReferenceText(row).includes(needle));
-  renderMachineReferenceRows(filtered);
+  machineReferenceFilteredData = getFilteredMachineReferences(query);
+  populateMachineReferenceSelect(machineReferenceFilteredData);
+  renderMachineReferenceRows(machineReferenceFilteredData);
+  updateMachineReferenceSearchMeta(machineReferenceFilteredData, query);
+  if (machineReferenceFilteredData.length) updateMachineReferenceSummary();
 }
 
 function initMachineReference() {
-  populateMachineReferenceSelect();
-  renderMachineReferenceRows(machineReferenceData);
+  machineReferenceFilteredData = getFilteredMachineReferences(machineReferenceSearchInputEl?.value);
+  populateMachineReferenceSelect(machineReferenceFilteredData);
+  renderMachineReferenceRows(machineReferenceFilteredData);
+  updateMachineReferenceSearchMeta(machineReferenceFilteredData, machineReferenceSearchInputEl?.value);
   updateMachineReferenceSummary();
 }
 
 if (machineReferenceSelectEl) machineReferenceSelectEl.addEventListener('change', updateMachineReferenceSummary);
 if (machineReferenceSearchInputEl) machineReferenceSearchInputEl.addEventListener('input', () => filterMachineReferenceRows(machineReferenceSearchInputEl.value));
+if (machineReferenceSearchClearEl) {
+  machineReferenceSearchClearEl.addEventListener('click', () => {
+    if (machineReferenceSearchInputEl) {
+      machineReferenceSearchInputEl.value = '';
+      machineReferenceSearchInputEl.focus();
+    }
+    filterMachineReferenceRows('');
+  });
+}
 if (machineReferenceBodyEl) {
   machineReferenceBodyEl.addEventListener('click', (event) => {
     const trigger = event.target?.closest?.('[data-machine-reference]');
     if (!trigger) return;
-    const match = getMachineReferenceByName(trigger.getAttribute('data-machine-reference'));
+    const match = getMachineReferenceByKey(trigger.getAttribute('data-machine-reference'));
     if (!match) return;
-    if (machineReferenceSelectEl) machineReferenceSelectEl.value = match.name;
+    if (machineReferenceSelectEl) machineReferenceSelectEl.value = getMachineReferenceKey(match);
     updateMachineReferenceSummary();
     machineReferenceDetailTitleEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   });
@@ -1777,7 +1858,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha162', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha163', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5740,7 +5821,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha162';
+const TC63_VERSION = '3.0.0-alpha163';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -5986,7 +6067,7 @@ const TC63_VERSION = '3.0.0-alpha162';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha162';
+const VERSION = '3.0.0-alpha163';
 
   function tc65GetJobs() {
     try {
@@ -9199,7 +9280,7 @@ const VERSION = '3.0.0-alpha162';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha162';
+const VERSION = '3.0.0-alpha163';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10741,7 +10822,7 @@ const VERSION = '3.0.0-alpha162';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha162 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha163 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;

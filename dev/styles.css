@@ -1,4 +1,4 @@
-﻿body {
+body {
   font-family: Arial, sans-serif;
   background-color: #f8f8f8;
   color: #000;
@@ -1624,12 +1624,25 @@ body.light .glossary-table th {
 }
 
 .history-toggle-chevron {
-  display: inline-block;
+  display: inline-flex;
+  height: 12px;
+  width: 12px;
   transition: transform 0.18s ease;
 }
 
-.history-drawer-toggle.open .history-toggle-chevron {
-  transform: rotate(180deg);
+.history-toggle-chevron::before {
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
+  content: "";
+  display: block;
+  height: 8px;
+  transform: rotate(45deg);
+  transition: transform 0.18s ease;
+  width: 8px;
+}
+
+.history-drawer-toggle.open .history-toggle-chevron::before {
+  transform: rotate(225deg);
 }
 
 .history-drawer-content[hidden] {
@@ -4967,10 +4980,21 @@ body.light .converter-block {
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  height:12px;
   transition:transform .18s ease;
-  font-size:.95rem;
+  width:12px;
 }
-.section-toggle-btn[aria-expanded="false"] .section-toggle-chevron{transform:rotate(-90deg);}
+.section-toggle-chevron::before{
+  border-bottom:2px solid currentColor;
+  border-right:2px solid currentColor;
+  content:"";
+  display:block;
+  height:8px;
+  transform:rotate(45deg);
+  transition:transform .18s ease;
+  width:8px;
+}
+.section-toggle-btn[aria-expanded="false"] .section-toggle-chevron::before{transform:rotate(-45deg);}
 .collapsible-head-block{min-width:0;}
 .collapsible-content[hidden]{display:none !important;}
 @media (max-width:768px){
@@ -6144,7 +6168,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha162 reference buildout ===== */
+/* ===== 3.0.0-alpha163 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6156,6 +6180,29 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   display: grid;
   gap: 12px;
   align-content: start;
+}
+
+.machine-search-row {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+}
+
+.machine-search-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.machine-search-clear {
+  min-height: 42px;
+  padding-inline: 14px;
+}
+
+.machine-search-meta {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
 }
 
 .machine-select-row {
@@ -6370,6 +6417,10 @@ body.light .reference-note-list {
   background: #ffffff !important;
 }
 
+#machineReferenceSelect:disabled {
+  opacity: 0.72;
+}
+
 :root[data-theme="dark"] #machineReferenceSelect option,
 body.dark #machineReferenceSelect option {
   color: #f4f7fb !important;
@@ -6489,6 +6540,10 @@ body.light #machineReferenceSearchInput {
 
   .stackup-open-pdf {
     text-align: center;
+  }
+
+  .machine-search-actions {
+    grid-template-columns: 1fr;
   }
 
   .stackup-visual-frame-wrap {
