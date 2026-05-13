@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha182';
+const BUILD_VERSION = '3.0.0-alpha183';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha182 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha183 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1035,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha182';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha182';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha183';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha183';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha182', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha183', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6368,7 +6368,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha182';
+const TC63_VERSION = '3.0.0-alpha183';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6614,7 +6614,7 @@ const TC63_VERSION = '3.0.0-alpha182';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha182';
+const VERSION = '3.0.0-alpha183';
 
   function tc65GetJobs() {
     try {
@@ -9827,7 +9827,7 @@ const VERSION = '3.0.0-alpha182';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha182';
+const VERSION = '3.0.0-alpha183';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11389,7 +11389,7 @@ const VERSION = '3.0.0-alpha182';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha182 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha183 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11546,7 +11546,7 @@ const VERSION = '3.0.0-alpha182';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha182 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha183 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -11730,7 +11730,7 @@ const VERSION = '3.0.0-alpha182';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha182 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha183 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -11909,6 +11909,104 @@ const VERSION = '3.0.0-alpha182';
   document.addEventListener('click', () => setTimeout(watchWorkflowTools, 120), true);
   setInterval(watchWorkflowTools, 1200);
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
+})();
+
+/* ===== 3.0.0-alpha183 workflow save actions ===== */
+(function(){
+  let savingWorkflowJob = false;
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function setStatus(message, state = 'info'){
+    const statusEl = byId('workflowSaveStatus');
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.dataset.state = state;
+  }
+
+  function setButtonsDisabled(disabled){
+    document.querySelectorAll('[data-workflow-save-job], #workflowReviewSyncSharedBtn').forEach((button) => {
+      button.disabled = !!disabled;
+    });
+  }
+
+  function savedCount(){
+    try {
+      const history = JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]');
+      return Array.isArray(history) ? history.length : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function timeLabel(){
+    try {
+      return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return 'now';
+    }
+  }
+
+  async function saveWorkflowJob(options = {}){
+    if (savingWorkflowJob) return;
+    savingWorkflowJob = true;
+    setButtonsDisabled(true);
+    setStatus(options.sync ? 'Saving job and starting shared sync...' : 'Saving job...', 'saving');
+    try {
+      if (typeof window.saveCurrentJobToHistory === 'function') {
+        await window.saveCurrentJobToHistory();
+      } else {
+        byId('saveHistoryBtn')?.click();
+      }
+
+      if (options.sync) {
+        byId('syncJobsBtn')?.click();
+      }
+
+      const cloudText = byId('jobsCloudStatus')?.textContent?.trim() || '';
+      const syncedText = /uploaded|synced|connected/i.test(cloudText) && !/saved locally only|could not|failed|not verified/i.test(cloudText)
+        ? ' Shared sync is available.'
+        : '';
+      setStatus(`Saved job at ${timeLabel()}. ${savedCount()} local save${savedCount() === 1 ? '' : 's'} stored.${syncedText}`, 'saved');
+      try { window.updateTapCalcShell?.(); } catch {}
+    } catch (error) {
+      console.error('Workflow save failed', error);
+      setStatus('Could not save from Workflow. Open Library and try Save Local.', 'error');
+    } finally {
+      savingWorkflowJob = false;
+      setButtonsDisabled(false);
+    }
+  }
+
+  function bindWorkflowSaveActions(){
+    document.querySelectorAll('[data-workflow-save-job]').forEach((button) => {
+      if (button.dataset.workflowSaveBound) return;
+      button.dataset.workflowSaveBound = '1';
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        saveWorkflowJob();
+      });
+    });
+    const syncButton = byId('workflowReviewSyncSharedBtn');
+    if (syncButton && !syncButton.dataset.workflowSaveBound) {
+      syncButton.dataset.workflowSaveBound = '1';
+      syncButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        saveWorkflowJob({ sync: true });
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', bindWorkflowSaveActions);
+  window.addEventListener('load', () => {
+    bindWorkflowSaveActions();
+    setTimeout(bindWorkflowSaveActions, 400);
+  });
+  window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
 
@@ -12102,7 +12200,7 @@ const VERSION = '3.0.0-alpha182';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha182 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha183 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12562,7 +12660,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha182 gasket torque reference ===== */
+/* ===== 3.0.0-alpha183 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -12768,27 +12866,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha182Bound) {
-      classSelect.dataset.alpha182Bound = '1';
+    if (!classSelect.dataset.alpha183Bound) {
+      classSelect.dataset.alpha183Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha182Bound) {
-      sizeSelect.dataset.alpha182Bound = '1';
+    if (!sizeSelect.dataset.alpha183Bound) {
+      sizeSelect.dataset.alpha183Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha182Bound) {
-      typeSelect.dataset.alpha182Bound = '1';
+    if (!typeSelect.dataset.alpha183Bound) {
+      typeSelect.dataset.alpha183Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha182Bound) {
-      searchInput.dataset.alpha182Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha183Bound) {
+      searchInput.dataset.alpha183Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();

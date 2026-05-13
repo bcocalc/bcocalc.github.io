@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha182">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha183">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha182 - 2026-05-13</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha183 - 2026-05-13</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha182 - 2026-05-13</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha183 - 2026-05-13</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -447,9 +447,11 @@
       </div>
       <div class="workflow-guided-actions">
         <button type="button" class="secondary-btn" id="workflowPrevBtn">Back</button>
+        <button type="button" class="secondary-btn" id="workflowSaveJobBtn" data-workflow-save-job>Save Job</button>
         <button type="button" id="workflowNextBtn">Next Step</button>
       </div>
     </div>
+    <p id="workflowSaveStatus" class="workflow-save-status" aria-live="polite">Save stays available here while you work through the steps.</p>
     <div id="workflowStageNav" class="workflow-stage-nav" aria-live="polite"></div>
     <div class="workflow-readiness-panel" id="workflowReadinessPanel" aria-live="polite">
       <div class="workflow-readiness-status">
@@ -600,6 +602,8 @@
         <p>Check the stage statuses, confirm the current BCO and ETA, then save locally or sync to the shared library.</p>
       </div>
       <div class="workflow-helper-actions">
+        <button type="button" id="workflowReviewSaveJobBtn" data-workflow-save-job>Save Job</button>
+        <button type="button" class="secondary-btn" id="workflowReviewSyncSharedBtn">Sync Shared</button>
         <button type="button" class="secondary-btn" data-go-screen="calc" data-go-mode="eta">Open ETA</button>
         <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
       </div>
@@ -1679,9 +1683,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha182"></script>
-<script src="stackup-data.js?v=3.0.0-alpha182"></script>
-<script src="measurement.js?v=3.0.0-alpha182"></script>
+<script src="firebase-config.js?v=3.0.0-alpha183"></script>
+<script src="stackup-data.js?v=3.0.0-alpha183"></script>
+<script src="measurement.js?v=3.0.0-alpha183"></script>
   </section>
 </body>
 </html>

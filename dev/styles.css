@@ -5106,6 +5106,10 @@ body.dark .workflow-jobtype-eyebrow{color:#9ab7cf;}
 .workflow-guided-head h4{margin:4px 0 6px;}
 .workflow-guided-head p{margin:0;max-width:620px;color:#4b6174;}
 .workflow-guided-actions{display:flex;gap:10px;flex-wrap:wrap;}
+.workflow-save-status{margin:0;padding:9px 12px;border-radius:12px;background:rgba(22,54,75,.06);border:1px solid rgba(57,101,141,.12);color:#355970;font-size:.9rem;font-weight:650;}
+.workflow-save-status[data-state="saving"]{background:rgba(245,196,0,.12);border-color:rgba(154,107,0,.28);color:#6c4d00;}
+.workflow-save-status[data-state="saved"]{background:rgba(31,122,66,.10);border-color:rgba(31,122,66,.24);color:#1f6b3d;}
+.workflow-save-status[data-state="error"]{background:rgba(162,50,50,.10);border-color:rgba(162,50,50,.26);color:#8c2626;}
 .workflow-stage-nav{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;}
 .workflow-stage-chip{appearance:none;border:1px solid rgba(57,101,141,.18);background:rgba(244,248,252,.96);border-radius:16px;padding:12px 12px 11px;text-align:left;display:grid;gap:4px;cursor:pointer;font:inherit;color:inherit;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;}
 .workflow-stage-chip:hover{transform:translateY(-1px);border-color:rgba(57,101,141,.35);box-shadow:0 12px 24px rgba(16,27,39,.08);}
@@ -5128,6 +5132,10 @@ body.dark .workflow-jobtype-eyebrow{color:#9ab7cf;}
 .workflow-mode-shell-hidden{display:none !important;}
 body.dark-mode .workflow-guided-shell,body.dark-mode .workflow-helper-panel{background:rgba(17,24,33,.92);border-color:rgba(103,131,161,.18);}
 body.dark-mode .workflow-guided-head p,body.dark-mode .workflow-helper-head p{color:#9fb8cb;}
+body.dark-mode .workflow-save-status{background:rgba(33,64,91,.30);border-color:rgba(97,132,165,.20);color:#d7e8f7;}
+body.dark-mode .workflow-save-status[data-state="saving"]{background:rgba(245,196,0,.15);border-color:rgba(245,196,0,.38);color:#ffe08b;}
+body.dark-mode .workflow-save-status[data-state="saved"]{background:rgba(47,143,83,.18);border-color:rgba(88,168,106,.36);color:#baf0ca;}
+body.dark-mode .workflow-save-status[data-state="error"]{background:rgba(162,50,50,.18);border-color:rgba(255,130,130,.32);color:#ffc7c7;}
 body.dark-mode .workflow-stage-chip{background:rgba(20,31,42,.92);border-color:rgba(120,152,186,.18);color:#e9f3fb;box-shadow:none;}
 body.dark-mode .workflow-stage-chip.active{background:#1f5f86;border-color:#1f5f86;color:#fff;}
 body.dark-mode .workflow-helper-card{background:rgba(27,37,49,.96);border-color:rgba(120,152,186,.14);}
@@ -6188,7 +6196,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha182 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha183 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6294,7 +6302,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha182 reference buildout ===== */
+/* ===== 3.0.0-alpha183 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6690,7 +6698,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha182 reference library picker ===== */
+/* ===== 3.0.0-alpha183 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7036,7 +7044,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha182 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha183 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7211,7 +7219,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha182 gasket torque reference ===== */
+/* ===== 3.0.0-alpha183 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7340,7 +7348,7 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha182 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha183 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7382,7 +7390,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha182 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha183 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7503,7 +7511,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha182 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha183 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7583,7 +7591,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha182 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha183 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
