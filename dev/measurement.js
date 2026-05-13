@@ -1,4 +1,4 @@
-﻿const BUILD_VERSION = '3.0.0-alpha161';
+﻿const BUILD_VERSION = '3.0.0-alpha162';
 
 (function(){
 
@@ -128,7 +128,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha161 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha162 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -899,6 +899,16 @@ const machineReferenceSpecGridEl = document.getElementById('machineReferenceSpec
 const machineReferenceDimensionsEl = document.getElementById('machineReferenceDimensions');
 const machineReferenceWeightsEl = document.getElementById('machineReferenceWeights');
 const machineReferencePageTextEl = document.getElementById('machineReferencePageText');
+const machineReferenceVisualCanvasEl = document.getElementById('machineReferenceVisualCanvas');
+const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.stackup-visual-frame-wrap') || null;
+const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
+const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
+const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
+const STACKUP_PDFJS_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.mjs';
+const STACKUP_PDFJS_WORKER_URL = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.mjs';
+let stackupPdfJsPromise = null;
+let machineReferenceVisualRenderToken = 0;
+const stackupPdfDocumentCache = new Map();
 const bundledStackupReferences = Array.isArray(window.TAPCALC_STACKUP_REFERENCES) ? window.TAPCALC_STACKUP_REFERENCES : [];
 const machineManualIndexData = [
   { name: 'IP 304 / 406 / 508 Manual', type: 'Manual Index', range: 'IP 304, IP 406, IP 508', use: 'Indexed tapping-machine manual source; full manual is not inline yet.', source: 'IP304 406 508, 2009.pdf', sourcePage: '-', dimensions: [], weights: [], notes: [], text: 'Manual index entry. Use the source file name for cross-checking until this manual is converted into app-native reference data.' },
@@ -1006,6 +1016,116 @@ function renderMachineReferenceList(target, items, emptyText) {
     : `<li>${escapeHtml(emptyText)}</li>`;
 }
 
+function getMachineReferenceVisualSource(row) {
+  const pageNumber = Number.parseInt(row?.sourcePage, 10);
+  if (!row?.source || !Number.isFinite(pageNumber) || pageNumber < 1) return null;
+  const pdfUrl = encodeURI(STACKUP_VISUAL_BASE_PATH + row.source);
+  return {
+    pdfUrl,
+    pageNumber,
+    openUrl: `${pdfUrl}#page=${encodeURIComponent(pageNumber)}&zoom=page-fit`
+  };
+}
+
+function getMachineReferenceVisualUrl(row) {
+  return getMachineReferenceVisualSource(row)?.openUrl || '';
+}
+
+function setMachineReferenceVisualMessage(message, show = true) {
+  if (!machineReferenceVisualFallbackEl) return;
+  machineReferenceVisualFallbackEl.textContent = message || '';
+  machineReferenceVisualFallbackEl.hidden = !show;
+}
+
+async function getStackupPdfJs() {
+  if (!stackupPdfJsPromise) {
+    stackupPdfJsPromise = import(STACKUP_PDFJS_URL)
+      .then((pdfjsLib) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = STACKUP_PDFJS_WORKER_URL;
+        return pdfjsLib;
+      })
+      .catch((error) => {
+        stackupPdfJsPromise = null;
+        throw error;
+      });
+  }
+  return stackupPdfJsPromise;
+}
+
+async function getStackupPdfDocument(pdfUrl) {
+  if (!stackupPdfDocumentCache.has(pdfUrl)) {
+    const pdfjsLib = await getStackupPdfJs();
+    stackupPdfDocumentCache.set(pdfUrl, pdfjsLib.getDocument({ url: pdfUrl }).promise);
+  }
+  return stackupPdfDocumentCache.get(pdfUrl);
+}
+
+async function renderMachineReferenceVisualPage(source, token) {
+  if (!machineReferenceVisualCanvasEl || !machineReferenceVisualWrapEl || !source) return;
+  const pdf = await getStackupPdfDocument(source.pdfUrl);
+  if (token !== machineReferenceVisualRenderToken) return;
+
+  const page = await pdf.getPage(Math.min(source.pageNumber, pdf.numPages));
+  if (token !== machineReferenceVisualRenderToken) return;
+
+  const baseViewport = page.getViewport({ scale: 1 });
+  const availableWidth = Math.max(320, machineReferenceVisualWrapEl.clientWidth - 28);
+  const scale = Math.min(2.1, Math.max(0.72, availableWidth / baseViewport.width));
+  const viewport = page.getViewport({ scale });
+  const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+  const canvas = machineReferenceVisualCanvasEl;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Stack-up preview canvas is not available.');
+
+  canvas.width = Math.floor(viewport.width * outputScale);
+  canvas.height = Math.floor(viewport.height * outputScale);
+  canvas.style.width = `${Math.floor(viewport.width)}px`;
+  canvas.style.height = `${Math.floor(viewport.height)}px`;
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+  await page.render({ canvasContext: context, viewport, transform }).promise;
+  if (token !== machineReferenceVisualRenderToken) return;
+  canvas.hidden = false;
+  setMachineReferenceVisualMessage('', false);
+}
+
+function updateMachineReferenceVisual(row) {
+  const visualSource = getMachineReferenceVisualSource(row);
+  const visualUrl = visualSource?.openUrl || '';
+  machineReferenceVisualRenderToken += 1;
+  const renderToken = machineReferenceVisualRenderToken;
+  if (machineReferenceVisualOpenEl) {
+    if (visualUrl) {
+      machineReferenceVisualOpenEl.href = visualUrl;
+      machineReferenceVisualOpenEl.removeAttribute('aria-disabled');
+      machineReferenceVisualOpenEl.classList.remove('is-disabled');
+    } else {
+      machineReferenceVisualOpenEl.href = '#';
+      machineReferenceVisualOpenEl.setAttribute('aria-disabled', 'true');
+      machineReferenceVisualOpenEl.classList.add('is-disabled');
+    }
+  }
+  if (!machineReferenceVisualCanvasEl) {
+    setMachineReferenceVisualMessage('Open the PDF to view the selected stack-up drawing.', !visualUrl);
+    return;
+  }
+  if (!visualSource) {
+    machineReferenceVisualCanvasEl.hidden = true;
+    setMachineReferenceVisualMessage('This reference is indexed only; no stack-up drawing is bundled for this entry yet.', true);
+    return;
+  }
+  machineReferenceVisualCanvasEl.hidden = false;
+  setMachineReferenceVisualMessage(`Loading ${row.source} page ${visualSource.pageNumber}...`, true);
+  renderMachineReferenceVisualPage(visualSource, renderToken).catch(() => {
+    if (renderToken !== machineReferenceVisualRenderToken) return;
+    machineReferenceVisualCanvasEl.hidden = true;
+    setMachineReferenceVisualMessage('The inline preview could not load. Use Open PDF to view the drawing.', true);
+  });
+}
+
 function updateMachineReferenceDetail(row) {
   if (!row) return;
   const sourcePage = row.sourcePage && row.sourcePage !== '-' ? `Page ${row.sourcePage}` : 'Indexed';
@@ -1029,6 +1149,7 @@ function updateMachineReferenceDetail(row) {
   }
   renderMachineReferenceList(machineReferenceDimensionsEl, row.dimensions, 'No extracted dimensions on this page.');
   renderMachineReferenceList(machineReferenceWeightsEl, row.weights, 'No extracted weights on this page.');
+  updateMachineReferenceVisual(row);
   if (machineReferencePageTextEl) {
     machineReferencePageTextEl.textContent = row.text || 'No extracted page text is available for this reference yet.';
   }
@@ -1656,7 +1777,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha161', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha162', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5619,7 +5740,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha161';
+const TC63_VERSION = '3.0.0-alpha162';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -5865,7 +5986,7 @@ const TC63_VERSION = '3.0.0-alpha161';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha161';
+const VERSION = '3.0.0-alpha162';
 
   function tc65GetJobs() {
     try {
@@ -9078,7 +9199,7 @@ const VERSION = '3.0.0-alpha161';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha161';
+const VERSION = '3.0.0-alpha162';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10620,10 +10741,10 @@ const VERSION = '3.0.0-alpha161';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha161 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha162 preserve multi-operation bundles on load ===== */
 (function(){
-  if (window.__tapcalcalpha161BundleLoadReady) return;
-  window.__tapcalcalpha161BundleLoadReady = true;
+  if (window.__tapcalcalpha162BundleLoadReady) return;
+  window.__tapcalcalpha162BundleLoadReady = true;
 
   function hasSavedOperationBundle(record) {
     return Array.isArray(record?.jobBundle?.operations) && record.jobBundle.operations.length > 1;
@@ -10733,7 +10854,7 @@ const VERSION = '3.0.0-alpha161';
         return merged;
       }
     } catch (error) {
-      console.warn('alpha161 full shared job fetch failed', error);
+      console.warn('alpha162 full shared job fetch failed', error);
     }
 
     return previewRecord;
@@ -10927,7 +11048,7 @@ const VERSION = '3.0.0-alpha161';
       scheduleLoadedJobWorkflow(record, { quick: true });
       return true;
     } catch (error) {
-      console.error('alpha161 bundle restore failed', error);
+      console.error('alpha162 bundle restore failed', error);
       return false;
     }
   }
@@ -10941,7 +11062,7 @@ const VERSION = '3.0.0-alpha161';
   }
 
   const previousLoader = window.loadRecordIntoCalculator || (typeof loadRecordIntoCalculator === 'function' ? loadRecordIntoCalculator : null);
-  function alpha161LoadRecord(record, options = {}) {
+  function alpha162LoadRecord(record, options = {}) {
     if (!record) return false;
     let result = false;
     if (typeof previousLoader === 'function') {
@@ -10957,8 +11078,8 @@ const VERSION = '3.0.0-alpha161';
     return result;
   }
 
-  window.loadRecordIntoCalculator = alpha161LoadRecord;
-  try { loadRecordIntoCalculator = alpha161LoadRecord; } catch {}
+  window.loadRecordIntoCalculator = alpha162LoadRecord;
+  try { loadRecordIntoCalculator = alpha162LoadRecord; } catch {}
   window.tapCalcRestoreOperationBundle = restoreOperationBundleFromRecord;
 
   function getJobs() {
@@ -11011,7 +11132,7 @@ const VERSION = '3.0.0-alpha161';
     return null;
   }
 
-  function alpha161LoadSelected(event) {
+  function alpha162LoadSelected(event) {
     if (event) {
       try { event.preventDefault(); } catch {}
       try { event.stopPropagation(); } catch {}
@@ -11030,7 +11151,7 @@ const VERSION = '3.0.0-alpha161';
     try { window.__tapcalcLibrarySelectedId = String(selected.id || ''); } catch {}
 
     const loadToken = `${String(selected.id || getRecordId(selected.record) || 'selected')}:${Date.now()}`;
-    window.__tapcalcalpha161ActiveLoadToken = loadToken;
+    window.__tapcalcalpha162ActiveLoadToken = loadToken;
     (async () => {
       try {
         const statusEl = document.getElementById('jobsCloudStatus');
@@ -11038,9 +11159,9 @@ const VERSION = '3.0.0-alpha161';
       } catch {}
 
       const fullRecord = await resolveFullOperationRecord(selected);
-      if (window.__tapcalcalpha161ActiveLoadToken !== loadToken) return;
+      if (window.__tapcalcalpha162ActiveLoadToken !== loadToken) return;
 
-      alpha161LoadRecord(fullRecord || selected.record, { message: true, switchScreen: true, skipPersist: false });
+      alpha162LoadRecord(fullRecord || selected.record, { message: true, switchScreen: true, skipPersist: false });
       scheduleBundleRestore(fullRecord || selected.record, { focus: true });
       scheduleLoadedJobWorkflow(fullRecord || selected.record);
       try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
@@ -11049,15 +11170,15 @@ const VERSION = '3.0.0-alpha161';
     return false;
   }
 
-  window.tapCalcForceLoadSelectedJob = alpha161LoadSelected;
-  window.tapCalcLibraryLoadSelected = alpha161LoadSelected;
-  window.loadSelectedLibraryJob = alpha161LoadSelected;
-  window.alpha47LoadSelectedLibraryJob = alpha161LoadSelected;
+  window.tapCalcForceLoadSelectedJob = alpha162LoadSelected;
+  window.tapCalcLibraryLoadSelected = alpha162LoadSelected;
+  window.loadSelectedLibraryJob = alpha162LoadSelected;
+  window.alpha47LoadSelectedLibraryJob = alpha162LoadSelected;
 
   function bindLoadButtonCapture(event) {
     const button = findLoadButtonFromEvent(event);
     if (!button) return;
-    alpha161LoadSelected(event);
+    alpha162LoadSelected(event);
   }
 
   window.addEventListener('click', bindLoadButtonCapture, true);
