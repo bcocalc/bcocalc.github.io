@@ -6196,7 +6196,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha186 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha187 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6302,7 +6302,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha186 reference buildout ===== */
+/* ===== 3.0.0-alpha187 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6698,7 +6698,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha186 reference library picker ===== */
+/* ===== 3.0.0-alpha187 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7044,7 +7044,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha186 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha187 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7219,7 +7219,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha186 gasket torque reference ===== */
+/* ===== 3.0.0-alpha187 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7348,7 +7348,7 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha186 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha187 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7390,7 +7390,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha186 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha187 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7511,7 +7511,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha186 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha187 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7591,7 +7591,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha186 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha187 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
@@ -7796,7 +7796,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   }
 }
 
-/* ===== 3.0.0-alpha186 neutral upcoming workflow steps ===== */
+/* ===== 3.0.0-alpha187 neutral upcoming workflow steps ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
@@ -7851,7 +7851,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em
   color: #173657 !important;
 }
 
-/* ===== 3.0.0-alpha186 incomplete workflow steps need attention ===== */
+/* ===== 3.0.0-alpha187 incomplete workflow steps need attention ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] {
@@ -7888,4 +7888,217 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] 
 body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] span,
 body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] em {
   color: #6c1721 !important;
+}
+
+/* ===== 3.0.0-alpha187 workflow guards and draft recovery ===== */
+body.measurement-page .workflow-draft-bar {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(140, 176, 214, 0.16);
+  border-radius: 12px;
+  background: rgba(7, 18, 32, 0.22);
+}
+
+body.measurement-page .card-screen-intro {
+  flex-wrap: wrap;
+}
+
+body.measurement-page .card-screen-intro > div:first-child {
+  flex: 1 1 360px;
+}
+
+body.measurement-page .card-screen-intro .screen-intro-stats {
+  flex: 0 1 340px;
+}
+
+body.measurement-page .card-screen-intro .screen-intro-meta {
+  flex: 1 1 100%;
+}
+
+body.measurement-page .workflow-draft-bar span {
+  flex: 1 1 220px;
+  color: #dbe9f8;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+body.measurement-page .workflow-draft-bar button {
+  min-height: 38px;
+}
+
+body.measurement-page .workflow-gate-notice {
+  margin: 0;
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 124, 135, 0.48);
+  border-radius: 12px;
+  background: rgba(112, 29, 38, 0.36);
+  color: #fff2f3;
+  font-size: 0.94rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+body.measurement-page .workflow-gate-notice[hidden] {
+  display: none !important;
+}
+
+body.measurement-page .workflow-field-hint {
+  margin: -2px 0 0;
+  padding: 10px 12px;
+  border: 1px solid rgba(132, 178, 255, 0.22);
+  border-radius: 10px;
+  background: rgba(17, 44, 82, 0.5);
+  color: #dbe9f8;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+body.measurement-page .workflow-gate-banner {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 13px 15px;
+  border: 1px solid rgba(214, 164, 56, 0.42);
+  border-radius: 13px;
+  background: rgba(104, 74, 16, 0.34);
+}
+
+body.measurement-page .workflow-gate-banner strong {
+  color: #ffe5ad;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+body.measurement-page .workflow-gate-banner span {
+  color: #f5e3bd;
+  font-size: 0.92rem;
+  line-height: 1.38;
+}
+
+body.measurement-page .workflow-gate-banner[data-state="ready"] {
+  border-color: rgba(78, 188, 111, 0.45);
+  background: rgba(22, 91, 48, 0.34);
+}
+
+body.measurement-page .workflow-gate-banner[data-state="ready"] strong {
+  color: #c9f8d7;
+}
+
+body.measurement-page .workflow-gate-banner[data-state="ready"] span {
+  color: #daf7e2;
+}
+
+body.measurement-page .workflow-gate-banner[data-state="blocked"] {
+  border-color: rgba(255, 124, 135, 0.48);
+  background: rgba(112, 29, 38, 0.34);
+}
+
+body.measurement-page .workflow-gate-banner[data-state="blocked"] strong,
+body.measurement-page .workflow-gate-banner[data-state="blocked"] span {
+  color: #fff2f3;
+}
+
+body.measurement-page .workflow-tool-card-head {
+  align-items: flex-start !important;
+}
+
+body.measurement-page .workflow-tool-card-head h4 {
+  min-width: 0;
+}
+
+body.measurement-page .workflow-tool-card-head span {
+  max-width: none !important;
+  min-width: 0;
+  flex: 0 1 190px;
+  border-radius: 12px !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-draft-bar,
+body.light.measurement-page .workflow-draft-bar {
+  background: #edf4fd;
+  border-color: #d3e0f3;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-draft-bar span,
+body.light.measurement-page .workflow-draft-bar span {
+  color: #244a73;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-notice,
+body.light.measurement-page .workflow-gate-notice {
+  background: #ffe6e9;
+  border-color: #df7b86;
+  color: #6c1721;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-field-hint,
+body.light.measurement-page .workflow-field-hint {
+  background: #e7eef7;
+  border-color: #c5d7ef;
+  color: #244a73;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner,
+body.light.measurement-page .workflow-gate-banner {
+  background: #fff5d9;
+  border-color: #dfbc65;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner strong,
+body.light.measurement-page .workflow-gate-banner strong {
+  color: #704d00;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner span,
+body.light.measurement-page .workflow-gate-banner span {
+  color: #644b13;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner[data-state="ready"],
+body.light.measurement-page .workflow-gate-banner[data-state="ready"] {
+  background: #e6f8eb;
+  border-color: #78c991;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner[data-state="ready"] strong,
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner[data-state="ready"] span,
+body.light.measurement-page .workflow-gate-banner[data-state="ready"] strong,
+body.light.measurement-page .workflow-gate-banner[data-state="ready"] span {
+  color: #1d6135;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner[data-state="blocked"],
+body.light.measurement-page .workflow-gate-banner[data-state="blocked"] {
+  background: #ffe6e9;
+  border-color: #df7b86;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner[data-state="blocked"] strong,
+:root[data-theme="light"] body.measurement-page .workflow-gate-banner[data-state="blocked"] span,
+body.light.measurement-page .workflow-gate-banner[data-state="blocked"] strong,
+body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
+  color: #6c1721;
+}
+
+@media (max-width: 720px) {
+  body.measurement-page .workflow-draft-bar {
+    align-items: stretch;
+  }
+
+  body.measurement-page .workflow-draft-bar button {
+    flex: 1 1 130px;
+  }
+
+  body.measurement-page .workflow-tool-card-head span {
+    flex-basis: auto;
+    width: 100%;
+  }
 }

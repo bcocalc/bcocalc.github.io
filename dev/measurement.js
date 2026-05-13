@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha186';
+const BUILD_VERSION = '3.0.0-alpha187';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha186 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha187 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1035,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha186';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha186';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha187';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha187';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha186', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha187', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3807,6 +3807,7 @@ function persistCurrentJob(options = {}) {
   try {
     const bundle = syncCurrentOperationItemFromUi({ render: options.render !== false }) || ensureJobBundleInitialized();
     localStorage.setItem(JOB_STATE_KEY, JSON.stringify(buildPersistedJobBundlePayload(bundle)));
+    localStorage.setItem('measurementCardDraftUpdatedAtV1', new Date().toISOString());
   } catch {}
 }
 
@@ -4712,6 +4713,7 @@ async function saveCurrentJobToHistory() {
 function resetCurrentJob() {
   currentJobBundle = null;
   localStorage.removeItem(JOB_STATE_KEY);
+  localStorage.removeItem('measurementCardDraftUpdatedAtV1');
   sessionStorage.removeItem('bcoCalculated');
   localStorage.removeItem('bcoData');
   localStorage.removeItem('pipeMaterial');
@@ -5192,7 +5194,7 @@ window.addEventListener('load', async () => {
       if(pipeLabel === '-') missing.push('pipe');
       if(bcoLabel === '-') missing.push('BCO');
       const context=[location, date, technician].filter(Boolean).join('  |  ');
-      cardMeta.textContent = missing.length ? `Missing ${missing.join(', ')}. Fill out Current and BCO to unlock the card workflow.` : (context || 'Card workflow is ready for stage inputs.');
+      cardMeta.textContent = missing.length ? `Missing ${missing.join(', ')}. Fill out Workflow Step 1 and Pipe / Cutter to unlock the card workflow.` : (context || 'Card workflow is ready for stage inputs.');
     }
     const activeMode=getActiveWorkflowMode();
     const activeLabel=getActiveWorkflowLabel();
@@ -5255,7 +5257,7 @@ window.addEventListener('load', async () => {
     const location=document.getElementById('jobLocation')?.value?.trim() || '';
     const description=document.getElementById('jobDescription')?.value?.trim() || '';
     const title = client || description || 'No active job yet';
-    const meta = location ? `${location}${description ? '  |  ' + description : ''}` : 'Start a job in the Current screen, then save locally or sync to shared.';
+    const meta = location ? `${location}${description ? '  |  ' + description : ''}` : 'Start a job in Workflow, then save locally or sync to shared.';
     const currentTitle=document.getElementById('jobsCurrentTitle');
     if(currentTitle) currentTitle.textContent=title;
     const currentMeta=document.getElementById('jobsCurrentMeta');
@@ -6374,7 +6376,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha186';
+const TC63_VERSION = '3.0.0-alpha187';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6620,7 +6622,7 @@ const TC63_VERSION = '3.0.0-alpha186';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha186';
+const VERSION = '3.0.0-alpha187';
 
   function tc65GetJobs() {
     try {
@@ -9833,7 +9835,7 @@ const VERSION = '3.0.0-alpha186';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha186';
+const VERSION = '3.0.0-alpha187';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11146,6 +11148,41 @@ const VERSION = '3.0.0-alpha186';
         : '<li>Nothing missing for this step.</li>';
     }
   }
+  function clearWorkflowGateNotice(){
+    const notice = document.getElementById('workflowGateNotice');
+    if (!notice) return;
+    notice.hidden = true;
+    notice.textContent = '';
+    delete notice.dataset.state;
+  }
+  function showWorkflowGateNotice(stage, state){
+    const notice = document.getElementById('workflowGateNotice');
+    if (!notice) return;
+    const meta = STAGE_META[stage] || { short: 'This step' };
+    const missingText = (state?.missing || []).join(', ');
+    notice.textContent = `Finish ${meta.short} before continuing: ${missingText}.`;
+    notice.dataset.state = 'blocked';
+    notice.hidden = false;
+    try { notice.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {}
+  }
+  function guardWorkflowAdvance(targetStage){
+    const stages = getStages();
+    const current = activeStage();
+    const currentIndex = stages.indexOf(current);
+    const targetIndex = stages.indexOf(targetStage);
+    if (targetIndex <= currentIndex || current === 'review') {
+      clearWorkflowGateNotice();
+      return true;
+    }
+    const state = getWorkflowRequirementState(current);
+    if (!state.missing.length) {
+      clearWorkflowGateNotice();
+      return true;
+    }
+    showWorkflowGateNotice(current, state);
+    updateWorkflowReadiness(current);
+    return false;
+  }
   function activeStage(){
     const stages = getStages();
     let stage = window.__tapCalcWorkflowStage || '';
@@ -11243,6 +11280,18 @@ const VERSION = '3.0.0-alpha186';
     if (pipeNote) pipeNote.textContent = bco !== '-'
       ? 'BCO is ready. The active workflow stages can use that number now.'
       : 'Once BCO is calculated, the workflow can carry that number into the stages that need it.';
+    const pipeGate = document.getElementById('workflowPipeGateBanner');
+    if (pipeGate) {
+      const pipeState = getWorkflowRequirementState('pipe');
+      if (!pipeState.missing.length) {
+        pipeGate.dataset.state = 'ready';
+        pipeGate.innerHTML = '<strong>Pipe / Cutter Ready</strong><span>Pipe, cutter, and BCO are locked in for the workflow math.</span>';
+      } else {
+        const started = pipeState.status === 'In Progress';
+        pipeGate.dataset.state = started ? 'waiting' : 'blocked';
+        pipeGate.innerHTML = `<strong>${started ? 'Pipe / Cutter In Progress' : 'Waiting on Pipe / Cutter'}</strong><span>Missing: ${workflowEscape(pipeState.missing.join(', '))}.</span>`;
+      }
+    }
     const reviewNote = document.getElementById('workflowReviewNote');
     if (reviewNote) {
       const modeStages = getStages().filter((stage)=>MODE_STAGES.has(stage));
@@ -11258,6 +11307,7 @@ const VERSION = '3.0.0-alpha186';
     const nextStage = stages.includes(stage) ? stage : stages[0];
     window.__tapCalcWorkflowStage = nextStage;
     try { localStorage.setItem(STORAGE_KEY, nextStage); } catch {}
+    clearWorkflowGateNotice();
     const meta = STAGE_META[nextStage] || STAGE_META.setup;
     const index = stages.indexOf(nextStage);
     const title = document.getElementById('workflowStageTitle');
@@ -11317,12 +11367,22 @@ const VERSION = '3.0.0-alpha186';
     }, 40);
   }
 
-  function jumpBy(delta){
+  function jumpBy(delta, opts={}){
     const stages = getStages();
     const current = activeStage();
     const index = stages.indexOf(current);
     const target = stages[Math.max(0, Math.min(stages.length - 1, index + delta))];
+    if (delta > 0 && opts.guard !== false && !guardWorkflowAdvance(target)) return false;
     setWorkflowStage(target);
+    return true;
+  }
+
+  function goToWorkflowStage(stage, opts={}){
+    const stages = getStages();
+    const target = stages.includes(stage) ? stage : stages[0];
+    if (opts.guard !== false && !guardWorkflowAdvance(target)) return false;
+    setWorkflowStage(target, opts);
+    return true;
   }
 
   function runWorkflowAction(trigger, event){
@@ -11341,10 +11401,10 @@ const VERSION = '3.0.0-alpha186';
         jumpBy(1);
         break;
       case 'workflowSetupNextBtn':
-        setWorkflowStage('pipe');
+        goToWorkflowStage('pipe');
         break;
       case 'workflowPipeNextBtn':
-        setWorkflowStage(normalizeMode(window.getActiveWorkflowMode?.() || 'hotTap'));
+        goToWorkflowStage(normalizeMode(window.getActiveWorkflowMode?.() || 'hotTap'));
         break;
       default:
         return false;
@@ -11365,7 +11425,7 @@ const VERSION = '3.0.0-alpha186';
   });
 
   window.tapCalcWorkflowGo = function(stage){
-    try { setWorkflowStage(stage || activeStage()); } catch {}
+    try { goToWorkflowStage(stage || activeStage()); } catch {}
     return false;
   };
   window.tapCalcWorkflowJump = function(delta){
@@ -11400,7 +11460,7 @@ const VERSION = '3.0.0-alpha186';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha186 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha187 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11557,7 +11617,7 @@ const VERSION = '3.0.0-alpha186';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha186 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha187 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -11741,7 +11801,7 @@ const VERSION = '3.0.0-alpha186';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha186 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha187 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -11835,11 +11895,11 @@ const VERSION = '3.0.0-alpha186';
   }
 
   function syncWorkflowResults(){
-    const bco = resultText('summaryBco') || resultText('bcoResult') || '?';
+    const bco = resultText('summaryBco') || '?';
     const eta = resultText('etaRangeDisplay') || '?';
     const bcoResult = byId('workflowBcoInlineResult');
     const etaResult = byId('workflowEtaInlineResult');
-    if (bcoResult) bcoResult.textContent = `BCO: ${bco}`;
+    if (bcoResult) bcoResult.textContent = bco === '?' ? 'BCO pending' : `BCO ${bco}`;
     if (etaResult) etaResult.textContent = `ETA: ${eta}`;
   }
 
@@ -11922,7 +11982,7 @@ const VERSION = '3.0.0-alpha186';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha186 workflow save actions ===== */
+/* ===== 3.0.0-alpha187 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -11960,6 +12020,16 @@ const VERSION = '3.0.0-alpha186';
     }
   }
 
+  function currentJobSaveLabel(){
+    const customer = byId('jobClient')?.value?.trim() || '';
+    const location = byId('jobLocation')?.value?.trim() || '';
+    const description = byId('jobDescription')?.value?.trim() || '';
+    const jobNumber = byId('jobNumber')?.value?.trim() || '';
+    const base = [customer || description, location].filter(Boolean).join(' - ');
+    const label = base || 'current draft';
+    return jobNumber ? `${label} (${jobNumber})` : label;
+  }
+
   async function saveWorkflowJob(options = {}){
     if (savingWorkflowJob) return;
     savingWorkflowJob = true;
@@ -11980,8 +12050,11 @@ const VERSION = '3.0.0-alpha186';
       const syncedText = /uploaded|synced|connected/i.test(cloudText) && !/saved locally only|could not|failed|not verified/i.test(cloudText)
         ? ' Shared sync is available.'
         : '';
-      setStatus(`Saved job at ${timeLabel()}. ${savedCount()} local save${savedCount() === 1 ? '' : 's'} stored.${syncedText}`, 'saved');
+      const count = savedCount();
+      const label = currentJobSaveLabel();
+      setStatus(`Saved ${label} at ${timeLabel()}. ${count} local save${count === 1 ? '' : 's'} stored.${syncedText}`, 'saved');
       try { window.updateTapCalcShell?.(); } catch {}
+      try { window.tapCalcUpdateDraftStatus?.(); } catch {}
     } catch (error) {
       console.error('Workflow save failed', error);
       setStatus('Could not save from Workflow. Open Library and try Save Local.', 'error');
@@ -12018,6 +12091,126 @@ const VERSION = '3.0.0-alpha186';
     setTimeout(bindWorkflowSaveActions, 400);
   });
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
+})();
+
+/* ===== 3.0.0-alpha187 workflow draft recovery ===== */
+(function(){
+  const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
+  const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
+  const draftStateKey = typeof JOB_STATE_KEY !== 'undefined' ? JOB_STATE_KEY : 'measurementCardStateV1';
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function hasDraftPayload(){
+    try {
+      return !!localStorage.getItem(draftStateKey);
+    } catch {
+      return false;
+    }
+  }
+
+  function currentDraftLabel(){
+    const customer = byId('jobClient')?.value?.trim() || '';
+    const location = byId('jobLocation')?.value?.trim() || '';
+    const description = byId('jobDescription')?.value?.trim() || '';
+    const jobNumber = byId('jobNumber')?.value?.trim() || '';
+    const label = [customer || description, location].filter(Boolean).join(' - ') || 'Current draft';
+    return jobNumber ? `${label} (${jobNumber})` : label;
+  }
+
+  function draftTimeLabel(){
+    try {
+      const raw = localStorage.getItem(DRAFT_UPDATED_KEY);
+      if (!raw) return '';
+      return new Date(raw).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  function hasVisibleDraftValues(){
+    return ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician','machineType','summaryPipe','summaryBco']
+      .some((id) => {
+        const el = byId(id);
+        const value = String(('value' in (el || {}) ? el.value : el?.textContent) || '').trim();
+        return !!value && value !== '-' && value !== '?';
+      });
+  }
+
+  function updateDraftStatus(){
+    const status = byId('workflowDraftStatus');
+    const draftExists = hasDraftPayload() || hasVisibleDraftValues();
+    const time = draftTimeLabel();
+    const label = currentDraftLabel();
+    if (status) {
+      status.textContent = draftExists
+        ? `${label} is auto-saved${time ? ` as of ${time}` : ''}.`
+        : 'Draft auto-saves as you type.';
+      status.dataset.state = draftExists ? 'draft' : 'empty';
+    }
+    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn'].forEach((id) => {
+      const button = byId(id);
+      if (!button) return;
+      button.textContent = draftExists ? 'Resume Draft' : 'Open Workflow';
+      button.dataset.state = draftExists ? 'draft' : 'empty';
+    });
+  }
+
+  function resumeDraft(event){
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+    }
+    try { window.tapCalcSetScreen?.('card'); } catch {}
+    let stage = '';
+    try { stage = localStorage.getItem(WORKFLOW_STAGE_KEY) || ''; } catch {}
+    stage = stage || window.__tapCalcWorkflowStage || 'setup';
+    setTimeout(() => {
+      try { window.tapCalcSetWorkflowStage?.(stage); } catch {}
+      const target = document.querySelector('.workflow-guided-shell') || byId('cardScreen');
+      try { target?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
+      updateDraftStatus();
+    }, 80);
+  }
+
+  function startNewJob(event){
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+    }
+    const hasDraft = hasDraftPayload() || hasVisibleDraftValues();
+    if (hasDraft && !window.confirm('Start a new blank job? This clears the current draft from this device. Save first if you want to keep it.')) return;
+    byId('resetJobBtn')?.click();
+  }
+
+  function bindDraftControls(){
+    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn'].forEach((id) => {
+      const button = byId(id);
+      if (!button || button.dataset.workflowDraftBound) return;
+      button.dataset.workflowDraftBound = '1';
+      button.addEventListener('click', resumeDraft);
+    });
+    ['workflowStartNewJobBtn','workflowStartNewJobInlineBtn'].forEach((id) => {
+      const button = byId(id);
+      if (!button || button.dataset.workflowStartNewBound) return;
+      button.dataset.workflowStartNewBound = '1';
+      button.addEventListener('click', startNewJob);
+    });
+    updateDraftStatus();
+  }
+
+  document.addEventListener('DOMContentLoaded', bindDraftControls);
+  window.addEventListener('load', () => {
+    bindDraftControls();
+    setTimeout(updateDraftStatus, 250);
+    setTimeout(updateDraftStatus, 900);
+  });
+  window.addEventListener('pageshow', () => setTimeout(bindDraftControls, 100));
+  document.addEventListener('input', () => setTimeout(updateDraftStatus, 120), true);
+  document.addEventListener('change', () => setTimeout(updateDraftStatus, 120), true);
+  window.tapCalcUpdateDraftStatus = updateDraftStatus;
 })();
 
 
@@ -12211,7 +12404,7 @@ const VERSION = '3.0.0-alpha186';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha186 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha187 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12671,7 +12864,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha186 gasket torque reference ===== */
+/* ===== 3.0.0-alpha187 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -12877,27 +13070,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha186Bound) {
-      classSelect.dataset.alpha186Bound = '1';
+    if (!classSelect.dataset.alpha187Bound) {
+      classSelect.dataset.alpha187Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha186Bound) {
-      sizeSelect.dataset.alpha186Bound = '1';
+    if (!sizeSelect.dataset.alpha187Bound) {
+      sizeSelect.dataset.alpha187Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha186Bound) {
-      typeSelect.dataset.alpha186Bound = '1';
+    if (!typeSelect.dataset.alpha187Bound) {
+      typeSelect.dataset.alpha187Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha186Bound) {
-      searchInput.dataset.alpha186Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha187Bound) {
+      searchInput.dataset.alpha187Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();

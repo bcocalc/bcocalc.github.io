@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha186">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha187">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha186 - 2026-05-13</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha187 - 2026-05-13</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha186 - 2026-05-13</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha187 - 2026-05-13</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -51,7 +51,7 @@
       </div>
       <div class="hero-actions">
         <button type="button" class="secondary-btn" data-go-screen="card">Start Workflow</button>
-        <button type="button" class="secondary-btn" data-go-screen="card">Continue Workflow</button>
+        <button type="button" class="secondary-btn" id="homeResumeDraftHeroBtn" data-go-screen="card">Resume Draft</button>
       </div>
     </div>
 
@@ -65,7 +65,7 @@
         <div class="home-current-job-actions">
           <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
           <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
-        <button type="button" class="secondary-btn" id="homeOpenWorkflowBtn" data-go-screen="card">Open Workflow</button>
+          <button type="button" class="secondary-btn" id="homeResumeDraftBtn" data-go-screen="card">Resume Draft</button>
         </div>
       </div>
       <div class="home-stat-grid">
@@ -422,7 +422,12 @@
       <div class="screen-intro-stat"><span>Pipe</span><strong id="cardCurrentPipe">?</strong></div>
       <div class="screen-intro-stat"><span>Stage</span><strong id="cardStageStat">Hot Tap</strong></div>
     </div>
-    <p id="cardCurrentMeta" class="screen-intro-meta">Fill out Current, then use Calc > BCO. The checklist below will call out what is still missing.</p>
+    <p id="cardCurrentMeta" class="screen-intro-meta">Fill out Workflow Step 1, then lock in Pipe / Cutter on Step 2. The checklist below will call out what is still missing.</p>
+    <div class="workflow-draft-bar" id="workflowDraftBar">
+      <span id="workflowDraftStatus">Draft auto-saves as you type.</span>
+      <button type="button" class="secondary-btn" id="workflowResumeDraftBtn">Resume Draft</button>
+      <button type="button" class="secondary-btn danger-btn" id="workflowStartNewJobBtn">Start New Job</button>
+    </div>
   </section>
   <section class="workflow-phase-shell">
     <div class="workflow-phase-head">
@@ -448,10 +453,12 @@
       <div class="workflow-guided-actions">
         <button type="button" class="secondary-btn" id="workflowPrevBtn">Back</button>
         <button type="button" class="secondary-btn" id="workflowSaveJobBtn" data-workflow-save-job>Save Job</button>
+        <button type="button" class="secondary-btn danger-btn" id="workflowStartNewJobInlineBtn">Start New Job</button>
         <button type="button" id="workflowNextBtn">Next Step</button>
       </div>
     </div>
     <p id="workflowSaveStatus" class="workflow-save-status" aria-live="polite">Save stays available here while you work through the steps.</p>
+    <p id="workflowGateNotice" class="workflow-gate-notice" aria-live="assertive" hidden></p>
     <div id="workflowStageNav" class="workflow-stage-nav" aria-live="polite"></div>
     <div class="workflow-readiness-panel" id="workflowReadinessPanel" aria-live="polite">
       <div class="workflow-readiness-status">
@@ -508,6 +515,7 @@
         <div class="workflow-setup-grid">
           <label class="workflow-setup-field" for="workflowMachineType"><span>Machine</span><select id="workflowMachineType" data-job-sync="machineType"></select></label>
           <label class="workflow-setup-field" for="workflowOperationType"><span>Job Type</span><select id="workflowOperationType" data-job-sync="operationType"></select></label>
+          <p id="workflowOperationTypeHint" class="workflow-field-hint workflow-setup-field-wide">Hot Tap keeps the workflow shorter. Line Stop adds Hot Tap, Line Stop, and Completion Plug steps.</p>
           <label class="workflow-setup-field" for="workflowJobPressure"><span>Pressure</span><input id="workflowJobPressure" type="text" placeholder="Pressure" data-job-sync="jobPressure"></label>
           <label class="workflow-setup-field" for="workflowJobTemperature"><span>Temperature</span><input id="workflowJobTemperature" type="text" placeholder="Temperature" data-job-sync="jobTemperature"></label>
           <label class="workflow-setup-field" for="workflowJobProduct"><span>Product</span><input id="workflowJobProduct" type="text" placeholder="Product" data-job-sync="jobProduct"></label>
@@ -557,11 +565,15 @@
         <button type="button" id="workflowPipeNextBtn">Continue to Active Stage</button>
       </div>
     </div>
+    <div id="workflowPipeGateBanner" class="workflow-gate-banner" data-state="waiting" aria-live="polite">
+      <strong>Waiting on Pipe / Cutter</strong>
+      <span>Enter pipe, cutter, and BCO before using job math.</span>
+    </div>
     <div id="workflowInlinePipeSetup" class="workflow-pipe-tools-grid">
       <section class="workflow-setup-form-card workflow-pipe-tool-card">
         <div class="workflow-tool-card-head">
           <h4>BCO Setup</h4>
-          <span id="workflowBcoInlineResult">BCO: ?</span>
+          <span id="workflowBcoInlineResult">BCO pending</span>
         </div>
         <div class="workflow-setup-grid">
           <label class="workflow-setup-field" for="workflowBcoPipeMaterial"><span>Pipe Material</span><select id="workflowBcoPipeMaterial" data-workflow-tool-sync="bcoPipeMaterial"></select></label>
@@ -1683,9 +1695,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha186"></script>
-<script src="stackup-data.js?v=3.0.0-alpha186"></script>
-<script src="measurement.js?v=3.0.0-alpha186"></script>
+<script src="firebase-config.js?v=3.0.0-alpha187"></script>
+<script src="stackup-data.js?v=3.0.0-alpha187"></script>
+<script src="measurement.js?v=3.0.0-alpha187"></script>
   </section>
 </body>
 </html>
