@@ -462,11 +462,12 @@ body.bco-page #themeToggle,
 body:not(.measurement-card) #themeToggle {
   top: 12px !important;
   right: 12px !important;
-  width: 34px !important;
+  width: 54px !important;
   height: 34px !important;
-  padding: 0 !important;
+  padding: 0 8px !important;
   border-radius: 8px !important;
-  font-size: 16px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
   line-height: 34px !important;
 }
 
@@ -6143,7 +6144,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha160 reference buildout ===== */
+/* ===== 3.0.0-alpha161 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6185,9 +6186,139 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   vertical-align: top;
 }
 
+.machine-reference-table tr.is-selected td {
+  background: rgba(61, 119, 234, 0.12);
+}
+
+.machine-reference-row-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--accent, #6aa7ff);
+  cursor: pointer;
+  display: inline;
+  font: inherit;
+  font-weight: 800;
+  padding: 0;
+  text-align: left;
+}
+
+.machine-reference-row-btn:hover,
+.machine-reference-row-btn:focus-visible {
+  text-decoration: underline;
+}
+
+.machine-file-badge {
+  border: 1px solid rgba(95, 159, 255, 0.35);
+  border-radius: 999px;
+  color: #dceaff;
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+  margin-left: 8px;
+  padding: 4px 7px;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
 .machine-reference-table td:nth-child(4),
 .machine-reference-table td:nth-child(5) {
   min-width: 190px;
+}
+
+.machine-stackup-detail-card {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.stackup-detail-head {
+  align-items: start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.stackup-detail-head h4 {
+  margin: 0 0 5px;
+}
+
+.stackup-source-pill {
+  border: 1px solid rgba(95, 159, 255, 0.35);
+  border-radius: 999px;
+  color: #dceaff;
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 900;
+  padding: 7px 10px;
+}
+
+.stackup-spec-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stackup-spec-item {
+  background: rgba(12, 31, 58, 0.42);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  display: grid;
+  gap: 4px;
+  padding: 11px 12px;
+}
+
+.stackup-spec-item span {
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.stackup-spec-item strong {
+  color: var(--text-main);
+  line-height: 1.35;
+}
+
+.stackup-detail-columns {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.stackup-detail-columns h5,
+.stackup-text-panel h5 {
+  margin: 0 0 8px;
+}
+
+.stackup-detail-list {
+  background: rgba(12, 31, 58, 0.32);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  display: grid;
+  gap: 7px;
+  line-height: 1.42;
+  margin: 0;
+  min-height: 74px;
+  padding: 12px 12px 12px 28px;
+}
+
+.stackup-text-panel {
+  background: rgba(12, 31, 58, 0.28);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.stackup-text-panel p {
+  color: var(--text-muted);
+  line-height: 1.5;
+  margin: 0;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
 }
 
 .reference-note-list {
@@ -6251,6 +6382,20 @@ body.dark #machineReferenceSelect option {
 
 @media (max-width: 640px) {
   .machine-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stackup-detail-head,
+  .stackup-detail-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .stackup-detail-head {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stackup-spec-grid {
     grid-template-columns: 1fr;
   }
 

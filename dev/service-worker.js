@@ -1,13 +1,14 @@
-﻿const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha160';
+﻿const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha161';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha160",
-  "./measurement.js?v=3.0.0-alpha160",
+  "./styles.css?v=3.0.0-alpha161",
+  "./measurement.js?v=3.0.0-alpha161",
+  "./stackup-data.js?v=3.0.0-alpha161",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha160",
+  "./firebase-config.js?v=3.0.0-alpha161",
   "./team-logo.png"
 ];
 
@@ -31,6 +32,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith('/measurement-card.html') ||
     url.pathname.endsWith('/styles.css') ||
     url.pathname.endsWith('/measurement.js') ||
+    url.pathname.endsWith('/stackup-data.js') ||
     url.pathname.endsWith('/firebase-config.js') ||
     url.pathname.endsWith('/service-worker.js')
   );

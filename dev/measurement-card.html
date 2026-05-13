@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha160">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha161">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha160 - 2026-05-12</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha161 - 2026-05-12</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha160 - 2026-05-12</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha161 - 2026-05-12</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -427,7 +427,7 @@
     <div class="workflow-guided-head">
       <div>
         <div class="hero-eyebrow">Guided Step</div>
-        <h4 id="workflowStageTitle">Step 1 Â· Job Setup</h4>
+        <h4 id="workflowStageTitle">Step 1  -  Job Setup</h4>
         <p id="workflowStageLead">Confirm who, where, and what kind of job this is before you jump into measurements.</p>
         <div class="workflow-guided-meta">
           <span id="workflowStepProgress">Step 1 of 4</span>
@@ -627,7 +627,7 @@
           <button type="button" class="variant-chip" data-line-stop-variant="hiStop">Hi-Stop</button>
         </div>
       </div>
-      <div class="variant-inline-note" id="lineStopVariantNote">Standard line stop math uses LI = MD Â± LD + POD - Wall.</div>
+      <div class="variant-inline-note" id="lineStopVariantNote">Standard line stop math uses LI = MD +/- LD + POD - Wall.</div>
     </div>
 
     <div class="line-stop-variant-panel active" data-line-stop-variant-panel="standard">
@@ -655,7 +655,7 @@
 
           <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
 
-          <p class="formula-note">Auto formula: LI = MD Â± LD + POD - Wall</p>
+          <p class="formula-note">Auto formula: LI = MD +/- LD + POD - Wall</p>
         </div>
 
         <div class="section">
@@ -674,7 +674,7 @@
       <div class="measurement-grid">
         <div class="section">
           <h3>HTP Stop</h3>
-          <p class="formula-note">Training formula: TCO = MD Â± LD + PTC + BCO. For HTP, BCO matches the host pipe size from the chart.</p>
+          <p class="formula-note">Training formula: TCO = MD +/- LD + PTC + BCO. For HTP, BCO matches the host pipe size from the chart.</p>
 
           <div class="row"><label>Pipe Size</label>
             <select id="htpPipeSize">
@@ -726,7 +726,7 @@
       <div class="measurement-grid">
         <div class="section">
           <h3>Hi-Stop Cutout</h3>
-          <p class="formula-note">Training formulas: LI = MD Â± LD and TCO = (RL/2) + (POD/2) + CL + PTC.</p>
+          <p class="formula-note">Training formulas: LI = MD +/- LD and TCO = (RL/2) + (POD/2) + CL + PTC.</p>
 
           <div class="row"><label>MD</label><input id="hsMd" type="number" step="any"></div>
           <div class="row row-split">
@@ -745,7 +745,7 @@
 
         <div class="section">
           <h3>Hi-Stop Plug Set</h3>
-          <p class="formula-note">PSD = ((RCD - PB) / (2 Ã— Plug Taper)) + 0.25 and Plug Set = PSD + MD Â± LD + Â½ POD.</p>
+          <p class="formula-note">PSD = ((RCD - PB) / (2 x Plug Taper)) + 0.25 and Plug Set = PSD + MD +/- LD + 1/2 POD.</p>
           <div class="row"><label>RCD</label><input id="hsRcd" type="number" step="any"></div>
           <div class="row"><label>PB (Plug Bottom)</label><input id="hsPb" type="number" step="any"></div>
           <div class="row"><label>Plug Taper</label><input id="hsPtp" type="number" step="any"></div>
@@ -958,9 +958,9 @@
           <div class="reference-card plant-summary-card">
             <h4>HTP Quick Rules</h4>
             <div class="reference-formula-grid">
-              <div class="formula-card"><strong>Hot Tap Cutout</strong><span>TCO = MD Â± LD + PTC + BCO</span><small>HTP training uses pipe size as the HTP BCO value.</small></div>
-              <div class="formula-card"><strong>Plug Set</strong><span>Plug Set = PSD Â± LD</span><small>Used when setting the HTP plug after the hot tap is complete.</small></div>
-              <div class="formula-card"><strong>Service Range</strong><span>3? through 16? pipe</span><small>The training deck lists up to 1480 PSI and 900Â°F capability for HTP service.</small></div>
+              <div class="formula-card"><strong>Hot Tap Cutout</strong><span>TCO = MD +/- LD + PTC + BCO</span><small>HTP training uses pipe size as the HTP BCO value.</small></div>
+              <div class="formula-card"><strong>Plug Set</strong><span>Plug Set = PSD +/- LD</span><small>Used when setting the HTP plug after the hot tap is complete.</small></div>
+              <div class="formula-card"><strong>Service Range</strong><span>3? through 16? pipe</span><small>The training deck lists up to 1480 PSI and 900 deg F capability for HTP service.</small></div>
             </div>
           </div>
         </div>
@@ -972,13 +972,13 @@
         <div class="reference-formula-grid reference-formula-grid-wide">
           <div class="formula-card">
             <strong>Standard Line Stop</strong>
-            <span>Set Point = MD Â± LD + POD - Wall</span>
+            <span>Set Point = MD +/- LD + POD - Wall</span>
             <small>Use for conventional line stop heads when you need lower-in from the training set-point method.</small>
           </div>
           <div class="formula-card">
             <strong>HTP Stop</strong>
-            <span>TCO = MD Â± LD + PTC + BCO</span>
-            <small>HTP BCO follows the pipe size chart. Plug Set uses PSD Â± LD.</small>
+            <span>TCO = MD +/- LD + PTC + BCO</span>
+            <small>HTP BCO follows the pipe size chart. Plug Set uses PSD +/- LD.</small>
           </div>
           <div class="formula-card">
             <strong>Hi-Stop Cutout</strong>
@@ -987,8 +987,8 @@
           </div>
           <div class="formula-card">
             <strong>Hi-Stop Plug Set</strong>
-            <span>Plug Set = PSD + MD Â± LD + Â½ POD</span>
-            <small>PSD = ((RCD - PB) / (2 Ã— Plug Taper)) + 0.25.</small>
+            <span>Plug Set = PSD + MD +/- LD + 1/2 POD</span>
+            <small>PSD = ((RCD - PB) / (2 x Plug Taper)) + 0.25.</small>
           </div>
           <div class="formula-card">
             <strong>Hi-Stop Notes</strong>
@@ -998,48 +998,72 @@
           <div class="formula-card">
             <strong>Completion Plug</strong>
             <span>Pipeline LI = JBF + LD</span>
-            <small>Pipeline side-outlet completion plug training also uses LI = FTD - TMU Â± LD.</small>
+            <small>Pipeline side-outlet completion plug training also uses LI = FTD - TMU +/- LD.</small>
           </div>
         </div>
       </div>
       <div class="reference-view" data-reference-view="machines">
-        <h3 class="reference-subheading">Machine Stack-Ups and Manual Index</h3>
-        <p class="reference-copy">Fast lookup for the Technician stack-up and manual files you uploaded. This is an in-app index so you can search by machine, operation, range, or source file without opening the full document pile.</p>
+        <h3 class="reference-subheading">Inline Stack-Up Reference</h3>
+        <p class="reference-copy">Search and select the stack-up you need, then read the key dimensions, weights, source page, and extracted stack-up text directly inside the app.</p>
         <div class="reference-chip-row">
           <span class="reference-chip"><strong id="machineReferenceTotalChip">0</strong> refs</span>
           <span class="reference-chip"><strong id="machineReferenceVisibleChip">0</strong> visible</span>
-          <span class="reference-chip"><strong id="machineReferenceHotTapChip">0</strong> tap machines</span>
+          <span class="reference-chip"><strong id="machineReferenceHotTapChip">0</strong> inline stack-ups</span>
         </div>
         <div class="reference-grid machine-reference-grid">
           <div class="reference-card machine-summary-card">
-            <h4>Quick Machine Lookup</h4>
+            <h4>Quick Stack-Up Lookup</h4>
             <div class="converter-inline plant-select-row machine-select-row">
-              <label for="machineReferenceSelect">Machine</label>
+              <label for="machineReferenceSelect">Stack-Up</label>
               <select id="machineReferenceSelect"></select>
             </div>
             <div class="bolting-summary-grid machine-summary-grid">
-              <div class="bolting-summary-item"><span class="summary-label">Type</span><span id="machineReferenceType" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Family</span><span id="machineReferenceType" class="summary-value">?</span></div>
               <div class="bolting-summary-item"><span class="summary-label">Range / Size</span><span id="machineReferenceRange" class="summary-value">?</span></div>
-              <div class="bolting-summary-item"><span class="summary-label">Use</span><span id="machineReferenceUse" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Stack-Up</span><span id="machineReferenceUse" class="summary-value">?</span></div>
               <div class="bolting-summary-item"><span class="summary-label">Source</span><span id="machineReferenceSource" class="summary-value">?</span></div>
             </div>
           </div>
           <div class="reference-card machine-summary-card">
             <h4>Field Use Notes</h4>
             <ul class="reference-note-list">
-              <li>Use the Job machine dropdown for the active job machine, then use this view when you need the supporting stack-up or manual source.</li>
-              <li>Hot tap machines are grouped separately from line stop machines so the crew is not hunting through the wrong family.</li>
-              <li>Manual PDFs are indexed here but not bundled into alpha160, keeping the live app light while still preserving the reference names.</li>
+              <li>The details below are extracted from the uploaded Tech stack-up PDFs so you can stay in TapCalc while checking a setup.</li>
+              <li>Search works across family, size, pressure class, source file, page, dimensions, and weight text.</li>
+              <li>Manuals remain indexed separately; this view focuses on stack-up pages that can be used inline.</li>
             </ul>
           </div>
         </div>
+        <div class="reference-card machine-stackup-detail-card">
+          <div class="stackup-detail-head">
+            <div>
+              <h4 id="machineReferenceDetailTitle">Select a stack-up</h4>
+              <p id="machineReferenceDetailMeta" class="reference-copy">Choose a stack-up from the dropdown or table.</p>
+            </div>
+            <span id="machineReferenceSourcePage" class="stackup-source-pill">Source page</span>
+          </div>
+          <div id="machineReferenceSpecGrid" class="stackup-spec-grid"></div>
+          <div class="stackup-detail-columns">
+            <div>
+              <h5>Dimensions</h5>
+              <ul id="machineReferenceDimensions" class="stackup-detail-list"></ul>
+            </div>
+            <div>
+              <h5>Weights / Equipment</h5>
+              <ul id="machineReferenceWeights" class="stackup-detail-list"></ul>
+            </div>
+          </div>
+          <div class="stackup-text-panel">
+            <h5>Extracted Page Text</h5>
+            <p id="machineReferencePageText"></p>
+          </div>
+        </div>
         <div class="reference-search-row plant-search-row">
-          <label for="machineReferenceSearchInput">Filter machines</label>
-          <input id="machineReferenceSearchInput" type="text" placeholder="Search HTM, LSM, IP, plug, range, or source file">
+          <label for="machineReferenceSearchInput">Filter stack-ups</label>
+          <input id="machineReferenceSearchInput" type="text" placeholder="Search hot tap, line stop, Hi-Stop, IP-100, 600#, 24, weight, or source file">
         </div>
         <div class="glossary-table-wrap bolting-table-wrap machine-table-wrap">
           <table class="glossary-table bolting-table machine-reference-table">
-            <thead><tr><th>Machine / File</th><th>Type</th><th>Range / Size</th><th>Use</th><th>Source</th></tr></thead>
+            <thead><tr><th>Stack-Up</th><th>Family</th><th>Range / Size</th><th>Key Details</th><th>Source</th></tr></thead>
             <tbody id="machineReferenceBody"></tbody>
           </table>
         </div>
@@ -1308,7 +1332,7 @@
           <div class="summary-item"><span class="summary-label">Unsynced Local Jobs</span><span id="unsyncedJobsCount" class="summary-value">0</span></div>
         </div>
         <p id="jobsCloudStatus" class="note">Connecting to shared job database...</p>
-        <div class="jobs-view-toggle"><button type="button" class="jobs-view-chip active" data-jobs-view="all">?? Search Jobs</button><button type="button" class="jobs-view-chip" data-jobs-view="customer">?? Customer</button><button type="button" class="jobs-view-chip" data-jobs-view="location">?? Location</button><button type="button" class="jobs-view-chip" data-jobs-view="date">?? Date</button></div>
+        <div class="jobs-view-toggle"><button type="button" class="jobs-view-chip active" data-jobs-view="all">Search Jobs</button><button type="button" class="jobs-view-chip" data-jobs-view="customer">Customer</button><button type="button" class="jobs-view-chip" data-jobs-view="location">Location</button><button type="button" class="jobs-view-chip" data-jobs-view="date">Date</button></div>
         <div class="row jobs-search-row">
           <label for="jobsSearchInput">Search Jobs</label>
           <input id="jobsSearchInput" type="text" placeholder="Search customer, location, job number, pipe size, or tech">
@@ -1329,7 +1353,7 @@
           <h3 id="decimalModalTitle">Decimal Equivalent Chart</h3>
           <p class="modal-subtitle">Fractions in 1/64 increments from 1/64 to 1.</p>
         </div>
-        <button type="button" id="closeDecimalModalBtn" class="modal-close-btn" aria-label="Close decimal chart">Ã—</button>
+        <button type="button" id="closeDecimalModalBtn" class="modal-close-btn" aria-label="Close decimal chart">x</button>
       </div>
       <div class="modal-search-row">
         <input id="decimalChartSearch" type="text" placeholder="Search fraction or decimal (example: 3/16 or 0.1875)">
@@ -1362,8 +1386,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha160"></script>
-<script src="measurement.js?v=3.0.0-alpha160"></script>
+<script src="firebase-config.js?v=3.0.0-alpha161"></script>
+<script src="stackup-data.js?v=3.0.0-alpha161"></script>
+<script src="measurement.js?v=3.0.0-alpha161"></script>
   </section>
 </body>
 </html>

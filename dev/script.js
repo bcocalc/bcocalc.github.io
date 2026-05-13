@@ -7,7 +7,7 @@
   const btn = document.createElement('button');
   btn.id = 'themeToggle';
   btn.className = 'theme-btn';
-  btn.innerHTML = '??';
+  btn.type = 'button';
   btn.style.position = 'fixed';
   btn.style.top = '16px';
   btn.style.right = '16px';
@@ -17,11 +17,17 @@
 
   const current = localStorage.getItem('theme') || 'dark';
   document.documentElement.setAttribute('data-theme', current);
+  btn.textContent = current === 'dark' ? 'Light' : 'Dark';
+  btn.setAttribute('aria-label', current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+  btn.title = current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
 
   btn.addEventListener('click', () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', t);
     localStorage.setItem('theme', t);
+    btn.textContent = t === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-label', t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.title = t === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
   });
 })();
 // ===== END THEME TOGGLE FACTORY =====
@@ -203,11 +209,15 @@ function initTheme() {
   const isDark = saved === "dark";
 
   document.body.classList.toggle("dark", isDark);
-  toggleBtn.textContent = isDark ? "??" : "??";
+  toggleBtn.textContent = isDark ? "Light" : "Dark";
+  toggleBtn.setAttribute("aria-label", isDark ? "Switch to light mode" : "Switch to dark mode");
+  toggleBtn.title = isDark ? "Switch to light mode" : "Switch to dark mode";
 
   toggleBtn.addEventListener("click", () => {
     const nowDark = document.body.classList.toggle("dark");
-    toggleBtn.textContent = nowDark ? "??" : "??";
+    toggleBtn.textContent = nowDark ? "Light" : "Dark";
+    toggleBtn.setAttribute("aria-label", nowDark ? "Switch to light mode" : "Switch to dark mode");
+    toggleBtn.title = nowDark ? "Switch to light mode" : "Switch to dark mode";
     localStorage.setItem("theme", nowDark ? "dark" : "light");
   });
 }
