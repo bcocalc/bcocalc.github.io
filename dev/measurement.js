@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha169';
+const BUILD_VERSION = '3.0.0-alpha170';
 
 (function(){
 
@@ -41,7 +41,23 @@ const TAP_MACHINE_OPTIONS = [
   '412',
   '360 / 152',
   '660 / 760',
-  '1200-M120'
+  '1200-M120',
+  'IP-100',
+  'IP-152',
+  'T-101',
+  'HTM 360',
+  'HTM 660',
+  'HTM 760',
+  'HTM 1200',
+  'HTM M120',
+  'HTM 18 T101',
+  'HTM 24 T101',
+  'HTM 28 T101',
+  'HTM C1-25',
+  'HTM C1-36',
+  'IP 304 / 406 / 508',
+  'IP 914XL',
+  'IPSCO IP100'
 ];
 
 function machineKey(value) {
@@ -67,7 +83,16 @@ function normalizeMachineType(value) {
     ['htm660', '660 / 760'],
     ['htm760', '660 / 760'],
     ['htm1200', '1200-M120'],
-    ['htmm120', '1200-M120']
+    ['htmm120', '1200-M120'],
+    ['ip100', 'IP-100'],
+    ['ip0100', 'IP-100'],
+    ['ip152', 'IP-152'],
+    ['ip0152', 'IP-152'],
+    ['t101', 'T-101'],
+    ['ip304406508', 'IP 304 / 406 / 508'],
+    ['ip304406510', 'IP 304 / 406 / 508'],
+    ['ip914xlnewmanual', 'IP 914XL'],
+    ['ipscoip100manual', 'IPSCO IP100']
   ]);
   if (aliases.has(key)) return aliases.get(key);
   if (key === '360' || key === '152') return '360 / 152';
@@ -117,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha169 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha170 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -896,8 +921,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha169';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha169';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha170';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha170';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2012,7 +2037,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha169', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha170', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5981,7 +6006,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha169';
+const TC63_VERSION = '3.0.0-alpha170';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6227,7 +6252,7 @@ const TC63_VERSION = '3.0.0-alpha169';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha169';
+const VERSION = '3.0.0-alpha170';
 
   function tc65GetJobs() {
     try {
@@ -9440,7 +9465,7 @@ const VERSION = '3.0.0-alpha169';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha169';
+const VERSION = '3.0.0-alpha170';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11180,7 +11205,7 @@ const VERSION = '3.0.0-alpha169';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha169 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha170 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
