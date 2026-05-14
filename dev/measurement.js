@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha194';
+const BUILD_VERSION = '3.0.0-alpha195';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha194 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha195 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1040,8 +1040,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha194';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha194';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha195';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha195';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2457,7 +2457,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha194', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha195', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3136,9 +3136,45 @@ function getStoredJobStatePayload() {
   }
 }
 
+function isMeaningfulPersistedValue(value) {
+  const text = String(value ?? '').trim();
+  return !!text && text !== '-' && text !== '?' && text !== '0.0000';
+}
+
+function isMeaningfulPersistedJobPayload(payload) {
+  if (!payload || typeof payload !== 'object') return false;
+  const shared = payload.sharedState || payload;
+  const sharedFields = [
+    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate',
+    'jobProduct','jobLocation','jobTechnician','jobNotes','machineType'
+  ];
+  if (sharedFields.some((key) => isMeaningfulPersistedValue(shared[key]))) return true;
+  if (String(shared.operationType || '').trim() && String(shared.operationType).trim() !== 'Hot Tap') return true;
+
+  const operations = Array.isArray(payload.operations) ? payload.operations : [];
+  if (operations.length > 1) return true;
+  const meaningfulKeys = [
+    'bcoPipeOD','bcoPipeID','bcoCutterOD','md','ld','ptc','start','mt','valveBore','gtf',
+    'htpPipeSize','htpMd','htpLd','htpPtc','lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel',
+    'hsMd','hsLd','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
+    'cpStart','cpJbf','cpLd','cpPt','cpLiManual','etaBco','etaRpmOverride'
+  ];
+  return operations.some((operation, index) => {
+    const label = String(operation?.label || '').trim();
+    if (label && label !== `Hot Tap ${index + 1}`) return true;
+    if (isMeaningfulPersistedValue(operation?.notes)) return true;
+    if (String(operation?.operationType || '').trim() && String(operation.operationType).trim() !== 'Hot Tap') return true;
+    const state = operation?.state || {};
+    return meaningfulKeys.some((key) => isMeaningfulPersistedValue(state[key]));
+  });
+}
+
 function shouldHoldStartupJobPersist(bundle) {
   if (jobDraftRestoreComplete) return false;
   const stored = getStoredJobStatePayload();
+  const storedMeaningful = isMeaningfulPersistedJobPayload(stored);
+  const nextMeaningful = isMeaningfulPersistedJobPayload(buildPersistedJobBundlePayload(bundle));
+  if (storedMeaningful && !nextMeaningful) return true;
   const storedOperationCount = Array.isArray(stored?.operations) ? stored.operations.length : 0;
   const nextOperationCount = Array.isArray(bundle?.operations) ? bundle.operations.length : 0;
   return storedOperationCount > 1 && nextOperationCount <= 1;
@@ -6543,7 +6579,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha194';
+const TC63_VERSION = '3.0.0-alpha195';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6789,7 +6825,7 @@ const TC63_VERSION = '3.0.0-alpha194';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha194';
+const VERSION = '3.0.0-alpha195';
 
   function tc65GetJobs() {
     try {
@@ -10002,7 +10038,7 @@ const VERSION = '3.0.0-alpha194';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha194';
+const VERSION = '3.0.0-alpha195';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11608,7 +11644,7 @@ const VERSION = '3.0.0-alpha194';
     setTimeout(()=>{
       const focusTarget = isModeStage
         ? document.querySelector('.card-focus-shell')
-        : document.querySelector(`[data-workflow-stage-panel="${nextStage}"]`);
+        : document.querySelector('.workflow-guided-shell') || document.querySelector(`[data-workflow-stage-panel="${nextStage}"]`);
       try { focusTarget?.scrollIntoView({ behavior:'smooth', block:'start' }); } catch {}
     }, 40);
   }
@@ -11706,7 +11742,7 @@ const VERSION = '3.0.0-alpha194';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha194 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha195 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11863,7 +11899,7 @@ const VERSION = '3.0.0-alpha194';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha194 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha195 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -12067,7 +12103,7 @@ const VERSION = '3.0.0-alpha194';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha194 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha195 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -12248,7 +12284,7 @@ const VERSION = '3.0.0-alpha194';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha194 workflow save actions ===== */
+/* ===== 3.0.0-alpha195 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12371,7 +12407,7 @@ const VERSION = '3.0.0-alpha194';
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
-/* ===== 3.0.0-alpha194 workflow draft recovery ===== */
+/* ===== 3.0.0-alpha195 workflow draft recovery ===== */
 (function(){
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
   const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
@@ -12381,9 +12417,46 @@ const VERSION = '3.0.0-alpha194';
     return document.getElementById(id);
   }
 
+  function safeParse(raw){
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+
+  function meaningfulValue(value){
+    const text = String(value ?? '').trim();
+    return !!text && text !== '-' && text !== '?' && text !== '0.0000';
+  }
+
+  function hasMeaningfulDraftState(state){
+    if (!state || typeof state !== 'object') return false;
+    const shared = state.sharedState || {};
+    const sharedFields = [
+      'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate',
+      'jobProduct','jobLocation','jobTechnician','jobNotes','machineType'
+    ];
+    if (sharedFields.some((key) => meaningfulValue(shared[key]))) return true;
+    if (String(shared.operationType || '').trim() && String(shared.operationType).trim() !== 'Hot Tap') return true;
+
+    const operations = Array.isArray(state.operations) ? state.operations : [];
+    if (operations.length > 1) return true;
+    return operations.some((operation, index) => {
+      const label = String(operation?.label || '').trim();
+      if (label && label !== `Hot Tap ${index + 1}`) return true;
+      if (meaningfulValue(operation?.notes)) return true;
+      if (String(operation?.operationType || '').trim() && String(operation.operationType).trim() !== 'Hot Tap') return true;
+      const opState = operation?.state || {};
+      const meaningfulKeys = [
+        'bcoPipeOD','bcoPipeID','bcoCutterOD','md','ld','ptc','start','mt','valveBore','gtf',
+        'htpPipeSize','htpMd','htpLd','htpPtc','lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel',
+        'hsMd','hsLd','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
+        'cpStart','cpJbf','cpLd','cpPt','cpLiManual','etaBco','etaRpmOverride'
+      ];
+      return meaningfulKeys.some((key) => meaningfulValue(opState[key]));
+    });
+  }
+
   function hasDraftPayload(){
     try {
-      return !!localStorage.getItem(draftStateKey);
+      return hasMeaningfulDraftState(safeParse(localStorage.getItem(draftStateKey)));
     } catch {
       return false;
     }
@@ -12413,7 +12486,7 @@ const VERSION = '3.0.0-alpha194';
       .some((id) => {
         const el = byId(id);
         const value = String(('value' in (el || {}) ? el.value : el?.textContent) || '').trim();
-        return !!value && value !== '-' && value !== '?';
+        return meaningfulValue(value);
       });
   }
 
@@ -12433,6 +12506,7 @@ const VERSION = '3.0.0-alpha194';
       if (!button) return;
       button.textContent = draftExists ? 'Resume Draft' : 'Open Workflow';
       button.dataset.state = draftExists ? 'draft' : 'empty';
+      if (id.startsWith('home')) button.hidden = !draftExists;
     });
     try { window.tapCalcUpdateSaveStateIndicators?.(); } catch {}
   }
@@ -12489,10 +12563,11 @@ const VERSION = '3.0.0-alpha194';
   window.addEventListener('pageshow', () => setTimeout(bindDraftControls, 100));
   document.addEventListener('input', () => setTimeout(updateDraftStatus, 120), true);
   document.addEventListener('change', () => setTimeout(updateDraftStatus, 120), true);
+  window.tapCalcHasMeaningfulDraftPayload = () => hasDraftPayload() || hasVisibleDraftValues();
   window.tapCalcUpdateDraftStatus = updateDraftStatus;
 })();
 
-/* ===== 3.0.0-alpha194 workflow save state indicators ===== */
+/* ===== 3.0.0-alpha195 workflow save state indicators ===== */
 (function(){
   const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
@@ -12556,7 +12631,9 @@ const VERSION = '3.0.0-alpha194';
   }
 
   function hasDraft(){
-    try { if (localStorage.getItem('measurementCardStateV1')) return true; } catch {}
+    try {
+      if (typeof window.tapCalcHasMeaningfulDraftPayload === 'function') return window.tapCalcHasMeaningfulDraftPayload();
+    } catch {}
     return ['jobClient','jobLocation','jobDescription','jobNumber','machineType','summaryPipe','summaryBco'].some((id) => {
       const el = byId(id);
       const value = String(('value' in (el || {}) ? el.value : el?.textContent) || '').trim();
@@ -12607,7 +12684,7 @@ const VERSION = '3.0.0-alpha194';
     if (draftOps) draftOps.textContent = draftExists ? countLabel : '0 operations';
 
     const homeStatus = byId('homeStatusStat');
-    if (homeStatus) homeStatus.textContent = STATE_COPY[state].label;
+    if (homeStatus) homeStatus.textContent = draftExists ? STATE_COPY[state].label : 'No Draft';
   }
 
   function setSaveState(state, detail = {}){
@@ -12830,7 +12907,7 @@ const VERSION = '3.0.0-alpha194';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha194 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha195 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -13290,7 +13367,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha194 gasket torque reference ===== */
+/* ===== 3.0.0-alpha195 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -13496,27 +13573,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha194Bound) {
-      classSelect.dataset.alpha194Bound = '1';
+    if (!classSelect.dataset.alpha195Bound) {
+      classSelect.dataset.alpha195Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha194Bound) {
-      sizeSelect.dataset.alpha194Bound = '1';
+    if (!sizeSelect.dataset.alpha195Bound) {
+      sizeSelect.dataset.alpha195Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha194Bound) {
-      typeSelect.dataset.alpha194Bound = '1';
+    if (!typeSelect.dataset.alpha195Bound) {
+      typeSelect.dataset.alpha195Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha194Bound) {
-      searchInput.dataset.alpha194Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha195Bound) {
+      searchInput.dataset.alpha195Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();
@@ -13534,7 +13611,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
 })();
 
-/* ===== 3.0.0-alpha194 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha195 U-wire placement reference ===== */
 (function(){
   const WIRE_ROWS = 12;
   const WIRE_SIZES = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 36, 42, 48, 54, 60, 72];
