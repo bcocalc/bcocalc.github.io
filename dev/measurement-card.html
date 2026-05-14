@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha189">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha190">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha189 - 2026-05-14</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha190 - 2026-05-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha189 - 2026-05-14</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha190 - 2026-05-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -963,7 +963,7 @@
         <strong id="referenceLibraryCurrent">Decimal / Fraction</strong>
         <small id="referenceLibraryDescription">Quick conversion and full chart</small>
       </div>
-      <span class="reference-library-count">12 refs</span>
+      <span class="reference-library-count">13 refs</span>
     </div>
     <div class="reference-library-shell">
       <button type="button" id="referenceLibraryToggle" class="reference-library-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="referenceLibraryMenu">
@@ -991,6 +991,7 @@
           <option value="machines">Machine Stack-Ups</option>
         </optgroup>
         <optgroup label="Field Reference">
+          <option value="uwire">U-Wire Calculator</option>
           <option value="fieldcheck">Field Checklists</option>
           <option value="plant150">150# Plant Series</option>
           <option value="plant600">600# Plant Series</option>
@@ -1175,6 +1176,100 @@
             <strong>Completion Plug</strong>
             <span>Pipeline LI = JBF + LD</span>
             <small>Pipeline side-outlet completion plug training also uses LI = FTD - TMU +/- LD.</small>
+          </div>
+        </div>
+      </div>
+      <div class="reference-view" data-reference-view="uwire">
+        <h3 class="reference-subheading">U-Wire Placement Calculator</h3>
+        <p class="reference-copy">Pre-job setup helper from Form HTS-5400.1.20. Enter the pipe, cutter, valve, travel, and measured U-wire rows to check engagement before the job starts.</p>
+        <div class="reference-grid uwire-reference-grid">
+          <div class="reference-card uwire-input-card">
+            <div class="stackup-detail-head">
+              <div>
+                <h4>Setup Inputs</h4>
+                <p class="reference-copy">Use current pipe to pull OD, wall, and cutter from the BCO setup, then finish the valve and U-wire checks here.</p>
+              </div>
+              <span class="stackup-source-pill">HTS-5400.1.20</span>
+            </div>
+            <div class="uwire-input-grid">
+              <label class="workflow-setup-field" for="uwirePipeOd"><span>Pipe OD</span><input id="uwirePipeOd" type="text" inputmode="decimal" placeholder="20"></label>
+              <label class="workflow-setup-field" for="uwirePipeWall"><span>Pipe Wall</span><input id="uwirePipeWall" type="text" inputmode="decimal" placeholder="0.375"></label>
+              <label class="workflow-setup-field" for="uwireCutterOd"><span>Cutter OD</span><input id="uwireCutterOd" type="text" inputmode="decimal" placeholder="19"></label>
+              <label class="workflow-setup-field" for="uwireToothWidth"><span>Tooth Width</span><input id="uwireToothWidth" type="text" inputmode="decimal" placeholder="0.250"></label>
+              <label class="workflow-setup-field" for="uwirePtc"><span>PTC</span><input id="uwirePtc" type="text" inputmode="decimal" placeholder="Pilot to cutter"></label>
+              <label class="workflow-setup-field" for="uwireCutterDepth"><span>Cutter Depth</span><input id="uwireCutterDepth" type="text" inputmode="decimal" placeholder="Depth"></label>
+              <label class="workflow-setup-field" for="uwireValveType"><span>Valve Type</span><select id="uwireValveType"><option value="Gate">Gate</option><option value="Ball">Ball</option><option value="M&J/Burtech">M&amp;J / Burtech</option><option value="Williamson">Williamson</option><option value="ENR">ENR</option></select></label>
+              <label class="workflow-setup-field" for="uwireFlangeClass"><span>Flange</span><select id="uwireFlangeClass"><option value="150#">150#</option><option value="300#">300#</option><option value="600#">600#</option><option value="900#">900#</option></select></label>
+              <label class="workflow-setup-field" for="uwireSize"><span>Valve / Flange Size</span><select id="uwireSize"></select></label>
+              <label class="workflow-setup-field" for="uwireMachineTravel"><span>Machine Travel</span><input id="uwireMachineTravel" type="text" inputmode="decimal" placeholder="Travel"></label>
+              <label class="workflow-setup-field" for="uwireLostDistance"><span>Lost Distance</span><input id="uwireLostDistance" type="text" inputmode="decimal" placeholder="LD"></label>
+              <label class="workflow-setup-field" for="uwireFittingLength"><span>Fitting Length</span><input id="uwireFittingLength" type="text" inputmode="decimal" placeholder="Length"></label>
+              <label class="workflow-setup-field" for="uwireValveLength"><span>Valve Length</span><input id="uwireValveLength" type="text" inputmode="decimal" placeholder="Length"></label>
+              <label class="workflow-setup-field" for="uwirePilotRelief"><span>Pilot Relief</span><input id="uwirePilotRelief" type="text" inputmode="decimal" placeholder="Relief"></label>
+              <label class="workflow-setup-field" for="uwireLabattsBridge"><span>Labatt's Bridge</span><input id="uwireLabattsBridge" type="text" inputmode="decimal" placeholder="Bridge"></label>
+              <label class="workflow-setup-field" for="uwireRpm"><span>RPM</span><input id="uwireRpm" type="text" inputmode="decimal" placeholder="RPM"></label>
+              <label class="workflow-setup-field" for="uwireFeedRate"><span>Feed Rate</span><input id="uwireFeedRate" type="text" inputmode="decimal" placeholder="Feed"></label>
+            </div>
+            <div class="button-row reference-actions uwire-actions">
+              <button type="button" id="uwireUseCurrentPipeBtn" class="secondary-btn">Use Current Pipe</button>
+              <button type="button" id="uwireClearBtn" class="secondary-btn">Clear U-Wire Inputs</button>
+            </div>
+            <p id="uwireInputStatus" class="reference-footnote">Enter the required setup values to calculate U-wire engagement.</p>
+          </div>
+
+          <div class="reference-card uwire-results-card">
+            <h4>Calculated Setup</h4>
+            <div class="bolting-summary-grid uwire-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Pipe ID</span><span id="uwirePipeIdOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Cutter ID</span><span id="uwireCutterIdOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Coupon Free</span><span id="uwireCouponFreeOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Tap Distance</span><span id="uwireTapDistanceOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Max Cutout + Pilot</span><span id="uwireMaxCutoutOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Coupon Free - 1 W.T.</span><span id="uwireCouponMinusWallOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Total Travel Required</span><span id="uwireTotalTravelOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Max Cutout Travel</span><span id="uwireMaxCutoutTravelOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Valve Nest</span><span id="uwireValveNestOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Optimal Final U-Wire</span><span id="uwireOptimalFinalOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Est. Tap Time</span><span id="uwireTapTimeOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Threshold</span><span id="uwireThresholdOut" class="summary-value">?</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="reference-card uwire-wire-card">
+          <div class="stackup-detail-head">
+            <div>
+              <h4>U-Wire Rows</h4>
+              <p class="reference-copy">Measured U-wire rows must be less than the calculated threshold. The workbook requires two rows for engagement on larger cutters.</p>
+            </div>
+            <span id="uwireEngagementPill" class="workflow-save-state-pill" data-state="draft">Waiting</span>
+          </div>
+          <div class="uwire-wire-grid" id="uwireWireGrid"></div>
+        </div>
+
+        <div class="reference-grid uwire-reference-grid">
+          <div class="reference-card uwire-status-card">
+            <h4>Setup Checks</h4>
+            <div class="uwire-status-grid">
+              <div class="uwire-status-item" id="uwirePilotStatusItem" data-state="waiting"><span>Pilot Status</span><strong id="uwirePilotStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireCutterDepthStatusItem" data-state="waiting"><span>Cutter Depth</span><strong id="uwireCutterDepthStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireCutterSizeStatusItem" data-state="waiting"><span>Cutter Size</span><strong id="uwireCutterSizeStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireValveSizeStatusItem" data-state="waiting"><span>Valve Size</span><strong id="uwireValveSizeStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireValveNestStatusItem" data-state="waiting"><span>Valve Nest</span><strong id="uwireValveNestStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwirePilotReliefStatusItem" data-state="waiting"><span>Pilot Relief</span><strong id="uwirePilotReliefStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireTravelStatusItem" data-state="waiting"><span>Total Travel</span><strong id="uwireTravelStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireMaxTravelStatusItem" data-state="waiting"><span>Max Cutout Travel</span><strong id="uwireMaxTravelStatusOut">?</strong></div>
+            </div>
+          </div>
+          <div class="reference-card uwire-status-card">
+            <h4>Field Notes</h4>
+            <ul class="reference-note-list">
+              <li>Source formulas are from U-Wire Placement Calculator Form HTS-5400.1.20 Rev. 3.</li>
+              <li>Final U-wire threshold follows Coupon Free - 1 W.T. + PTC - 0.094.</li>
+              <li>If the contact reliability warning appears, stop and get approval before relying on the setup.</li>
+              <li>Confirm valve bore, flange class, and valve nest against the physical valve before the cut.</li>
+            </ul>
+            <p id="uwireReliabilityOut" class="reference-footnote">Reliability check will appear after travel values are entered.</p>
           </div>
         </div>
       </div>
@@ -1742,9 +1837,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha189"></script>
-<script src="stackup-data.js?v=3.0.0-alpha189"></script>
-<script src="measurement.js?v=3.0.0-alpha189"></script>
+<script src="firebase-config.js?v=3.0.0-alpha190"></script>
+<script src="stackup-data.js?v=3.0.0-alpha190"></script>
+<script src="measurement.js?v=3.0.0-alpha190"></script>
   </section>
 </body>
 </html>

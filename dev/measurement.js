@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha189';
+const BUILD_VERSION = '3.0.0-alpha190';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha189 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha190 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -692,7 +692,11 @@ function enableMixedMeasurementInputs() {
     'lsMd','lsLd','lsPod','lsLiManual','lsTravel','lsMachineTravel',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManual',
     'fractionNumerator','fractionDenominator','decimalInput','etaBco',
-    'pivotWallThickness','pivotPipeIdOverride'
+    'pivotWallThickness','pivotPipeIdOverride',
+    'uwirePipeOd','uwirePipeWall','uwireCutterOd','uwireToothWidth','uwirePtc','uwireCutterDepth',
+    'uwireMachineTravel','uwireLostDistance','uwireFittingLength','uwireValveLength','uwirePilotRelief',
+    'uwireLabattsBridge','uwireRpm','uwireFeedRate',
+    ...Array.from({ length: 12 }, (_, index) => `uwireWireRow${index + 1}`)
   ];
   measurementFieldIds.forEach((id) => {
     const field = document.getElementById(id);
@@ -855,6 +859,7 @@ const referenceLibraryItems = [
   { id: 'stopmath', group: 'Charts', label: 'Stop Math', description: 'Standard, HTP, and Hi-Stop formulas', keywords: 'line stop math htp hi stop formula tco plug set' },
   { id: 'pivothead', group: 'Setup Guides', label: 'Pivot Head Setup', description: 'Seal size, load pad, nose/backing plate, and Clearance B', keywords: 'pivot head line stop setup sealing element seal load pad nose plate backing plate clearance b wall thickness' },
   { id: 'machines', group: 'Machine Reference', label: 'Machine Stack-Ups', description: 'Tap, stop, plug, and manual index', keywords: 'machine stack ups hot tap line stop completion plug manuals' },
+  { id: 'uwire', group: 'Field Reference', label: 'U-Wire Calculator', description: 'Pre-job U-wire placement and engagement checks', keywords: 'u wire uwire placement calculator pre job setup engagement coupon free pilot valve nest' },
   { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
   { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
   { id: 'plant600', group: 'Field Reference', label: '600# Plant Series', description: 'Higher class flange reference', keywords: '600 plant flange jack bolt packing wrench' },
@@ -1035,8 +1040,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha189';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha189';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha190';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha190';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2405,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha189', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha190', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6486,7 +6491,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha189';
+const TC63_VERSION = '3.0.0-alpha190';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6732,7 +6737,7 @@ const TC63_VERSION = '3.0.0-alpha189';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha189';
+const VERSION = '3.0.0-alpha190';
 
   function tc65GetJobs() {
     try {
@@ -9945,7 +9950,7 @@ const VERSION = '3.0.0-alpha189';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha189';
+const VERSION = '3.0.0-alpha190';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11649,7 +11654,7 @@ const VERSION = '3.0.0-alpha189';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha189 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha190 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11806,7 +11811,7 @@ const VERSION = '3.0.0-alpha189';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha189 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha190 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -12010,7 +12015,7 @@ const VERSION = '3.0.0-alpha189';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha189 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha190 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -12191,7 +12196,7 @@ const VERSION = '3.0.0-alpha189';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha189 workflow save actions ===== */
+/* ===== 3.0.0-alpha190 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12314,7 +12319,7 @@ const VERSION = '3.0.0-alpha189';
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
-/* ===== 3.0.0-alpha189 workflow draft recovery ===== */
+/* ===== 3.0.0-alpha190 workflow draft recovery ===== */
 (function(){
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
   const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
@@ -12435,7 +12440,7 @@ const VERSION = '3.0.0-alpha189';
   window.tapCalcUpdateDraftStatus = updateDraftStatus;
 })();
 
-/* ===== 3.0.0-alpha189 workflow save state indicators ===== */
+/* ===== 3.0.0-alpha190 workflow save state indicators ===== */
 (function(){
   const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
@@ -12773,7 +12778,7 @@ const VERSION = '3.0.0-alpha189';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha189 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha190 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -13233,7 +13238,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha189 gasket torque reference ===== */
+/* ===== 3.0.0-alpha190 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -13439,27 +13444,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha189Bound) {
-      classSelect.dataset.alpha189Bound = '1';
+    if (!classSelect.dataset.alpha190Bound) {
+      classSelect.dataset.alpha190Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha189Bound) {
-      sizeSelect.dataset.alpha189Bound = '1';
+    if (!sizeSelect.dataset.alpha190Bound) {
+      sizeSelect.dataset.alpha190Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha189Bound) {
-      typeSelect.dataset.alpha189Bound = '1';
+    if (!typeSelect.dataset.alpha190Bound) {
+      typeSelect.dataset.alpha190Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha189Bound) {
-      searchInput.dataset.alpha189Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha190Bound) {
+      searchInput.dataset.alpha190Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();
@@ -13475,4 +13480,382 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGasketTorqueReference);
   else setTimeout(initGasketTorqueReference, 0);
   window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
+})();
+
+/* ===== 3.0.0-alpha190 U-wire placement reference ===== */
+(function(){
+  const WIRE_ROWS = 12;
+  const WIRE_SIZES = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 36, 42, 48, 54, 60, 72];
+  const VALVE_NEST_TABLE = {
+    Gate: {
+      '150#': [[3, 3.5], [4, 3.875], [5, null], [6, 4.125], [8, 4.5], [10, 5], [12, 5.625], [14, 5.375], [16, 6], [18, 6.5], [20, 6.75], [22, null], [24, 7.5], [26, null], [30, 9.5], [36, 10.5], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': [[3, 4], [4, 4.5], [5, null], [6, 5], [8, 6], [10, 7], [12, 9], [14, 11], [16, 13], [18, 15], [20, 16], [22, null], [24, 17], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '600#': [[3, 6.125], [4, 7.125], [5, null], [6, 9.25], [8, 11.875], [10, 13.25], [12, 14.625], [14, 15.25], [16, 16.5], [18, 19.25], [20, 20.375], [22, null], [24, 21.625], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    Ball: {
+      '150#': [[3, 3.5], [4, 3.875], [5, null], [6, 4.125], [8, 4.5], [10, 5], [12, 5.625], [14, 5.375], [16, 6], [18, 6.5], [20, 6.75], [22, null], [24, 7.5], [26, null], [30, 9.5], [36, 10.5], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': [[3, 4], [4, 4.5], [5, null], [6, 5], [8, 6], [10, 7], [12, 9], [14, 11], [16, 13], [18, 15], [20, 16], [22, null], [24, 17], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '600#': [[3, 6.125], [4, 7.125], [5, null], [6, 9.25], [8, 11.875], [10, 13.25], [12, 14.625], [14, 15.25], [16, 16.5], [18, 19.25], [20, 20.375], [22, null], [24, 21.625], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    Williamson: {
+      '150#': [[3, 1.688], [4, 1.625], [5, null], [6, 1.625], [8, 1.875], [10, 1.875], [12, 1.875], [14, 2.167], [16, 2], [18, 2.583], [20, 2.542], [22, null], [24, 3.458], [26, null], [30, 3.542], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': [[3, null], [4, 1.417], [5, null], [6, 1.833], [8, 1.958], [10, 2.333], [12, 2.542], [14, 2.583], [16, null], [18, 3.375], [20, 3.542], [22, 3.542], [24, 4.25], [26, null], [30, 5.479], [36, 6.521], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '600#': [[3, null], [4, 1.75], [5, null], [6, 2.25], [8, 2.25], [10, 2.667], [12, 3.375], [14, 3.542], [16, 3.917], [18, 4.438], [20, 4.583], [22, 4.583], [24, 4.625], [26, 5.417], [30, 5.917], [36, 8.5], [42, 7.5], [48, 7.521], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    'M&J/Burtech': {
+      '150#': [[3, 1.375], [4, 1.375], [5, null], [6, 1.625], [8, 1.625], [10, 2.188], [12, 2.188], [14, null], [16, null], [18, null], [20, null], [22, null], [24, null], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': WIRE_SIZES.map((size) => [size, null]),
+      '600#': [[3, null], [4, 2.75], [5, null], [6, 2.75], [8, 3.25], [10, 3.25], [12, 3.25], [14, null], [16, 4], [18, null], [20, 4.5], [22, null], [24, 4.5], [26, null], [30, 6], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    ENR: {
+      '150#': [[3, null], [4, null], [5, null], [6, null], [8, 1.5], [10, null], [12, null], [14, null], [16, null], [18, null], [20, null], [22, null], [24, null], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': WIRE_SIZES.map((size) => [size, null]),
+      '600#': WIRE_SIZES.map((size) => [size, null]),
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    }
+  };
+
+  const byId = (id) => document.getElementById(id);
+
+  function parseUwireNumber(value) {
+    const raw = String(value ?? '').trim().replace(/"/g, '').replace(/\s+/g, ' ');
+    if (!raw) return NaN;
+    if (/^-?\d*\.?\d+$/.test(raw)) return Number(raw);
+    const mixed = raw.match(/^(-?\d+)(?:\s|-)+(\d+)\/(\d+)$/);
+    if (mixed) {
+      const sign = mixed[1].startsWith('-') ? -1 : 1;
+      const whole = Math.abs(Number(mixed[1]));
+      const numerator = Number(mixed[2]);
+      const denominator = Number(mixed[3]);
+      return denominator ? sign * (whole + numerator / denominator) : NaN;
+    }
+    const frac = raw.match(/^(-?\d+)\/(\d+)$/);
+    if (frac) {
+      const numerator = Number(frac[1]);
+      const denominator = Number(frac[2]);
+      return denominator ? numerator / denominator : NaN;
+    }
+    return NaN;
+  }
+
+  function value(id) {
+    return parseUwireNumber(byId(id)?.value);
+  }
+
+  function has(value) {
+    return Number.isFinite(value);
+  }
+
+  function calcIf(...values) {
+    return values.every(has);
+  }
+
+  function safeRoot(value) {
+    return Number.isFinite(value) && value >= 0 ? Math.sqrt(value) : NaN;
+  }
+
+  function formatUwire(value, digits = 3) {
+    if (!Number.isFinite(value)) return '-';
+    const fixed = value.toFixed(digits);
+    return fixed.replace(/\.?0+$/, '');
+  }
+
+  function formatUwireInches(value, digits = 3) {
+    return Number.isFinite(value) ? `${formatUwire(value, digits)}"` : '-';
+  }
+
+  function setText(id, text) {
+    const el = byId(id);
+    if (el) el.textContent = text || '-';
+  }
+
+  function setStatus(itemId, textId, text, state) {
+    setText(textId, text);
+    const item = byId(itemId);
+    if (item) item.dataset.state = state || 'waiting';
+  }
+
+  function statusState(text) {
+    const normalized = String(text || '').toLowerCase();
+    if (!normalized || normalized === '-' || normalized === '?') return 'waiting';
+    if (/not|no go|too|shallow|small|large|will not|unacceptable|approval/i.test(text)) return 'bad';
+    if (/contact reliability/i.test(text)) return 'warn';
+    return 'ok';
+  }
+
+  function lookupValveNest(valveType, flangeClass, size) {
+    const rows = VALVE_NEST_TABLE[valveType]?.[flangeClass] || [];
+    if (!rows.length || !Number.isFinite(size)) return NaN;
+    let match = null;
+    rows.forEach((row) => {
+      if (Number(row[0]) <= size) match = row;
+    });
+    const result = match ? match[1] : null;
+    return Number.isFinite(result) ? result : NaN;
+  }
+
+  function renderWireInputs() {
+    const grid = byId('uwireWireGrid');
+    if (!grid || grid.dataset.rendered === '1') return;
+    grid.dataset.rendered = '1';
+    grid.innerHTML = Array.from({ length: WIRE_ROWS }, (_, index) => {
+      const row = index + 1;
+      return `<label class="uwire-wire-row" for="uwireWireRow${row}">
+        <span>Row ${row}</span>
+        <input id="uwireWireRow${row}" type="text" inputmode="decimal" placeholder="U-wire">
+        <strong id="uwireWireStatus${row}" data-state="waiting">Waiting</strong>
+      </label>`;
+    }).join('');
+  }
+
+  function populateSizeSelect() {
+    const select = byId('uwireSize');
+    if (!select || select.dataset.rendered === '1') return;
+    select.dataset.rendered = '1';
+    select.innerHTML = '<option value="">Select size</option>' + WIRE_SIZES.map((size) => `<option value="${size}">${size}"</option>`).join('');
+  }
+
+  function setPill(text, state) {
+    const pill = byId('uwireEngagementPill');
+    if (!pill) return;
+    pill.textContent = text || 'Waiting';
+    pill.dataset.state = state || 'draft';
+  }
+
+  function updateWireRows(threshold) {
+    let goodCount = 0;
+    let enteredCount = 0;
+    for (let row = 1; row <= WIRE_ROWS; row += 1) {
+      const input = byId(`uwireWireRow${row}`);
+      const status = byId(`uwireWireStatus${row}`);
+      const measured = parseUwireNumber(input?.value);
+      let text = 'Waiting';
+      let state = 'waiting';
+      if (Number.isFinite(measured)) {
+        enteredCount += 1;
+        if (Number.isFinite(threshold)) {
+          const good = measured < threshold;
+          text = good ? 'Good' : 'No Go';
+          state = good ? 'ok' : 'bad';
+          if (good) goodCount += 1;
+        } else {
+          text = 'Need setup';
+          state = 'warn';
+        }
+      }
+      if (status) {
+        status.textContent = text;
+        status.dataset.state = state;
+      }
+    }
+    return { enteredCount, goodCount };
+  }
+
+  function updateUwireCalculator() {
+    renderWireInputs();
+    populateSizeSelect();
+
+    const pipeOd = value('uwirePipeOd');
+    const wall = value('uwirePipeWall');
+    const cutterOd = value('uwireCutterOd');
+    const toothWidth = value('uwireToothWidth');
+    const ptc = value('uwirePtc');
+    const cutterDepth = value('uwireCutterDepth');
+    const machineTravel = value('uwireMachineTravel');
+    const lostDistance = value('uwireLostDistance');
+    const fittingLength = value('uwireFittingLength');
+    const valveLength = value('uwireValveLength');
+    const pilotRelief = value('uwirePilotRelief');
+    const labattsBridge = value('uwireLabattsBridge');
+    const rpm = value('uwireRpm');
+    const feedRate = value('uwireFeedRate');
+    const valveType = byId('uwireValveType')?.value || 'Gate';
+    const flangeClass = byId('uwireFlangeClass')?.value || '150#';
+    const valveSize = value('uwireSize');
+
+    const pipeId = calcIf(pipeOd, wall) ? pipeOd - 2 * wall : NaN;
+    const cutterId = calcIf(cutterOd, toothWidth) ? cutterOd - 2 * toothWidth : NaN;
+    const couponFree = calcIf(pipeOd, pipeId, cutterId)
+      ? pipeOd / 2 - safeRoot((pipeId / 2) ** 2 - (cutterId / 2) ** 2)
+      : NaN;
+    const tapDistanceBase = calcIf(pipeOd, pipeId, cutterOd)
+      ? pipeOd / 2 - safeRoot((pipeId / 2) ** 2 - (cutterOd / 2) ** 2)
+      : NaN;
+    const tapDistance = calcIf(pipeOd, pipeId, cutterOd) && cutterOd > pipeId ? pipeOd / 2 : tapDistanceBase;
+    const maxCutout = calcIf(pipeOd, wall, ptc) ? pipeOd / 2 - wall + ptc : NaN;
+    const couponMinusWall = calcIf(couponFree, wall) ? couponFree - wall : NaN;
+    const totalTravel = calcIf(lostDistance, fittingLength, valveLength, tapDistance)
+      ? lostDistance + fittingLength + valveLength + tapDistance
+      : NaN;
+    const maxCutoutTravel = calcIf(lostDistance, fittingLength, valveLength, tapDistance, maxCutout)
+      ? lostDistance + fittingLength + valveLength + tapDistance + maxCutout
+      : NaN;
+    const valveNest = lookupValveNest(valveType, flangeClass, valveSize);
+    const estimatedTapTime = calcIf(tapDistance, feedRate, rpm) && feedRate > 0 && rpm > 0
+      ? tapDistance / (feedRate * rpm) / 60
+      : NaN;
+    const threshold = calcIf(ptc, couponMinusWall) ? ptc + couponMinusWall - 0.094 : NaN;
+    const optimalFinal = threshold;
+
+    setText('uwirePipeIdOut', formatUwireInches(pipeId));
+    setText('uwireCutterIdOut', formatUwireInches(cutterId));
+    setText('uwireCouponFreeOut', formatUwireInches(couponFree));
+    setText('uwireTapDistanceOut', formatUwireInches(tapDistance));
+    setText('uwireMaxCutoutOut', formatUwireInches(maxCutout));
+    setText('uwireCouponMinusWallOut', formatUwireInches(couponMinusWall));
+    setText('uwireTotalTravelOut', formatUwireInches(totalTravel));
+    setText('uwireMaxCutoutTravelOut', formatUwireInches(maxCutoutTravel));
+    setText('uwireValveNestOut', Number.isFinite(valveNest) ? formatUwireInches(valveNest) : 'N/A');
+    setText('uwireOptimalFinalOut', formatUwireInches(optimalFinal));
+    setText('uwireThresholdOut', formatUwireInches(threshold));
+    setText('uwireTapTimeOut', Number.isFinite(estimatedTapTime) ? `${formatUwire(estimatedTapTime, 3)} hr` : '-');
+
+    const wireStats = updateWireRows(threshold);
+    const row1Status = byId('uwireWireStatus1')?.textContent || '';
+    const row2Status = byId('uwireWireStatus2')?.textContent || '';
+    let engagementText = 'Waiting';
+    let engagementState = 'draft';
+    if (wireStats.enteredCount > 0 && !Number.isFinite(threshold)) {
+      engagementText = 'Need Setup';
+      engagementState = 'error';
+    } else if (Number.isFinite(cutterOd) && cutterOd < 3 && row1Status === 'Good') {
+      engagementText = 'Acceptable';
+      engagementState = 'synced';
+    } else if (Number.isFinite(cutterOd) && cutterOd >= 3 && !byId('uwireWireRow2')?.value.trim()) {
+      engagementText = 'Need 2 Rows';
+      engagementState = 'error';
+    } else if (Number.isFinite(cutterOd) && cutterOd >= 3 && row2Status === 'Good') {
+      engagementText = 'Acceptable';
+      engagementState = 'synced';
+    } else if (wireStats.enteredCount > 0) {
+      engagementText = 'Not Acceptable';
+      engagementState = 'error';
+    }
+    setPill(engagementText, engagementState);
+
+    const pilotStatus = calcIf(ptc, pipeId) ? (ptc < pipeId / 2 - 0.25 ? 'Pilot OK' : 'Pilot too long') : '-';
+    const cutterDepthStatus = calcIf(cutterDepth, couponFree, labattsBridge)
+      ? (cutterDepth > couponFree + 0.25 + labattsBridge ? 'Cutter depth good' : 'Cutter too shallow')
+      : '-';
+    const cutterSizeStatus = calcIf(cutterId, pipeId)
+      ? (cutterId > pipeId ? 'Cutter ID too large' : 'Cutter ID adequate')
+      : '-';
+    const valveSizeStatus = calcIf(valveSize, cutterOd)
+      ? (valveSize < cutterOd ? 'Valve bore too small' : 'Valve adequate')
+      : '-';
+    const valveNestStatus = calcIf(lostDistance, valveNest)
+      ? (lostDistance > (valveNest * -1 + 0.25) ? 'Valve nest acceptable' : 'Valve nest unacceptable')
+      : '-';
+    const pilotReliefStatus = calcIf(pilotRelief, wall)
+      ? (pilotRelief > wall + 0.375 ? 'Relief adequate' : 'Relief not adequate')
+      : '-';
+    const travelStatus = calcIf(machineTravel, totalTravel)
+      ? (machineTravel > totalTravel ? 'Machine has enough travel' : 'Machine will not work')
+      : '-';
+    const maxTravelStatus = calcIf(machineTravel, maxCutoutTravel)
+      ? (machineTravel > maxCutoutTravel ? 'Machine has enough travel' : 'Machine will not work')
+      : '-';
+
+    setStatus('uwirePilotStatusItem', 'uwirePilotStatusOut', pilotStatus, statusState(pilotStatus));
+    setStatus('uwireCutterDepthStatusItem', 'uwireCutterDepthStatusOut', cutterDepthStatus, statusState(cutterDepthStatus));
+    setStatus('uwireCutterSizeStatusItem', 'uwireCutterSizeStatusOut', cutterSizeStatus, statusState(cutterSizeStatus));
+    setStatus('uwireValveSizeStatusItem', 'uwireValveSizeStatusOut', valveSizeStatus, statusState(valveSizeStatus));
+    setStatus('uwireValveNestStatusItem', 'uwireValveNestStatusOut', valveNestStatus, statusState(valveNestStatus));
+    setStatus('uwirePilotReliefStatusItem', 'uwirePilotReliefStatusOut', pilotReliefStatus, statusState(pilotReliefStatus));
+    setStatus('uwireTravelStatusItem', 'uwireTravelStatusOut', travelStatus, statusState(travelStatus));
+    setStatus('uwireMaxTravelStatusItem', 'uwireMaxTravelStatusOut', maxTravelStatus, statusState(maxTravelStatus));
+
+    const reliabilityEl = byId('uwireReliabilityOut');
+    if (reliabilityEl) {
+      if (calcIf(machineTravel, totalTravel)) {
+        const reliability = machineTravel - totalTravel < 6 ? 'Contact Reliability For Approval' : '';
+        reliabilityEl.textContent = reliability || 'Reliability check clear.';
+        reliabilityEl.dataset.state = reliability ? 'warn' : 'ok';
+      } else {
+        reliabilityEl.textContent = 'Reliability check will appear after travel values are entered.';
+        reliabilityEl.dataset.state = 'waiting';
+      }
+    }
+
+    const missing = [];
+    if (!Number.isFinite(pipeOd)) missing.push('Pipe OD');
+    if (!Number.isFinite(wall)) missing.push('Pipe wall');
+    if (!Number.isFinite(cutterOd)) missing.push('Cutter OD');
+    if (!Number.isFinite(toothWidth)) missing.push('Tooth width');
+    if (!Number.isFinite(ptc)) missing.push('PTC');
+    const inputStatus = byId('uwireInputStatus');
+    if (inputStatus) {
+      inputStatus.textContent = missing.length
+        ? `Missing: ${missing.join(', ')}.`
+        : `Threshold is ${formatUwireInches(threshold)}. ${wireStats.goodCount} U-wire row${wireStats.goodCount === 1 ? '' : 's'} currently read Good.`;
+      inputStatus.dataset.state = missing.length ? 'warn' : 'ok';
+    }
+  }
+
+  function useCurrentPipe() {
+    const pipeOd = parseUwireNumber(byId('bcoTrueODDisplay')?.textContent)
+      || parseUwireNumber(String(byId('bcoPipeOD')?.selectedOptions?.[0]?.textContent || '').match(/\(([^)]+)\s+OD\)/i)?.[1]);
+    const pipeId = parseUwireNumber(byId('bcoPipeID')?.value);
+    const cutterOd = parseUwireNumber(byId('bcoCutterOD')?.value);
+    if (Number.isFinite(pipeOd)) byId('uwirePipeOd').value = formatUwire(pipeOd, 4);
+    if (Number.isFinite(pipeOd) && Number.isFinite(pipeId)) byId('uwirePipeWall').value = formatUwire((pipeOd - pipeId) / 2, 4);
+    if (Number.isFinite(cutterOd)) byId('uwireCutterOd').value = formatUwire(cutterOd, 4);
+    const ptc = parseUwireNumber(byId('ptc')?.value);
+    if (Number.isFinite(ptc)) byId('uwirePtc').value = formatUwire(ptc, 4);
+    updateUwireCalculator();
+  }
+
+  function clearUwireInputs() {
+    document.querySelectorAll('[id^="uwire"]').forEach((el) => {
+      if (el instanceof HTMLInputElement) el.value = '';
+    });
+    const sizeSelect = byId('uwireSize');
+    if (sizeSelect) sizeSelect.value = '';
+    updateUwireCalculator();
+  }
+
+  function initUwireCalculator() {
+    if (!byId('uwirePipeOd')) return;
+    renderWireInputs();
+    populateSizeSelect();
+    const fields = [
+      'uwirePipeOd','uwirePipeWall','uwireCutterOd','uwireToothWidth','uwirePtc','uwireCutterDepth',
+      'uwireValveType','uwireFlangeClass','uwireSize','uwireMachineTravel','uwireLostDistance',
+      'uwireFittingLength','uwireValveLength','uwirePilotRelief','uwireLabattsBridge','uwireRpm','uwireFeedRate',
+      ...Array.from({ length: WIRE_ROWS }, (_, index) => `uwireWireRow${index + 1}`)
+    ];
+    fields.forEach((id) => {
+      const el = byId(id);
+      if (!el || el.dataset.uwireBound === '1') return;
+      el.dataset.uwireBound = '1';
+      el.addEventListener('input', updateUwireCalculator);
+      el.addEventListener('change', updateUwireCalculator);
+    });
+    const useBtn = byId('uwireUseCurrentPipeBtn');
+    if (useBtn && useBtn.dataset.uwireBound !== '1') {
+      useBtn.dataset.uwireBound = '1';
+      useBtn.addEventListener('click', useCurrentPipe);
+    }
+    const clearBtn = byId('uwireClearBtn');
+    if (clearBtn && clearBtn.dataset.uwireBound !== '1') {
+      clearBtn.dataset.uwireBound = '1';
+      clearBtn.addEventListener('click', clearUwireInputs);
+    }
+    updateUwireCalculator();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('[data-reference-target="uwire"]')) setTimeout(initUwireCalculator, 0);
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target?.id === 'referenceViewSelect' && event.target.value === 'uwire') setTimeout(initUwireCalculator, 0);
+  }, true);
+  window.addEventListener('pageshow', () => setTimeout(initUwireCalculator, 60));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUwireCalculator);
+  else setTimeout(initUwireCalculator, 0);
+  window.tapCalcInitUwireCalculator = initUwireCalculator;
 })();
