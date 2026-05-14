@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha190">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha191">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha190 - 2026-05-14</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha191 - 2026-05-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha190 - 2026-05-14</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha191 - 2026-05-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -1182,6 +1182,46 @@
       <div class="reference-view" data-reference-view="uwire">
         <h3 class="reference-subheading">U-Wire Placement Calculator</h3>
         <p class="reference-copy">Pre-job setup helper from Form HTS-5400.1.20. Enter the pipe, cutter, valve, travel, and measured U-wire rows to check engagement before the job starts.</p>
+        <div class="reference-card uwire-measure-card">
+          <div class="stackup-detail-head">
+            <div>
+              <h4>Where To Measure</h4>
+              <p class="reference-copy">Use this as a visual cue for the pilot, cutter edge, U-wire rows, and pilot relief before entering the setup numbers.</p>
+            </div>
+            <span class="stackup-source-pill">Workbook visual</span>
+          </div>
+          <div class="uwire-visual-layout">
+            <figure class="uwire-diagram-stage">
+              <img src="reference/uwire-pilot-cutter.png?v=3.0.0-alpha191" alt="Pilot cutter assembly showing U-wire rows and pilot relief measurement areas">
+              <svg class="uwire-diagram-overlay" viewBox="0 0 920 1062" aria-hidden="true">
+                <defs>
+                  <marker id="uwireArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                    <path d="M 0 0 L 10 5 L 0 10 z"></path>
+                  </marker>
+                </defs>
+                <path class="uwire-callout-line uwire-callout-arrow" d="M 694 460 L 530 460"></path>
+                <text class="uwire-callout-text" x="566" y="442">U-wire rows</text>
+                <path class="uwire-callout-line uwire-callout-ptc" d="M 720 918 L 720 1030"></path>
+                <path class="uwire-callout-line uwire-callout-ptc" d="M 700 918 L 740 918"></path>
+                <path class="uwire-callout-line uwire-callout-ptc" d="M 700 1030 L 740 1030"></path>
+                <text class="uwire-callout-text uwire-callout-ptc" x="748" y="982">PTC</text>
+                <path class="uwire-callout-line uwire-callout-relief uwire-callout-arrow" d="M 586 925 L 632 925 L 632 1025"></path>
+                <text class="uwire-callout-text uwire-callout-relief" x="642" y="952">Pilot relief</text>
+                <path class="uwire-callout-line uwire-callout-edge uwire-callout-arrow" d="M 204 872 L 398 872"></path>
+                <text class="uwire-callout-text uwire-callout-edge" x="34" y="878">Cutter edge</text>
+              </svg>
+            </figure>
+            <div class="uwire-measure-notes">
+              <h5>Field measurement reminders</h5>
+              <ul class="reference-note-list">
+                <li>PTC is the pilot-to-cutter distance. Measure from the pilot point/tip back to the cutter cutting edge or tooth line used for the cut.</li>
+                <li>U-wire rows are entered from the measured rows on the pilot. Larger cutters need two acceptable rows for engagement.</li>
+                <li>Pilot relief is checked against wall thickness so the pilot clears the opposite inside wall.</li>
+                <li>Confirm the exact points against the actual cutter/pilot assembly before relying on the numbers.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
         <div class="reference-grid uwire-reference-grid">
           <div class="reference-card uwire-input-card">
             <div class="stackup-detail-head">
@@ -1837,9 +1877,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha190"></script>
-<script src="stackup-data.js?v=3.0.0-alpha190"></script>
-<script src="measurement.js?v=3.0.0-alpha190"></script>
+<script src="firebase-config.js?v=3.0.0-alpha191"></script>
+<script src="stackup-data.js?v=3.0.0-alpha191"></script>
+<script src="measurement.js?v=3.0.0-alpha191"></script>
   </section>
 </body>
 </html>
