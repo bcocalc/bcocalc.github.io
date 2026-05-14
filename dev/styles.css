@@ -6210,7 +6210,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha196 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha197 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6316,7 +6316,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha196 reference buildout ===== */
+/* ===== 3.0.0-alpha197 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6712,7 +6712,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha196 reference library picker ===== */
+/* ===== 3.0.0-alpha197 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7058,7 +7058,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha196 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha197 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7233,7 +7233,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha196 gasket torque reference ===== */
+/* ===== 3.0.0-alpha197 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7362,7 +7362,7 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha196 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha197 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7404,7 +7404,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha196 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha197 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7529,7 +7529,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha196 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha197 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7609,7 +7609,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha196 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha197 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
@@ -7814,7 +7814,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   }
 }
 
-/* ===== 3.0.0-alpha196 neutral upcoming workflow steps ===== */
+/* ===== 3.0.0-alpha197 neutral upcoming workflow steps ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
@@ -7869,7 +7869,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em
   color: #173657 !important;
 }
 
-/* ===== 3.0.0-alpha196 incomplete workflow steps need attention ===== */
+/* ===== 3.0.0-alpha197 incomplete workflow steps need attention ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] {
@@ -7908,7 +7908,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] 
   color: #6c1721 !important;
 }
 
-/* ===== 3.0.0-alpha196 workflow guards and draft recovery ===== */
+/* ===== 3.0.0-alpha197 workflow guards and draft recovery ===== */
 body.measurement-page .workflow-draft-bar {
   flex: 1 1 100%;
   display: flex;
@@ -8121,7 +8121,7 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha196 compact mobile workflow intro ===== */
+/* ===== 3.0.0-alpha197 compact mobile workflow intro ===== */
 @media (max-width: 720px) {
   body.measurement-page .card-screen-intro {
     display: grid;
@@ -8333,7 +8333,7 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha196 review/save polish ===== */
+/* ===== 3.0.0-alpha197 review/save polish ===== */
 body.measurement-page .workflow-review-status-card {
   display: flex;
   align-items: center;
@@ -8594,7 +8594,7 @@ body.light.measurement-page .workflow-review-operation-item span {
   }
 }
 
-/* ===== 3.0.0-alpha196 resume/save state and operation notes ===== */
+/* ===== 3.0.0-alpha197 resume/save state and operation notes ===== */
 body.measurement-page .home-draft-resume-card {
   display: flex;
   align-items: center;
@@ -8788,7 +8788,7 @@ body.light.measurement-page .workflow-review-operation-note {
   }
 }
 
-/* ===== 3.0.0-alpha196 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha197 U-wire placement reference ===== */
 body.measurement-page .uwire-reference-grid {
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   gap: 14px;
@@ -9003,5 +9003,167 @@ body.light.measurement-page .uwire-status-item[data-state="bad"] strong {
 
   body.measurement-page .uwire-wire-row {
     grid-template-columns: 64px minmax(0, 1fr);
+  }
+}
+
+
+/* ===== 3.0.0-alpha197 mobile library visibility and wrapping repair ===== */
+body.measurement-page #jobsScreen .library-lane.active {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+body.measurement-page #jobsScreen .jobs-panel-local.library-lane.active {
+  display: block !important;
+}
+
+body.measurement-page #jobsScreen .jobs-panel-shared.library-lane.active {
+  display: flex !important;
+  flex-direction: column;
+}
+
+body.measurement-page #jobsScreen .library-lane:not(.active) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+body.measurement-page #jobsScreen .library-lane-btn.active {
+  background: linear-gradient(180deg, #4d85ee 0%, #2f69e1 100%) !important;
+  border-color: rgba(201, 224, 255, 0.82) !important;
+  box-shadow: 0 0 0 2px rgba(151, 190, 255, 0.24), 0 10px 24px rgba(18, 88, 210, 0.28) !important;
+  color: #fff !important;
+}
+
+body.measurement-page #jobsScreen .library-lane.collapsed .accordion-body,
+body.measurement-page #jobsScreen .library-lane .accordion-body {
+  display: block !important;
+}
+
+body.measurement-page #jobsScreen .library-lane .accordion-caret {
+  display: none !important;
+}
+
+body.measurement-page #jobsScreen .jobs-screen-topbar,
+body.measurement-page #jobsScreen .jobs-status-card,
+body.measurement-page #jobsScreen .jobs-panel-card,
+body.measurement-page #jobsScreen .jobs-list-item,
+body.measurement-page #jobsScreen .history-card,
+body.measurement-page #jobsScreen .job-detail-header,
+body.measurement-page #jobsScreen .job-detail-grid,
+body.measurement-page #jobsScreen .summary-item {
+  min-width: 0;
+}
+
+body.measurement-page #jobsScreen .jobs-screen-topbar h3,
+body.measurement-page #jobsScreen .jobs-screen-topbar p,
+body.measurement-page #jobsScreen .jobs-status-card,
+body.measurement-page #jobsScreen .jobs-mini-note,
+body.measurement-page #jobsScreen .jobs-note,
+body.measurement-page #jobsScreen .history-title,
+body.measurement-page #jobsScreen .history-meta,
+body.measurement-page #jobsScreen .job-detail-title,
+body.measurement-page #jobsScreen .job-detail-subtitle,
+body.measurement-page #jobsScreen .job-detail-grid,
+body.measurement-page #jobsScreen .jobs-library-empty,
+body.measurement-page #jobsScreen .jobs-list-item,
+body.measurement-page #jobsScreen .jobs-list-item * {
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+@media (max-width: 820px) {
+  body.measurement-page #jobsScreen {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  body.measurement-page #jobsPanel.jobs-workspace-panel,
+  body.measurement-page #jobsPanel .jobs-workspace-grid,
+  body.measurement-page #jobsPanel .jobs-panel-card {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-screen-topbar {
+    gap: 14px;
+    padding: 14px 12px;
+  }
+
+  body.measurement-page #jobsScreen .jobs-screen-topbar h3 {
+    font-size: clamp(1.35rem, 7vw, 1.8rem);
+    line-height: 1.08;
+  }
+
+  body.measurement-page #jobsScreen .jobs-screen-topbar p {
+    font-size: 1rem;
+    line-height: 1.35;
+  }
+
+  body.measurement-page #jobsScreen .jobs-top-actions {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    width: 100%;
+  }
+
+  body.measurement-page #jobsScreen .jobs-top-actions button,
+  body.measurement-page #jobsScreen .library-lane-btn,
+  body.measurement-page #jobsScreen .jobs-actions-compact button,
+  body.measurement-page #jobsScreen .job-detail-actions button {
+    min-width: 0 !important;
+    width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.14;
+  }
+
+  body.measurement-page #jobsScreen .jobs-top-actions button {
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 0.92rem;
+  }
+
+  body.measurement-page #jobsScreen .library-lane-btn {
+    min-height: 48px;
+    padding: 10px;
+  }
+
+  body.measurement-page #jobsScreen .jobs-panel-card {
+    padding: 14px 12px;
+  }
+
+  body.measurement-page #jobsScreen .jobs-section-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: start;
+  }
+
+  body.measurement-page #jobsScreen .jobs-status-grid,
+  body.measurement-page #jobsScreen .jobs-status-strip,
+  body.measurement-page #jobsScreen .job-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body.measurement-page #jobsScreen #jobsSelect {
+    min-height: 180px !important;
+    max-height: 38dvh !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-history-drawer,
+  body.measurement-page #jobsScreen .jobs-library-details {
+    max-height: none !important;
+  }
+}
+
+@media (max-width: 430px) {
+  body.measurement-page #jobsScreen .jobs-top-actions button {
+    font-size: 0.86rem;
+  }
+
+  body.measurement-page #jobsScreen .library-lane-switch {
+    gap: 8px;
   }
 }

@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha196';
+const BUILD_VERSION = '3.0.0-alpha197';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha196 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha197 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1045,8 +1045,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha196';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha196';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha197';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha197';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2462,7 +2462,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha196', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha197', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3363,9 +3363,13 @@ function setLibraryLane(lane) {
   libraryLanePanelEls.forEach((panel) => {
     const isActive = panel.dataset.libraryLanePanel === next;
     panel.classList.toggle('active', isActive);
+    panel.classList.remove('collapsed');
     panel.hidden = !isActive;
     panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
     panel.style.display = isActive ? 'block' : 'none';
+    panel.style.visibility = isActive ? 'visible' : 'hidden';
+    panel.style.opacity = isActive ? '1' : '0';
+    panel.style.pointerEvents = isActive ? 'auto' : 'none';
   });
   if (jobsScreen) jobsScreen.dataset.activeLane = next;
   try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
@@ -3424,6 +3428,7 @@ function initAccordionSections() {
   const mobile = window.innerWidth <= 768;
   document.querySelectorAll('.mode-panel .section').forEach((section, index) => {
     if (section.classList.contains('job-info-section')) return;
+    if (section.closest('#jobsScreen') || section.classList.contains('library-lane')) return;
     if (section.dataset.accordionReady === 'true') return;
     const heading = section.querySelector('h3');
     if (!heading) return;
@@ -4758,7 +4763,19 @@ async function loadCloudJobs() {
     }));
 
     renderJobsList();
-    if (cloudJobsCache.length) openSharedLibraryLane();
+    const sharedLaneAlreadySelected = (() => {
+      try {
+        const jobsScreen = document.getElementById('jobsScreen');
+        const sharedPanel = document.querySelector('[data-library-lane-panel="shared"]');
+        const savedLane = localStorage.getItem('tapcalcLibraryLaneV1') || '';
+        return jobsScreen?.dataset.activeLane === 'shared' || sharedPanel?.classList.contains('active') || savedLane === 'shared';
+      } catch {
+        return false;
+      }
+    })();
+    if (cloudJobsCache.length && sharedLaneAlreadySelected) {
+      try { setLibraryLane('shared'); } catch { try { openSharedLibraryLane(); } catch {} }
+    }
 
     if (jobsCloudStatusEl) {
       jobsCloudStatusEl.textContent =
@@ -6584,7 +6601,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha196';
+const TC63_VERSION = '3.0.0-alpha197';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6830,7 +6847,7 @@ const TC63_VERSION = '3.0.0-alpha196';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha196';
+const VERSION = '3.0.0-alpha197';
 
   function tc65GetJobs() {
     try {
@@ -7360,11 +7377,20 @@ const VERSION = '3.0.0-alpha196';
       if(jobsScreen){ jobsScreen.dataset.activeLane='local'; jobsScreen.style.pointerEvents='auto'; jobsScreen.style.zIndex=''; }
       const shared=document.querySelector('[data-library-lane-panel="shared"]');
       const local=document.querySelector('[data-library-lane-panel="local"]');
-      if(shared){ shared.hidden=true; shared.classList.remove('active'); shared.style.display='none'; }
-      if(local){ local.hidden=false; local.classList.add('active'); local.style.display='block'; }
+      if(shared){ shared.hidden=true; shared.classList.remove('active'); shared.style.display='none'; shared.style.visibility='hidden'; shared.style.opacity='0'; shared.style.pointerEvents='none'; }
+      if(local){ local.hidden=false; local.classList.add('active'); local.classList.remove('collapsed'); local.style.display='block'; local.style.visibility='visible'; local.style.opacity='1'; local.style.pointerEvents='auto'; }
       document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach(btn=>{ const active=btn.dataset.libraryLane==='local'; btn.classList.toggle('active',active); btn.setAttribute('aria-pressed', active?'true':'false'); });
       try { localStorage.setItem('tapcalcLibraryLaneV1','local'); } catch {}
     } catch {}
+  }
+  function repairOrClearLibraryTrap(){
+    let requestedLane = 'local';
+    try { requestedLane = localStorage.getItem('tapcalcLibraryLaneV1') === 'shared' ? 'shared' : 'local'; } catch {}
+    if(requestedLane === 'shared'){
+      try { window.tapCalcRepairLibraryLane?.(); } catch {}
+      return;
+    }
+    clearLibraryTrap();
   }
   function hardShowScreen(name){
     if (typeof window.tapCalcSetScreen === 'function') {
@@ -7386,7 +7412,7 @@ const VERSION = '3.0.0-alpha196';
     window.__alpha87LoadWrapped = true;
     window.loadCloudJobs = async function(){
       const res = await origLoad.apply(this, arguments);
-      if(compact()) setTimeout(clearLibraryTrap, 50);
+      if(compact()) setTimeout(repairOrClearLibraryTrap, 50);
       return res;
     };
     try { loadCloudJobs = window.loadCloudJobs; } catch {}
@@ -7418,8 +7444,8 @@ const VERSION = '3.0.0-alpha196';
   document.addEventListener('change', (e)=>{
     if(e.target && e.target.id==='referenceViewSelect' && e.target.value==='garlock600'){ setTimeout(garlockInit,0); setTimeout(garlockInit,120); }
   }, true);
-  window.addEventListener('pageshow', ()=>{ setTimeout(garlockInit,80); if(compact()) setTimeout(clearLibraryTrap,120); });
-  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(garlockInit,80); if(compact()) setTimeout(clearLibraryTrap,120); });
+  window.addEventListener('pageshow', ()=>{ setTimeout(garlockInit,80); if(compact()) setTimeout(repairOrClearLibraryTrap,120); });
+  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(garlockInit,80); if(compact()) setTimeout(repairOrClearLibraryTrap,120); });
   setTimeout(garlockInit, 200);
 })();
 
@@ -10043,7 +10069,7 @@ const VERSION = '3.0.0-alpha196';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha196';
+const VERSION = '3.0.0-alpha197';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11751,7 +11777,7 @@ const VERSION = '3.0.0-alpha196';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha196 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha197 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11908,7 +11934,7 @@ const VERSION = '3.0.0-alpha196';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha196 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha197 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -12112,7 +12138,7 @@ const VERSION = '3.0.0-alpha196';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha196 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha197 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -12293,7 +12319,7 @@ const VERSION = '3.0.0-alpha196';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha196 workflow save actions ===== */
+/* ===== 3.0.0-alpha197 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12416,7 +12442,7 @@ const VERSION = '3.0.0-alpha196';
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
-/* ===== 3.0.0-alpha196 workflow draft recovery ===== */
+/* ===== 3.0.0-alpha197 workflow draft recovery ===== */
 (function(){
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
   const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
@@ -12576,7 +12602,7 @@ const VERSION = '3.0.0-alpha196';
   window.tapCalcUpdateDraftStatus = updateDraftStatus;
 })();
 
-/* ===== 3.0.0-alpha196 workflow save state indicators ===== */
+/* ===== 3.0.0-alpha197 workflow save state indicators ===== */
 (function(){
   const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
@@ -12754,6 +12780,32 @@ const VERSION = '3.0.0-alpha196';
     return nextMode;
   }
 
+  function applyLibraryLaneDom(lane){
+    const nextLane = normalizeLane(lane);
+    document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((btn) => {
+      const active = btn.dataset.libraryLane === nextLane;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-library-lane-panel]').forEach((panel) => {
+      const active = panel.dataset.libraryLanePanel === nextLane;
+      panel.classList.toggle('active', active);
+      panel.classList.remove('collapsed');
+      panel.hidden = !active;
+      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+      panel.style.display = active ? 'block' : 'none';
+      panel.style.visibility = active ? 'visible' : 'hidden';
+      panel.style.pointerEvents = active ? 'auto' : 'none';
+      panel.style.opacity = active ? '1' : '0';
+      panel.querySelectorAll('.accordion-body').forEach((body) => {
+        body.style.display = active ? 'block' : '';
+      });
+    });
+    const jobs = $('jobsScreen');
+    if (jobs) jobs.dataset.activeLane = nextLane;
+    return nextLane;
+  }
+
   function syncTabs(activeScreen){
     document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
       const active = tab.dataset.screen === activeScreen;
@@ -12792,24 +12844,7 @@ const VERSION = '3.0.0-alpha196';
   }
 
   function setLibraryLaneCore(lane){
-    const nextLane = normalizeLane(lane);
-    document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((btn) => {
-      const active = btn.dataset.libraryLane === nextLane;
-      btn.classList.toggle('active', active);
-      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
-    });
-    document.querySelectorAll('[data-library-lane-panel]').forEach((panel) => {
-      const active = panel.dataset.libraryLanePanel === nextLane;
-      panel.classList.toggle('active', active);
-      panel.hidden = !active;
-      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
-      panel.style.display = active ? 'block' : 'none';
-      panel.style.visibility = active ? 'visible' : 'hidden';
-      panel.style.pointerEvents = active ? 'auto' : 'none';
-      panel.style.opacity = active ? '1' : '0';
-    });
-    const jobs = $('jobsScreen');
-    if (jobs) jobs.dataset.activeLane = nextLane;
+    const nextLane = applyLibraryLaneDom(lane);
     try { localStorage.setItem('tapcalcLibraryLaneV1', nextLane); } catch {}
     setTimeout(() => { try { if (typeof renderJobsList === 'function') renderJobsList(); } catch {} }, 20);
     if (nextLane === 'shared') {
@@ -12852,6 +12887,11 @@ const VERSION = '3.0.0-alpha196';
     const activeScreen = normalizeScreen(document.body.dataset.activeScreen || 'home');
     syncVisibleScreens(activeScreen);
     syncTabs(activeScreen);
+    if (activeScreen === 'jobs') {
+      let lane = $('jobsScreen')?.dataset.activeLane || 'local';
+      try { lane = localStorage.getItem('tapcalcLibraryLaneV1') || lane; } catch {}
+      applyLibraryLaneDom(lane);
+    }
   }
 
   function openFromTrigger(trigger){
@@ -12897,6 +12937,11 @@ const VERSION = '3.0.0-alpha196';
   window.setLibraryLane = function(lane){
     return setLibraryLaneCore(lane);
   };
+  window.tapCalcRepairLibraryLane = function(){
+    let lane = $('jobsScreen')?.dataset.activeLane || 'local';
+    try { lane = localStorage.getItem('tapcalcLibraryLaneV1') || lane; } catch {}
+    return applyLibraryLaneDom(lane);
+  };
   try { setLibraryLane = window.setLibraryLane; } catch {}
   window.openSharedLibraryLane = function(){
     return openScreenCore('jobs', { libraryLane: 'shared' });
@@ -12914,9 +12959,14 @@ const VERSION = '3.0.0-alpha196';
   document.addEventListener('DOMContentLoaded', () => setTimeout(restoreScreen, 20));
   window.addEventListener('load', () => setTimeout(restoreScreen, 40));
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
+  window.addEventListener('resize', () => {
+    if (normalizeScreen(document.body.dataset.activeScreen || 'home') === 'jobs') {
+      try { window.tapCalcRepairLibraryLane(); } catch {}
+    }
+  }, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha196 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha197 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -13376,7 +13426,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha196 gasket torque reference ===== */
+/* ===== 3.0.0-alpha197 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -13620,7 +13670,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
 })();
 
-/* ===== 3.0.0-alpha196 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha197 U-wire placement reference ===== */
 (function(){
   const WIRE_ROWS = 12;
   const WIRE_SIZES = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 36, 42, 48, 54, 60, 72];
