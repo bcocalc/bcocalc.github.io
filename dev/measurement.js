@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha199';
+const BUILD_VERSION = '3.0.0-alpha200';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha199 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha200 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -868,12 +868,13 @@ const referenceLibraryItems = [
   { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
   { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
   { id: 'plant600', group: 'Field Reference', label: '600# Plant Series', description: 'Higher class flange reference', keywords: '600 plant flange jack bolt packing wrench' },
-  { id: 'gaskettorque', group: 'Field Reference', label: 'CMG / Gasket Torque', description: 'Starred CMG / Graphonic RF gasket torque lookup', keywords: 'garlock gasket torque raised face flange cmg graphonic starred 150 300 400 600' },
-  { id: 'garlock600', group: 'Field Reference', label: 'Graphonic 600# Torque', description: 'Garlock preferred and minimum torque lookup', keywords: 'garlock graphonic 600 torque gasket stress preferred minimum' }
+  { id: 'gaskettorque', group: 'Field Reference', label: 'Graphonic', description: 'Starred RF gasket torque lookup with engineering 600# data', keywords: 'garlock gasket torque raised face flange cmg graphonic starred 150 300 400 600 engineering' },
+  { id: 'papergaskets', group: 'Field Reference', label: 'Paper Gaskets', description: 'Compressed sheet and GYLON ring gasket torque tables', keywords: 'garlock paper gasket compressed sheet gylon ring torque 150 300 400 600 900 multi swell' }
 ];
 
 function getSafeReferenceView(view) {
   const requested = String(view || referenceViewSelectEl?.value || '').trim();
+  if (requested === 'garlock600') return 'gaskettorque';
   const validViews = new Set(referenceViewEls.map((panel) => panel.dataset.referenceView).filter(Boolean));
   if (requested && validViews.has(requested)) return requested;
   if (validViews.has('converter')) return 'converter';
@@ -1045,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha199';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha199';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha200';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha200';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2462,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha199', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha200', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6601,7 +6602,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha199';
+const TC63_VERSION = '3.0.0-alpha200';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6847,7 +6848,7 @@ const TC63_VERSION = '3.0.0-alpha199';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha199';
+const VERSION = '3.0.0-alpha200';
 
   function tc65GetJobs() {
     try {
@@ -10069,7 +10070,7 @@ const VERSION = '3.0.0-alpha199';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha199';
+const VERSION = '3.0.0-alpha200';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11777,7 +11778,7 @@ const VERSION = '3.0.0-alpha199';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha199 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha200 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11934,7 +11935,7 @@ const VERSION = '3.0.0-alpha199';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha199 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha200 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -12138,7 +12139,7 @@ const VERSION = '3.0.0-alpha199';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha199 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha200 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -12319,7 +12320,7 @@ const VERSION = '3.0.0-alpha199';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha199 workflow save actions ===== */
+/* ===== 3.0.0-alpha200 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12442,7 +12443,7 @@ const VERSION = '3.0.0-alpha199';
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
-/* ===== 3.0.0-alpha199 workflow draft recovery ===== */
+/* ===== 3.0.0-alpha200 workflow draft recovery ===== */
 (function(){
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
   const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
@@ -12602,7 +12603,7 @@ const VERSION = '3.0.0-alpha199';
   window.tapCalcUpdateDraftStatus = updateDraftStatus;
 })();
 
-/* ===== 3.0.0-alpha199 workflow save state indicators ===== */
+/* ===== 3.0.0-alpha200 workflow save state indicators ===== */
 (function(){
   const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
@@ -12966,7 +12967,7 @@ const VERSION = '3.0.0-alpha199';
   }, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha199 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha200 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -13426,11 +13427,11 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha199 gasket torque reference ===== */
+/* ===== 3.0.0-alpha200 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
-    { key: 'cmg', label: 'CMG / Graphonic *', standard: true }
+    { key: 'cmg', label: 'Graphonic *', standard: true }
   ];
   const RAW_GASKET_TORQUE_DATA = {
     '150': [
@@ -13518,20 +13519,44 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
       ['24','24','1.88',[1103,3308],[1117,3350],[588,2940],CE,[994,2983]]
     ]
   };
+  const GRAPHONIC_600_ENGINEERING = new Map([
+    ['1/2', { torque: ['11', '37'], bolts: '4', boltSize: '0.50' }],
+    ['3/4', { torque: ['20', '67'], bolts: '4', boltSize: '0.63' }],
+    ['1', { torque: ['27', '89'], bolts: '4', boltSize: '0.63' }],
+    ['1-1/4', { torque: ['41', '120'], bolts: '4', boltSize: '0.63' }],
+    ['1-1/2', { torque: ['60', '200'], bolts: '4', boltSize: '0.75' }],
+    ['2', { torque: ['43', '120'], bolts: '8', boltSize: '0.63' }],
+    ['2-1/2', { torque: ['56', '188'], bolts: '8', boltSize: '0.75' }],
+    ['3', { torque: ['83', '200'], bolts: '8', boltSize: '0.75' }],
+    ['4', { torque: ['135', '320'], bolts: '8', boltSize: '0.88' }],
+    ['5', { torque: ['197', '490'], bolts: '8', boltSize: '1.00' }],
+    ['6', { torque: ['165', '490'], bolts: '12', boltSize: '1.00' }],
+    ['8', { torque: ['246', '710'], bolts: '12', boltSize: '1.13' }],
+    ['10', { torque: ['248', '828'], bolts: '16', boltSize: '1.25' }],
+    ['12', { torque: ['264', '880'], bolts: '20', boltSize: '1.25' }],
+    ['14', { torque: ['315', '1049'], bolts: '20', boltSize: '1.38' }],
+    ['16', { torque: ['386', '1286'], bolts: '20', boltSize: '1.50' }],
+    ['18', { torque: ['602', '2006'], bolts: '20', boltSize: '1.63' }],
+    ['20', { torque: ['553', '1843'], bolts: '24', boltSize: '1.63' }],
+    ['24', { torque: ['946', '3154'], bolts: '24', boltSize: '1.88' }]
+  ]);
   const GASKET_TORQUE_DATA = Object.fromEntries(Object.entries(RAW_GASKET_TORQUE_DATA).map(([flangeClass, rows]) => [
     flangeClass,
-    rows.map((row) => ({
-      flangeClass,
-      size: row[0],
-      bolts: row[1],
-      boltSize: row[2],
-      flexseal: row[3],
-      edge: row[4],
-      kammprofile: row[5],
-      cmg: row[6],
-      jacketed: row[7],
-      source: flangeClass === '150' || flangeClass === '300' ? 'Scan p.2' : 'Scan p.3'
-    }))
+    rows.map((row) => {
+      const engineering600 = flangeClass === '600' ? GRAPHONIC_600_ENGINEERING.get(row[0]) : null;
+      return {
+        flangeClass,
+        size: row[0],
+        bolts: engineering600?.bolts || row[1],
+        boltSize: engineering600?.boltSize || row[2],
+        flexseal: row[3],
+        edge: row[4],
+        kammprofile: row[5],
+        cmg: engineering600?.torque || row[6],
+        jacketed: row[7],
+        source: engineering600 ? 'Engineering 600# Graphonic' : (flangeClass === '150' || flangeClass === '300' ? 'Scan p.2' : 'Scan p.3')
+      };
+    })
   ]));
 
   function gasketTorqueEl(id) {
@@ -13560,8 +13585,9 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     return value || '-';
   }
 
-  function getGasketTorqueNote(value, type) {
+  function getGasketTorqueNote(value, type, row) {
     if (value === CE) return `${type.label} is marked Contact Engineering for this flange class.`;
+    if (row?.source === 'Engineering 600# Graphonic') return `${type.label} engineering 600# value; torque per bolt.`;
     if (type.standard) return `${type.label} starred shop style; torque per bolt.`;
     return `${type.label} torque per bolt.`;
   }
@@ -13589,7 +13615,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     });
     body.innerHTML = rows.map((row) => {
       const torque = row[type.key];
-      const note = getGasketTorqueNote(torque, type);
+      const note = getGasketTorqueNote(torque, type, row);
       const rowClass = torque === CE ? ' class="gasket-torque-contact-row"' : '';
       return `<tr${rowClass}><td>${gasketTorqueEscape(row.size)}"</td><td>${gasketTorqueEscape(row.bolts)}</td><td>${gasketTorqueEscape(row.boltSize)}</td><td>${gasketTorqueEscape(formatGasketTorque(torque, 'min'))}</td><td>${gasketTorqueEscape(formatGasketTorque(torque, 'preferred'))}</td><td>${gasketTorqueEscape(note)}</td></tr>`;
     }).join('');
@@ -13611,7 +13637,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const note = gasketTorqueEl('gasketTorqueNote');
     if (note) {
       note.textContent = torque === CE
-        ? `${type.label} is the starred shop style, but ${gasketTorqueClass()}# class says Contact Engineering. Confirm before using CMG / Graphonic torque here.`
+        ? `${type.label} is the starred shop style, but ${gasketTorqueClass()}# class says Contact Engineering. Confirm before using Graphonic torque here.`
         : `${gasketTorqueClass()}# RF, ${row.size}" pipe, ${type.label}: minimum ${formatGasketTorque(torque, 'min')} and preferred ${formatGasketTorque(torque, 'preferred')} per bolt.`;
       note.dataset.state = torque === CE ? 'warn' : 'ok';
     }
@@ -13667,7 +13693,313 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
 })();
 
-/* ===== 3.0.0-alpha199 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha200 paper gasket torque reference ===== */
+(function(){
+  const PAPER_GASKET_GEOMETRY = {
+    '0.5': ['0.84', '1.38', '0.94'],
+    '0.75': ['1.06', '1.69', '1.36'],
+    '1': ['1.31', '2.00', '1.79'],
+    '1.25': ['1.66', '2.50', '2.74'],
+    '1.5': ['1.91', '2.88', '3.65'],
+    '2': ['2.38', '3.62', '5.84'],
+    '2.5': ['2.88', '4.12', '6.81'],
+    '3': ['3.50', '5.00', '10.01'],
+    '3.5': ['4.00', '5.50', '11.19'],
+    '4': ['4.50', '6.19', '14.18'],
+    '5': ['5.56', '7.31', '17.68'],
+    '6': ['6.62', '8.50', '22.31'],
+    '8': ['8.62', '10.62', '30.21'],
+    '10': ['10.75', '12.75', '36.90'],
+    '12': ['12.75', '15.00', '49.01'],
+    '14': ['14.00', '16.25', '53.43'],
+    '16': ['16.00', '18.50', '67.71'],
+    '18': ['18.00', '21.00', '91.85'],
+    '20': ['20.00', '23.00', '101.27'],
+    '24': ['24.00', '27.25', '130.75']
+  };
+  const PAPER_GASKET_LABELS = {
+    '0.5': '1/2',
+    '0.75': '3/4',
+    '1.25': '1-1/4',
+    '1.5': '1-1/2',
+    '2.5': '2-1/2',
+    '3.5': '3-1/2'
+  };
+  const PAPER_GASKET_SOURCE_PAGE = {
+    '150': 'Scan p.14',
+    '300': 'Scan p.13',
+    '400': 'Scan p.12',
+    '600': 'Scan p.11',
+    '900': 'Scan p.10'
+  };
+  const PAPER_GASKET_RAW = {
+    '150': [
+      ['0.5','4','0.50','60','7560','32134','<300','4800','9','15000','28'],
+      ['0.75','4','0.50','60','7560','22235','<300','4800','13','15000','40'],
+      ['1','4','0.50','60','7560','16867','<300','4800','17','15000','53'],
+      ['1.25','4','0.50','60','7560','11024','<300','4800','26','11024','60'],
+      ['1.5','4','0.50','60','7560','8291','<300','4800','35','8291','60'],
+      ['2','4','0.63','120','12120','8301','<300','4800','69','8301','120'],
+      ['2.5','4','0.63','120','12120','7115','<300','4800','81','7115','120'],
+      ['3','4','0.63','120','12120','4844','<300','4800','119','4844','120'],
+      ['3.5','8','0.63','120','12120','8668','<300','4800','66','8668','120'],
+      ['4','8','0.63','120','12120','6837','<300','4800','84','6837','120'],
+      ['5','8','0.75','200','18120','8199','<300','4800','117','8199','200'],
+      ['6','8','0.75','200','18120','6496','<300','4800','148','6496','200'],
+      ['8','8','0.75','200','18120','4799','<300','4800','200','4799','200'],
+      ['10','12','0.88','320','25140','8177','<300','4800','186','8177','320'],
+      ['12','12','0.88','320','25140','6155','<300','4800','250','6155','320'],
+      ['14','12','1.00','490','33060','7425','<300','4800','317','7425','490'],
+      ['16','16','1.00','490','33060','7813','<300','4800','301','7813','490'],
+      ['18','16','1.13','710','43680','7609','<300','4800','448','7609','710'],
+      ['20','20','1.13','710','43680','8627','<300','4800','395','8627','710'],
+      ['24','20','1.25','1000','55740','8526','<300','4800','563','8526','1000']
+    ],
+    '300': [
+      ['0.5','4','0.50','60','7560','32134','<800','6200','12','15000','28'],
+      ['0.75','4','0.63','120','12120','35647','<800','6200','21','15000','51'],
+      ['1','4','0.63','120','12120','27041','<800','6400','28','15000','67'],
+      ['1.25','4','0.63','120','12120','17673','<800','6400','43','15000','102'],
+      ['1.5','4','0.75','200','18120','19872','<800','6400','64','15000','151'],
+      ['2','8','0.63','120','12120','16602','<800','6400','46','15000','108'],
+      ['2.5','8','0.75','200','18120','21274','<800','6400','60','15000','141'],
+      ['3','8','0.75','200','18120','14483','<800','6400','88','14483','200'],
+      ['3.5','8','0.75','200','18120','12959','<800','6400','99','12959','200'],
+      ['4','8','0.75','200','18120','10221','<800','6400','125','10221','200'],
+      ['5','8','0.75','200','18120','8199','<800','6400','156','8199','200'],
+      ['6','12','0.75','200','18120','9745','<800','6400','131','9745','200'],
+      ['8','12','0.88','320','25140','9987','<800','6400','205','9987','320'],
+      ['10','16','1.00','490','33060','14337','<800','6400','219','14337','490'],
+      ['12','16','1.13','710','43680','14259','<800','6400','319','14259','710'],
+      ['14','20','1.13','710','43680','16351','<800','6600','287','15000','652'],
+      ['16','20','1.25','1000','55740','16465','<800','6600','401','15000','912'],
+      ['18','24','1.25','1000','55740','14565','<800','6400','439','14565','1000'],
+      ['20','24','1.25','1000','55740','13210','<800','6400','484','13210','1000'],
+      ['24','24','1.50','1600','84300','15474','<800','6400','662','15000','1552']
+    ],
+    '400': [
+      ['0.5','4','0.50','60','7560','32134','<1000','7200','13','15000','28'],
+      ['0.75','4','0.63','120','12120','35647','<1000','7200','24','15000','51'],
+      ['1','4','0.63','120','12120','27041','<1000','7400','33','15000','67'],
+      ['1.25','4','0.63','120','12120','17673','<1000','7400','50','15000','102'],
+      ['1.5','4','0.75','200','18120','19872','<1000','7400','74','15000','151'],
+      ['2','8','0.63','120','12120','16602','<1000','7400','53','15000','108'],
+      ['2.5','8','0.75','200','18120','21274','<1000','7400','70','15000','141'],
+      ['3','8','0.75','200','18120','14483','<1000','7400','102','14483','200'],
+      ['3.5','8','0.88','320','25140','17979','<1000','7400','132','15000','267'],
+      ['4','8','0.88','320','25140','14181','<1000','7400','167','14181','320'],
+      ['5','8','0.88','320','25140','11375','<1000','7400','208','11375','320'],
+      ['6','12','0.88','320','25140','13520','<1000','7400','175','13520','320'],
+      ['8','12','1.00','490','33060','13133','<1000','7400','276','13133','490'],
+      ['10','16','1.13','710','43680','18942','<1000','7400','277','15000','562'],
+      ['12','16','1.25','1000','55740','18196','<1000','7400','407','15000','824'],
+      ['14','20','1.25','1000','55740','20865','<1000','7600','364','15000','719'],
+      ['16','20','1.38','1360','69300','20471','<1000','7600','505','15000','997'],
+      ['18','24','1.38','1360','69300','18109','<1000','7400','556','15000','1127'],
+      ['20','24','1.50','1600','84300','19979','<1000','7400','593','15000','1201'],
+      ['24','24','1.75','3000','118800','21806','<1000','7400','1018','15000','2064']
+    ],
+    '600': [
+      ['0.5','4','0.50','60','7560','32134','<1500','9400','18','15000','28'],
+      ['0.75','4','0.63','120','12120','35647','<1500','9400','32','15000','50'],
+      ['1','4','0.63','120','12120','27041','<1500','9400','42','15000','67'],
+      ['1.25','4','0.63','120','12120','17673','<1500','9400','64','15000','102'],
+      ['1.5','4','0.75','200','18120','19872','<1500','9400','95','15000','151'],
+      ['2','8','0.63','120','12120','16602','<1500','9400','68','15000','108'],
+      ['2.5','8','0.75','200','18120','21274','<1500','9400','88','15000','141'],
+      ['3','8','0.75','200','18120','14483','<1500','9400','130','14483','200'],
+      ['3.5','8','0.88','320','25140','17979','<1500','9400','167','15000','267'],
+      ['4','8','0.88','320','25140','14181','<1500','9400','212','14181','320'],
+      ['5','8','1.00','490','33060','14959','<1500','9400','308','14959','490'],
+      ['6','12','1.00','490','33060','17779','<1500','9400','259','15000','413'],
+      ['8','12','1.13','710','43680','17352','<1500','9400','385','15000','614'],
+      ['10','16','1.25','1000','55740','24172','<1500','9400','389','15000','621'],
+      ['12','20','1.25','1000','55740','22745','<1500','9400','413','15000','659'],
+      ['14','20','1.38','1360','69300','25941','<1500','9400','493','15000','786'],
+      ['16','20','1.50','1600','84300','24902','<1500','9400','604','15000','964'],
+      ['18','20','1.63','2200','100800','21950','<1500','9400','942','15000','1503'],
+      ['20','24','1.63','2200','100800','23890','<1500','9400','866','15000','1381'],
+      ['24','24','1.88','4000','138240','25375','<1500','9400','1482','15000','2365']
+    ],
+    '900': [
+      ['0.5','4','0.75','200','18120','77020','<2250','9200','24','15000','39'],
+      ['0.75','4','0.75','200','18120','53294','<2250','9200','35','15000','56'],
+      ['1','4','0.88','320','25140','56089','<2250','9400','54','15000','86'],
+      ['1.25','4','0.88','320','25140','36659','<2250','9400','82','15000','131'],
+      ['1.5','4','1.00','490','33060','36257','<2250','9400','127','15000','203'],
+      ['2','8','0.88','320','25140','34436','<2250','9400','87','15000','139'],
+      ['2.5','8','1.00','490','33060','36815','<2250','9400','119','15000','189'],
+      ['3','8','0.88','320','25140','20094','<2250','9400','150','15000','239'],
+      ['4','8','1.13','710','43680','24640','<2250','9400','271','15000','432'],
+      ['5','8','1.25','1000','55740','25221','<2250','9400','373','15000','595'],
+      ['6','12','1.13','710','43680','23490','<2250','9400','284','15000','453'],
+      ['8','12','1.38','1360','69300','27530','<2250','9400','464','15000','741'],
+      ['10','16','1.38','1360','69300','30053','<2250','9400','425','15000','679'],
+      ['12','20','1.38','1360','69300','28278','<2250','9400','452','15000','721'],
+      ['14','20','1.50','1600','84300','31556','<2250','9600','487','15000','761'],
+      ['16','20','1.63','2200','100800','29776','<2250','9600','709','15000','1108'],
+      ['18','20','1.88','4000','138240','30103','<2250','9400','1249','15000','1993'],
+      ['20','20','2.00','4400','159120','31426','<2250','9400','1316','15000','2100'],
+      ['24','20','2.50','8800','257520','39391','<2250','9400','2100','15000','3351']
+    ]
+  };
+
+  function paperGasketEl(id) {
+    return document.getElementById(id);
+  }
+
+  function paperGasketEscape(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function paperGasketSizeLabel(size) {
+    return PAPER_GASKET_LABELS[size] || size;
+  }
+
+  const PAPER_GASKET_DATA = Object.fromEntries(Object.entries(PAPER_GASKET_RAW).map(([flangeClass, rows]) => [
+    flangeClass,
+    rows.map((row) => {
+      const geometry = PAPER_GASKET_GEOMETRY[row[0]] || ['', '', ''];
+      return {
+        flangeClass,
+        size: row[0],
+        displaySize: paperGasketSizeLabel(row[0]),
+        rfId: geometry[0],
+        rfOd: geometry[1],
+        area: geometry[2],
+        bolts: row[1],
+        boltSize: row[2],
+        torque60: row[3],
+        compForce: row[4],
+        maxStressAvail: row[5],
+        internalPressure: row[6],
+        minGasketStress: row[7],
+        minTorque: row[8],
+        maxRecAvailStress: row[9],
+        preferredTorque: row[10],
+        source: PAPER_GASKET_SOURCE_PAGE[flangeClass] || 'Scan.pdf'
+      };
+    })
+  ]));
+
+  function paperGasketClass() {
+    return paperGasketEl('paperGasketClassSelect')?.value || '150';
+  }
+
+  function paperGasketRows() {
+    return PAPER_GASKET_DATA[paperGasketClass()] || PAPER_GASKET_DATA['150'] || [];
+  }
+
+  function populatePaperGasketSizeSelect() {
+    const select = paperGasketEl('paperGasketSizeSelect');
+    if (!select) return;
+    const rows = paperGasketRows();
+    const previous = select.value;
+    select.innerHTML = rows.map((row) => `<option value="${paperGasketEscape(row.size)}">${paperGasketEscape(row.displaySize)}"</option>`).join('');
+    if (previous && rows.some((row) => row.size === previous)) select.value = previous;
+    if (!select.value && rows[0]?.size) select.value = rows[0].size;
+  }
+
+  function setPaperGasketText(id, value) {
+    const element = paperGasketEl(id);
+    if (element) element.textContent = value || '-';
+  }
+
+  function updatePaperGasketSummary() {
+    const rows = paperGasketRows();
+    const size = paperGasketEl('paperGasketSizeSelect')?.value || rows[0]?.size || '';
+    const row = rows.find((item) => item.size === size) || rows[0];
+    if (!row) return;
+    setPaperGasketText('paperGasketBoltCount', row.bolts);
+    setPaperGasketText('paperGasketBoltSize', row.boltSize);
+    setPaperGasketText('paperGasketMinTorque', `${row.minTorque} ft-lbs`);
+    setPaperGasketText('paperGasketPreferredTorque', `${row.preferredTorque} ft-lbs`);
+    setPaperGasketText('paperGasketPressure', `${row.internalPressure} psi`);
+    const note = paperGasketEl('paperGasketNote');
+    if (note) {
+      note.textContent = `${paperGasketClass()}# RF, ${row.displaySize}" pipe: minimum ${row.minTorque} ft-lbs and preferred ${row.preferredTorque} ft-lbs per bolt. Source ${row.source}.`;
+    }
+  }
+
+  function renderPaperGasketTable() {
+    const body = paperGasketEl('paperGasketBody');
+    if (!body) return;
+    const query = String(paperGasketEl('paperGasketSearchInput')?.value || '').trim().toLowerCase();
+    const selectedSize = paperGasketEl('paperGasketSizeSelect')?.value || '';
+    const rows = paperGasketRows().filter((row) => {
+      if (!query) return true;
+      return [
+        row.flangeClass,
+        row.size,
+        row.displaySize,
+        row.rfId,
+        row.rfOd,
+        row.area,
+        row.bolts,
+        row.boltSize,
+        row.torque60,
+        row.compForce,
+        row.maxStressAvail,
+        row.internalPressure,
+        row.minGasketStress,
+        row.minTorque,
+        row.maxRecAvailStress,
+        row.preferredTorque,
+        row.source,
+        'paper gasket',
+        'gylon',
+        'compressed sheet'
+      ].join(' ').toLowerCase().includes(query);
+    });
+    body.innerHTML = rows.map((row) => {
+      const selectedClass = row.size === selectedSize ? ' class="paper-gasket-selected-row"' : '';
+      return `<tr${selectedClass}><td>${paperGasketEscape(row.displaySize)}"</td><td>${paperGasketEscape(row.rfId)}</td><td>${paperGasketEscape(row.rfOd)}</td><td>${paperGasketEscape(row.area)}</td><td>${paperGasketEscape(row.bolts)}</td><td>${paperGasketEscape(row.boltSize)}</td><td>${paperGasketEscape(row.torque60)}</td><td>${paperGasketEscape(row.compForce)}</td><td>${paperGasketEscape(row.maxStressAvail)}</td><td>${paperGasketEscape(row.internalPressure)}</td><td>${paperGasketEscape(row.minGasketStress)}</td><td>${paperGasketEscape(row.minTorque)}</td><td>${paperGasketEscape(row.maxRecAvailStress)}</td><td>${paperGasketEscape(row.preferredTorque)}</td></tr>`;
+    }).join('');
+  }
+
+  function updatePaperGasketReference() {
+    populatePaperGasketSizeSelect();
+    updatePaperGasketSummary();
+    renderPaperGasketTable();
+  }
+
+  function initPaperGasketReference() {
+    const classSelect = paperGasketEl('paperGasketClassSelect');
+    const sizeSelect = paperGasketEl('paperGasketSizeSelect');
+    const searchInput = paperGasketEl('paperGasketSearchInput');
+    if (!classSelect || !sizeSelect) return;
+    if (!classSelect.dataset.alpha200Bound) {
+      classSelect.dataset.alpha200Bound = '1';
+      classSelect.addEventListener('change', updatePaperGasketReference);
+    }
+    if (!sizeSelect.dataset.alpha200Bound) {
+      sizeSelect.dataset.alpha200Bound = '1';
+      sizeSelect.addEventListener('change', () => {
+        updatePaperGasketSummary();
+        renderPaperGasketTable();
+      });
+      sizeSelect.addEventListener('input', updatePaperGasketSummary);
+    }
+    if (searchInput && !searchInput.dataset.alpha200Bound) {
+      searchInput.dataset.alpha200Bound = '1';
+      searchInput.addEventListener('input', renderPaperGasketTable);
+    }
+    updatePaperGasketReference();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('[data-reference-target="papergaskets"]')) setTimeout(initPaperGasketReference, 0);
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target?.id === 'referenceViewSelect' && event.target.value === 'papergaskets') setTimeout(initPaperGasketReference, 0);
+  }, true);
+  window.addEventListener('pageshow', () => setTimeout(initPaperGasketReference, 60));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPaperGasketReference);
+  else setTimeout(initPaperGasketReference, 0);
+  window.tapCalcInitPaperGasketReference = initPaperGasketReference;
+})();
+
+/* ===== 3.0.0-alpha200 U-wire placement reference ===== */
 (function(){
   const WIRE_ROWS = 12;
   const WIRE_SIZES = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 36, 42, 48, 54, 60, 72];
