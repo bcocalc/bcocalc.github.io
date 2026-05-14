@@ -6196,7 +6196,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha188 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha189 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6302,7 +6302,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha188 reference buildout ===== */
+/* ===== 3.0.0-alpha189 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6698,7 +6698,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha188 reference library picker ===== */
+/* ===== 3.0.0-alpha189 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7044,7 +7044,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha188 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha189 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7219,7 +7219,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha188 gasket torque reference ===== */
+/* ===== 3.0.0-alpha189 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7348,7 +7348,7 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha188 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha189 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7390,7 +7390,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha188 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha189 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7511,7 +7511,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha188 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha189 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7591,7 +7591,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha188 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha189 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
@@ -7796,7 +7796,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   }
 }
 
-/* ===== 3.0.0-alpha188 neutral upcoming workflow steps ===== */
+/* ===== 3.0.0-alpha189 neutral upcoming workflow steps ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
@@ -7851,7 +7851,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em
   color: #173657 !important;
 }
 
-/* ===== 3.0.0-alpha188 incomplete workflow steps need attention ===== */
+/* ===== 3.0.0-alpha189 incomplete workflow steps need attention ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] {
@@ -7890,7 +7890,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] 
   color: #6c1721 !important;
 }
 
-/* ===== 3.0.0-alpha188 workflow guards and draft recovery ===== */
+/* ===== 3.0.0-alpha189 workflow guards and draft recovery ===== */
 body.measurement-page .workflow-draft-bar {
   flex: 1 1 100%;
   display: flex;
@@ -8103,7 +8103,7 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha188 review/save polish ===== */
+/* ===== 3.0.0-alpha189 review/save polish ===== */
 body.measurement-page .workflow-review-status-card {
   display: flex;
   align-items: center;
@@ -8361,5 +8361,199 @@ body.light.measurement-page .workflow-review-operation-item span {
 
   body.measurement-page .workflow-review-check-item {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ===== 3.0.0-alpha189 resume/save state and operation notes ===== */
+body.measurement-page .home-draft-resume-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid rgba(132, 178, 255, 0.32);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(32, 78, 150, 0.34), rgba(12, 31, 58, 0.82));
+  box-shadow: 0 14px 30px rgba(4, 12, 24, 0.18);
+}
+
+body.measurement-page .home-draft-resume-card[hidden] {
+  display: none !important;
+}
+
+body.measurement-page .home-draft-resume-card h3 {
+  margin: 4px 0 6px;
+  color: #ffffff;
+  font-size: 1.12rem;
+  line-height: 1.25;
+}
+
+body.measurement-page .home-draft-resume-card p {
+  margin: 0;
+  color: #d7e8f7;
+  font-size: 0.94rem;
+  line-height: 1.4;
+}
+
+body.measurement-page .home-draft-resume-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  min-width: min(100%, 320px);
+}
+
+body.measurement-page .home-draft-resume-side > span:not(.workflow-save-state-pill) {
+  color: #cfe1f8;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+body.measurement-page .workflow-save-state-pill,
+body.measurement-page #workflowReviewSaveStatePill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 7px 11px;
+  border: 1px solid rgba(214, 164, 56, 0.38);
+  border-radius: 999px;
+  background: rgba(104, 74, 16, 0.34);
+  color: #ffe5ad;
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+body.measurement-page .workflow-save-state-pill[data-state="local"],
+body.measurement-page #workflowReviewSaveStatePill[data-state="local"] {
+  border-color: rgba(132, 178, 255, 0.42);
+  background: rgba(31, 78, 147, 0.35);
+  color: #dceaff;
+}
+
+body.measurement-page .workflow-save-state-pill[data-state="synced"],
+body.measurement-page #workflowReviewSaveStatePill[data-state="synced"] {
+  border-color: rgba(78, 188, 111, 0.44);
+  background: rgba(22, 91, 48, 0.36);
+  color: #c9f8d7;
+}
+
+body.measurement-page .workflow-save-state-pill[data-state="error"],
+body.measurement-page #workflowReviewSaveStatePill[data-state="error"] {
+  border-color: rgba(255, 124, 135, 0.5);
+  background: rgba(112, 29, 38, 0.36);
+  color: #fff2f3;
+}
+
+body.measurement-page .operation-notes-row,
+body.measurement-page .workflow-operation-notes-field {
+  grid-column: 1 / -1;
+}
+
+body.measurement-page .operation-notes-row textarea,
+body.measurement-page .workflow-operation-notes-field textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+body.measurement-page .workflow-save-state-card p {
+  margin: 10px 0 0;
+  color: #d6e6f8;
+  font-size: 0.93rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+body.measurement-page .workflow-review-operation-note {
+  margin-top: 2px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(171, 199, 237, 0.12);
+  color: #f3ddac !important;
+  font-weight: 800;
+}
+
+:root[data-theme="light"] body.measurement-page .home-draft-resume-card,
+body.light.measurement-page .home-draft-resume-card {
+  background: #eef5ff;
+  border-color: #c5d7ef;
+  box-shadow: 0 12px 24px rgba(42, 73, 110, 0.12);
+}
+
+:root[data-theme="light"] body.measurement-page .home-draft-resume-card h3,
+body.light.measurement-page .home-draft-resume-card h3 {
+  color: #122742;
+}
+
+:root[data-theme="light"] body.measurement-page .home-draft-resume-card p,
+:root[data-theme="light"] body.measurement-page .home-draft-resume-side > span:not(.workflow-save-state-pill),
+body.light.measurement-page .home-draft-resume-card p,
+body.light.measurement-page .home-draft-resume-side > span:not(.workflow-save-state-pill) {
+  color: #375674;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-save-state-pill,
+:root[data-theme="light"] body.measurement-page #workflowReviewSaveStatePill,
+body.light.measurement-page .workflow-save-state-pill,
+body.light.measurement-page #workflowReviewSaveStatePill {
+  background: #fff5d9;
+  border-color: #dfbc65;
+  color: #704d00;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-save-state-pill[data-state="local"],
+:root[data-theme="light"] body.measurement-page #workflowReviewSaveStatePill[data-state="local"],
+body.light.measurement-page .workflow-save-state-pill[data-state="local"],
+body.light.measurement-page #workflowReviewSaveStatePill[data-state="local"] {
+  background: #e7eef7;
+  border-color: #c5d7ef;
+  color: #244a73;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-save-state-pill[data-state="synced"],
+:root[data-theme="light"] body.measurement-page #workflowReviewSaveStatePill[data-state="synced"],
+body.light.measurement-page .workflow-save-state-pill[data-state="synced"],
+body.light.measurement-page #workflowReviewSaveStatePill[data-state="synced"] {
+  background: #e6f8eb;
+  border-color: #78c991;
+  color: #1d6135;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-save-state-pill[data-state="error"],
+:root[data-theme="light"] body.measurement-page #workflowReviewSaveStatePill[data-state="error"],
+body.light.measurement-page .workflow-save-state-pill[data-state="error"],
+body.light.measurement-page #workflowReviewSaveStatePill[data-state="error"] {
+  background: #ffe6e9;
+  border-color: #df7b86;
+  color: #6c1721;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-save-state-card p,
+body.light.measurement-page .workflow-save-state-card p {
+  color: #375674;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-review-operation-note,
+body.light.measurement-page .workflow-review-operation-note {
+  border-top-color: #d3e0f3;
+  color: #704d00 !important;
+}
+
+@media (max-width: 720px) {
+  body.measurement-page .home-draft-resume-card {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  body.measurement-page .home-draft-resume-side {
+    justify-content: flex-start;
+    min-width: 0;
+  }
+
+  body.measurement-page .home-draft-resume-side .secondary-btn {
+    width: 100%;
   }
 }

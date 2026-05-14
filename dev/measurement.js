@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha188';
+const BUILD_VERSION = '3.0.0-alpha189';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha188 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha189 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1035,8 +1035,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha188';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha188';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha189';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha189';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2400,7 +2400,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha188', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha189', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2573,6 +2573,7 @@ const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPip
 const JOB_BUNDLE_VERSION = 3;
 const jobOperationSelectEl = document.getElementById('jobOperationSelect');
 const jobOperationLabelEl = document.getElementById('jobOperationLabel');
+const jobOperationNotesEl = document.getElementById('jobOperationNotes');
 const jobOperationStatusEl = document.getElementById('jobOperationStatus');
 const jobOperationPreviewListEl = document.getElementById('jobOperationPreviewList');
 const addHotTapOpBtnEl = document.getElementById('addHotTapOpBtn');
@@ -2620,6 +2621,10 @@ let currentJobBundle = null;
 let suppressJobBundleUiSync = false;
 let jobDraftRestoreComplete = false;
 let selectedJobId = '';
+try {
+  window.tapCalcJobsSearchTerm = jobsSearchTerm;
+  window.tapCalcJobsBrowseMode = jobsBrowseMode;
+} catch {}
 
 Object.defineProperty(window, 'currentJobBundle', {
   configurable: true,
@@ -2836,6 +2841,7 @@ function normalizeBundleItem(rawItem = {}, index = 0) {
   return {
     id: rawItem.id || createBundleId(`op${index + 1}`),
     label: String(rawItem.label || '').trim(),
+    notes: String(rawItem.notes || rawItem.operationNotes || '').trim(),
     operationType: formatOperationType(rawItem.operationType || inferOperationType(state)),
     mode,
     createdAtIso: rawItem.createdAtIso || new Date().toISOString(),
@@ -2952,12 +2958,32 @@ window.tapCalcGetSelectedOperation = function() {
   return getSelectedOperationItem(currentJobBundle || ensureJobBundleInitialized());
 };
 
+function getOperationNotesEl() {
+  return document.getElementById('workflowJobOperationNotes') || jobOperationNotesEl;
+}
+
+function getOperationNotesValue() {
+  const workflowNotesEl = document.getElementById('workflowJobOperationNotes');
+  const active = document.activeElement;
+  if (active === workflowNotesEl || active === jobOperationNotesEl) return String(active.value || '').trim();
+  return String(workflowNotesEl?.value || jobOperationNotesEl?.value || '').trim();
+}
+
+function setOperationNotesFields(value = '') {
+  const safeValue = String(value || '');
+  [jobOperationNotesEl, document.getElementById('workflowJobOperationNotes')].forEach((el) => {
+    if (el && document.activeElement !== el) el.value = safeValue;
+  });
+}
+
 function renderOperationPreview(bundle = ensureJobBundleInitialized()) {
   if (!jobOperationPreviewListEl) return;
   jobOperationPreviewListEl.innerHTML = bundle.operations.map((operation) => {
     const active = operation.id === bundle.selectedOperationId;
     const summary = buildOperationSummaryFromItem(operation);
-    return `<button type="button" class="job-operation-card${active ? ' active' : ''}" data-operation-id="${escapeHtml(operation.id)}" aria-pressed="${active ? 'true' : 'false'}"><small>${escapeHtml(summary.operationType)}</small><strong>${escapeHtml(operation.label || summary.operationType)}</strong><span>${escapeHtml(summary.details)}</span></button>`;
+    const notes = String(operation?.notes || '').trim();
+    const details = notes ? `${summary.details}  |  Note: ${notes}` : summary.details;
+    return `<button type="button" class="job-operation-card${active ? ' active' : ''}" data-operation-id="${escapeHtml(operation.id)}" aria-pressed="${active ? 'true' : 'false'}"><small>${escapeHtml(summary.operationType)}</small><strong>${escapeHtml(operation.label || summary.operationType)}</strong><span>${escapeHtml(details)}</span></button>`;
   }).join('');
   jobOperationPreviewListEl.querySelectorAll('[data-operation-id]').forEach((button) => {
     button.addEventListener('click', () => selectOperationById(button.dataset.operationId || ''));
@@ -2982,6 +3008,7 @@ function renderOperationManager() {
     delete jobOperationSelectEl.dataset.activeOperationId;
   }
   jobOperationLabelEl.value = selectedOperation?.label || '';
+  setOperationNotesFields(selectedOperation?.notes || '');
   const total = bundle.operations.length;
   jobOperationStatusEl.textContent = `${total} operation${total === 1 ? '' : 's'} in this job  |  ${buildOperationCountsSummary(bundle.operations)}`;
   if (duplicateOperationBtnEl) duplicateOperationBtnEl.disabled = !selectedOperation;
@@ -3006,6 +3033,7 @@ function syncCurrentOperationItemFromUi(options = {}) {
   selectedOperation.updatedAtIso = new Date().toISOString();
   const previousLabel = String(selectedOperation.label || '').trim();
   const typedLabel = String(jobOperationLabelEl?.value || '').trim();
+  selectedOperation.notes = getOperationNotesValue();
   const autoLabel = createOperationLabel(selectedOperation.operationType, bundle.operations.filter((operation) => operation.id !== selectedOperation.id));
   if (typedLabel) {
     const typedLooksAuto = isAutoOperationLabel(typedLabel);
@@ -3031,6 +3059,7 @@ function buildPersistedJobBundlePayload(bundle = currentJobBundle) {
     operations: normalized.operations.map((operation) => ({
       id: operation.id,
       label: operation.label,
+      notes: operation.notes || '',
       operationType: operation.operationType,
       mode: operation.mode,
       createdAtIso: operation.createdAtIso,
@@ -4357,8 +4386,12 @@ async function syncLocalJobsToCloud() {
     if (jobsCloudStatusEl) {
       if (failCount === 0) {
         jobsCloudStatusEl.textContent = `Sync complete. ${successCount} job${successCount === 1 ? '' : 's'} uploaded.`;
+        if (successCount > 0) {
+          try { window.tapCalcSetSaveState?.('synced', { syncedAtIso: new Date().toISOString() }); } catch {}
+        }
       } else {
         jobsCloudStatusEl.textContent = `Sync finished with issues. Uploaded ${successCount}, failed ${failCount}.`;
+        try { window.tapCalcSetSaveState?.(successCount > 0 ? 'synced' : 'error'); } catch {}
       }
     }
   } finally {
@@ -4413,7 +4446,8 @@ window.getCombinedJobsForDisplay = function getCombinedJobsForDisplay() {
     jobs = jobs.filter(({ record }) => {
       const haystack = [
         record?.meta?.title, record?.meta?.operationType, record?.job?.client, record?.job?.location, record?.job?.technician,
-        record?.job?.jobNumber, record?.job?.date, record?.job?.notes, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd, record?.meta?.savedAtDisplay
+        record?.job?.jobNumber, record?.job?.date, record?.job?.notes, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd, record?.meta?.savedAtDisplay,
+        ...(record?.jobBundle?.operations || []).flatMap((operation) => [operation?.label, operation?.notes, operation?.operationType])
       ].join(' ').toLowerCase();
       return haystack.includes(term);
     });
@@ -4712,6 +4746,13 @@ async function saveCurrentJobToHistory() {
   const snapshot = buildHistorySnapshot();
   items.unshift(snapshot);
   saveHistory(items);
+  try {
+    window.tapCalcSetSaveState?.('local', {
+      savedAtIso: snapshot?.record?.meta?.savedAtIso || new Date().toISOString(),
+      label: snapshot?.summary?.title || snapshot?.record?.meta?.title || '',
+      operationCount: snapshot?.record?.meta?.operationCount || snapshot?.record?.jobBundle?.operations?.length || 1
+    });
+  } catch {}
   initHistoryDrawer();
   renderHistory();
   updateHistoryCount();
@@ -4728,6 +4769,14 @@ async function saveCurrentJobToHistory() {
         target.cloudId = cloudId;
         target.synced = true;
         saveHistory(refreshed);
+        try {
+          window.tapCalcSetSaveState?.('synced', {
+            savedAtIso: snapshot?.record?.meta?.savedAtIso || new Date().toISOString(),
+            syncedAtIso: new Date().toISOString(),
+            label: snapshot?.summary?.title || snapshot?.record?.meta?.title || '',
+            operationCount: snapshot?.record?.meta?.operationCount || snapshot?.record?.jobBundle?.operations?.length || 1
+          });
+        } catch {}
         renderHistory();
         updateUnsyncedCount();
         await loadCloudJobs();
@@ -4736,6 +4785,7 @@ async function saveCurrentJobToHistory() {
     }
   } catch (error) {
     console.error('TapCalc auto-sync failed', error);
+    try { window.tapCalcSetSaveState?.('local'); } catch {}
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally only. Cloud upload was not verified. Retry from the Library tab. ${formatFirebaseError(error)}`;
   }
 }
@@ -4821,6 +4871,21 @@ if (jobOperationLabelEl) {
   jobOperationLabelEl.addEventListener('change', syncOperationLabel);
 }
 
+if (jobOperationNotesEl) {
+  const syncOperationNotes = () => {
+    const bundle = ensureJobBundleInitialized();
+    const selectedOperation = getSelectedOperationItem(bundle);
+    if (!selectedOperation) return;
+    selectedOperation.notes = String(jobOperationNotesEl.value || '').trim();
+    selectedOperation.updatedAtIso = new Date().toISOString();
+    renderOperationManager();
+    persistCurrentJob({ render: false });
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+  };
+  jobOperationNotesEl.addEventListener('input', syncOperationNotes);
+  jobOperationNotesEl.addEventListener('change', syncOperationNotes);
+}
+
 if (addHotTapOpBtnEl) addHotTapOpBtnEl.addEventListener('click', () => addOperationForMode('hotTap'));
 if (addLineStopOpBtnEl) addLineStopOpBtnEl.addEventListener('click', () => addOperationForMode('lineStop'));
 if (addCompletionOpBtnEl) addCompletionOpBtnEl.addEventListener('click', () => addOperationForMode('completionPlug'));
@@ -4880,10 +4945,21 @@ async function testFirestoreUpload() {
 }
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
-if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
+if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => {
+  jobsSearchTerm = event.target.value.trim();
+  try {
+    window.tapCalcJobsSearchTerm = jobsSearchTerm;
+    window.jobsSearchTerm = jobsSearchTerm;
+  } catch {}
+  renderJobsList();
+});
 jobsViewChipEls.forEach((button) => {
   button.addEventListener('click', () => {
     jobsBrowseMode = button.dataset.jobsView || 'all';
+    try {
+      window.tapCalcJobsBrowseMode = jobsBrowseMode;
+      window.jobsBrowseMode = jobsBrowseMode;
+    } catch {}
     jobsViewChipEls.forEach((btn) => btn.classList.toggle('active', btn === button));
     renderJobsList();
   });
@@ -4955,6 +5031,10 @@ window.addEventListener('load', async () => {
 });
 
 })();
+
+var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
+var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
+var selectedJobId = window.selectedJobId || '';
 
 
 // alpha4 app shell navigation
@@ -6406,7 +6486,7 @@ window.addEventListener('load', async () => {
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha188';
+const TC63_VERSION = '3.0.0-alpha189';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6652,7 +6732,7 @@ const TC63_VERSION = '3.0.0-alpha188';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha188';
+const VERSION = '3.0.0-alpha189';
 
   function tc65GetJobs() {
     try {
@@ -9865,7 +9945,7 @@ const VERSION = '3.0.0-alpha188';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha188';
+const VERSION = '3.0.0-alpha189';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11338,7 +11418,9 @@ const VERSION = '3.0.0-alpha188';
           const summary = typeof buildOperationSummaryFromItem === 'function'
             ? buildOperationSummaryFromItem(operation)
             : { operationType: operation?.operationType || 'Operation', label: operation?.label || `Operation ${index + 1}`, details: 'No measurements yet' };
-          return `<div class="workflow-review-operation-item"><small>${workflowEscape(summary.operationType || `Operation ${index + 1}`)}</small><strong>${workflowEscape(operation?.label || summary.label || `Operation ${index + 1}`)}</strong><span>${workflowEscape(summary.details || 'No measurements yet')}</span></div>`;
+          const notes = String(operation?.notes || '').trim();
+          const noteLine = notes ? `<span class="workflow-review-operation-note">${workflowEscape(notes)}</span>` : '';
+          return `<div class="workflow-review-operation-item"><small>${workflowEscape(summary.operationType || `Operation ${index + 1}`)}</small><strong>${workflowEscape(operation?.label || summary.label || `Operation ${index + 1}`)}</strong><span>${workflowEscape(summary.details || 'No measurements yet')}</span>${noteLine}</div>`;
         }).join('')
         : '<div class="workflow-review-operation-item"><strong>No operations yet</strong><span>Add a Hot Tap, Line Stop, or Completion operation before saving.</span></div>';
     }
@@ -11567,7 +11649,7 @@ const VERSION = '3.0.0-alpha188';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha188 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha189 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11724,11 +11806,12 @@ const VERSION = '3.0.0-alpha188';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha188 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha189 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
     label: 'jobOperationLabel',
+    notes: 'jobOperationNotes',
     status: 'jobOperationStatus',
     preview: 'jobOperationPreviewList',
     addHotTap: 'addHotTapOpBtn',
@@ -11740,6 +11823,7 @@ const VERSION = '3.0.0-alpha188';
   const WORKFLOW = {
     select: 'workflowJobOperationSelect',
     label: 'workflowJobOperationLabel',
+    notes: 'workflowJobOperationNotes',
     status: 'workflowJobOperationStatus',
     preview: 'workflowJobOperationPreviewList',
     addHotTap: 'workflowAddHotTapOpBtn',
@@ -11766,6 +11850,7 @@ const VERSION = '3.0.0-alpha188';
       byId(SOURCE.select)?.innerHTML || '',
       byId(SOURCE.select)?.value || '',
       byId(SOURCE.label)?.value || '',
+      byId(SOURCE.notes)?.value || '',
       byId(SOURCE.status)?.textContent || '',
       byId(SOURCE.preview)?.innerHTML || '',
       byId(SOURCE.duplicate)?.disabled ? 'duplicate-off' : 'duplicate-on',
@@ -11787,6 +11872,9 @@ const VERSION = '3.0.0-alpha188';
       }
       const workflowLabel = byId(WORKFLOW.label);
       if (workflowLabel && document.activeElement !== workflowLabel) workflowLabel.value = sourceLabel.value || '';
+      const workflowNotes = byId(WORKFLOW.notes);
+      const sourceNotes = byId(SOURCE.notes);
+      if (workflowNotes && sourceNotes && document.activeElement !== workflowNotes) workflowNotes.value = sourceNotes.value || '';
       const workflowStatus = byId(WORKFLOW.status);
       const sourceStatus = byId(SOURCE.status);
       if (workflowStatus && sourceStatus) workflowStatus.textContent = sourceStatus.textContent || '1 operation in this job.';
@@ -11857,6 +11945,20 @@ const VERSION = '3.0.0-alpha188';
       workflowLabel.addEventListener('input', syncLabel);
       workflowLabel.addEventListener('change', syncLabel);
     }
+    const workflowNotes = byId(WORKFLOW.notes);
+    if (workflowNotes && !workflowNotes.dataset.workflowOperationsBound) {
+      workflowNotes.dataset.workflowOperationsBound = '1';
+      const syncNotes = () => {
+        if (syncingWorkflowOperations) return;
+        const sourceNotes = byId(SOURCE.notes);
+        if (!sourceNotes) return;
+        sourceNotes.value = workflowNotes.value || '';
+        fireInputChange(sourceNotes);
+        refreshAfterOperationChange(false);
+      };
+      workflowNotes.addEventListener('input', syncNotes);
+      workflowNotes.addEventListener('change', syncNotes);
+    }
     [
       ['addHotTap', SOURCE.addHotTap],
       ['addLineStop', SOURCE.addLineStop],
@@ -11878,7 +11980,7 @@ const VERSION = '3.0.0-alpha188';
         selectWorkflowOperation(card.dataset.operationId || '');
       });
     }
-    ['select', 'label', 'status', 'preview'].forEach((key) => {
+    ['select', 'label', 'notes', 'status', 'preview'].forEach((key) => {
       const sourceEl = byId(SOURCE[key]);
       if (!sourceEl || sourceEl.dataset.workflowOperationsSourceBound) return;
       sourceEl.dataset.workflowOperationsSourceBound = '1';
@@ -11908,7 +12010,7 @@ const VERSION = '3.0.0-alpha188';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha188 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha189 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -12089,7 +12191,7 @@ const VERSION = '3.0.0-alpha188';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha188 workflow save actions ===== */
+/* ===== 3.0.0-alpha189 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12212,7 +12314,7 @@ const VERSION = '3.0.0-alpha188';
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
-/* ===== 3.0.0-alpha188 workflow draft recovery ===== */
+/* ===== 3.0.0-alpha189 workflow draft recovery ===== */
 (function(){
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
   const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
@@ -12269,12 +12371,13 @@ const VERSION = '3.0.0-alpha188';
         : 'Draft auto-saves as you type.';
       status.dataset.state = draftExists ? 'draft' : 'empty';
     }
-    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn'].forEach((id) => {
+    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn','homeResumeDraftQuickBtn'].forEach((id) => {
       const button = byId(id);
       if (!button) return;
       button.textContent = draftExists ? 'Resume Draft' : 'Open Workflow';
       button.dataset.state = draftExists ? 'draft' : 'empty';
     });
+    try { window.tapCalcUpdateSaveStateIndicators?.(); } catch {}
   }
 
   function resumeDraft(event){
@@ -12305,7 +12408,7 @@ const VERSION = '3.0.0-alpha188';
   }
 
   function bindDraftControls(){
-    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn'].forEach((id) => {
+    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn','homeResumeDraftQuickBtn'].forEach((id) => {
       const button = byId(id);
       if (!button || button.dataset.workflowDraftBound) return;
       button.dataset.workflowDraftBound = '1';
@@ -12330,6 +12433,153 @@ const VERSION = '3.0.0-alpha188';
   document.addEventListener('input', () => setTimeout(updateDraftStatus, 120), true);
   document.addEventListener('change', () => setTimeout(updateDraftStatus, 120), true);
   window.tapCalcUpdateDraftStatus = updateDraftStatus;
+})();
+
+/* ===== 3.0.0-alpha189 workflow save state indicators ===== */
+(function(){
+  const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
+  const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
+  const STATE_COPY = {
+    draft: {
+      label: 'Draft Only',
+      copy: 'This job is auto-saved as a draft on this device.'
+    },
+    local: {
+      label: 'Saved Local',
+      copy: 'This job has been saved to the local Library on this device.'
+    },
+    synced: {
+      label: 'Synced Shared',
+      copy: 'This job has been saved locally and uploaded to the shared Library.'
+    },
+    error: {
+      label: 'Save Issue',
+      copy: 'TapCalc saved what it could, but the last shared sync was not verified.'
+    }
+  };
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function safeParse(raw){
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+
+  function readSaveState(){
+    try { return safeParse(localStorage.getItem(SAVE_STATE_KEY)) || { state: 'draft' }; } catch { return { state: 'draft' }; }
+  }
+
+  function operationCount(){
+    try {
+      const bundle = typeof window.ensureJobBundleInitialized === 'function' ? window.ensureJobBundleInitialized() : null;
+      const count = Array.isArray(bundle?.operations) ? bundle.operations.length : 0;
+      return count || 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  function currentJobLabel(){
+    const customer = byId('jobClient')?.value?.trim() || '';
+    const location = byId('jobLocation')?.value?.trim() || '';
+    const description = byId('jobDescription')?.value?.trim() || '';
+    const jobNumber = byId('jobNumber')?.value?.trim() || '';
+    const label = [customer || description, location].filter(Boolean).join(' - ') || 'Current draft';
+    return jobNumber ? `${label} (${jobNumber})` : label;
+  }
+
+  function timeText(iso){
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  function hasDraft(){
+    try { if (localStorage.getItem('measurementCardStateV1')) return true; } catch {}
+    return ['jobClient','jobLocation','jobDescription','jobNumber','machineType','summaryPipe','summaryBco'].some((id) => {
+      const el = byId(id);
+      const value = String(('value' in (el || {}) ? el.value : el?.textContent) || '').trim();
+      return !!value && value !== '-' && value !== '?';
+    });
+  }
+
+  function setPill(el, state){
+    if (!el) return;
+    const normalized = STATE_COPY[state] ? state : 'draft';
+    el.textContent = STATE_COPY[normalized].label;
+    el.dataset.state = normalized;
+  }
+
+  function updateSaveStateIndicators(){
+    const saved = readSaveState();
+    const state = STATE_COPY[saved.state] ? saved.state : 'draft';
+    const draftExists = hasDraft();
+    const draftTime = timeText(saved.updatedAtIso || saved.savedAtIso || saved.syncedAtIso || (() => {
+      try { return localStorage.getItem(DRAFT_UPDATED_KEY); } catch { return ''; }
+    })());
+    const count = operationCount();
+    const countLabel = `${count} operation${count === 1 ? '' : 's'}`;
+    const label = saved.label || currentJobLabel();
+    const timeSuffix = draftTime ? ` at ${draftTime}` : '';
+
+    setPill(byId('workflowSaveStatePill'), state);
+    setPill(byId('workflowReviewSaveStatePill'), state);
+    setPill(byId('homeDraftResumeStatus'), state);
+
+    const reviewCopy = byId('workflowReviewSaveStateCopy');
+    if (reviewCopy) reviewCopy.textContent = `${STATE_COPY[state].copy}${timeSuffix ? ` Last updated${timeSuffix}.` : ''}`;
+
+    const draftCard = byId('homeDraftResumeCard');
+    if (draftCard) {
+      draftCard.hidden = !draftExists;
+      draftCard.dataset.state = draftExists ? state : 'empty';
+    }
+    const draftTitle = byId('homeDraftResumeTitle');
+    if (draftTitle) draftTitle.textContent = draftExists ? label : 'No active draft';
+    const draftMeta = byId('homeDraftResumeMeta');
+    if (draftMeta) {
+      draftMeta.textContent = draftExists
+        ? `${STATE_COPY[state].copy}${timeSuffix ? ` Last updated${timeSuffix}.` : ''}`
+        : 'Start a workflow and TapCalc will keep the draft ready here.';
+    }
+    const draftOps = byId('homeDraftResumeOperations');
+    if (draftOps) draftOps.textContent = draftExists ? countLabel : '0 operations';
+
+    const homeStatus = byId('homeStatusStat');
+    if (homeStatus) homeStatus.textContent = STATE_COPY[state].label;
+  }
+
+  function setSaveState(state, detail = {}){
+    const nowIso = new Date().toISOString();
+    const next = {
+      ...readSaveState(),
+      ...detail,
+      state: STATE_COPY[state] ? state : 'draft',
+      label: detail.label || currentJobLabel(),
+      operationCount: detail.operationCount || operationCount(),
+      updatedAtIso: nowIso
+    };
+    if (next.state === 'local' && !next.savedAtIso) next.savedAtIso = nowIso;
+    if (next.state === 'synced' && !next.syncedAtIso) next.syncedAtIso = nowIso;
+    try { localStorage.setItem(SAVE_STATE_KEY, JSON.stringify(next)); } catch {}
+    updateSaveStateIndicators();
+  }
+
+  document.addEventListener('DOMContentLoaded', updateSaveStateIndicators);
+  window.addEventListener('load', () => {
+    updateSaveStateIndicators();
+    setTimeout(updateSaveStateIndicators, 300);
+    setTimeout(updateSaveStateIndicators, 1000);
+  });
+  window.addEventListener('pageshow', () => setTimeout(updateSaveStateIndicators, 120));
+  document.addEventListener('input', () => setTimeout(updateSaveStateIndicators, 120), true);
+  document.addEventListener('change', () => setTimeout(updateSaveStateIndicators, 120), true);
+  window.tapCalcSetSaveState = setSaveState;
+  window.tapCalcUpdateSaveStateIndicators = updateSaveStateIndicators;
 })();
 
 
@@ -12523,7 +12773,7 @@ const VERSION = '3.0.0-alpha188';
   window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha188 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha189 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -12983,7 +13233,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha188 gasket torque reference ===== */
+/* ===== 3.0.0-alpha189 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -13189,27 +13439,27 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
     const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
     if (!classSelect || !sizeSelect || !typeSelect) return;
-    if (!classSelect.dataset.alpha188Bound) {
-      classSelect.dataset.alpha188Bound = '1';
+    if (!classSelect.dataset.alpha189Bound) {
+      classSelect.dataset.alpha189Bound = '1';
       classSelect.addEventListener('change', updateGasketTorqueReference);
     }
-    if (!sizeSelect.dataset.alpha188Bound) {
-      sizeSelect.dataset.alpha188Bound = '1';
+    if (!sizeSelect.dataset.alpha189Bound) {
+      sizeSelect.dataset.alpha189Bound = '1';
       sizeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
       sizeSelect.addEventListener('input', updateGasketTorqueSummary);
     }
-    if (!typeSelect.dataset.alpha188Bound) {
-      typeSelect.dataset.alpha188Bound = '1';
+    if (!typeSelect.dataset.alpha189Bound) {
+      typeSelect.dataset.alpha189Bound = '1';
       typeSelect.addEventListener('change', () => {
         updateGasketTorqueSummary();
         renderGasketTorqueTable();
       });
     }
-    if (searchInput && !searchInput.dataset.alpha188Bound) {
-      searchInput.dataset.alpha188Bound = '1';
+    if (searchInput && !searchInput.dataset.alpha189Bound) {
+      searchInput.dataset.alpha189Bound = '1';
       searchInput.addEventListener('input', renderGasketTorqueTable);
     }
     updateGasketTorqueReference();
