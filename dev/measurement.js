@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha197';
+const BUILD_VERSION = '3.0.0-alpha198';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha197 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha198 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -1045,8 +1045,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha197';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha197';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha198';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha198';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2462,7 +2462,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha197', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha198', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6601,7 +6601,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha197';
+const TC63_VERSION = '3.0.0-alpha198';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6847,7 +6847,7 @@ const TC63_VERSION = '3.0.0-alpha197';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha197';
+const VERSION = '3.0.0-alpha198';
 
   function tc65GetJobs() {
     try {
@@ -10069,7 +10069,7 @@ const VERSION = '3.0.0-alpha197';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha197';
+const VERSION = '3.0.0-alpha198';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11777,7 +11777,7 @@ const VERSION = '3.0.0-alpha197';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha197 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha198 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11934,7 +11934,7 @@ const VERSION = '3.0.0-alpha197';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha197 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha198 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -12138,7 +12138,7 @@ const VERSION = '3.0.0-alpha197';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha197 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha198 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -12319,7 +12319,7 @@ const VERSION = '3.0.0-alpha197';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha197 workflow save actions ===== */
+/* ===== 3.0.0-alpha198 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12442,7 +12442,7 @@ const VERSION = '3.0.0-alpha197';
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
-/* ===== 3.0.0-alpha197 workflow draft recovery ===== */
+/* ===== 3.0.0-alpha198 workflow draft recovery ===== */
 (function(){
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
   const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
@@ -12602,7 +12602,7 @@ const VERSION = '3.0.0-alpha197';
   window.tapCalcUpdateDraftStatus = updateDraftStatus;
 })();
 
-/* ===== 3.0.0-alpha197 workflow save state indicators ===== */
+/* ===== 3.0.0-alpha198 workflow save state indicators ===== */
 (function(){
   const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
@@ -12966,7 +12966,7 @@ const VERSION = '3.0.0-alpha197';
   }, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha197 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha198 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -13426,7 +13426,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha197 gasket torque reference ===== */
+/* ===== 3.0.0-alpha198 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
@@ -13670,7 +13670,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
 })();
 
-/* ===== 3.0.0-alpha197 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha198 U-wire placement reference ===== */
 (function(){
   const WIRE_ROWS = 12;
   const WIRE_SIZES = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 36, 42, 48, 54, 60, 72];
