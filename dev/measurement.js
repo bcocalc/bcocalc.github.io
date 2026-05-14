@@ -6894,9 +6894,9 @@ const VERSION = '3.0.0-alpha189';
   setTimeout(() => {
     try {
       const badge = document.querySelector('.version-badge');
-      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-13`;
+      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-14`;
       const title = document.querySelector('.top-app-title');
-      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-13`;
+      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-14`;
       tc65RenderDetails();
     } catch {}
   }, 0);
