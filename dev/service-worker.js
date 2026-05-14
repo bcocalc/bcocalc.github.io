@@ -1,16 +1,16 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha192';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha193';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha192",
-  "./measurement.js?v=3.0.0-alpha192",
-  "./pdf.mjs?v=3.0.0-alpha192",
-  "./pdf.worker.mjs?v=3.0.0-alpha192",
-  "./stackup-data.js?v=3.0.0-alpha192",
+  "./styles.css?v=3.0.0-alpha193",
+  "./measurement.js?v=3.0.0-alpha193",
+  "./pdf.mjs?v=3.0.0-alpha193",
+  "./pdf.worker.mjs?v=3.0.0-alpha193",
+  "./stackup-data.js?v=3.0.0-alpha193",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha192",
+  "./firebase-config.js?v=3.0.0-alpha193",
   "./team-logo.png"
 ];
 

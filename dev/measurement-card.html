@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha192">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha193">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha192 - 2026-05-14</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha193 - 2026-05-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha192 - 2026-05-14</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha193 - 2026-05-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -1540,12 +1540,24 @@
               <div class="bolting-summary-item"><span class="summary-label">Jack-Bolts</span><span id="plant150Count" class="summary-value">?</span></div>
             </div>
           </div>
+          <div class="reference-card plant-summary-card plant-jackbolt-card">
+            <h4>Sealtite 1 Jackbolt Measurements</h4>
+            <p class="reference-copy">Measurements tied to the selected 150# plant size.</p>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Fully Set Measurement</span><span id="plant150SealtiteSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Fully Retracted Measurement</span><span id="plant150SealtiteRetracted" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Set</span><span id="plant150SealtiteTurnsSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Retracted</span><span id="plant150SealtiteTurnsRetracted" class="summary-value">?</span></div>
+            </div>
+          </div>
         </div>
         <div class="reference-search-row plant-search-row">
-          <label for="plant150SearchInput">Filter 150# table</label>
+          <label for="plant150SearchInput">Filter 150# tables</label>
           <input id="plant150SearchInput" type="text" placeholder="Search size or wrench">
         </div>
         <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant150Body"></tbody></table></div>
+        <h4 class="reference-table-heading">Sealtite 1 Jackbolt Measurements</h4>
+        <div class="glossary-table-wrap plant-jackbolt-table-wrap"><table class="glossary-table"><thead><tr><th>Flange Size</th><th>Measurement Fully Set</th><th>Measurement Fully Retracted</th><th>Turns Fully Set</th><th>Turns Fully Retracted</th></tr></thead><tbody id="plant150SealtiteBody"></tbody></table></div>
       </div>
 
       <div class="reference-view" data-reference-view="plant600">
@@ -1564,12 +1576,24 @@
               <div class="bolting-summary-item"><span class="summary-label">Jack-Bolts</span><span id="plant600Count" class="summary-value">?</span></div>
             </div>
           </div>
+          <div class="reference-card plant-summary-card plant-jackbolt-card">
+            <h4>Sealtite 1 Jackbolt Measurements</h4>
+            <p class="reference-copy">Measurements tied to the selected 600# plant size. Blank source rows show as a dash.</p>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Fully Set Measurement</span><span id="plant600SealtiteSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Fully Retracted Measurement</span><span id="plant600SealtiteRetracted" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Set</span><span id="plant600SealtiteTurnsSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Retracted</span><span id="plant600SealtiteTurnsRetracted" class="summary-value">?</span></div>
+            </div>
+          </div>
         </div>
         <div class="reference-search-row plant-search-row">
-          <label for="plant600SearchInput">Filter 600# table</label>
+          <label for="plant600SearchInput">Filter 600# tables</label>
           <input id="plant600SearchInput" type="text" placeholder="Search size or wrench">
         </div>
         <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant600Body"></tbody></table></div>
+        <h4 class="reference-table-heading">Sealtite 1 Jackbolt Measurements</h4>
+        <div class="glossary-table-wrap plant-jackbolt-table-wrap"><table class="glossary-table"><thead><tr><th>Flange Size</th><th>Measurement Fully Set</th><th>Measurement Fully Retracted</th><th>Turns Fully Set</th><th>Turns Fully Retracted</th></tr></thead><tbody id="plant600SealtiteBody"></tbody></table></div>
       </div>
       <div class="reference-view" data-reference-view="garlock600">
         <h3 class="reference-subheading">Graphonic 600# Torque</h3>
@@ -1837,9 +1861,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha192"></script>
-<script src="stackup-data.js?v=3.0.0-alpha192"></script>
-<script src="measurement.js?v=3.0.0-alpha192"></script>
+<script src="firebase-config.js?v=3.0.0-alpha193"></script>
+<script src="stackup-data.js?v=3.0.0-alpha193"></script>
+<script src="measurement.js?v=3.0.0-alpha193"></script>
   </section>
 </body>
 </html>
