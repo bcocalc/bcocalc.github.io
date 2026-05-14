@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha195">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha196">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha195 - 2026-05-14</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha196 - 2026-05-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha195 - 2026-05-14</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha196 - 2026-05-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -519,18 +519,19 @@
         <div class="workflow-setup-grid">
           <label class="workflow-setup-field" for="workflowJobClient"><span>Customer</span><input id="workflowJobClient" type="text" placeholder="Customer" data-job-sync="jobClient"></label>
           <label class="workflow-setup-field" for="workflowJobLocation"><span>Location</span><input id="workflowJobLocation" type="text" placeholder="Location" data-job-sync="jobLocation"></label>
+          <label class="workflow-setup-field" for="workflowMachineType"><span>Machine</span><select id="workflowMachineType" data-job-sync="machineType"></select></label>
+          <label class="workflow-setup-field" for="workflowOperationType"><span>Job Type</span><select id="workflowOperationType" data-job-sync="operationType"></select></label>
+          <p id="workflowOperationTypeHint" class="workflow-field-hint workflow-setup-field-wide">Hot Tap keeps the workflow shorter. Line Stop adds Hot Tap, Line Stop, and Completion Plug steps.</p>
+          <button type="button" class="workflow-setup-inline-next" data-workflow-setup-next>Continue to Pipe / Cutter</button>
+        </div>
+      </section>
+      <section class="workflow-setup-form-card">
+        <h4>Optional Details</h4>
+        <div class="workflow-setup-grid">
           <label class="workflow-setup-field" for="workflowJobDescription"><span>Job Description</span><input id="workflowJobDescription" type="text" placeholder="Job description" data-job-sync="jobDescription"></label>
           <label class="workflow-setup-field" for="workflowJobNumber"><span>Job Number</span><input id="workflowJobNumber" type="text" placeholder="Job number" data-job-sync="jobNumber"></label>
           <label class="workflow-setup-field" for="workflowJobDate"><span>Date</span><input id="workflowJobDate" type="date" data-job-sync="jobDate"></label>
           <label class="workflow-setup-field" for="workflowJobTechnician"><span>Technician</span><input id="workflowJobTechnician" type="text" placeholder="Technician" data-job-sync="jobTechnician"></label>
-        </div>
-      </section>
-      <section class="workflow-setup-form-card">
-        <h4>Field Details</h4>
-        <div class="workflow-setup-grid">
-          <label class="workflow-setup-field" for="workflowMachineType"><span>Machine</span><select id="workflowMachineType" data-job-sync="machineType"></select></label>
-          <label class="workflow-setup-field" for="workflowOperationType"><span>Job Type</span><select id="workflowOperationType" data-job-sync="operationType"></select></label>
-          <p id="workflowOperationTypeHint" class="workflow-field-hint workflow-setup-field-wide">Hot Tap keeps the workflow shorter. Line Stop adds Hot Tap, Line Stop, and Completion Plug steps.</p>
           <label class="workflow-setup-field" for="workflowJobPressure"><span>Pressure</span><input id="workflowJobPressure" type="text" placeholder="Pressure" data-job-sync="jobPressure"></label>
           <label class="workflow-setup-field" for="workflowJobTemperature"><span>Temperature</span><input id="workflowJobTemperature" type="text" placeholder="Temperature" data-job-sync="jobTemperature"></label>
           <label class="workflow-setup-field" for="workflowJobProduct"><span>Product</span><input id="workflowJobProduct" type="text" placeholder="Product" data-job-sync="jobProduct"></label>
@@ -1861,9 +1862,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha195"></script>
-<script src="stackup-data.js?v=3.0.0-alpha195"></script>
-<script src="measurement.js?v=3.0.0-alpha195"></script>
+<script src="firebase-config.js?v=3.0.0-alpha196"></script>
+<script src="stackup-data.js?v=3.0.0-alpha196"></script>
+<script src="measurement.js?v=3.0.0-alpha196"></script>
   </section>
 </body>
 </html>

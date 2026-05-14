@@ -6210,7 +6210,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha195 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha196 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6316,7 +6316,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha195 reference buildout ===== */
+/* ===== 3.0.0-alpha196 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6712,7 +6712,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha195 reference library picker ===== */
+/* ===== 3.0.0-alpha196 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7058,7 +7058,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha195 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha196 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7233,7 +7233,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha195 gasket torque reference ===== */
+/* ===== 3.0.0-alpha196 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7362,7 +7362,7 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha195 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha196 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7404,7 +7404,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha195 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha196 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7427,6 +7427,10 @@ body.measurement-page .workflow-setup-form-card h4 {
   color: #ffffff;
   font-size: 1rem;
   line-height: 1.2;
+}
+
+body.measurement-page .workflow-setup-inline-next {
+  display: none;
 }
 
 body.measurement-page .workflow-setup-grid {
@@ -7525,7 +7529,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha195 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha196 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7605,7 +7609,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha195 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha196 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
@@ -7810,7 +7814,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   }
 }
 
-/* ===== 3.0.0-alpha195 neutral upcoming workflow steps ===== */
+/* ===== 3.0.0-alpha196 neutral upcoming workflow steps ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
@@ -7865,7 +7869,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em
   color: #173657 !important;
 }
 
-/* ===== 3.0.0-alpha195 incomplete workflow steps need attention ===== */
+/* ===== 3.0.0-alpha196 incomplete workflow steps need attention ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] {
@@ -7904,7 +7908,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] 
   color: #6c1721 !important;
 }
 
-/* ===== 3.0.0-alpha195 workflow guards and draft recovery ===== */
+/* ===== 3.0.0-alpha196 workflow guards and draft recovery ===== */
 body.measurement-page .workflow-draft-bar {
   flex: 1 1 100%;
   display: flex;
@@ -8117,7 +8121,219 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha195 review/save polish ===== */
+/* ===== 3.0.0-alpha196 compact mobile workflow intro ===== */
+@media (max-width: 720px) {
+  body.measurement-page .card-screen-intro {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    justify-content: start;
+    gap: 12px;
+    padding: 14px 12px;
+  }
+
+  body.measurement-page .card-screen-intro > div:first-child,
+  body.measurement-page .card-screen-intro .screen-intro-stats,
+  body.measurement-page .card-screen-intro .screen-intro-meta,
+  body.measurement-page .card-screen-intro .workflow-draft-bar {
+    flex: none;
+    width: 100%;
+    min-width: 0;
+  }
+
+  body.measurement-page .card-screen-intro .screen-intro-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  body.measurement-page .card-screen-intro .screen-intro-stat {
+    min-height: 72px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  body.measurement-page .card-screen-intro .screen-intro-stat:nth-child(3) {
+    grid-column: 1 / -1;
+  }
+
+  body.measurement-page .card-screen-intro .screen-intro-meta {
+    margin: 0;
+  }
+
+  body.measurement-page .workflow-draft-bar {
+    margin-top: 0;
+    padding: 10px;
+  }
+
+  body.measurement-page .workflow-draft-bar > span {
+    flex: 1 1 100%;
+  }
+
+  body.measurement-page .workflow-draft-bar .workflow-save-state-pill {
+    justify-content: center;
+    width: 100%;
+  }
+
+  body.measurement-page .workflow-guided-shell {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  body.measurement-page .workflow-guided-head {
+    gap: 9px;
+  }
+
+  body.measurement-page .workflow-guided-head h4 {
+    margin-bottom: 3px;
+  }
+
+  body.measurement-page .workflow-guided-head p {
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  body.measurement-page .workflow-guided-meta {
+    gap: 6px;
+    margin-top: 6px;
+  }
+
+  body.measurement-page .workflow-guided-actions {
+    display: grid;
+    grid-template-columns: 84px 84px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  body.measurement-page #workflowStartNewJobInlineBtn {
+    display: none !important;
+  }
+
+  body.measurement-page .workflow-guided-actions button {
+    min-height: 42px;
+    padding: 8px 9px;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    line-height: 1.12;
+  }
+
+  body.measurement-page #workflowSaveStatus {
+    display: none;
+  }
+
+  body.measurement-page .workflow-stage-nav {
+    gap: 7px;
+    padding-bottom: 2px;
+  }
+
+  body.measurement-page .workflow-stage-chip {
+    min-width: 118px;
+    max-width: 154px;
+    padding: 8px 10px;
+  }
+
+  body.measurement-page .workflow-stage-chip span {
+    font-size: 0.92rem;
+    line-height: 1.12;
+  }
+
+  body.measurement-page .workflow-stage-chip em {
+    font-size: 0.72rem;
+  }
+
+  body.measurement-page .workflow-readiness-panel {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  body.measurement-page .workflow-readiness-status {
+    display: none;
+  }
+
+  body.measurement-page .workflow-readiness-main,
+  body.measurement-page .workflow-readiness-missing {
+    padding: 10px;
+  }
+
+  body.measurement-page .workflow-readiness-main h5 {
+    margin-bottom: 4px;
+    font-size: 0.96rem;
+  }
+
+  body.measurement-page .workflow-readiness-main p,
+  body.measurement-page .workflow-readiness-missing ul {
+    font-size: 0.88rem;
+    line-height: 1.35;
+  }
+
+  body.measurement-page .workflow-readiness-missing ul {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 16px;
+    row-gap: 2px;
+    padding-left: 18px;
+  }
+
+  body.measurement-page .workflow-readiness-missing li + li {
+    margin-top: 0;
+  }
+
+  body.measurement-page .workflow-helper-panel {
+    gap: 12px;
+    padding: 14px 12px;
+  }
+
+  body.measurement-page .workflow-helper-head h3 {
+    font-size: 1.28rem;
+    margin-bottom: 6px;
+  }
+
+  body.measurement-page .workflow-helper-head p {
+    font-size: 0.93rem;
+    line-height: 1.38;
+  }
+
+  body.measurement-page .workflow-setup-form-card {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  body.measurement-page #workflowSetupNextBtn {
+    display: none;
+  }
+
+  body.measurement-page .workflow-setup-inline-next {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    grid-column: 1 / -1;
+    min-height: 44px;
+    width: 100%;
+    margin-top: 2px;
+    border: 1px solid rgba(180, 206, 255, 0.28);
+    border-radius: 12px;
+    background: linear-gradient(180deg, #3c79f2, #215bce);
+    color: #ffffff;
+    font-weight: 800;
+    box-shadow: 0 10px 22px rgba(20, 58, 128, 0.28);
+  }
+
+  body.measurement-page .workflow-setup-grid {
+    gap: 9px;
+  }
+
+  body.measurement-page .workflow-setup-field input,
+  body.measurement-page .workflow-setup-field select,
+  body.measurement-page .workflow-setup-field textarea {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+
+  body.measurement-page #workflowSetupPanel .workflow-setup-summary-grid,
+  body.measurement-page #workflowSetupPanel .workflow-helper-note {
+    display: none;
+  }
+}
+
+/* ===== 3.0.0-alpha196 review/save polish ===== */
 body.measurement-page .workflow-review-status-card {
   display: flex;
   align-items: center;
@@ -8378,7 +8594,7 @@ body.light.measurement-page .workflow-review-operation-item span {
   }
 }
 
-/* ===== 3.0.0-alpha195 resume/save state and operation notes ===== */
+/* ===== 3.0.0-alpha196 resume/save state and operation notes ===== */
 body.measurement-page .home-draft-resume-card {
   display: flex;
   align-items: center;
@@ -8572,7 +8788,7 @@ body.light.measurement-page .workflow-review-operation-note {
   }
 }
 
-/* ===== 3.0.0-alpha195 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha196 U-wire placement reference ===== */
 body.measurement-page .uwire-reference-grid {
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   gap: 14px;
