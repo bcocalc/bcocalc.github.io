@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha198">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha199">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha198 - 2026-05-14</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha199 - 2026-05-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha198 - 2026-05-14</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha199 - 2026-05-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -996,7 +996,7 @@
           <option value="fieldcheck">Field Checklists</option>
           <option value="plant150">150# Plant Series</option>
           <option value="plant600">600# Plant Series</option>
-          <option value="gaskettorque">Gasket Torque</option>
+          <option value="gaskettorque">CMG / Gasket Torque</option>
           <option value="garlock600">Graphonic 600# Torque</option>
         </optgroup>
       </select>
@@ -1655,8 +1655,8 @@
       </div>
 
       <div class="reference-view" data-reference-view="gaskettorque">
-        <h3 class="reference-subheading">Gasket Torque</h3>
-        <p class="reference-copy">Garlock raised-face flange torque lookup from the uploaded scan. Pick flange class, pipe size, and gasket type to see minimum and preferred torque per bolt.</p>
+        <h3 class="reference-subheading">CMG / Gasket Torque</h3>
+        <p class="reference-copy">Garlock raised-face flange torque lookup from the uploaded scan. This tool only shows the starred shop style: CMG / Graphonic.</p>
         <div class="reference-grid plant-reference-grid gasket-torque-reference-grid">
           <div class="reference-card plant-summary-card gasket-torque-summary-card">
             <h4>Raised Face Torque Lookup</h4>
@@ -1674,17 +1674,11 @@
                 <label for="gasketTorqueSizeSelect">Pipe Size</label>
                 <select id="gasketTorqueSizeSelect"></select>
               </div>
-              <div class="converter-inline plant-select-row gasket-torque-select-row">
-                <label for="gasketTorqueTypeSelect">Gasket Type</label>
-                <select id="gasketTorqueTypeSelect">
-                  <option value="flexseal">FLEXSEAL</option>
-                  <option value="edge">EDGE</option>
-                  <option value="kammprofile">Kammprofile</option>
-                  <option value="cmg">CMG</option>
-                  <option value="jacketed">Jacketed Gasket</option>
-                </select>
-              </div>
+              <select id="gasketTorqueTypeSelect" hidden aria-label="Gasket style">
+                <option value="cmg" selected>CMG / Graphonic *</option>
+              </select>
             </div>
+            <p class="gasket-torque-style-key"><strong>* CMG / Graphonic</strong> is the starred gasket style used by the team.</p>
             <div class="bolting-summary-grid gasket-torque-summary-grid">
               <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="gasketTorqueBoltCount" class="summary-value">?</span></div>
               <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="gasketTorqueBoltSize" class="summary-value">?</span></div>
@@ -1707,7 +1701,7 @@
             <tbody id="gasketTorqueBody"></tbody>
           </table>
         </div>
-        <p class="reference-footnote">Source: uploaded Scan.pdf Garlock Torque Tables pages 2 and 3. Use the job gasket manufacturer's latest instructions when they differ from this field reference.</p>
+        <p class="reference-footnote">Source: uploaded Scan.pdf Garlock Torque Tables pages 2 and 3. Star mark added to CMG / Graphonic because that is the shop style called out from the paperwork. Use the job gasket manufacturer's latest instructions when they differ from this field reference.</p>
       </div>
 
     </div>
@@ -1862,9 +1856,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha198"></script>
-<script src="stackup-data.js?v=3.0.0-alpha198"></script>
-<script src="measurement.js?v=3.0.0-alpha198"></script>
+<script src="firebase-config.js?v=3.0.0-alpha199"></script>
+<script src="stackup-data.js?v=3.0.0-alpha199"></script>
+<script src="measurement.js?v=3.0.0-alpha199"></script>
   </section>
 </body>
 </html>

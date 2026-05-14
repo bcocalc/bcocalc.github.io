@@ -6210,7 +6210,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha198 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha199 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6316,7 +6316,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha198 reference buildout ===== */
+/* ===== 3.0.0-alpha199 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6712,7 +6712,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha198 reference library picker ===== */
+/* ===== 3.0.0-alpha199 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7058,7 +7058,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha198 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha199 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7233,7 +7233,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha198 gasket torque reference ===== */
+/* ===== 3.0.0-alpha199 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7245,7 +7245,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
 
 .gasket-torque-controls {
   display: grid;
-  grid-template-columns: repeat(3, minmax(180px, 1fr));
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -7291,6 +7291,22 @@ body.light #pivotBackingStatus[data-state="danger"] {
   padding: 10px 12px;
 }
 
+.gasket-torque-style-key {
+  background: rgba(96, 165, 250, 0.13);
+  border: 1px solid rgba(147, 197, 253, 0.34);
+  border-radius: 10px;
+  color: #dbeafe;
+  font-size: 0.92rem;
+  font-weight: 800;
+  line-height: 1.35;
+  margin: 0 0 14px;
+  padding: 9px 12px;
+}
+
+.gasket-torque-style-key strong {
+  color: #ffffff;
+}
+
 .gasket-torque-note[data-state="ok"] {
   background: rgba(42, 157, 143, 0.14);
   border-color: rgba(42, 157, 143, 0.46);
@@ -7334,6 +7350,18 @@ body.light .gasket-torque-note[data-state="ok"] {
   color: #07564d;
 }
 
+:root[data-theme="light"] body.measurement-page .gasket-torque-style-key,
+body.light .gasket-torque-style-key {
+  background: #e8f1ff;
+  border-color: #8ab8ff;
+  color: #0d3a70;
+}
+
+:root[data-theme="light"] body.measurement-page .gasket-torque-style-key strong,
+body.light .gasket-torque-style-key strong {
+  color: #082d55;
+}
+
 :root[data-theme="light"] body.measurement-page .gasket-torque-note[data-state="warn"],
 body.light .gasket-torque-note[data-state="warn"] {
   background: #fff5df;
@@ -7362,7 +7390,7 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha198 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha199 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7404,7 +7432,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha198 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha199 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7529,7 +7557,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha198 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha199 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7609,7 +7637,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha198 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha199 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
@@ -7814,7 +7842,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   }
 }
 
-/* ===== 3.0.0-alpha198 neutral upcoming workflow steps ===== */
+/* ===== 3.0.0-alpha199 neutral upcoming workflow steps ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
@@ -7869,7 +7897,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em
   color: #173657 !important;
 }
 
-/* ===== 3.0.0-alpha198 incomplete workflow steps need attention ===== */
+/* ===== 3.0.0-alpha199 incomplete workflow steps need attention ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] {
@@ -7908,7 +7936,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] 
   color: #6c1721 !important;
 }
 
-/* ===== 3.0.0-alpha198 workflow guards and draft recovery ===== */
+/* ===== 3.0.0-alpha199 workflow guards and draft recovery ===== */
 body.measurement-page .workflow-draft-bar {
   flex: 1 1 100%;
   display: flex;
@@ -8121,7 +8149,7 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha198 compact mobile workflow intro ===== */
+/* ===== 3.0.0-alpha199 compact mobile workflow intro ===== */
 @media (max-width: 720px) {
   body.measurement-page .card-screen-intro {
     display: grid;
@@ -8333,7 +8361,7 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha198 review/save polish ===== */
+/* ===== 3.0.0-alpha199 review/save polish ===== */
 body.measurement-page .workflow-review-status-card {
   display: flex;
   align-items: center;
@@ -8594,7 +8622,7 @@ body.light.measurement-page .workflow-review-operation-item span {
   }
 }
 
-/* ===== 3.0.0-alpha198 resume/save state and operation notes ===== */
+/* ===== 3.0.0-alpha199 resume/save state and operation notes ===== */
 body.measurement-page .home-draft-resume-card {
   display: flex;
   align-items: center;
@@ -8788,7 +8816,7 @@ body.light.measurement-page .workflow-review-operation-note {
   }
 }
 
-/* ===== 3.0.0-alpha198 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha199 U-wire placement reference ===== */
 body.measurement-page .uwire-reference-grid {
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   gap: 14px;
@@ -9007,7 +9035,7 @@ body.light.measurement-page .uwire-status-item[data-state="bad"] strong {
 }
 
 
-/* ===== 3.0.0-alpha198 mobile library visibility and wrapping repair ===== */
+/* ===== 3.0.0-alpha199 mobile library visibility and wrapping repair ===== */
 body.measurement-page #jobsScreen .library-lane.active {
   visibility: visible !important;
   opacity: 1 !important;
@@ -9169,7 +9197,7 @@ body.measurement-page #jobsScreen .jobs-list-item * {
 }
 
 
-/* ===== 3.0.0-alpha198 mobile library polish ===== */
+/* ===== 3.0.0-alpha199 mobile library polish ===== */
 body.measurement-page #jobsScreen .jobs-action-short {
   display: none;
 }

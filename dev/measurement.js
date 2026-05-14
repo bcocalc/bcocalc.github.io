@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha198';
+const BUILD_VERSION = '3.0.0-alpha199';
 
 (function(){
 
@@ -142,7 +142,7 @@ window.tapCalcNormalizeMachineType = normalizeMachineType;
 window.tapCalcSetMachineTypeValue = setMachineTypeValue;
 window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
 
-/* ===== 3.0.0-alpha198 mobile workflow/tools interaction guard ===== */
+/* ===== 3.0.0-alpha199 mobile workflow/tools interaction guard ===== */
 (function(){
   let lastHandledKey = '';
   let lastHandledAt = 0;
@@ -868,7 +868,7 @@ const referenceLibraryItems = [
   { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
   { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
   { id: 'plant600', group: 'Field Reference', label: '600# Plant Series', description: 'Higher class flange reference', keywords: '600 plant flange jack bolt packing wrench' },
-  { id: 'gaskettorque', group: 'Field Reference', label: 'Gasket Torque', description: 'Garlock RF torque by class, size, and gasket type', keywords: 'garlock gasket torque raised face flange flexseal edge kammprofile cmg jacketed 150 300 400 600' },
+  { id: 'gaskettorque', group: 'Field Reference', label: 'CMG / Gasket Torque', description: 'Starred CMG / Graphonic RF gasket torque lookup', keywords: 'garlock gasket torque raised face flange cmg graphonic starred 150 300 400 600' },
   { id: 'garlock600', group: 'Field Reference', label: 'Graphonic 600# Torque', description: 'Garlock preferred and minimum torque lookup', keywords: 'garlock graphonic 600 torque gasket stress preferred minimum' }
 ];
 
@@ -1045,8 +1045,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha198';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha198';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha199';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha199';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2462,7 +2462,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha198', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha199', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6601,7 +6601,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha198';
+const TC63_VERSION = '3.0.0-alpha199';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6847,7 +6847,7 @@ const TC63_VERSION = '3.0.0-alpha198';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha198';
+const VERSION = '3.0.0-alpha199';
 
   function tc65GetJobs() {
     try {
@@ -10069,7 +10069,7 @@ const VERSION = '3.0.0-alpha198';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha198';
+const VERSION = '3.0.0-alpha199';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11777,7 +11777,7 @@ const VERSION = '3.0.0-alpha198';
   window.tapCalcSetWorkflowStage = setWorkflowStage;
 })();
 
-/* ===== 3.0.0-alpha198 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha199 inline workflow job setup ===== */
 (function(){
   const fieldPairs = [
     ['workflowJobClient', 'jobClient'],
@@ -11934,7 +11934,7 @@ const VERSION = '3.0.0-alpha198';
   window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
 })();
 
-/* ===== 3.0.0-alpha198 workflow operation manager mirror ===== */
+/* ===== 3.0.0-alpha199 workflow operation manager mirror ===== */
 (function(){
   const SOURCE = {
     select: 'jobOperationSelect',
@@ -12138,7 +12138,7 @@ const VERSION = '3.0.0-alpha198';
   window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
 })();
 
-/* ===== 3.0.0-alpha198 inline workflow BCO/ETA tools ===== */
+/* ===== 3.0.0-alpha199 inline workflow BCO/ETA tools ===== */
 (function(){
   const fieldPairs = [
     ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
@@ -12319,7 +12319,7 @@ const VERSION = '3.0.0-alpha198';
   window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
 })();
 
-/* ===== 3.0.0-alpha198 workflow save actions ===== */
+/* ===== 3.0.0-alpha199 workflow save actions ===== */
 (function(){
   let savingWorkflowJob = false;
 
@@ -12442,7 +12442,7 @@ const VERSION = '3.0.0-alpha198';
   window.tapCalcSaveWorkflowJob = saveWorkflowJob;
 })();
 
-/* ===== 3.0.0-alpha198 workflow draft recovery ===== */
+/* ===== 3.0.0-alpha199 workflow draft recovery ===== */
 (function(){
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
   const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
@@ -12602,7 +12602,7 @@ const VERSION = '3.0.0-alpha198';
   window.tapCalcUpdateDraftStatus = updateDraftStatus;
 })();
 
-/* ===== 3.0.0-alpha198 workflow save state indicators ===== */
+/* ===== 3.0.0-alpha199 workflow save state indicators ===== */
 (function(){
   const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
   const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
@@ -12966,7 +12966,7 @@ const VERSION = '3.0.0-alpha198';
   }, { passive:true });
 })();
 
-/* ===== 3.0.0-alpha198 preserve multi-operation bundles on load ===== */
+/* ===== 3.0.0-alpha199 preserve multi-operation bundles on load ===== */
 (function(){
   if (window.__tapcalcalpha162BundleLoadReady) return;
   window.__tapcalcalpha162BundleLoadReady = true;
@@ -13426,15 +13426,11 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
 })();
 
 
-/* ===== 3.0.0-alpha198 gasket torque reference ===== */
+/* ===== 3.0.0-alpha199 gasket torque reference ===== */
 (function(){
   const CE = 'Contact Engineering';
   const GASKET_TORQUE_TYPES = [
-    { key: 'flexseal', label: 'FLEXSEAL' },
-    { key: 'edge', label: 'EDGE' },
-    { key: 'kammprofile', label: 'Kammprofile' },
-    { key: 'cmg', label: 'CMG' },
-    { key: 'jacketed', label: 'Jacketed Gasket' }
+    { key: 'cmg', label: 'CMG / Graphonic *', standard: true }
   ];
   const RAW_GASKET_TORQUE_DATA = {
     '150': [
@@ -13547,7 +13543,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   }
 
   function gasketTorqueType() {
-    const key = gasketTorqueEl('gasketTorqueTypeSelect')?.value || 'flexseal';
+    const key = gasketTorqueEl('gasketTorqueTypeSelect')?.value || 'cmg';
     return GASKET_TORQUE_TYPES.find((type) => type.key === key) || GASKET_TORQUE_TYPES[0];
   }
 
@@ -13565,7 +13561,8 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   }
 
   function getGasketTorqueNote(value, type) {
-    if (value === CE) return `${type.label} torque is listed as Contact Engineering for this flange class.`;
+    if (value === CE) return `${type.label} is marked Contact Engineering for this flange class.`;
+    if (type.standard) return `${type.label} starred shop style; torque per bolt.`;
     return `${type.label} torque per bolt.`;
   }
 
@@ -13588,7 +13585,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
       if (!query) return true;
       const value = row[type.key];
       const torqueText = Array.isArray(value) ? value.join(' ') : value;
-      return `${row.flangeClass} ${row.size} ${row.bolts} ${row.boltSize} ${torqueText} ${type.label} ${row.source}`.toLowerCase().includes(query);
+      return `${row.flangeClass} ${row.size} ${row.bolts} ${row.boltSize} ${torqueText} ${type.label} starred graphonic shop style ${row.source}`.toLowerCase().includes(query);
     });
     body.innerHTML = rows.map((row) => {
       const torque = row[type.key];
@@ -13614,7 +13611,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     const note = gasketTorqueEl('gasketTorqueNote');
     if (note) {
       note.textContent = torque === CE
-        ? `${type.label} values for ${gasketTorqueClass()}# class say Contact Engineering. Use another listed gasket type or confirm with engineering before using CMG.`
+        ? `${type.label} is the starred shop style, but ${gasketTorqueClass()}# class says Contact Engineering. Confirm before using CMG / Graphonic torque here.`
         : `${gasketTorqueClass()}# RF, ${row.size}" pipe, ${type.label}: minimum ${formatGasketTorque(torque, 'min')} and preferred ${formatGasketTorque(torque, 'preferred')} per bolt.`;
       note.dataset.state = torque === CE ? 'warn' : 'ok';
     }
@@ -13670,7 +13667,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
 })();
 
-/* ===== 3.0.0-alpha198 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha199 U-wire placement reference ===== */
 (function(){
   const WIRE_ROWS = 12;
   const WIRE_SIZES = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 36, 42, 48, 54, 60, 72];
