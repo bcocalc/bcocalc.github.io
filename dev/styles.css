@@ -6210,7 +6210,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
   box-shadow:0 0 0 2px rgba(110,160,255,.28), 0 12px 26px rgba(10,25,48,.36) !important;
 }
 
-/* ===== 3.0.0-alpha199 workflow readiness guide ===== */
+/* ===== 3.0.0-alpha200 workflow readiness guide ===== */
 .workflow-readiness-panel{
   display:grid;
   grid-template-columns:minmax(120px,.45fr) minmax(260px,1fr) minmax(190px,.65fr);
@@ -6316,7 +6316,7 @@ body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"]
 :root[data-theme="light"] body.measurement-page .variant-inline-note,:root[data-theme="light"] body.measurement-page .formula-card small{color:#4c6077;}
 @media (max-width: 768px){.line-stop-variant-head{align-items:stretch;}.variant-chip-row{width:100%;}.variant-chip{flex:1 1 120px;text-align:center;}}
 
-/* ===== 3.0.0-alpha199 reference buildout ===== */
+/* ===== 3.0.0-alpha200 reference buildout ===== */
 .machine-reference-grid,
 .checklist-reference-grid {
   grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
@@ -6712,7 +6712,7 @@ body.light #machineReferenceSearchInput {
   }
 }
 
-/* ===== 3.0.0-alpha199 reference library picker ===== */
+/* ===== 3.0.0-alpha200 reference library picker ===== */
 .visually-hidden {
   clip: rect(0 0 0 0);
   border: 0;
@@ -7058,7 +7058,7 @@ body.light .reference-library-option.active {
   }
 }
 
-/* ===== 3.0.0-alpha199 pivot head setup reference ===== */
+/* ===== 3.0.0-alpha200 pivot head setup reference ===== */
 .pivot-reference-grid {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.85fr);
   align-items: stretch;
@@ -7233,7 +7233,7 @@ body.light #pivotBackingStatus[data-state="danger"] {
   }
 }
 
-/* ===== 3.0.0-alpha199 gasket torque reference ===== */
+/* ===== 3.0.0-alpha200 gasket torque reference ===== */
 .reference-view[data-reference-view="gaskettorque"] .gasket-torque-reference-grid {
   display: block;
 }
@@ -7390,7 +7390,114 @@ body.light .gasket-torque-contact-row td {
   }
 }
 
-/* ===== 3.0.0-alpha199 desktop reference picker row fix ===== */
+/* ===== 3.0.0-alpha200 paper gasket torque reference ===== */
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-reference-grid {
+  display: block;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-summary-card {
+  width: 100%;
+  max-width: none;
+}
+
+.paper-gasket-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-select-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  margin: 0;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-select-row label {
+  margin: 0;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-select-row select {
+  min-width: 0;
+  width: 100%;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 12px;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-summary-grid .summary-label {
+  font-size: 0.72rem;
+  line-height: 1.2;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-summary-grid .summary-value {
+  font-size: 1.04rem;
+  line-height: 1.16;
+}
+
+.paper-gasket-note {
+  background: rgba(42, 157, 143, 0.14);
+  border: 1px solid rgba(42, 157, 143, 0.46);
+  border-radius: 10px;
+  color: #c9f8ef;
+  font-weight: 800;
+  line-height: 1.42;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-table-wrap {
+  width: 100%;
+  overflow: auto;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-table {
+  width: 100%;
+  min-width: 1180px;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-table th,
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-table td {
+  white-space: nowrap;
+}
+
+.reference-view[data-reference-view="papergaskets"] .paper-gasket-selected-row td {
+  background: rgba(59, 130, 246, 0.18);
+}
+
+:root[data-theme="light"] body.measurement-page .paper-gasket-note,
+body.light .paper-gasket-note {
+  background: #e9f8f4;
+  border-color: #5ac9b9;
+  color: #07564d;
+}
+
+:root[data-theme="light"] body.measurement-page .reference-view[data-reference-view="papergaskets"] .paper-gasket-selected-row td,
+body.light .reference-view[data-reference-view="papergaskets"] .paper-gasket-selected-row td {
+  background: #e8f1ff;
+}
+
+@media (max-width: 900px) {
+  .paper-gasket-controls {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 540px) {
+  .reference-view[data-reference-view="papergaskets"] .paper-gasket-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reference-view[data-reference-view="papergaskets"] .paper-gasket-table {
+    min-width: 1040px;
+  }
+}
+
+/* ===== 3.0.0-alpha200 desktop reference picker row fix ===== */
 body.measurement-page .reference-library-options {
   align-items: stretch;
 }
@@ -7432,7 +7539,7 @@ body.measurement-page .reference-library-option span {
   }
 }
 
-/* ===== 3.0.0-alpha199 inline workflow job setup ===== */
+/* ===== 3.0.0-alpha200 inline workflow job setup ===== */
 body.measurement-page .workflow-setup-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7557,7 +7664,7 @@ body.light.measurement-page .workflow-setup-field textarea {
   }
 }
 
-/* ===== 3.0.0-alpha199 workflow current-step emphasis ===== */
+/* ===== 3.0.0-alpha200 workflow current-step emphasis ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="current"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="current"],
@@ -7637,7 +7744,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   color: #886111 !important;
 }
 
-/* ===== 3.0.0-alpha199 workflow-only job operations ===== */
+/* ===== 3.0.0-alpha200 workflow-only job operations ===== */
 body.measurement-page .workflow-operations-card {
   display: grid;
   gap: 13px;
@@ -7842,7 +7949,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][da
   }
 }
 
-/* ===== 3.0.0-alpha199 neutral upcoming workflow steps ===== */
+/* ===== 3.0.0-alpha200 neutral upcoming workflow steps ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="ready"],
 body.measurement-page .workflow-stage-chip[data-stage-state="upcoming"][data-stage-progress="in-progress"],
@@ -7897,7 +8004,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="upcoming"] em
   color: #173657 !important;
 }
 
-/* ===== 3.0.0-alpha199 incomplete workflow steps need attention ===== */
+/* ===== 3.0.0-alpha200 incomplete workflow steps need attention ===== */
 body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 :root[data-theme="dark"] body.measurement-page .workflow-stage-chip[data-stage-state="incomplete"],
 body.dark-mode.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] {
@@ -7936,7 +8043,7 @@ body.light.measurement-page .workflow-stage-chip[data-stage-state="incomplete"] 
   color: #6c1721 !important;
 }
 
-/* ===== 3.0.0-alpha199 workflow guards and draft recovery ===== */
+/* ===== 3.0.0-alpha200 workflow guards and draft recovery ===== */
 body.measurement-page .workflow-draft-bar {
   flex: 1 1 100%;
   display: flex;
@@ -8149,7 +8256,7 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha199 compact mobile workflow intro ===== */
+/* ===== 3.0.0-alpha200 compact mobile workflow intro ===== */
 @media (max-width: 720px) {
   body.measurement-page .card-screen-intro {
     display: grid;
@@ -8361,7 +8468,7 @@ body.light.measurement-page .workflow-gate-banner[data-state="blocked"] span {
   }
 }
 
-/* ===== 3.0.0-alpha199 review/save polish ===== */
+/* ===== 3.0.0-alpha200 review/save polish ===== */
 body.measurement-page .workflow-review-status-card {
   display: flex;
   align-items: center;
@@ -8622,7 +8729,7 @@ body.light.measurement-page .workflow-review-operation-item span {
   }
 }
 
-/* ===== 3.0.0-alpha199 resume/save state and operation notes ===== */
+/* ===== 3.0.0-alpha200 resume/save state and operation notes ===== */
 body.measurement-page .home-draft-resume-card {
   display: flex;
   align-items: center;
@@ -8816,7 +8923,7 @@ body.light.measurement-page .workflow-review-operation-note {
   }
 }
 
-/* ===== 3.0.0-alpha199 U-wire placement reference ===== */
+/* ===== 3.0.0-alpha200 U-wire placement reference ===== */
 body.measurement-page .uwire-reference-grid {
   grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
   gap: 14px;
@@ -9035,7 +9142,7 @@ body.light.measurement-page .uwire-status-item[data-state="bad"] strong {
 }
 
 
-/* ===== 3.0.0-alpha199 mobile library visibility and wrapping repair ===== */
+/* ===== 3.0.0-alpha200 mobile library visibility and wrapping repair ===== */
 body.measurement-page #jobsScreen .library-lane.active {
   visibility: visible !important;
   opacity: 1 !important;
@@ -9197,7 +9304,7 @@ body.measurement-page #jobsScreen .jobs-list-item * {
 }
 
 
-/* ===== 3.0.0-alpha199 mobile library polish ===== */
+/* ===== 3.0.0-alpha200 mobile library polish ===== */
 body.measurement-page #jobsScreen .jobs-action-short {
   display: none;
 }
