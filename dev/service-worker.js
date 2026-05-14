@@ -1,18 +1,17 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha191';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha192';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha191",
-  "./measurement.js?v=3.0.0-alpha191",
-  "./pdf.mjs?v=3.0.0-alpha191",
-  "./pdf.worker.mjs?v=3.0.0-alpha191",
-  "./stackup-data.js?v=3.0.0-alpha191",
+  "./styles.css?v=3.0.0-alpha192",
+  "./measurement.js?v=3.0.0-alpha192",
+  "./pdf.mjs?v=3.0.0-alpha192",
+  "./pdf.worker.mjs?v=3.0.0-alpha192",
+  "./stackup-data.js?v=3.0.0-alpha192",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha191",
-  "./team-logo.png",
-  "./reference/uwire-pilot-cutter.png?v=3.0.0-alpha191"
+  "./firebase-config.js?v=3.0.0-alpha192",
+  "./team-logo.png"
 ];
 
 self.addEventListener("install", (event) => {
