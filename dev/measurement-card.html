@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha199">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha200">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha199 - 2026-05-14</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha200 - 2026-05-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha199 - 2026-05-14</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha200 - 2026-05-14</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -996,8 +996,8 @@
           <option value="fieldcheck">Field Checklists</option>
           <option value="plant150">150# Plant Series</option>
           <option value="plant600">600# Plant Series</option>
-          <option value="gaskettorque">CMG / Gasket Torque</option>
-          <option value="garlock600">Graphonic 600# Torque</option>
+          <option value="gaskettorque">Graphonic</option>
+          <option value="papergaskets">Paper Gaskets</option>
         </optgroup>
       </select>
     </div>
@@ -1596,67 +1596,9 @@
         <h4 class="reference-table-heading">Sealtite 1 Jackbolt Measurements</h4>
         <div class="glossary-table-wrap plant-jackbolt-table-wrap"><table class="glossary-table"><thead><tr><th>Flange Size</th><th>Measurement Fully Set</th><th>Measurement Fully Retracted</th><th>Turns Fully Set</th><th>Turns Fully Retracted</th></tr></thead><tbody id="plant600SealtiteBody"></tbody></table></div>
       </div>
-      <div class="reference-view" data-reference-view="garlock600">
-        <h3 class="reference-subheading">Graphonic 600# Torque</h3>
-        <p class="reference-copy">Garlock GRAPHONIC gasket torque reference for ASME B16.5 Class 600# flanges, built into TapCalc so you can filter by pipe size without opening the sheet.</p>
-        <div class="reference-grid plant-reference-grid torque-reference-grid">
-          <div class="reference-card plant-summary-card torque-summary-card">
-            <h4>600# Torque Quick Lookup</h4>
-            <div class="converter-inline plant-select-row torque-select-row">
-              <label for="garlock600SizeSelect">Pipe Size</label>
-              <select id="garlock600SizeSelect">
-                <option value="1/2">1/2</option>
-                <option value="3/4">3/4</option>
-                <option value="1">1</option>
-                <option value="1-1/4">1-1/4</option>
-                <option value="1-1/2">1-1/2</option>
-                <option value="2">2</option>
-                <option value="2-1/2">2-1/2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="8">8</option>
-                <option value="10">10</option>
-                <option value="12">12</option>
-                <option value="14">14</option>
-                <option value="16">16</option>
-                <option value="18">18</option>
-                <option value="20">20</option>
-                <option value="24">24</option>
-            </select>
-            </div>
-            <div class="bolting-summary-grid torque-summary-grid">
-              <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="garlock600BoltCount" class="summary-value">?</span></div>
-              <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="garlock600BoltSize" class="summary-value">?</span></div>
-              <div class="bolting-summary-item"><span class="summary-label">Min Torque / Bolt</span><span id="garlock600MinTorque" class="summary-value">?</span></div>
-              <div class="bolting-summary-item"><span class="summary-label">Preferred Torque / Bolt</span><span id="garlock600PreferredTorque" class="summary-value">?</span></div>
-              <div class="bolting-summary-item"><span class="summary-label">Torque @ 60 ksi</span><span id="garlock600Torque60" class="summary-value">?</span></div>
-            </div>
-            <div class="reference-chip-row torque-chip-row">
-              <span class="reference-chip"><strong id="garlock600StressValue">?</strong> max gasket stress</span>
-              <span class="reference-chip"><strong id="garlock600ContactArea">?</strong> contact area</span>
-            </div>
-          </div>
-        </div>
-        <div class="reference-search-row plant-search-row torque-search-row">
-          <label for="garlock600SearchInput">Filter torque chart</label>
-          <input id="garlock600SearchInput" type="text" placeholder="Search size, torque, bolt count, or bolt size">
-        </div>
-        <div class="glossary-table-wrap bolting-table-wrap torque-table-wrap">
-          <table class="glossary-table bolting-table torque-table">
-            <thead>
-              <tr><th>Pipe Size</th><th>Bolts</th><th>Bolt Size</th><th>Torque @ 60 ksi</th><th>Min Torque</th><th>Preferred Torque</th><th>Max Stress</th><th>Contact Area</th></tr>
-            </thead>
-            <tbody id="garlock600Body"></tbody>
-          </table>
-        </div>
-        <p class="reference-footnote">Source: Garlock Bolt Torque Values for GRAPHONIC Gaskets in ASME B16.5 Class 600# Flanges. Built as structured data, not just an image paste-in.</p>
-      </div>
-
       <div class="reference-view" data-reference-view="gaskettorque">
-        <h3 class="reference-subheading">CMG / Gasket Torque</h3>
-        <p class="reference-copy">Garlock raised-face flange torque lookup from the uploaded scan. This tool only shows the starred shop style: CMG / Graphonic.</p>
+        <h3 class="reference-subheading">Graphonic</h3>
+        <p class="reference-copy">Garlock raised-face flange torque lookup from the uploaded scan and engineering 600# Graphonic table.</p>
         <div class="reference-grid plant-reference-grid gasket-torque-reference-grid">
           <div class="reference-card plant-summary-card gasket-torque-summary-card">
             <h4>Raised Face Torque Lookup</h4>
@@ -1675,10 +1617,10 @@
                 <select id="gasketTorqueSizeSelect"></select>
               </div>
               <select id="gasketTorqueTypeSelect" hidden aria-label="Gasket style">
-                <option value="cmg" selected>CMG / Graphonic *</option>
+                <option value="cmg" selected>Graphonic *</option>
               </select>
             </div>
-            <p class="gasket-torque-style-key"><strong>* CMG / Graphonic</strong> is the starred gasket style used by the team.</p>
+            <p class="gasket-torque-style-key"><strong>* Graphonic</strong> is the starred gasket style used by the team. 600# values use the engineering Graphonic table.</p>
             <div class="bolting-summary-grid gasket-torque-summary-grid">
               <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="gasketTorqueBoltCount" class="summary-value">?</span></div>
               <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="gasketTorqueBoltSize" class="summary-value">?</span></div>
@@ -1701,7 +1643,54 @@
             <tbody id="gasketTorqueBody"></tbody>
           </table>
         </div>
-        <p class="reference-footnote">Source: uploaded Scan.pdf Garlock Torque Tables pages 2 and 3. Star mark added to CMG / Graphonic because that is the shop style called out from the paperwork. Use the job gasket manufacturer's latest instructions when they differ from this field reference.</p>
+        <p class="reference-footnote">Source: uploaded Scan.pdf Garlock Torque Tables pages 2 and 3, plus the engineering 600# Graphonic table. Use the job gasket manufacturer's latest instructions when they differ from this field reference.</p>
+      </div>
+
+      <div class="reference-view" data-reference-view="papergaskets">
+        <h3 class="reference-subheading">Paper Gaskets</h3>
+        <p class="reference-copy">Garlock .125&quot; compressed sheet and GYLON ring gasket torque tables recreated from Scan.pdf pages 10-14.</p>
+        <div class="reference-grid plant-reference-grid paper-gasket-reference-grid">
+          <div class="reference-card plant-summary-card paper-gasket-summary-card">
+            <h4>Paper Gasket Quick Lookup</h4>
+            <div class="paper-gasket-controls">
+              <div class="converter-inline plant-select-row paper-gasket-select-row">
+                <label for="paperGasketClassSelect">Flange Class</label>
+                <select id="paperGasketClassSelect">
+                  <option value="150">150</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                  <option value="600">600</option>
+                  <option value="900">900</option>
+                </select>
+              </div>
+              <div class="converter-inline plant-select-row paper-gasket-select-row">
+                <label for="paperGasketSizeSelect">Pipe Size</label>
+                <select id="paperGasketSizeSelect"></select>
+              </div>
+            </div>
+            <div class="bolting-summary-grid paper-gasket-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="paperGasketBoltCount" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="paperGasketBoltSize" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Min Torque / Bolt</span><span id="paperGasketMinTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Preferred / Bolt</span><span id="paperGasketPreferredTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Internal Pressure</span><span id="paperGasketPressure" class="summary-value">?</span></div>
+            </div>
+            <p id="paperGasketNote" class="paper-gasket-note">Values are ft-lbs per bolt for Garlock paper gasket charts.</p>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row paper-gasket-search-row">
+          <label for="paperGasketSearchInput">Filter paper gasket table</label>
+          <input id="paperGasketSearchInput" type="text" placeholder="Search size, pressure, bolt count, stress, or torque">
+        </div>
+        <div class="glossary-table-wrap bolting-table-wrap paper-gasket-table-wrap">
+          <table class="glossary-table bolting-table paper-gasket-table">
+            <thead>
+              <tr><th>Pipe Size</th><th>RF ID</th><th>RF OD</th><th>Area</th><th>Bolts</th><th>Bolt Size</th><th>60 ksi Torque</th><th>Comp Force</th><th>Max Stress Avail.</th><th>Pressure</th><th>Min Stress</th><th>Min Torque</th><th>Max Rec/Avail Stress</th><th>Preferred Torque</th></tr>
+            </thead>
+            <tbody id="paperGasketBody"></tbody>
+          </table>
+        </div>
+        <p class="reference-footnote">Source: uploaded Scan.pdf pages 10-14. Values are based on raised-face metallic flanges. For lined and/or non-metallic raised-face flanges, consult the flange manufacturer to confirm suitability. Multi-Swell 3760 maximum recommended gasket stress is 10,000 psi.</p>
       </div>
 
     </div>
@@ -1856,9 +1845,9 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha199"></script>
-<script src="stackup-data.js?v=3.0.0-alpha199"></script>
-<script src="measurement.js?v=3.0.0-alpha199"></script>
+<script src="firebase-config.js?v=3.0.0-alpha200"></script>
+<script src="stackup-data.js?v=3.0.0-alpha200"></script>
+<script src="measurement.js?v=3.0.0-alpha200"></script>
   </section>
 </body>
 </html>
