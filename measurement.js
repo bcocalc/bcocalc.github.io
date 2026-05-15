@@ -1,3 +1,4 @@
+const BUILD_VERSION = '3.0.0-alpha200';
 
 (function(){
 
@@ -9,7 +10,7 @@
   const btn = document.createElement('button');
   btn.id = 'themeToggle';
   btn.className = 'theme-btn';
-  btn.innerHTML = '🌓';
+  btn.type = 'button';
   btn.style.position = 'fixed';
   btn.style.top = '16px';
   btn.style.right = '16px';
@@ -17,13 +18,217 @@
 
   document.body.appendChild(btn);
 
+  function syncThemeState(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    document.body.classList.toggle('dark', theme === 'dark');
+    document.body.classList.toggle('light', theme === 'light');
+    btn.textContent = theme === 'dark' ? 'Light' : 'Dark';
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode');
+    btn.title = theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode';
+  }
+
   const current = localStorage.getItem('theme') || 'dark';
-  document.documentElement.setAttribute('data-theme', current);
+  syncThemeState(current);
 
   btn.addEventListener('click', () => {
     const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-    document.documentElement.setAttribute('data-theme', t);
+    syncThemeState(t);
     localStorage.setItem('theme', t);
+  });
+})();
+
+const TAP_MACHINE_OPTIONS = [
+  '412',
+  '360 / 152',
+  '660 / 760',
+  '1200-M120',
+  'IP-100',
+  'IP-152',
+  'T-101',
+  'HTM 360',
+  'HTM 660',
+  'HTM 760',
+  'HTM 1200',
+  'HTM M120',
+  'HTM 18 T101',
+  'HTM 24 T101',
+  'HTM 28 T101',
+  'HTM C1-25',
+  'HTM C1-36',
+  'IP 304 / 406 / 508',
+  'IP 914XL',
+  'IPSCO IP100'
+];
+
+function machineKey(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function normalizeMachineType(value) {
+  const raw = String(value ?? '').trim().replace(/\s+/g, ' ');
+  if (!raw) return '';
+  const key = machineKey(raw);
+  const exact = TAP_MACHINE_OPTIONS.find(option => machineKey(option) === key);
+  if (exact) return exact;
+  const aliases = new Map([
+    ['360152', '360 / 152'],
+    ['152360', '360 / 152'],
+    ['660760', '660 / 760'],
+    ['760660', '660 / 760'],
+    ['1200m120', '1200-M120'],
+    ['m1201200', '1200-M120'],
+    ['tap412', '412'],
+    ['htm412', '412'],
+    ['htm360', '360 / 152'],
+    ['htm660', '660 / 760'],
+    ['htm760', '660 / 760'],
+    ['htm1200', '1200-M120'],
+    ['htmm120', '1200-M120'],
+    ['ip100', 'IP-100'],
+    ['ip0100', 'IP-100'],
+    ['ip152', 'IP-152'],
+    ['ip0152', 'IP-152'],
+    ['t101', 'T-101'],
+    ['ip304406508', 'IP 304 / 406 / 508'],
+    ['ip304406510', 'IP 304 / 406 / 508'],
+    ['ip914xlnewmanual', 'IP 914XL'],
+    ['ipscoip100manual', 'IPSCO IP100']
+  ]);
+  if (aliases.has(key)) return aliases.get(key);
+  if (key === '360' || key === '152') return '360 / 152';
+  if (key === '660' || key === '760') return '660 / 760';
+  if (key === '1200' || key === 'm120') return '1200-M120';
+  return raw;
+}
+
+function ensureMachineTypeOption(value) {
+  const el = document.getElementById('machineType');
+  const normalized = normalizeMachineType(value);
+  if (!el || el.tagName !== 'SELECT' || !normalized) return normalized;
+  const exists = Array.from(el.options || []).some(option => option.value === normalized);
+  if (!exists) {
+    const option = document.createElement('option');
+    option.value = normalized;
+    option.textContent = normalized;
+    el.appendChild(option);
+  }
+  return normalized;
+}
+
+function setMachineTypeValue(value, options = {}) {
+  const el = document.getElementById('machineType');
+  if (!el) return false;
+  const normalized = normalizeMachineType(value);
+  if (el.tagName === 'SELECT') ensureMachineTypeOption(normalized);
+  if (el.type === 'checkbox') el.checked = !!normalized;
+  else el.value = normalized;
+  if (options.dispatch !== false) {
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+  return true;
+}
+
+function deriveEtaMachineFromMachine(value) {
+  const key = machineKey(value);
+  if (key.includes('360') || key.includes('152')) return '360';
+  if (key.includes('660') || key.includes('760')) return '660';
+  if (key.includes('1200') || key.includes('m120')) return '1200';
+  return '';
+}
+
+window.tapCalcMachineOptions = TAP_MACHINE_OPTIONS;
+window.tapCalcNormalizeMachineType = normalizeMachineType;
+window.tapCalcSetMachineTypeValue = setMachineTypeValue;
+window.tapCalcDeriveEtaMachine = deriveEtaMachineFromMachine;
+
+/* ===== 3.0.0-alpha200 mobile workflow/tools interaction guard ===== */
+(function(){
+  let lastHandledKey = '';
+  let lastHandledAt = 0;
+
+  function touchHandledRecently(key, eventType) {
+    const now = Date.now();
+    if (eventType === 'click' && lastHandledKey === key && (now - lastHandledAt) < 450) return true;
+    if (eventType !== 'click') {
+      lastHandledKey = key;
+      lastHandledAt = now;
+    }
+    return false;
+  }
+
+  function stopEvent(event) {
+    try { if (event.cancelable) event.preventDefault(); } catch {}
+    try { event.stopPropagation(); } catch {}
+    try { if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation(); } catch {}
+  }
+
+  function handleInteractiveTap(target) {
+    if (!target || target.disabled) return false;
+    if (target.matches('.calc-submode-btn[data-mode]')) {
+      try { window.tapCalcSetScreen?.('calc'); } catch {}
+      try { window.setMode?.(target.dataset.mode || 'bco'); } catch {}
+      return true;
+    }
+    if (target.matches('.workflow-card[data-workflow-target], .workflow-submode-btn[data-mode]')) {
+      const nextMode = target.dataset.workflowTarget || target.dataset.mode || 'hotTap';
+      try { window.tapCalcSetScreen?.('card'); } catch {}
+      try { window.tapCalcSetWorkflowStage?.(nextMode); } catch {}
+      try { window.setMode?.(nextMode); } catch {}
+      return true;
+    }
+    if (target.matches('[data-workflow-stage]')) {
+      try { window.tapCalcSetScreen?.('card'); } catch {}
+      try { window.tapCalcSetWorkflowStage?.(target.dataset.workflowStage || 'setup'); } catch {}
+      return true;
+    }
+    if (target.matches('[data-workflow-setup-next]')) {
+      try { window.tapCalcSetScreen?.('card'); } catch {}
+      try { window.tapCalcWorkflowGo?.('pipe'); } catch {}
+      return true;
+    }
+    switch (target.id) {
+      case 'workflowPrevBtn':
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowJump?.(-1); } catch {}
+        return true;
+      case 'workflowNextBtn':
+      case 'workflowNextPrimaryBtn':
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowJump?.(1); } catch {}
+        return true;
+      case 'workflowSetupNextBtn':
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowGo?.('pipe'); } catch {}
+        return true;
+      case 'workflowPipeNextBtn': {
+        const nextMode = String(window.getActiveWorkflowMode?.() || 'hotTap');
+        try { window.tapCalcSetScreen?.('card'); } catch {}
+        try { window.tapCalcWorkflowGo?.(nextMode); } catch {}
+        return true;
+      }
+      default:
+        return false;
+    }
+  }
+
+  function interactionHandler(event) {
+    const target = event.target && event.target.closest
+      ? event.target.closest('.calc-submode-btn[data-mode], .workflow-submode-btn[data-mode], .workflow-card[data-workflow-target], [data-workflow-stage], [data-workflow-setup-next], #workflowPrevBtn, #workflowNextBtn, #workflowSetupNextBtn, #workflowPipeNextBtn, #workflowNextPrimaryBtn')
+      : null;
+    if (!target) return;
+    const key = target.id || target.dataset.mode || target.dataset.workflowTarget || target.dataset.workflowStage || '';
+    if (touchHandledRecently(key, event.type)) {
+      stopEvent(event);
+      return false;
+    }
+    if (!handleInteractiveTap(target)) return;
+    stopEvent(event);
+    return false;
+  }
+
+  ['pointerdown', 'touchstart', 'click'].forEach((eventName) => {
+    document.addEventListener(eventName, interactionHandler, true);
   });
 })();
 // ===== END THEME TOGGLE FACTORY =====
@@ -39,8 +244,8 @@ function getBcoData() {
 }
 
 function getGeometry(data) {
-  const pipeOD = parseFloat(data?.pipeOD) || parseFloat(localStorage.getItem("pipeOD")) || 0;
-  const pipeID = parseFloat(data?.pipeID) || parseFloat(localStorage.getItem("pipeID")) || 0;
+  const pipeOD = parseFloat(data?.pipeOD) || 0;
+  const pipeID = parseFloat(data?.pipeID) || 0;
   const wall = pipeOD && pipeID ? ((pipeOD - pipeID) / 2) : 0;
   return { pipeOD, pipeID, wall };
 }
@@ -62,46 +267,108 @@ function refreshBcoState() {
 refreshBcoState();
 
 // ===== MODE SWITCHING =====
-const modeButtons = Array.from(document.querySelectorAll('.mode-btn[data-mode]'));
+const WORKFLOW_MODE_KEY = 'measurementCardActiveModeV1';
+const CALC_MODE_KEY = 'measurementCardCalcModeV1';
+const CALC_SCREEN_MODES = new Set(['bco', 'eta']);
+const WORKFLOW_SCREEN_MODES = new Set(['hotTap', 'lineStop', 'completionPlug']);
+const calcModeButtons = Array.from(document.querySelectorAll('.calc-submode-btn[data-mode]'));
+const workflowModeButtons = Array.from(document.querySelectorAll('.workflow-submode-btn[data-mode]'));
 const panels = {
   bco: document.getElementById('bcoPanel'),
   hotTap: document.getElementById('hotTapPanel'),
+  htp: document.getElementById('htpPanel'),
   lineStop: document.getElementById('lineStopPanel'),
   completionPlug: document.getElementById('completionPlugPanel'),
-  eta: document.getElementById('etaPanel'),
-  glossary: document.getElementById('glossaryPanel'),
-  jobs: document.getElementById('jobsPanel')
+  eta: document.getElementById('etaPanel')
 };
 
+function normalizeMode(mode) {
+  if (mode === 'htp') return 'hotTap';
+  return String(mode || '').trim();
+}
+
+function getStoredCalcMode() {
+  try {
+    const savedMode = normalizeMode(localStorage.getItem(CALC_MODE_KEY));
+    return savedMode === 'eta' ? 'eta' : 'bco';
+  } catch {
+    return 'bco';
+  }
+}
+
+function getStoredWorkflowMode() {
+  try {
+    const savedMode = normalizeMode(localStorage.getItem(WORKFLOW_MODE_KEY));
+    return WORKFLOW_SCREEN_MODES.has(savedMode) ? savedMode : 'hotTap';
+  } catch {
+    return 'hotTap';
+  }
+}
+
+function syncCalcModeButtons(mode) {
+  calcModeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
+}
+
+function syncWorkflowModeButtons(mode) {
+  workflowModeButtons.forEach((btn) => btn.classList.toggle('active', btn.dataset.mode === mode));
+}
+
+function getActiveCalcMode() {
+  return calcModeButtons.find((btn) => btn.classList.contains('active'))?.dataset.mode || getStoredCalcMode();
+}
+
+function getActiveWorkflowMode() {
+  return workflowModeButtons.find((btn) => btn.classList.contains('active'))?.dataset.mode || getStoredWorkflowMode();
+}
+
+function getActiveWorkflowLabel() {
+  return workflowModeButtons.find((btn) => btn.classList.contains('active'))?.textContent?.trim() || 'Hot Tap';
+}
+
 function setMode(mode) {
-  modeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+  const nextMode = normalizeMode(mode);
+  if (!panels[nextMode]) return;
+  if (CALC_SCREEN_MODES.has(nextMode)) syncCalcModeButtons(nextMode);
+  if (WORKFLOW_SCREEN_MODES.has(nextMode)) syncWorkflowModeButtons(nextMode);
   Object.entries(panels).forEach(([key, panel]) => {
     if (!panel) return;
-    panel.classList.toggle('active', key === mode);
+    panel.classList.toggle('active', key === nextMode);
   });
-  if (mode === 'eta') {
+  if (nextMode === 'eta') {
     syncBcoToEta({ force: true });
     updateEtaEstimate();
   }
-  try {
-    localStorage.setItem('measurementCardActiveModeV1', mode);
-  } catch {}
+  if (CALC_SCREEN_MODES.has(nextMode)) {
+    try { localStorage.setItem(CALC_MODE_KEY, nextMode); } catch {}
+  }
+  if (WORKFLOW_SCREEN_MODES.has(nextMode)) {
+    try { localStorage.setItem(WORKFLOW_MODE_KEY, nextMode); } catch {}
+  }
 }
 
-modeButtons.forEach(btn => {
+window.setMode = setMode;
+window.getStoredCalcMode = getStoredCalcMode;
+window.getStoredWorkflowMode = getStoredWorkflowMode;
+window.getActiveCalcMode = getActiveCalcMode;
+window.getActiveWorkflowMode = getActiveWorkflowMode;
+window.getActiveWorkflowLabel = getActiveWorkflowLabel;
+window.normalizeMode = normalizeMode;
+window.CALC_SCREEN_MODES = CALC_SCREEN_MODES;
+window.WORKFLOW_SCREEN_MODES = WORKFLOW_SCREEN_MODES;
+
+calcModeButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     if (btn.disabled) return;
     setMode(btn.dataset.mode);
-    if (typeof persistCurrentJob === 'function') persistCurrentJob();
   });
 });
 
 try {
-  const savedMode = localStorage.getItem('measurementCardActiveModeV1');
-  setMode(savedMode && panels[savedMode] ? savedMode : 'bco');
+  setMode(getStoredCalcMode());
 } catch {
   setMode('bco');
 }
+syncWorkflowModeButtons(getStoredWorkflowMode());
 
 // ===== SUPPORTING GEOMETRY DISPLAY =====
 (function(){
@@ -109,22 +376,25 @@ try {
     const pipeIdEl = document.getElementById("pipeId");
     const wallThkEl = document.getElementById("wallThk");
     const lsWallDisplay = document.getElementById("lsWallDisplay");
+    const hsWallDisplay = document.getElementById("hsWallDisplay");
     const podEl = document.getElementById("pod");
     const lsPodEl = document.getElementById("lsPod");
+    const hsPodEl = document.getElementById("hsPod");
 
     if (podEl && isFinite(geometry.pipeOD) && geometry.pipeOD) podEl.value = geometry.pipeOD.toFixed(4);
     if (lsPodEl && isFinite(geometry.pipeOD) && geometry.pipeOD) lsPodEl.value = geometry.pipeOD.toFixed(4);
+    if (hsPodEl && isFinite(geometry.pipeOD) && geometry.pipeOD) hsPodEl.value = geometry.pipeOD.toFixed(4);
 
     if (!document.getElementById("pipeId") && document.getElementById("mco")) {
       const mcoRow = document.getElementById("mco").closest(".row");
       if (mcoRow) {
         const pipeIdRow = document.createElement("div");
         pipeIdRow.className = "row pipe-support";
-        pipeIdRow.innerHTML = '<label>Pipe I.D.</label><div id="pipeId" class="display-geometry">—</div><span class="from-bco">From BCO Calculator</span>';
+        pipeIdRow.innerHTML = '<label>Pipe I.D.</label><div id="pipeId" class="display-geometry">-</div><span class="from-bco">From BCO Calculator</span>';
 
         const wallRow = document.createElement("div");
         wallRow.className = "row pipe-support";
-        wallRow.innerHTML = '<label>Wall Thickness</label><div id="wallThk" class="display-geometry">—</div><span class="from-bco">From BCO Calculator</span>';
+        wallRow.innerHTML = '<label>Wall Thickness</label><div id="wallThk" class="display-geometry">-</div><span class="from-bco">From BCO Calculator</span>';
 
         mcoRow.after(pipeIdRow);
         pipeIdRow.after(wallRow);
@@ -138,8 +408,10 @@ try {
     if (isFinite(geometry.wall) && geometry.wall) {
       wallThk && (wallThk.textContent = geometry.wall.toFixed(4));
       lsWallDisplay && (lsWallDisplay.textContent = geometry.wall.toFixed(4));
+      hsWallDisplay && (hsWallDisplay.textContent = geometry.wall.toFixed(4));
     } else {
-      lsWallDisplay && (lsWallDisplay.textContent = "—");
+      lsWallDisplay && (lsWallDisplay.textContent = "-");
+      hsWallDisplay && (hsWallDisplay.textContent = "-");
     }
   }
 
@@ -149,7 +421,6 @@ try {
     run();
   }
 })();
-
 
 // ===== BCO TAB =====
 const pipeData = {
@@ -223,8 +494,8 @@ function updateBcoDisplays() {
   const pipeOD = parseFloat(trueOD?.[material]?.[nominal]);
   const pipeID = getMeasurementValue(bcoPipeIdEl);
   const wall = Number.isFinite(pipeOD) && Number.isFinite(pipeID) ? (pipeOD - pipeID) / 2 : NaN;
-  if (bcoTrueOdDisplayEl) bcoTrueOdDisplayEl.textContent = Number.isFinite(pipeOD) ? pipeOD.toFixed(4) : '—';
-  if (bcoWallDisplayEl) bcoWallDisplayEl.textContent = Number.isFinite(wall) ? wall.toFixed(4) : '—';
+  if (bcoTrueOdDisplayEl) bcoTrueOdDisplayEl.textContent = Number.isFinite(pipeOD) ? pipeOD.toFixed(4) : '-';
+  if (bcoWallDisplayEl) bcoWallDisplayEl.textContent = Number.isFinite(wall) ? wall.toFixed(4) : '-';
 }
 
 function updateBcoPipeId() {
@@ -261,16 +532,17 @@ function hydrateBcoInputsFromSavedData() {
 function applyBcoToMeasurementCard() {
   refreshBcoState();
   const pipeOD = Number.isFinite(geometry.pipeOD) ? geometry.pipeOD.toFixed(4) : '';
-  const wall = Number.isFinite(geometry.wall) ? geometry.wall.toFixed(4) : '—';
+  const wall = Number.isFinite(geometry.wall) ? geometry.wall.toFixed(4) : '-';
   if (podEl && pipeOD) podEl.value = pipeOD;
   if (lsPodEl && pipeOD) lsPodEl.value = pipeOD;
   const pipeId = document.getElementById('pipeId');
   const wallThk = document.getElementById('wallThk');
   const lsWallDisplay = document.getElementById('lsWallDisplay');
-  if (pipeId) pipeId.textContent = Number.isFinite(geometry.pipeID) ? geometry.pipeID.toFixed(4) : '—';
+  if (pipeId) pipeId.textContent = Number.isFinite(geometry.pipeID) ? geometry.pipeID.toFixed(4) : '-';
   if (wallThk) wallThk.textContent = wall;
   if (lsWallDisplay) lsWallDisplay.textContent = wall;
   calcHotTap();
+  calcHtp();
   calcLineStop();
   syncBcoToEta({ force: true });
   updateEtaEstimate();
@@ -297,6 +569,7 @@ function calculateIntegratedBco(options = {}) {
     refreshBcoState();
     updateBcoDisplays();
     calcHotTap();
+    calcHtp();
     calcLineStop();
     updateSummary();
     return;
@@ -311,6 +584,7 @@ function calculateIntegratedBco(options = {}) {
     refreshBcoState();
     updateBcoDisplays();
     calcHotTap();
+    calcHtp();
     calcLineStop();
     updateSummary();
     return;
@@ -374,10 +648,6 @@ const fractionPrecisionEl = document.getElementById('fractionPrecision');
 const decimalToFractionResultEl = document.getElementById('decimalToFractionResult');
 const decimalChartSearchEl = document.getElementById('decimalChartSearch');
 const quickDecimalBtnEls = Array.from(document.querySelectorAll('.quick-decimal-btn'));
-const measurementInputToolbarEl = document.getElementById('measurementInputToolbar');
-const measurementToolbarButtonEls = Array.from(document.querySelectorAll('[data-measurement-toolbar]'));
-let activeMeasurementField = null;
-let measurementToolbarHideTimer = null;
 
 function gcd(a, b) {
   a = Math.abs(a);
@@ -391,15 +661,10 @@ function gcd(a, b) {
 }
 
 function formatDecimal(value, digits = 4) {
-  if (!Number.isFinite(value)) return '—';
+  if (!Number.isFinite(value)) return '-';
   return value.toFixed(digits);
 }
 
-function formatNormalizedMeasurement(value, digits = 4) {
-  if (!Number.isFinite(value)) return '—';
-  const normalized = value.toFixed(digits).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
-  return normalized === '-0' ? '0' : normalized;
-}
 
 function shouldNormalizeMeasurement(rawValue) {
   return /[\/\s-]/.test(String(rawValue || '').trim());
@@ -419,144 +684,39 @@ function normalizeMeasurementField(field, options = {}) {
   if (!Number.isFinite(parsed)) return;
   const shouldNormalize = options.force || shouldNormalizeMeasurement(rawValue);
   if (!shouldNormalize) return;
-  const normalized = formatNormalizedMeasurement(parsed);
+  const normalized = formatDecimal(parsed);
   if (field.value === normalized) return;
   field.value = normalized;
   field.dispatchEvent(new Event('input', { bubbles: true }));
   field.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
-
-function isToolbarEligibleField(field) {
-  return Boolean(field && field.dataset.measurementToolbarEligible === 'true' && !field.disabled);
-}
-
-function updateMeasurementToolbarViewport() {
-  if (!measurementInputToolbarEl) return;
-
-  if (measurementInputToolbarEl.hidden) {
-    measurementInputToolbarEl.style.left = '';
-    measurementInputToolbarEl.style.right = '';
-    measurementInputToolbarEl.style.bottom = '';
-    measurementInputToolbarEl.style.width = '';
-    return;
-  }
-
-  const viewport = window.visualViewport;
-  if (!viewport) {
-    measurementInputToolbarEl.style.left = '';
-    measurementInputToolbarEl.style.right = '';
-    measurementInputToolbarEl.style.bottom = '';
-    measurementInputToolbarEl.style.width = '';
-    return;
-  }
-
-  const keyboardOffset = Math.max(0, window.innerHeight - (viewport.height + viewport.offsetTop));
-  measurementInputToolbarEl.style.left = `${Math.max(0, viewport.offsetLeft)}px`;
-  measurementInputToolbarEl.style.right = `${Math.max(0, window.innerWidth - (viewport.width + viewport.offsetLeft))}px`;
-  measurementInputToolbarEl.style.bottom = `${keyboardOffset}px`;
-  measurementInputToolbarEl.style.width = `${viewport.width}px`;
-}
-
-function showMeasurementInputToolbar(field) {
-  if (!measurementInputToolbarEl || !isToolbarEligibleField(field)) return;
-  activeMeasurementField = field;
-  if (measurementToolbarHideTimer) {
-    clearTimeout(measurementToolbarHideTimer);
-    measurementToolbarHideTimer = null;
-  }
-  measurementInputToolbarEl.hidden = false;
-  document.body.classList.add('measurement-toolbar-open');
-  updateMeasurementToolbarViewport();
-}
-
-function hideMeasurementInputToolbar() {
-  if (!measurementInputToolbarEl) return;
-  measurementToolbarHideTimer = setTimeout(() => {
-    const activeEl = document.activeElement;
-    if (activeEl && isToolbarEligibleField(activeEl)) return;
-    activeMeasurementField = null;
-    measurementInputToolbarEl.hidden = true;
-    document.body.classList.remove('measurement-toolbar-open');
-    updateMeasurementToolbarViewport();
-  }, 120);
-}
-
-function insertIntoMeasurementField(insertText) {
-  const field = activeMeasurementField;
-  if (!isToolbarEligibleField(field)) return;
-  const textToInsert = String(insertText ?? '');
-  const start = Number.isInteger(field.selectionStart) ? field.selectionStart : String(field.value || '').length;
-  const end = Number.isInteger(field.selectionEnd) ? field.selectionEnd : start;
-  const currentValue = String(field.value || '');
-  field.value = `${currentValue.slice(0, start)}${textToInsert}${currentValue.slice(end)}`;
-  const nextPosition = start + textToInsert.length;
-  try {
-    field.setSelectionRange(nextPosition, nextPosition);
-  } catch {}
-  field.dispatchEvent(new Event('input', { bubbles: true }));
-  field.focus({ preventScroll: true });
-}
-
-function backspaceMeasurementField() {
-  const field = activeMeasurementField;
-  if (!isToolbarEligibleField(field)) return;
-  const start = Number.isInteger(field.selectionStart) ? field.selectionStart : String(field.value || '').length;
-  const end = Number.isInteger(field.selectionEnd) ? field.selectionEnd : start;
-  const currentValue = String(field.value || '');
-  if (start !== end) {
-    field.value = `${currentValue.slice(0, start)}${currentValue.slice(end)}`;
-    try {
-      field.setSelectionRange(start, start);
-    } catch {}
-  } else if (start > 0) {
-    field.value = `${currentValue.slice(0, start - 1)}${currentValue.slice(end)}`;
-    try {
-      field.setSelectionRange(start - 1, start - 1);
-    } catch {}
-  }
-  field.dispatchEvent(new Event('input', { bubbles: true }));
-  field.focus({ preventScroll: true });
-}
-
 function enableMixedMeasurementInputs() {
-  const measurementSelectors = [
-    'input[type="number"][step="any"]',
-    '#fractionNumerator',
-    '#fractionDenominator',
-    '#decimalInput'
+  const measurementFieldIds = [
+    'bcoPipeID','bcoCutterOD','md','ld','ptc','pod','start','mt','valveBore','gtf',
+    'lsMd','lsLd','lsPod','lsLiManual','lsTravel','lsMachineTravel',
+    'cpStart','cpJbf','cpLd','cpPt','cpLiManual',
+    'fractionNumerator','fractionDenominator','decimalInput','etaBco',
+    'pivotWallThickness','pivotPipeIdOverride',
+    'uwirePipeOd','uwirePipeWall','uwireCutterOd','uwireToothWidth','uwirePtc','uwireCutterDepth',
+    'uwireMachineTravel','uwireLostDistance','uwireFittingLength','uwireValveLength','uwirePilotRelief',
+    'uwireLabattsBridge','uwireRpm','uwireFeedRate',
+    ...Array.from({ length: 12 }, (_, index) => `uwireWireRow${index + 1}`)
   ];
-  const fields = Array.from(new Set(
-    measurementSelectors.flatMap((selector) => Array.from(document.querySelectorAll(selector)))
-  ));
-  fields.forEach((field) => {
-    if (!field || field.dataset.mixedMeasurementEnabled === 'true') return;
-    const isWholeNumberField = field.id === 'fractionNumerator' || field.id === 'fractionDenominator';
-    const isMeasurementField = field.matches('input[step="any"]') && field.id !== 'decimalInput';
+  measurementFieldIds.forEach((id) => {
+    const field = document.getElementById(id);
+    if (!field) return;
     try { field.type = 'text'; } catch {}
-    field.setAttribute('inputmode', isWholeNumberField ? 'numeric' : 'decimal');
-    field.setAttribute('enterkeyhint', 'done');
+    field.setAttribute('inputmode', 'decimal');
     field.setAttribute('autocomplete', 'off');
     field.setAttribute('autocorrect', 'off');
-    field.setAttribute('autocapitalize', 'off');
     field.setAttribute('spellcheck', 'false');
-    if (!isWholeNumberField) {
-      field.setAttribute('placeholder', field.getAttribute('placeholder') || '12 1/2 or 12.5');
-    }
-    field.dataset.measurementToolbarEligible = isMeasurementField ? 'true' : 'false';
-    field.dataset.mixedMeasurementEnabled = 'true';
-    field.addEventListener('focus', () => {
-      if (isMeasurementField) showMeasurementInputToolbar(field);
-    });
-    field.addEventListener('blur', () => {
-      normalizeMeasurementField(field, { force: true });
-      if (isMeasurementField) hideMeasurementInputToolbar();
-    });
+    field.addEventListener('blur', () => normalizeMeasurementField(field, { force: true }));
     field.addEventListener('change', () => normalizeMeasurementField(field, { force: true }));
     field.addEventListener('input', () => {
-      // Do not auto-normalize while the user is still typing a mixed fraction.
-      // Example: "11 5/1" may still become "11 5/16", so conversion waits for
-      // blur/change/Done instead of firing mid-entry.
+      if (shouldNormalizeMeasurement(field.value) && Number.isFinite(parseMixedMeasurement(field.value))) {
+        normalizeMeasurementField(field);
+      }
     });
   });
 }
@@ -607,7 +767,7 @@ function updateFractionToDecimal() {
   const numerator = parseFloat(fractionNumeratorEl.value);
   const denominator = parseFloat(fractionDenominatorEl.value);
   if (!Number.isFinite(numerator) || !Number.isFinite(denominator) || denominator === 0) {
-    fractionToDecimalResultEl.textContent = '—';
+    fractionToDecimalResultEl.textContent = '-';
     return;
   }
   fractionToDecimalResultEl.textContent = formatDecimal(numerator / denominator);
@@ -618,7 +778,7 @@ function updateDecimalToFraction() {
   const value = parseFloat(decimalInputEl.value);
   const maxDenominator = parseInt(fractionPrecisionEl.value, 10) || 64;
   if (!Number.isFinite(value)) {
-    decimalToFractionResultEl.textContent = '—';
+    decimalToFractionResultEl.textContent = '-';
     return;
   }
   const whole = Math.floor(value);
@@ -638,7 +798,7 @@ function updateDecimalToFraction() {
 
   const simplified = simplifyFraction(numerator, denominator);
   if (!simplified) {
-    decimalToFractionResultEl.textContent = '—';
+    decimalToFractionResultEl.textContent = '-';
     return;
   }
   numerator = simplified.numerator;
@@ -651,123 +811,1237 @@ function updateDecimalToFraction() {
 
 function parseMixedMeasurement(rawValue) {
   if (typeof rawValue !== 'string') return null;
-  const unicodeFractionMap = {
-    '¼': '1/4',
-    '½': '1/2',
-    '¾': '3/4',
-    '⅐': '1/7',
-    '⅑': '1/9',
-    '⅒': '1/10',
-    '⅓': '1/3',
-    '⅔': '2/3',
-    '⅕': '1/5',
-    '⅖': '2/5',
-    '⅗': '3/5',
-    '⅘': '4/5',
-    '⅙': '1/6',
-    '⅚': '5/6',
-    '⅛': '1/8',
-    '⅜': '3/8',
-    '⅝': '5/8',
-    '⅞': '7/8'
-  };
   const normalized = rawValue
     .trim()
-    .replace(/[″”]/g, '')
-    .replace(/[–—]/g, '-')
-    .replace(/[−]/g, '-')
-    .replace(/[¼½¾⅐⅑⅒⅓⅔⅕⅖⅗⅘⅙⅚⅛⅜⅝⅞]/g, (match) => ` ${unicodeFractionMap[match] || match}`)
-    .replace(/\s+/g, ' ')
-    .trim();
+    .replace(/[?"]/g, '')
+    .replace(/[--]/g, '-')
+    .replace(/\s+/g, ' ');
   if (!normalized) return null;
 
-  if (/^[+-]?\d*\.?\d+$/.test(normalized)) {
+  if (/^\d*\.?\d+$/.test(normalized)) {
     const decimalValue = parseFloat(normalized);
     return Number.isFinite(decimalValue) ? decimalValue : null;
   }
 
-  const mixedMatch = normalized.match(/^([+-])?(\d+)(?:\s|-)+(\d+)\/(\d+)$/);
+  const mixedMatch = normalized.match(/^(\d+)(?:\s|-)+(\d+)\/(\d+)$/);
   if (mixedMatch) {
-    const sign = mixedMatch[1] === '-' ? -1 : 1;
-    const whole = parseInt(mixedMatch[2], 10);
-    const numerator = parseInt(mixedMatch[3], 10);
-    const denominator = parseInt(mixedMatch[4], 10);
+    const whole = parseInt(mixedMatch[1], 10);
+    const numerator = parseInt(mixedMatch[2], 10);
+    const denominator = parseInt(mixedMatch[3], 10);
     if (!denominator) return null;
-    return sign * (whole + (numerator / denominator));
+    return whole + (numerator / denominator);
   }
 
-  const fractionMatch = normalized.match(/^([+-])?(\d+)\/(\d+)$/);
+  const fractionMatch = normalized.match(/^(\d+)\/(\d+)$/);
   if (fractionMatch) {
-    const sign = fractionMatch[1] === '-' ? -1 : 1;
-    const numerator = parseInt(fractionMatch[2], 10);
-    const denominator = parseInt(fractionMatch[3], 10);
+    const numerator = parseInt(fractionMatch[1], 10);
+    const denominator = parseInt(fractionMatch[2], 10);
     if (!denominator) return null;
-    return sign * (numerator / denominator);
+    return numerator / denominator;
   }
 
   return null;
 }
 
 
-if (measurementToolbarButtonEls.length) {
-  measurementToolbarButtonEls.forEach((button) => {
-    button.addEventListener('pointerdown', (event) => {
-      event.preventDefault();
-    });
-    button.addEventListener('click', () => {
-      const action = button.dataset.measurementToolbar;
-      if (action === 'space') {
-        insertIntoMeasurementField(' ');
-        return;
-      }
-      if (action === 'slash') {
-        insertIntoMeasurementField('/');
-        return;
-      }
-      if (action === 'dash') {
-        insertIntoMeasurementField('-');
-        return;
-      }
-      if (action === 'backspace') {
-        backspaceMeasurementField();
-        return;
-      }
-      if (action === 'done') {
-        if (activeMeasurementField) {
-          normalizeMeasurementField(activeMeasurementField, { force: true });
-          activeMeasurementField.blur();
-        }
-      }
-    });
-  });
-}
-
-if (measurementInputToolbarEl) {
-  measurementInputToolbarEl.addEventListener('pointerdown', (event) => {
-    event.preventDefault();
-  });
-}
-
-if (window.visualViewport) {
-  const syncMeasurementToolbarToViewport = () => updateMeasurementToolbarViewport();
-  window.visualViewport.addEventListener('resize', syncMeasurementToolbarToViewport);
-  window.visualViewport.addEventListener('scroll', syncMeasurementToolbarToViewport);
-  window.addEventListener('orientationchange', syncMeasurementToolbarToViewport);
-  window.addEventListener('resize', syncMeasurementToolbarToViewport);
-  document.addEventListener('scroll', syncMeasurementToolbarToViewport, { passive: true });
-}
-
 if (decimalReferenceBtnEl) decimalReferenceBtnEl.addEventListener('click', openDecimalModal);
 
+const referenceViewSelectEl = document.getElementById('referenceViewSelect');
+const referenceViewEls = Array.from(document.querySelectorAll('.reference-view[data-reference-view]'));
+const referenceLibraryToggleEl = document.getElementById('referenceLibraryToggle');
+const referenceLibraryMenuEl = document.getElementById('referenceLibraryMenu');
+const referenceLibrarySearchEl = document.getElementById('referenceLibrarySearch');
+const referenceLibraryOptionsEl = document.getElementById('referenceLibraryOptions');
+const referenceLibraryEmptyEl = document.getElementById('referenceLibraryEmpty');
+const referenceLibraryCurrentEl = document.getElementById('referenceLibraryCurrent');
+const referenceLibraryDescriptionEl = document.getElementById('referenceLibraryDescription');
+const referenceLibraryGroupEl = document.getElementById('referenceLibraryGroup');
+const referenceLibraryItems = [
+  { id: 'converter', group: 'Charts', label: 'Decimal / Fraction', description: 'Quick conversion and full chart', keywords: 'decimal fraction conversion chart' },
+  { id: 'bolting', group: 'Charts', label: 'Bolting Chart', description: 'Flange class, stud, wrench, counts', keywords: 'bolting flange class stud wrench count asme' },
+  { id: 'glossary', group: 'Charts', label: 'Glossary', description: 'Abbreviations and field meanings', keywords: 'glossary abbreviations terms field meanings' },
+  { id: 'htp', group: 'Charts', label: 'HTP Chart', description: 'Pipe size, branch, head, and cutter lookup', keywords: 'htp pipe branch head cutter bco' },
+  { id: 'stopmath', group: 'Charts', label: 'Stop Math', description: 'Standard, HTP, and Hi-Stop formulas', keywords: 'line stop math htp hi stop formula tco plug set' },
+  { id: 'pivothead', group: 'Setup Guides', label: 'Pivot Head Setup', description: 'Seal size, load pad, nose/backing plate, and Clearance B', keywords: 'pivot head line stop setup sealing element seal load pad nose plate backing plate clearance b wall thickness' },
+  { id: 'machines', group: 'Machine Reference', label: 'Machine Stack-Ups', description: 'Tap, stop, plug, and manual index', keywords: 'machine stack ups hot tap line stop completion plug manuals' },
+  { id: 'uwire', group: 'Field Reference', label: 'U-Wire Calculator', description: 'Pre-job U-wire placement and engagement checks', keywords: 'u wire uwire placement calculator pre job setup engagement coupon free pilot valve nest' },
+  { id: 'fieldcheck', group: 'Field Reference', label: 'Field Checklists', description: 'Pre-job, cut, stop, and save checks', keywords: 'checklist field pre job cut stop save' },
+  { id: 'plant150', group: 'Field Reference', label: '150# Plant Series', description: 'Jack-bolt and packing wrench info', keywords: '150 plant jack bolt packing wrench' },
+  { id: 'plant600', group: 'Field Reference', label: '600# Plant Series', description: 'Higher class flange reference', keywords: '600 plant flange jack bolt packing wrench' },
+  { id: 'gaskettorque', group: 'Field Reference', label: 'Graphonic', description: 'Starred RF gasket torque lookup with engineering 600# data', keywords: 'garlock gasket torque raised face flange cmg graphonic starred 150 300 400 600 engineering' },
+  { id: 'papergaskets', group: 'Field Reference', label: 'Paper Gaskets', description: 'Compressed sheet and GYLON ring gasket torque tables', keywords: 'garlock paper gasket compressed sheet gylon ring torque 150 300 400 600 900 multi swell' }
+];
 
-document.addEventListener('focusin', (event) => {
-  const field = event.target;
-  if (isToolbarEligibleField(field)) showMeasurementInputToolbar(field);
+function getSafeReferenceView(view) {
+  const requested = String(view || referenceViewSelectEl?.value || '').trim();
+  if (requested === 'garlock600') return 'gaskettorque';
+  const validViews = new Set(referenceViewEls.map((panel) => panel.dataset.referenceView).filter(Boolean));
+  if (requested && validViews.has(requested)) return requested;
+  if (validViews.has('converter')) return 'converter';
+  return referenceViewEls[0]?.dataset.referenceView || 'converter';
+}
+
+function getReferenceLibraryItem(view) {
+  return referenceLibraryItems.find((item) => item.id === view) || referenceLibraryItems[0] || null;
+}
+
+function syncReferenceLibraryLabels(view) {
+  const item = getReferenceLibraryItem(view);
+  if (!item) return;
+  if (referenceLibraryCurrentEl) referenceLibraryCurrentEl.textContent = item.label;
+  if (referenceLibraryDescriptionEl) referenceLibraryDescriptionEl.textContent = item.description;
+  if (referenceLibraryGroupEl) referenceLibraryGroupEl.textContent = item.group;
+}
+
+function syncReferenceShortcutState(view) {
+  document.querySelectorAll('[data-reference-target]').forEach((el) => {
+    const isActive = el.dataset.referenceTarget === view;
+    el.classList.toggle('active', isActive);
+    if (el.getAttribute('role') === 'option') el.setAttribute('aria-selected', isActive ? 'true' : 'false');
+  });
+}
+
+function setReferenceView(view) {
+  const nextView = getSafeReferenceView(view);
+  let activated = false;
+  referenceViewEls.forEach((panel) => {
+    const isActive = panel.dataset.referenceView === nextView;
+    panel.classList.toggle('active', isActive);
+    if (isActive) activated = true;
+  });
+  if (!activated && referenceViewEls[0]) {
+    referenceViewEls[0].classList.add('active');
+  }
+  if (referenceViewSelectEl && referenceViewSelectEl.value !== nextView) referenceViewSelectEl.value = nextView;
+  syncReferenceShortcutState(nextView);
+  syncReferenceLibraryLabels(nextView);
+  try { localStorage.setItem('tapcalcReferenceViewV1', nextView); } catch {}
+  try {
+    document.querySelector(`.reference-view[data-reference-view="${nextView}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch {}
+}
+
+function getReferenceLibraryFilteredItems(query) {
+  const needle = String(query || '').trim().toLowerCase();
+  if (!needle) return referenceLibraryItems.slice();
+  const tokens = needle.split(/\s+/).filter(Boolean);
+  return referenceLibraryItems.filter((item) => {
+    const haystack = `${item.group} ${item.label} ${item.description} ${item.keywords}`.toLowerCase();
+    return tokens.every((token) => haystack.includes(token));
+  });
+}
+
+function renderReferenceLibraryOptions(query = '') {
+  if (!referenceLibraryOptionsEl) return;
+  const items = getReferenceLibraryFilteredItems(query);
+  const currentView = getSafeReferenceView(referenceViewSelectEl?.value || localStorage.getItem('tapcalcReferenceViewV1') || 'converter');
+  let currentGroup = '';
+  referenceLibraryOptionsEl.innerHTML = items.map((item) => {
+    const groupHeader = item.group !== currentGroup
+      ? `<div class="reference-library-group-label">${escapeHtml(item.group)}</div>`
+      : '';
+    currentGroup = item.group;
+    return `${groupHeader}<button type="button" class="reference-library-option${item.id === currentView ? ' active' : ''}" data-reference-target="${escapeHtml(item.id)}" role="option" aria-selected="${item.id === currentView ? 'true' : 'false'}"><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.description)}</span></button>`;
+  }).join('');
+  if (referenceLibraryEmptyEl) referenceLibraryEmptyEl.hidden = items.length > 0;
+}
+
+function setReferenceLibraryOpen(isOpen) {
+  if (!referenceLibraryMenuEl || !referenceLibraryToggleEl) return;
+  referenceLibraryMenuEl.hidden = !isOpen;
+  referenceLibraryToggleEl.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  referenceLibraryToggleEl.classList.toggle('is-open', isOpen);
+  if (isOpen) {
+    renderReferenceLibraryOptions(referenceLibrarySearchEl?.value || '');
+    setTimeout(() => referenceLibrarySearchEl?.focus(), 0);
+  }
+}
+
+if (referenceLibraryToggleEl) {
+  referenceLibraryToggleEl.addEventListener('click', () => {
+    setReferenceLibraryOpen(referenceLibraryMenuEl?.hidden !== false);
+  });
+}
+
+if (referenceLibrarySearchEl) {
+  referenceLibrarySearchEl.addEventListener('input', () => renderReferenceLibraryOptions(referenceLibrarySearchEl.value));
+}
+
+if (referenceLibraryOptionsEl) {
+  referenceLibraryOptionsEl.addEventListener('click', (event) => {
+    const trigger = event.target?.closest?.('[data-reference-target]');
+    if (!trigger) return;
+    setReferenceView(trigger.dataset.referenceTarget || 'converter');
+    if (referenceLibrarySearchEl) referenceLibrarySearchEl.value = '';
+    setReferenceLibraryOpen(false);
+  });
+}
+
+document.addEventListener('click', (event) => {
+  if (!referenceLibraryMenuEl || referenceLibraryMenuEl.hidden) return;
+  if (event.target?.closest?.('.reference-library-panel')) return;
+  setReferenceLibraryOpen(false);
 });
 
-document.addEventListener('focusout', (event) => {
-  if (isToolbarEligibleField(event.target)) hideMeasurementInputToolbar();
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && referenceLibraryMenuEl && !referenceLibraryMenuEl.hidden) {
+    setReferenceLibraryOpen(false);
+    referenceLibraryToggleEl?.focus();
+  }
 });
+
+renderReferenceLibraryOptions();
+
+if (referenceViewSelectEl) {
+  referenceViewSelectEl.addEventListener('change', () => setReferenceView(referenceViewSelectEl.value));
+  try {
+    setReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl.value || 'converter');
+  } catch {
+    setReferenceView(referenceViewSelectEl.value || 'converter');
+  }
+} else {
+  syncReferenceShortcutState('converter');
+}
+
+const glossarySearchInputEl = document.getElementById('glossarySearchInput');
+const referenceBackToTopBtnEl = document.getElementById('referenceBackToTopBtn');
+const glossaryTableBodyEl = document.getElementById('glossaryTableBody');
+const glossaryCountChipEl = document.getElementById('glossaryCountChip');
+const glossaryVisibleChipEl = document.getElementById('glossaryVisibleChip');
+const plant150SizeSelectEl = document.getElementById('plant150SizeSelect');
+const plant600SizeSelectEl = document.getElementById('plant600SizeSelect');
+const plant150SearchInputEl = document.getElementById('plant150SearchInput');
+const plant600SearchInputEl = document.getElementById('plant600SearchInput');
+const garlock600SizeSelectEl = document.getElementById('garlock600SizeSelect');
+const garlock600SearchInputEl = document.getElementById('garlock600SearchInput');
+const pivotPipeMaterialEl = document.getElementById('pivotPipeMaterial');
+const pivotPipeSizeEl = document.getElementById('pivotPipeSize');
+const pivotWallThicknessEl = document.getElementById('pivotWallThickness');
+const pivotPipeIdOverrideEl = document.getElementById('pivotPipeIdOverride');
+const pivotPressureBandEl = document.getElementById('pivotPressureBand');
+const pivotMeasuredNoseOdEl = document.getElementById('pivotMeasuredNoseOd');
+const pivotUseCurrentPipeBtnEl = document.getElementById('pivotUseCurrentPipeBtn');
+const pivotClearOverrideBtnEl = document.getElementById('pivotClearOverrideBtn');
+const pivotInputStatusEl = document.getElementById('pivotInputStatus');
+const pivotBackingStatusEl = document.getElementById('pivotBackingStatus');
+const pivotSealBodyEl = document.getElementById('pivotSealBody');
+const machineReferenceSelectEl = document.getElementById('machineReferenceSelect');
+const machineReferenceSearchInputEl = document.getElementById('machineReferenceSearchInput');
+const machineReferenceSearchClearEl = document.getElementById('machineReferenceSearchClear');
+const machineReferenceSearchMetaEl = document.getElementById('machineReferenceSearchMeta');
+const machineReferenceBodyEl = document.getElementById('machineReferenceBody');
+const machineReferenceTotalChipEl = document.getElementById('machineReferenceTotalChip');
+const machineReferenceVisibleChipEl = document.getElementById('machineReferenceVisibleChip');
+const machineReferenceHotTapChipEl = document.getElementById('machineReferenceHotTapChip');
+const machineReferenceDetailTitleEl = document.getElementById('machineReferenceDetailTitle');
+const machineReferenceDetailMetaEl = document.getElementById('machineReferenceDetailMeta');
+const machineReferenceSourcePageEl = document.getElementById('machineReferenceSourcePage');
+const machineReferenceSpecGridEl = document.getElementById('machineReferenceSpecGrid');
+const machineReferenceDimensionsEl = document.getElementById('machineReferenceDimensions');
+const machineReferenceWeightsEl = document.getElementById('machineReferenceWeights');
+const machineReferencePageTextEl = document.getElementById('machineReferencePageText');
+const machineReferenceVisualCanvasEl = document.getElementById('machineReferenceVisualCanvas');
+const machineReferenceVisualFrameEl = document.getElementById('machineReferenceVisualFrame');
+const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.stackup-visual-frame-wrap') || null;
+const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
+const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
+const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha200';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha200';
+let stackupPdfJsPromise = null;
+let machineReferenceVisualRenderToken = 0;
+const stackupPdfDocumentCache = new Map();
+const bundledStackupReferences = Array.isArray(window.TAPCALC_STACKUP_REFERENCES) ? window.TAPCALC_STACKUP_REFERENCES : [];
+const machineManualIndexData = [
+  { name: 'IP 304 / 406 / 508 Manual', type: 'Manual Index', range: 'IP 304, IP 406, IP 508', use: 'Indexed tapping-machine manual source; full manual is not inline yet.', source: 'IP304 406 508, 2009.pdf', sourcePage: '-', dimensions: [], weights: [], notes: [], text: 'Manual index entry. Use the source file name for cross-checking until this manual is converted into app-native reference data.' },
+  { name: 'IP 914XL Manual', type: 'Manual Index', range: 'IP 914XL', use: 'Indexed tapping-machine manual source; full manual is not inline yet.', source: 'IP914XL new manual.pdf', sourcePage: '-', dimensions: [], weights: [], notes: [], text: 'Manual index entry. Use the source file name for cross-checking until this manual is converted into app-native reference data.' },
+  { name: 'IPSCO IP100 Manual', type: 'Manual Index', range: 'IP100', use: 'Indexed tapping-machine manual source; full manual is not inline yet.', source: 'ipsco ip100.pdf', sourcePage: '-', dimensions: [], weights: [], notes: [], text: 'Manual index entry. Use the source file name for cross-checking until this manual is converted into app-native reference data.' },
+  { name: 'Series 1-4 Hydraulic Actuator Manual', type: 'Manual Index', range: 'Series 1 through 4', use: 'Indexed hydraulic actuator manual source; full manual is not inline yet.', source: 'Series 1 to 4 hydraulic actuator manual.pdf', sourcePage: '-', dimensions: [], weights: [], notes: [], text: 'Manual index entry. Use the source file name for cross-checking until this manual is converted into app-native reference data.' },
+  { name: '72 Jack Screw Actuator', type: 'Manual Index', range: '72 inch actuator', use: 'Indexed jack screw actuator source; document is not inline yet.', source: '72Jack Screw Actuator-R2-furmanite.doc', sourcePage: '-', dimensions: [], weights: [], notes: [], text: 'Manual index entry. Use the source file name for cross-checking until this document is converted into app-native reference data.' }
+];
+const machineReferenceData = bundledStackupReferences.length
+  ? bundledStackupReferences.concat(machineManualIndexData)
+  : machineManualIndexData;
+machineReferenceData.forEach((row, index) => {
+  if (row && !row.id) row.id = `machine-reference-${index}`;
+  if (row) row.displayName = buildMachineReferenceDisplayName(row);
+});
+let machineReferenceFilteredData = machineReferenceData.slice();
+const glossaryRowsData = [
+  ['MD', 'Measured Distance'],
+  ['LD', 'Lost Distance'],
+  ['LI', 'Lower In'],
+  ['PTC', 'Pilot To Cutter'],
+  ['BCO', 'Book Cut Out'],
+  ['CCO', 'Coupon Cut Out'],
+  ['MCO', 'Maximum Cut Out'],
+  ['POP', 'Pilot On Pipe'],
+  ['COP', 'Cutter On Pipe'],
+  ['TTD', 'Total Travel Distance'],
+  ['TCO', 'Total Cutout'],
+  ['MT', 'Machine Travel'],
+  ['POD', 'Pipe Outside Diameter'],
+  ['OD', 'Outside Diameter'],
+  ['ID', 'Inside Diameter'],
+  ['WT / Wall', 'Wall Thickness'],
+  ['VB', 'Valve Bore'],
+  ['GTF', 'Gate To Flange'],
+  ['Valve T', 'Valve Turns'],
+  ['Seg T', 'Segment Turns'],
+  ['-1 Wall', 'Minus One Wall Thickness'],
+  ['JBF', 'Jack Bolt to Flange'],
+  ['PT', 'Plug Thickness'],
+  ['RPM', 'Revolutions Per Minute'],
+  ['ETA', 'Estimated cutting time based on travel, feed, and RPM'],
+  ['Feed Rate', 'Advance per revolution, shown in inches per revolution'],
+  ['Hot Tap', 'Operation that cuts into the line with a pilot and cutter'],
+  ['Line Stop', 'Operation that inserts a stopping head or inflatable stop into the line'],
+  ['Completion Plug', 'Plug used to seal the branch after the tapping / stopping work is complete'],
+  ['FHL', 'Folding Head Line Stop'],
+  ['Coupon', 'The cutout removed by the cutter during a hot tap'],
+  ['Plant Series', 'Reference chart for jack-bolt wrench size, packing nut wrench size, and jack-bolt count'],
+  ['HTM', 'Hot Tap Machine stack-up reference'],
+  ['LSM', 'Line Stop Machine stack-up reference'],
+  ['Stack-Up', 'Machine setup/reference document used to confirm the physical arrangement'],
+  ['IP Manual', 'Uploaded tapping-machine manual reference'],
+  ['MA140', 'Line stop machine family listed in the uploaded stack-up references']
+];
+
+function renderGlossaryRows(rows) {
+  if (!glossaryTableBodyEl) return;
+  glossaryTableBodyEl.innerHTML = rows.map(([abbr, meaning]) => `<tr><td>${abbr}</td><td>${meaning}</td></tr>`).join('');
+  if (glossaryCountChipEl) glossaryCountChipEl.textContent = String(glossaryRowsData.length);
+  if (glossaryVisibleChipEl) glossaryVisibleChipEl.textContent = String(rows.length);
+}
+
+function filterGlossaryRows(query) {
+  const needle = String(query || '').trim().toLowerCase();
+  const filtered = glossaryRowsData.filter(([abbr, meaning]) => `${abbr} ${meaning}`.toLowerCase().includes(needle));
+  renderGlossaryRows(filtered);
+}
+
+if (glossarySearchInputEl) {
+  glossarySearchInputEl.addEventListener('input', () => filterGlossaryRows(glossarySearchInputEl.value));
+}
+renderGlossaryRows(glossaryRowsData);
+
+if (referenceBackToTopBtnEl) {
+  referenceBackToTopBtnEl.addEventListener('click', () => {
+    document.querySelector('#refScreen .ref-screen-topbar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function normalizeMachineReferenceSearchText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[#/\\.,:;()[\]{}"'`]+/g, ' ')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeMachineReferenceDisplayText(value) {
+  return String(value || '')
+    .replace(/\b(?:1|I)\s+P\s*-\s*(\d+)/gi, 'IP-$1')
+    .replace(/\bIP\s+(\d+)/gi, 'IP-$1')
+    .replace(/\bIP\s*-\s*(\d+)/gi, 'IP-$1')
+    .replace(/\bT\s*-\s*(\d+)/gi, 'T-$1')
+    .replace(/#(?=(?:Gate|Housing|Valve|Line|Tapping|Machine))/gi, '# ')
+    .replace(/#(?=\d+")/g, '# ')
+    .replace(/\s*-\s*/g, ' - ')
+    .replace(/\s+/g, ' ')
+    .replace(/\bIP\s*-\s*(\d+)/gi, 'IP-$1')
+    .replace(/\bT\s*-\s*(\d+)/gi, 'T-$1')
+    .replace(/\bCH\s*-\s*(\d+)/gi, 'CH-$1')
+    .replace(/\bMA\s*-\s*(\d+)/gi, 'MA-$1')
+    .replace(/\bM\s*-\s*(\d+)/gi, 'M-$1')
+    .replace(/\bHI\s*-\s*STOP\b/gi, 'HI-STOP')
+    .replace(/\bSTACK\s*-\s*UP\b/gi, 'STACK-UP')
+    .replace(/\s+\.$/g, '.')
+    .trim();
+}
+
+function normalizeStackupSourceText(value) {
+  return normalizeMachineReferenceDisplayText(value)
+    .replace(/ALWAYSHI-STOP/gi, 'ALWAYS HI-STOP')
+    .replace(/FMaximum/gi, 'F Maximum')
+    .replace(/PSIMaximum/gi, 'PSI Maximum')
+    .replace(/600#Normal/gi, '600# Normal')
+    .replace(/situations\)Size/gi, 'situations) Size')
+    .replace(/BLine Stop/gi, 'B Line Stop')
+    .replace(/L\s*i\s*n\s*e\s*S\s*t\s*o\s*p/gi, 'Line Stop')
+    .replace(/#Housing/gi, '# Housing')
+    .replace(/#Gate/gi, '# Gate');
+}
+
+function getMachineReferenceDisplayName(row) {
+  return row?.displayName || row?.name || 'Selected Stack-Up';
+}
+
+function sourceFamilyLabel(source = '') {
+  const name = String(source || '').replace(/\.pdf$/i, '').trim();
+  const labels = [
+    [/Series 1 Hyd Stack ups gate valve/i, 'Series 1 Hydraulic Gate Valve'],
+    [/Series 1 Hyd Stack ups stv/i, 'Series 1 Hydraulic STV'],
+    [/Series 1 Jackscrew Stack ups gate valve/i, 'Series 1 Jackscrew Gate Valve'],
+    [/Series 1 Jackscrew Stack ups stv/i, 'Series 1 Jackscrew STV'],
+    [/Series 2 hyd gate valve/i, 'Series 2 Hydraulic Gate Valve'],
+    [/Series 2 hyd stv/i, 'Series 2 Hydraulic STV'],
+    [/Series 2 mechanical gate valve/i, 'Series 2 Mechanical Gate Valve'],
+    [/Series 3 hyd gate valve/i, 'Series 3 Hydraulic Gate Valve'],
+    [/Series 3 hyd stv/i, 'Series 3 Hydraulic STV'],
+    [/Series 3 Mechanical gate valve/i, 'Series 3 Mechanical Gate Valve']
+  ];
+  const match = labels.find(([pattern]) => pattern.test(name));
+  return match ? match[1] : name || 'Stack-Up';
+}
+
+function firstStackupPatternMatch(text, patterns) {
+  for (const pattern of patterns) {
+    const matches = Array.from(text.matchAll(pattern));
+    if (matches.length) return normalizeMachineReferenceDisplayText(matches[matches.length - 1][0]);
+  }
+  return '';
+}
+
+function extractHotTapDisplayName(row) {
+  const text = normalizeStackupSourceText(row?.text);
+  return firstStackupPatternMatch(text, [
+    /\d+(?:\.\d+)?"\s+(?:150#|300#|600#|300#\/600#)\s+(?:THREADED\s+)?HOT TAP\s+\d+(?:\.\d+)?"\s+(?:IP|T|CH)\s*-?\s*\d+(?:\s*(?:-| - )\s*\d+(?:\.\d+)?"\s*TRAVEL|\s*\(\d+"\s*TRAVEL\))?/gi,
+    /\d+(?:\.\d+)?"\s+(?:THREADED\s+)?HOT TAP\s+\d+(?:\.\d+)?"\s+(?:IP|T|CH)\s*-?\s*\d+(?:\s*(?:-| - )\s*\d+(?:\.\d+)?"\s*TRAVEL|\s*\(\d+"\s*TRAVEL\))?/gi,
+    /\d+(?:\.\d+)?"\s+(?:150#|300#|600#|300#\/600#)\s+HOT TAP\s+(?:IP|T|CH)\s*-?\s*\d+(?:\s*(?:-| - )\s*\d+(?:\.\d+)?"\s*TRAVEL|\s*\(\d+"\s*TRAVEL\))?/gi
+  ]);
+}
+
+function extractLineStopDisplayName(row) {
+  const text = normalizeStackupSourceText(row?.text);
+  return firstStackupPatternMatch(text, [
+    /\d+(?:\.\d+)?"\s+(?:150#|300#|600#|300#\/600#)\s+LINE STOP\s+\d+(?:\.\d+)?"\s+JACKSCREW/gi,
+    /\d+(?:\.\d+)?"\s+(?:150#|300#|600#|300#\/600#)\s+LINE STOP/gi
+  ]);
+}
+
+function extractHiStopDisplayName(row) {
+  const text = normalizeStackupSourceText(row?.text);
+  return firstStackupPatternMatch(text, [
+    /\d+(?:\.\d+)?"\s+\.\d+"\s+600#\s+HI-STOP/gi,
+    /\d+(?:\.\d+)?"\s+600#\s+HI-STOP/gi,
+    /\.\d+"\s+600#\s+HI-STOP/gi
+  ]);
+}
+
+function extractQualitechDisplayName(row) {
+  const text = normalizeStackupSourceText(row?.text);
+  if (/3\s*"?\s+SHORTCUT VALVE/i.test(text)) return '3" Shortcut Valve Stack-Up';
+  if (/PLUG SETTER/i.test(text)) return 'Qualitech Plug Setter';
+  if (/3"\s+150#\s+FLANGE VALVE/i.test(text)) return '3" 150# Qualitech Flange Valve';
+  if (/ACTUATOR WEIGHT/i.test(text)) return 'Qualitech Actuator';
+  if (/HOT TAP QUALITECH VALVE/i.test(text) && /QUALITECH LINE STOP/i.test(text)) return '2" Qualitech Hot Tap / Line Stop Overview';
+  return '';
+}
+
+function buildMachineReferenceDisplayName(row) {
+  const current = normalizeMachineReferenceDisplayText(row?.name);
+  const type = String(row?.type || '');
+  const source = String(row?.source || '');
+  const text = normalizeStackupSourceText(row?.text);
+  let extracted = '';
+
+  if (/Hot Tap/i.test(type)) extracted = extractHotTapDisplayName(row);
+  if (!extracted && /Hi-Stop/i.test(type)) extracted = extractHiStopDisplayName(row);
+  if (!extracted && /Qualitech/i.test(source)) extracted = extractQualitechDisplayName(row);
+  if (!extracted && /Line Stop/i.test(type)) extracted = extractLineStopDisplayName(row);
+
+  if (!extracted && /Rating\/Operating Dimensions|Function Rating\/Operating Dimensions/i.test(current)) {
+    extracted = `${sourceFamilyLabel(source)} Ratings / Operating Dimensions`;
+  }
+  if (!extracted && /LINE STOP MACHINE/i.test(current) && /Travel/i.test(text)) {
+    extracted = `${sourceFamilyLabel(source)} Machine Range`;
+  }
+  if (!extracted && /Normal Line Stop Range/i.test(current)) {
+    extracted = `${sourceFamilyLabel(source)} Normal Line Stop Range`;
+  }
+
+  const genericName = /^(?:HOT TAP|HOT TAP MACHINE|HI-STOP|STACK-UP|LINE STOP VALVE|LINE STOP MACHINE|JACKSCREW LINE STOP MACHINE|Qualitech Stackup|THE HOT TAP\.?|FOR \d+" HOT TAP WHEN)$/i.test(current);
+  if (extracted && (genericName || current.length > 95 || /THE HOT TAP|HOT TAP MACHINE|LINE STOP VALVE|JACKSCREW LINE STOP MACHINE|FOR \d+" HOT TAP WHEN|Rating\/Operating Dimensions/i.test(current))) {
+    return extracted;
+  }
+  if (extracted && /(?:1|I)\s+P|IP\s+\d|#(?:Gate|Housing)|#\d+"/i.test(row?.name || '')) return extracted;
+  if (genericName && extracted) return extracted;
+  if (genericName && /Qualitech/i.test(source)) return `Qualitech Stack-Up p. ${row?.sourcePage || '-'}`;
+  if (genericName && /Hi-Stop/i.test(type)) return `Hi-Stop Stack-Up p. ${row?.sourcePage || '-'}`;
+  if (genericName && /Hot Tap/i.test(type)) return `Hot Tap Stack-Up p. ${row?.sourcePage || '-'}`;
+  if (genericName && /Line Stop/i.test(type)) return `Line Stop Stack-Up p. ${row?.sourcePage || '-'}`;
+  if (/Rating\/Operating Dimensions/i.test(current)) return `${sourceFamilyLabel(source)} Ratings / Operating Dimensions`;
+  if (/LINE STOP MACHINE/i.test(text) && /Travel/i.test(text) && current.length > 95) return `${sourceFamilyLabel(source)} Machine Range`;
+  return current || `Stack-Up p. ${row?.sourcePage || '-'}`;
+}
+
+function getMachineReferenceText(row) {
+  return normalizeMachineReferenceSearchText([
+    getMachineReferenceDisplayName(row),
+    row?.name,
+    row?.type,
+    row?.range,
+    row?.use,
+    row?.source,
+    row?.sourcePage,
+    row?.text,
+    ...(Array.isArray(row?.dimensions) ? row.dimensions : []),
+    ...(Array.isArray(row?.weights) ? row.weights : []),
+    ...(Array.isArray(row?.notes) ? row.notes : [])
+  ].filter(Boolean).join(' '));
+}
+
+function getMachineReferenceKey(row) {
+  return String(row?.id || row?.name || '');
+}
+
+function getMachineReferenceByKey(key) {
+  return machineReferenceData.find((row) => getMachineReferenceKey(row) === key) || machineReferenceData[0] || null;
+}
+
+function setMachineReferenceText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value || '-';
+}
+
+function renderMachineReferenceList(target, items, emptyText) {
+  if (!target) return;
+  const safeItems = Array.isArray(items) ? items.filter(Boolean).slice(0, 12) : [];
+  target.innerHTML = safeItems.length
+    ? safeItems.map((item) => `<li>${escapeHtml(item)}</li>`).join('')
+    : `<li>${escapeHtml(emptyText)}</li>`;
+}
+
+function getMachineReferenceVisualSource(row) {
+  const pageNumber = Number.parseInt(row?.sourcePage, 10);
+  if (!row?.source || !Number.isFinite(pageNumber) || pageNumber < 1) return null;
+  const pdfUrl = encodeURI(STACKUP_VISUAL_BASE_PATH + row.source);
+  return {
+    pdfUrl,
+    pageNumber,
+    openUrl: `${pdfUrl}#page=${encodeURIComponent(pageNumber)}&zoom=page-fit`
+  };
+}
+
+function getMachineReferenceVisualUrl(row) {
+  return getMachineReferenceVisualSource(row)?.openUrl || '';
+}
+
+function setMachineReferenceVisualMessage(message, show = true) {
+  if (!machineReferenceVisualFallbackEl) return;
+  machineReferenceVisualFallbackEl.textContent = message || '';
+  machineReferenceVisualFallbackEl.hidden = !show;
+}
+
+async function getStackupPdfJs() {
+  if (!stackupPdfJsPromise) {
+    stackupPdfJsPromise = import(STACKUP_PDFJS_URL)
+      .then((pdfjsLib) => {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = STACKUP_PDFJS_WORKER_URL;
+        return pdfjsLib;
+      })
+      .catch((error) => {
+        stackupPdfJsPromise = null;
+        throw error;
+      });
+  }
+  return stackupPdfJsPromise;
+}
+
+async function getStackupPdfDocument(pdfUrl) {
+  if (!stackupPdfDocumentCache.has(pdfUrl)) {
+    const pdfjsLib = await getStackupPdfJs();
+    const docPromise = pdfjsLib.getDocument({ url: pdfUrl }).promise.catch((error) => {
+      stackupPdfDocumentCache.delete(pdfUrl);
+      throw error;
+    });
+    stackupPdfDocumentCache.set(pdfUrl, docPromise);
+  }
+  return stackupPdfDocumentCache.get(pdfUrl);
+}
+
+function hideMachineReferenceNativePreview() {
+  if (!machineReferenceVisualFrameEl) return;
+  machineReferenceVisualFrameEl.hidden = true;
+  machineReferenceVisualFrameEl.removeAttribute('src');
+}
+
+function showMachineReferenceNativePreview(source) {
+  if (!machineReferenceVisualFrameEl || !source?.openUrl) return false;
+  machineReferenceVisualFrameEl.src = source.openUrl;
+  machineReferenceVisualFrameEl.hidden = false;
+  setMachineReferenceVisualMessage('', false);
+  return true;
+}
+
+async function renderMachineReferenceVisualPage(source, token) {
+  if (!machineReferenceVisualCanvasEl || !machineReferenceVisualWrapEl || !source) return;
+  hideMachineReferenceNativePreview();
+  const pdf = await getStackupPdfDocument(source.pdfUrl);
+  if (token !== machineReferenceVisualRenderToken) return;
+
+  const page = await pdf.getPage(Math.min(source.pageNumber, pdf.numPages));
+  if (token !== machineReferenceVisualRenderToken) return;
+
+  const baseViewport = page.getViewport({ scale: 1 });
+  const availableWidth = Math.max(320, machineReferenceVisualWrapEl.clientWidth - 28);
+  const scale = Math.min(2.1, Math.max(0.72, availableWidth / baseViewport.width));
+  const viewport = page.getViewport({ scale });
+  const outputScale = Math.min(window.devicePixelRatio || 1, 2);
+  const canvas = machineReferenceVisualCanvasEl;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('Stack-up preview canvas is not available.');
+
+  canvas.width = Math.floor(viewport.width * outputScale);
+  canvas.height = Math.floor(viewport.height * outputScale);
+  canvas.style.width = `${Math.floor(viewport.width)}px`;
+  canvas.style.height = `${Math.floor(viewport.height)}px`;
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.fillStyle = '#ffffff';
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
+  await page.render({ canvasContext: context, viewport, transform }).promise;
+  if (token !== machineReferenceVisualRenderToken) return;
+  hideMachineReferenceNativePreview();
+  canvas.hidden = false;
+  setMachineReferenceVisualMessage('', false);
+}
+
+function updateMachineReferenceVisual(row) {
+  const visualSource = getMachineReferenceVisualSource(row);
+  const visualUrl = visualSource?.openUrl || '';
+  machineReferenceVisualRenderToken += 1;
+  const renderToken = machineReferenceVisualRenderToken;
+  if (machineReferenceVisualOpenEl) {
+    if (visualUrl) {
+      machineReferenceVisualOpenEl.href = visualUrl;
+      machineReferenceVisualOpenEl.removeAttribute('aria-disabled');
+      machineReferenceVisualOpenEl.classList.remove('is-disabled');
+    } else {
+      machineReferenceVisualOpenEl.href = '#';
+      machineReferenceVisualOpenEl.setAttribute('aria-disabled', 'true');
+      machineReferenceVisualOpenEl.classList.add('is-disabled');
+    }
+  }
+  if (!machineReferenceVisualCanvasEl) {
+    if (!showMachineReferenceNativePreview(visualSource)) {
+      setMachineReferenceVisualMessage('Open the PDF to view the selected stack-up drawing.', !visualUrl);
+    }
+    return;
+  }
+  if (!visualSource) {
+    machineReferenceVisualCanvasEl.hidden = true;
+    hideMachineReferenceNativePreview();
+    setMachineReferenceVisualMessage('This reference is indexed only; no stack-up drawing is bundled for this entry yet.', true);
+    return;
+  }
+  machineReferenceVisualCanvasEl.hidden = false;
+  setMachineReferenceVisualMessage(`Loading ${row.source} page ${visualSource.pageNumber}...`, true);
+  renderMachineReferenceVisualPage(visualSource, renderToken).catch(() => {
+    if (renderToken !== machineReferenceVisualRenderToken) return;
+    machineReferenceVisualCanvasEl.hidden = true;
+    if (!showMachineReferenceNativePreview(visualSource)) {
+      setMachineReferenceVisualMessage('The inline preview could not load. Use Open PDF to view the drawing.', true);
+    }
+  });
+}
+
+function updateMachineReferenceDetail(row) {
+  if (!row) return;
+  const sourcePage = row.sourcePage && row.sourcePage !== '-' ? `Page ${row.sourcePage}` : 'Indexed';
+  if (machineReferenceDetailTitleEl) machineReferenceDetailTitleEl.textContent = getMachineReferenceDisplayName(row);
+  if (machineReferenceDetailMetaEl) {
+    machineReferenceDetailMetaEl.textContent = `${row.type || 'Reference'} | ${row.range || 'Range not listed'} | ${row.source || 'Source not listed'}`;
+  }
+  if (machineReferenceSourcePageEl) machineReferenceSourcePageEl.textContent = `${row.source || 'Source'} | ${sourcePage}`;
+  if (machineReferenceSpecGridEl) {
+    const specs = [
+      ['Family', row.type || '-'],
+      ['Range / Size', row.range || '-'],
+      ['Source', row.source || '-'],
+      ['Source Page', sourcePage],
+      ['Dimensions Found', String((row.dimensions || []).length)],
+      ['Weights Found', String((row.weights || []).length)]
+    ];
+    machineReferenceSpecGridEl.innerHTML = specs
+      .map(([label, value]) => `<div class="stackup-spec-item"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`)
+      .join('');
+  }
+  renderMachineReferenceList(machineReferenceDimensionsEl, row.dimensions, 'No extracted dimensions on this page.');
+  renderMachineReferenceList(machineReferenceWeightsEl, row.weights, 'No extracted weights on this page.');
+  updateMachineReferenceVisual(row);
+  if (machineReferencePageTextEl) {
+    machineReferencePageTextEl.textContent = row.text || 'No extracted page text is available for this reference yet.';
+  }
+}
+
+function renderMachineReferenceRows(rows = machineReferenceData) {
+  if (!machineReferenceBodyEl) return;
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const activeKey = machineReferenceSelectEl?.value || getMachineReferenceKey(machineReferenceData[0]);
+  machineReferenceBodyEl.innerHTML = safeRows.length
+    ? safeRows.map((row) => {
+        const detailBits = []
+          .concat((row.dimensions || []).slice(0, 3))
+          .concat((row.weights || []).slice(0, 2));
+        const details = detailBits.length ? detailBits.join(' | ') : row.use || row.text || '-';
+        const sourcePage = row.sourcePage && row.sourcePage !== '-' ? `p. ${row.sourcePage}` : 'index';
+        const rowKey = getMachineReferenceKey(row);
+        return `<tr class="${rowKey === activeKey ? 'is-selected' : ''}"><td><button type="button" class="machine-reference-row-btn" data-machine-reference="${escapeHtml(rowKey)}">${escapeHtml(getMachineReferenceDisplayName(row))}</button></td><td>${escapeHtml(row.type)}</td><td>${escapeHtml(row.range)}</td><td>${escapeHtml(details)}</td><td>${escapeHtml(row.source)}<span class="machine-file-badge">${escapeHtml(sourcePage)}</span></td></tr>`;
+      }).join('')
+    : '<tr><td colspan="5">No machine references match that search.</td></tr>';
+  if (machineReferenceTotalChipEl) machineReferenceTotalChipEl.textContent = String(machineReferenceData.length);
+  if (machineReferenceVisibleChipEl) machineReferenceVisibleChipEl.textContent = String(safeRows.length);
+  if (machineReferenceHotTapChipEl) {
+    machineReferenceHotTapChipEl.textContent = String(machineReferenceData.filter((row) => row.sourcePage && row.sourcePage !== '-').length);
+  }
+}
+
+function getFilteredMachineReferences(query) {
+  const needle = normalizeMachineReferenceSearchText(query);
+  const tokens = needle ? needle.split(' ').filter(Boolean) : [];
+  return !tokens.length
+    ? machineReferenceData.slice()
+    : machineReferenceData
+        .map((row, index) => ({ row, index, score: getMachineReferenceSearchScore(row, tokens, needle) }))
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || a.index - b.index)
+        .map((item) => item.row);
+}
+
+function getMachineReferenceSearchScore(row, tokens, phrase) {
+  const haystack = getMachineReferenceText(row);
+  if (!tokens.every((token) => haystack.includes(token))) return 0;
+  const name = normalizeMachineReferenceSearchText(row?.name);
+  const type = normalizeMachineReferenceSearchText(row?.type);
+  const range = normalizeMachineReferenceSearchText(row?.range);
+  const use = normalizeMachineReferenceSearchText(row?.use);
+  const source = normalizeMachineReferenceSearchText(row?.source);
+  let score = phrase && name.includes(phrase) ? 80 : 0;
+  tokens.forEach((token) => {
+    if (name.includes(token)) score += 24;
+    if (type.includes(token)) score += 14;
+    if (range.includes(token)) score += 10;
+    if (use.includes(token)) score += 6;
+    if (source.includes(token)) score += 4;
+    if (haystack.includes(token)) score += 1;
+  });
+  return score;
+}
+
+function updateMachineReferenceSearchMeta(rows, query) {
+  if (!machineReferenceSearchMetaEl) return;
+  const count = Array.isArray(rows) ? rows.length : 0;
+  const needle = String(query || '').trim();
+  machineReferenceSearchMetaEl.textContent = needle
+    ? `${count} match${count === 1 ? '' : 'es'}`
+    : `Showing ${count} stack-ups`;
+}
+
+function populateMachineReferenceSelect(rows = machineReferenceFilteredData) {
+  if (!machineReferenceSelectEl) return '';
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const previous = machineReferenceSelectEl.value;
+  if (!safeRows.length) {
+    machineReferenceSelectEl.innerHTML = '<option value="">No stack-ups match that search</option>';
+    machineReferenceSelectEl.value = '';
+    machineReferenceSelectEl.disabled = true;
+    return '';
+  }
+  machineReferenceSelectEl.disabled = false;
+  machineReferenceSelectEl.innerHTML = safeRows
+    .map((row) => `<option value="${escapeHtml(getMachineReferenceKey(row))}">${escapeHtml(row.type)} - ${escapeHtml(getMachineReferenceDisplayName(row))}</option>`)
+    .join('');
+  const nextKey = previous && safeRows.some((row) => getMachineReferenceKey(row) === previous) ? previous : getMachineReferenceKey(safeRows[0]);
+  if (nextKey) machineReferenceSelectEl.value = nextKey;
+  return nextKey;
+}
+
+function updateMachineReferenceSummary() {
+  const activeKey = machineReferenceSelectEl?.value || getMachineReferenceKey(machineReferenceData[0]);
+  const match = getMachineReferenceByKey(activeKey);
+  if (!match) return;
+  setMachineReferenceText('machineReferenceType', match.type);
+  setMachineReferenceText('machineReferenceRange', match.range);
+  setMachineReferenceText('machineReferenceUse', match.use);
+  setMachineReferenceText('machineReferenceSource', match.sourcePage && match.sourcePage !== '-' ? `${match.source} p. ${match.sourcePage}` : match.source);
+  updateMachineReferenceDetail(match);
+  renderMachineReferenceRows(machineReferenceFilteredData);
+}
+
+function filterMachineReferenceRows(query) {
+  machineReferenceFilteredData = getFilteredMachineReferences(query);
+  populateMachineReferenceSelect(machineReferenceFilteredData);
+  renderMachineReferenceRows(machineReferenceFilteredData);
+  updateMachineReferenceSearchMeta(machineReferenceFilteredData, query);
+  if (machineReferenceFilteredData.length) updateMachineReferenceSummary();
+}
+
+function initMachineReference() {
+  machineReferenceFilteredData = getFilteredMachineReferences(machineReferenceSearchInputEl?.value);
+  populateMachineReferenceSelect(machineReferenceFilteredData);
+  renderMachineReferenceRows(machineReferenceFilteredData);
+  updateMachineReferenceSearchMeta(machineReferenceFilteredData, machineReferenceSearchInputEl?.value);
+  updateMachineReferenceSummary();
+}
+
+if (machineReferenceSelectEl) machineReferenceSelectEl.addEventListener('change', updateMachineReferenceSummary);
+if (machineReferenceSearchInputEl) machineReferenceSearchInputEl.addEventListener('input', () => filterMachineReferenceRows(machineReferenceSearchInputEl.value));
+if (machineReferenceSearchClearEl) {
+  machineReferenceSearchClearEl.addEventListener('click', () => {
+    if (machineReferenceSearchInputEl) {
+      machineReferenceSearchInputEl.value = '';
+      machineReferenceSearchInputEl.focus();
+    }
+    filterMachineReferenceRows('');
+  });
+}
+if (machineReferenceBodyEl) {
+  machineReferenceBodyEl.addEventListener('click', (event) => {
+    const trigger = event.target?.closest?.('[data-machine-reference]');
+    if (!trigger) return;
+    const match = getMachineReferenceByKey(trigger.getAttribute('data-machine-reference'));
+    if (!match) return;
+    if (machineReferenceSelectEl) machineReferenceSelectEl.value = getMachineReferenceKey(match);
+    updateMachineReferenceSummary();
+    machineReferenceDetailTitleEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+initMachineReference();
+
+function formatPivotFraction(value, denominator = 64) {
+  if (!Number.isFinite(value)) return '-';
+  const sign = value < 0 ? '-' : '';
+  const absValue = Math.abs(value);
+  const whole = Math.floor(absValue);
+  let numerator = Math.round((absValue - whole) * denominator);
+  let den = denominator;
+  if (numerator === den) {
+    return `${sign}${whole + 1}`;
+  }
+  if (numerator === 0) return `${sign}${whole}`;
+  const simplified = simplifyFraction(numerator, den);
+  numerator = simplified?.numerator || numerator;
+  den = simplified?.denominator || den;
+  return `${sign}${whole ? `${whole} ` : ''}${numerator}/${den}`;
+}
+
+function formatPivotInches(value, digits = 4) {
+  if (!Number.isFinite(value)) return '-';
+  return `${value.toFixed(digits)}" (${formatPivotFraction(value)})`;
+}
+
+function setPivotText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value || '-';
+}
+
+function setPivotBackingStatus(state, message) {
+  if (!pivotBackingStatusEl) return;
+  pivotBackingStatusEl.textContent = message;
+  pivotBackingStatusEl.setAttribute('data-state', state || 'info');
+}
+
+function getPivotMaterial() {
+  const material = pivotPipeMaterialEl?.value || 'CarbonSteel';
+  return pipeData[material] ? material : 'CarbonSteel';
+}
+
+function getPivotPressureBand() {
+  return pivotPressureBandEl?.value === 'over500' ? 'over500' : 'under500';
+}
+
+function populatePivotPipeSizes() {
+  if (!pivotPipeSizeEl) return;
+  const material = getPivotMaterial();
+  const previous = pivotPipeSizeEl.value;
+  pivotPipeSizeEl.innerHTML = Object.keys(pipeData[material] || {})
+    .map((size) => `<option value="${escapeHtml(size)}">${escapeHtml(size)}" (${formatDecimal(trueOD[material]?.[size], 3)} OD)</option>`)
+    .join('');
+  if (previous && pipeData[material]?.[previous]) pivotPipeSizeEl.value = previous;
+  if (!pivotPipeSizeEl.value) pivotPipeSizeEl.value = Object.keys(pipeData[material] || {})[0] || '';
+}
+
+function findPivotNominalForOd(material, pipeOd) {
+  if (!Number.isFinite(pipeOd)) return '';
+  const entries = Object.entries(trueOD[material] || {});
+  let best = null;
+  entries.forEach(([size, od]) => {
+    const delta = Math.abs(Number(od) - pipeOd);
+    if (!best || delta < best.delta) best = { size, delta };
+  });
+  return best && best.delta <= 0.08 ? best.size : '';
+}
+
+function getPivotNosePlateCheck(pipeSize, pipeId, pressureBand = 'under500') {
+  const nominal = Number.parseFloat(pipeSize);
+  if (!Number.isFinite(nominal) || !Number.isFinite(pipeId)) {
+    return { tolerance: '-', range: '-' };
+  }
+  let underId = NaN;
+  let pressureNote = '';
+  if (nominal >= 3 && nominal <= 4) {
+    underId = 7 / 16;
+  } else if (nominal >= 6 && nominal <= 12) {
+    underId = 1 / 2;
+  } else if (nominal >= 14 && nominal <= 36) {
+    underId = pressureBand === 'over500' ? 5 / 8 : 3 / 4;
+    pressureNote = pressureBand === 'over500' ? ' above 500 psi' : ' below 500 psi';
+  }
+  if (Number.isFinite(underId)) {
+    const targetOd = pipeId - underId;
+    const tolerance = `${formatPivotFraction(underId)}" under pipe ID${pressureNote}`;
+    return {
+      tolerance,
+      range: formatPivotInches(targetOd),
+      minOd: targetOd,
+      maxOd: targetOd,
+      targetOd,
+      underId
+    };
+  }
+  return { tolerance: 'Not listed in guide', range: '-' };
+}
+
+function getPivotClearanceB(pipeSize) {
+  const nominal = Number.parseFloat(pipeSize);
+  if (!Number.isFinite(nominal)) return '-';
+  if (nominal >= 3 && nominal <= 12) return '1/4" to 1/2"';
+  if (nominal >= 14) return '3/8" to 9/16"';
+  return 'Not listed';
+}
+
+function renderPivotSealRows(pipeId) {
+  if (!pivotSealBodyEl) return;
+  if (!Number.isFinite(pipeId)) {
+    pivotSealBodyEl.innerHTML = '<tr><td colspan="3">Enter pipe size and wall thickness to calculate seal sizes.</td></tr>';
+    return;
+  }
+  const rows = [
+    { offset: -1 / 16, label: '-1/16"', check: 'Section 7 Rev.1 minimum' },
+    { offset: -1 / 32, label: '-1/32"', check: 'Within guide tolerance' },
+    { offset: 0, label: 'Exact Pipe ID', check: 'Center of guide range' },
+    { offset: 1 / 32, label: '+1/32"', check: 'Within guide tolerance' },
+    { offset: 1 / 16, label: '+1/16"', check: 'Section 7 Rev.1 maximum' },
+    { offset: 3 / 32, label: '+3/32"', check: 'Field-check only' },
+    { offset: 1 / 8, label: '+1/8"', check: 'Field-check upper only' }
+  ];
+  pivotSealBodyEl.innerHTML = rows.map((row) => {
+    const seal = pipeId + row.offset;
+    const className = row.offset >= -(1 / 16) && row.offset <= (1 / 16) ? 'pivot-seal-guide' : 'pivot-seal-extended';
+    return `<tr class="${className}"><td>${escapeHtml(row.label)}</td><td>${escapeHtml(formatPivotInches(seal))}</td><td>${escapeHtml(row.check)}</td></tr>`;
+  }).join('');
+}
+
+function updatePivotBackingPlateHelper(pipeId, measuredNoseOd, nose) {
+  const hasRange = Number.isFinite(pipeId) && Number.isFinite(nose?.minOd) && Number.isFinite(nose?.maxOd);
+  const targetLabel = Number.isFinite(nose?.targetOd)
+    ? formatPivotInches(nose.targetOd)
+    : `${formatPivotInches(nose.minOd)} to ${formatPivotInches(nose.maxOd)}`;
+  setPivotText('pivotBackingTargetOut', hasRange ? targetLabel : '-');
+
+  if (!hasRange) {
+    setPivotText('pivotBackingUnderOut', '-');
+    setPivotText('pivotBackingAddOut', '-');
+    setPivotText('pivotBackingPerSideOut', '-');
+    setPivotBackingStatus('info', 'Select a listed pipe size and enter wall thickness or measured ID to calculate the backing plate target.');
+    return;
+  }
+
+  if (!Number.isFinite(measuredNoseOd)) {
+    setPivotText('pivotBackingUnderOut', '-');
+    setPivotText('pivotBackingAddOut', '-');
+    setPivotText('pivotBackingPerSideOut', '-');
+    setPivotBackingStatus('info', 'Enter the actual nose plate OD. If it is undersized, this helper will flag the backing plate / Tech Support review before use.');
+    return;
+  }
+
+  setPivotText('pivotBackingUnderOut', formatPivotInches(pipeId - measuredNoseOd));
+
+  if (measuredNoseOd < nose.minOd) {
+    const diameterAdd = nose.minOd - measuredNoseOd;
+    setPivotText('pivotBackingAddOut', formatPivotInches(diameterAdd));
+    setPivotText('pivotBackingPerSideOut', formatPivotInches(diameterAdd / 2));
+    setPivotBackingStatus('danger', `BACKING PLATE REQUIRED REVIEW: Nose plate OD is undersized for Section 7. Add about ${formatPivotInches(diameterAdd)} to OD (${formatPivotInches(diameterAdd / 2)} per side). Section 7 says Tech Support review and a 3/16" to 1/4" aluminum backing plate may be needed before using this setup.`);
+    return;
+  }
+
+  if (measuredNoseOd > nose.maxOd) {
+    setPivotText('pivotBackingAddOut', `Oversize by ${formatPivotInches(measuredNoseOd - nose.maxOd)}`);
+    setPivotText('pivotBackingPerSideOut', '-');
+    setPivotBackingStatus('danger', `STOP CHECK: Nose plate OD is larger than the Section 7 target by ${formatPivotInches(measuredNoseOd - nose.maxOd)}. A backing plate will not correct oversize; verify pipe ID and plate selection before use.`);
+    return;
+  }
+
+  setPivotText('pivotBackingAddOut', 'None');
+  setPivotText('pivotBackingPerSideOut', 'None');
+  setPivotBackingStatus('ok', 'OK: Measured nose plate OD matches the Section 7 target. Backing plate review is not indicated by this check.');
+}
+
+function updatePivotHeadSetup() {
+  if (!pivotPipeSizeEl) return;
+  const material = getPivotMaterial();
+  const pipeSize = pivotPipeSizeEl.value;
+  const od = Number.parseFloat(trueOD[material]?.[pipeSize]);
+  const nominal = Number.parseFloat(pipeSize);
+  const wall = getMeasurementValue(pivotWallThicknessEl);
+  const overrideId = getMeasurementValue(pivotPipeIdOverrideEl);
+  const pressureBand = getPivotPressureBand();
+  const measuredNoseOd = getMeasurementValue(pivotMeasuredNoseOdEl);
+  const calculatedId = Number.isFinite(od) && Number.isFinite(wall) ? od - (wall * 2) : NaN;
+  const pipeId = Number.isFinite(overrideId) ? overrideId : calculatedId;
+  const loadPadRequired = Number.isFinite(nominal) && nominal > 4;
+  const loadPadTarget = Number.isFinite(pipeId) && loadPadRequired ? pipeId / 2 : NaN;
+  const loadPadLow = Number.isFinite(loadPadTarget) ? loadPadTarget - (1 / 16) : NaN;
+  const nose = getPivotNosePlateCheck(pipeSize, pipeId, pressureBand);
+  const sealGuideLow = Number.isFinite(pipeId) ? pipeId - (1 / 16) : NaN;
+  const sealGuideHigh = Number.isFinite(pipeId) ? pipeId + (1 / 16) : NaN;
+  const sealFieldHigh = Number.isFinite(pipeId) ? pipeId + (1 / 8) : NaN;
+  const status = [];
+
+  if (!Number.isFinite(wall) && !Number.isFinite(overrideId)) status.push('Enter wall thickness or measured ID.');
+  if (Number.isFinite(wall) && wall <= 0) status.push('Wall thickness must be greater than zero.');
+  if (Number.isFinite(calculatedId) && calculatedId <= 0) status.push('Calculated ID is not valid for the selected pipe size.');
+  if (Number.isFinite(overrideId)) status.push('Measured ID override is being used.');
+  if (Number.isFinite(nominal) && nominal >= 14 && nominal <= 36) {
+    status.push(pressureBand === 'over500' ? 'Above 500 psi nose target selected.' : 'Below 500 psi nose target selected.');
+  }
+  if (!status.length) status.push('Pivot head setup values calculated from selected pipe and wall thickness.');
+
+  setPivotText('pivotPipeOdOut', formatPivotInches(od));
+  setPivotText('pivotPipeIdOut', formatPivotInches(pipeId));
+  setPivotText('pivotSealRangeOut', Number.isFinite(pipeId) ? `Guide ${formatPivotInches(sealGuideLow)} to ${formatPivotInches(sealGuideHigh)}; field max ${formatPivotInches(sealFieldHigh)}` : '-');
+  setPivotText('pivotLoadPadTargetOut', Number.isFinite(pipeId) ? (loadPadRequired ? formatPivotInches(loadPadTarget) : 'N/A for 3" and 4"') : '-');
+  setPivotText('pivotLoadPadRangeOut', Number.isFinite(pipeId) ? (loadPadRequired && Number.isFinite(loadPadTarget) ? `${formatPivotInches(loadPadLow)} to ${formatPivotInches(loadPadTarget)}` : 'No load pad required') : '-');
+  setPivotText('pivotClearanceBOut', getPivotClearanceB(pipeSize));
+  setPivotText('pivotNoseToleranceOut', nose.tolerance);
+  setPivotText('pivotNoseRangeOut', nose.range);
+  if (pivotInputStatusEl) pivotInputStatusEl.textContent = status.join(' ');
+  renderPivotSealRows(pipeId);
+  updatePivotBackingPlateHelper(pipeId, measuredNoseOd, nose);
+}
+
+function useCurrentPipeForPivotHead() {
+  const geometry = getCurrentPipeGeometry();
+  const material = localStorage.getItem('pipeMaterial') || 'CarbonSteel';
+  if (pivotPipeMaterialEl && pipeData[material]) pivotPipeMaterialEl.value = material;
+  populatePivotPipeSizes();
+  const nominal = findPivotNominalForOd(getPivotMaterial(), geometry.pipeOD);
+  if (nominal && pivotPipeSizeEl) pivotPipeSizeEl.value = nominal;
+  if (pivotWallThicknessEl && Number.isFinite(geometry.wall) && geometry.wall > 0) {
+    pivotWallThicknessEl.value = geometry.wall.toFixed(4);
+  }
+  if (pivotPipeIdOverrideEl && Number.isFinite(geometry.pipeID) && geometry.pipeID > 0) {
+    pivotPipeIdOverrideEl.value = geometry.pipeID.toFixed(4);
+  }
+  updatePivotHeadSetup();
+}
+
+if (pivotPipeMaterialEl) {
+  pivotPipeMaterialEl.addEventListener('change', () => {
+    populatePivotPipeSizes();
+    updatePivotHeadSetup();
+  });
+}
+[pivotPipeSizeEl, pivotWallThicknessEl, pivotPipeIdOverrideEl, pivotPressureBandEl, pivotMeasuredNoseOdEl].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', updatePivotHeadSetup);
+  el.addEventListener('change', updatePivotHeadSetup);
+});
+if (pivotUseCurrentPipeBtnEl) pivotUseCurrentPipeBtnEl.addEventListener('click', useCurrentPipeForPivotHead);
+if (pivotClearOverrideBtnEl) {
+  pivotClearOverrideBtnEl.addEventListener('click', () => {
+    if (pivotPipeIdOverrideEl) pivotPipeIdOverrideEl.value = '';
+    updatePivotHeadSetup();
+  });
+}
+populatePivotPipeSizes();
+updatePivotHeadSetup();
+
+
+const htpChartData = {
+  '3': { branch: '6"', head: '3" - 4"', cutter: 5.500, bco: 3.000 },
+  '4': { branch: '6" - 8"', head: '4" - 6"', cutter: 7.468, bco: 4.000 },
+  '6': { branch: '8" - 12"', head: '6" - 8"', cutter: 9.968, bco: 6.000 },
+  '8': { branch: '12"', head: '6" - 8"', cutter: 9.968, bco: 8.000 },
+  '10': { branch: '16"', head: '10" - 12"', cutter: 14.468, bco: 10.000 },
+  '12': { branch: '16"', head: '10" - 12"', cutter: 14.468, bco: 12.000 },
+  '14': { branch: '20"', head: '14" - 16"', cutter: 18.468, bco: 14.000 },
+  '16': { branch: '20"', head: '14" - 16"', cutter: 18.468, bco: 16.000 }
+};
+
+const plant150Data = [
+  ['3"','3/16"','5/8"','4'], ['4"','3/16"','5/8"','4'], ['6"','1/4"','3/4"','4'], ['8"','5/16"','7/8"','4'],
+  ['10"','5/16"','7/8"','6'], ['12"','7/16"','1 1/16"','6'], ['14"','7/16"','1 1/4"','6'], ['16"','7/16"','1 1/4"','8'],
+  ['18"','7/16"','1 1/4"','8'], ['20"','7/16"','1 1/4"','10'], ['24"','7/16"','1 1/4"','10'], ['30"','7/16"','1 3/8"','14'], ['36"','7/16"','1 3/8"','16']
+];
+const plant600Data = [
+  ['3"','3/8"','1 1/16"','4'], ['4"','3/8"','1 1/4"','4'], ['6"','3/8"','1 1/4"','6'], ['8"','9/16"','1 5/8"','6'],
+  ['10"','9/16"','1 5/8"','8'], ['12"','9/16"','1 5/8"','10'], ['14"','5/8"','1 5/8"','10'], ['16"','11/16"','1 13/16"','10'],
+  ['18"','13/16"','1 13/16"','10'], ['20"','13/16"','1 13/16"','12'], ['24"','1"','2 1/8"','12'], ['30"','1 1/16"','2 1/4"','14'], ['36"','1 1/16"','2 1/2"','14']
+];
+const sealtite1JackboltData = [
+  ['3"','150#','1.875"','2.375"','9','9'],
+  ['3"','600#','1.5"','2.625"','15','15'],
+  ['4"','150#','1.5"','2.5"','18','18'],
+  ['4"','600#','1.75"','2.875"','15','15'],
+  ['6"','150#','1.625"','2"','6','6'],
+  ['6"','600#','1.875"','3.25"','17','17'],
+  ['8"','150#','1.625"','2.375"','9','9'],
+  ['8"','600#','1.75"','3.375"','17','17'],
+  ['10"','150#','1.625"','2.375"','9','9'],
+  ['10"','600#','2"','3.5"','15','15'],
+  ['12"','150#','1.5"','2.438"','9','9'],
+  ['12"','600#','1.875"','3.563"','17','17'],
+  ['14"','150#','1.938"','2.75"','8','8'],
+  ['14"','600#','1.813"','3.813"','17.5','17.5'],
+  ['16"','150#','1.625"','3"','14','14'],
+  ['16"','600#','2"','3.625"','13','13'],
+  ['18"','150#','2"','2.75"','7.5','7.5'],
+  ['18"','600#','2"','2.75"','7.5','7.5'],
+  ['20"','150#','1.5"','2.75"','13','13'],
+  ['20"','600#','1.5"','2.75"','13','13'],
+  ['24"','150#','1.375"','2.813"','14','14'],
+  ['24"','600#','1.375"','2.813"','14','14'],
+  ['30"','150#','1.75"','2.875"','9','9'],
+  ['30"','600#','1.75"','2.875"','9','9'],
+  ['36"','150#','2"','3.25"','11','11'],
+  ['36"','600#','2"','3.25"','11','11']
+];
+
+const garlock600Data = [
+  { size:'1/2', area:'0.94', bolts:'4', boltSize:'0.50', torque60:'60', maxStress:'32118', minTorque:'11', maxRecStress:'20000', preferredTorque:'37' },
+  { size:'3/4', area:'1.36', bolts:'4', boltSize:'0.63', torque60:'120', maxStress:'35629', minTorque:'20', maxRecStress:'20000', preferredTorque:'67' },
+  { size:'1', area:'1.79', bolts:'4', boltSize:'0.63', torque60:'120', maxStress:'27027', minTorque:'27', maxRecStress:'20000', preferredTorque:'89' },
+  { size:'1-1/4', area:'2.74', bolts:'4', boltSize:'0.63', torque60:'120', maxStress:'17664', minTorque:'41', maxRecStress:'17664', preferredTorque:'120' },
+  { size:'1-1/2', area:'3.65', bolts:'4', boltSize:'0.75', torque60:'200', maxStress:'19862', minTorque:'60', maxRecStress:'19862', preferredTorque:'200' },
+  { size:'2', area:'5.84', bolts:'8', boltSize:'0.63', torque60:'120', maxStress:'16593', minTorque:'43', maxRecStress:'16593', preferredTorque:'120' },
+  { size:'2-1/2', area:'6.82', bolts:'8', boltSize:'0.75', torque60:'200', maxStress:'21264', minTorque:'56', maxRecStress:'20000', preferredTorque:'188' },
+  { size:'3', area:'10.01', bolts:'8', boltSize:'0.75', torque60:'200', maxStress:'14476', minTorque:'83', maxRecStress:'14476', preferredTorque:'200' },
+  { size:'4', area:'14.19', bolts:'8', boltSize:'0.88', torque60:'320', maxStress:'14174', minTorque:'135', maxRecStress:'14174', preferredTorque:'320' },
+  { size:'5', area:'17.69', bolts:'8', boltSize:'1.00', torque60:'490', maxStress:'14952', minTorque:'197', maxRecStress:'14952', preferredTorque:'490' },
+  { size:'6', area:'22.33', bolts:'12', boltSize:'1.00', torque60:'490', maxStress:'17770', minTorque:'165', maxRecStress:'17770', preferredTorque:'490' },
+  { size:'8', area:'30.22', bolts:'12', boltSize:'1.13', torque60:'710', maxStress:'17344', minTorque:'246', maxRecStress:'17344', preferredTorque:'710' },
+  { size:'10', area:'36.91', bolts:'16', boltSize:'1.25', torque60:'1000', maxStress:'24160', minTorque:'248', maxRecStress:'20000', preferredTorque:'828' },
+  { size:'12', area:'49.04', bolts:'20', boltSize:'1.25', torque60:'1000', maxStress:'22733', minTorque:'264', maxRecStress:'20000', preferredTorque:'880' },
+  { size:'14', area:'53.46', bolts:'20', boltSize:'1.38', torque60:'1360', maxStress:'25928', minTorque:'315', maxRecStress:'20000', preferredTorque:'1049' },
+  { size:'16', area:'67.74', bolts:'20', boltSize:'1.50', torque60:'1600', maxStress:'24889', minTorque:'386', maxRecStress:'20000', preferredTorque:'1286' },
+  { size:'18', area:'91.89', bolts:'20', boltSize:'1.63', torque60:'2200', maxStress:'21939', minTorque:'602', maxRecStress:'20000', preferredTorque:'2006' },
+  { size:'20', area:'101.32', bolts:'24', boltSize:'1.63', torque60:'2200', maxStress:'23878', minTorque:'553', maxRecStress:'20000', preferredTorque:'1843' },
+  { size:'24', area:'130.82', bolts:'24', boltSize:'1.88', torque60:'4000', maxStress:'25362', minTorque:'946', maxRecStress:'20000', preferredTorque:'3154' }
+];
+
+function renderSimpleTableRows(targetId, rows) {
+  const body = document.getElementById(targetId);
+  if (!body) return;
+  body.innerHTML = rows.map((row) => `<tr>${row.map((cell) => `<td>${cell}</td>`).join('')}</tr>`).join('');
+}
+
+function getSealtiteJackboltRows(seriesKey) {
+  const classLabel = `${seriesKey}#`;
+  return sealtite1JackboltData
+    .filter((row) => row[1] === classLabel)
+    .map((row) => [row[0], row[2] || '-', row[3] || '-', row[4] || '-', row[5] || '-']);
+}
+
+function setPlantText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value || '-';
+}
+
+function renderGarlock600Rows(rows) {
+  const body = document.getElementById('garlock600Body');
+  if (!body) return;
+  body.innerHTML = rows.map((row) => `<tr><td>${row.size}</td><td>${row.bolts}</td><td>${row.boltSize}</td><td>${row.torque60}</td><td>${row.minTorque}</td><td>${row.preferredTorque}</td><td>${row.maxRecStress}</td><td>${row.area}</td></tr>`).join('');
+}
+
+function populateGarlock600Select() {
+  if (!garlock600SizeSelectEl) return;
+  const previous = garlock600SizeSelectEl.value;
+  const markup = garlock600Data.map((row) => `<option value="${row.size}">${row.size}</option>`).join('');
+  if (!garlock600SizeSelectEl.options.length || garlock600SizeSelectEl.innerHTML.trim() !== markup.trim()) {
+    garlock600SizeSelectEl.innerHTML = markup;
+  }
+  if (previous && garlock600Data.some((row) => row.size === previous)) garlock600SizeSelectEl.value = previous;
+  if (!garlock600SizeSelectEl.value && garlock600Data[0]?.size) garlock600SizeSelectEl.value = garlock600Data[0].size;
+}
+
+function updateGarlock600Summary() {
+  const activeSize = garlock600SizeSelectEl?.value || garlock600Data[0]?.size;
+  const match = garlock600Data.find((row) => row.size === activeSize) || garlock600Data[0];
+  if (!match) return;
+  const setText = (id, value) => { const el = document.getElementById(id); if (el) el.textContent = value || '-'; };
+  setText('garlock600BoltCount', match.bolts);
+  setText('garlock600BoltSize', match.boltSize);
+  setText('garlock600MinTorque', `${match.minTorque} ft lbs`);
+  setText('garlock600PreferredTorque', `${match.preferredTorque} ft lbs`);
+  setText('garlock600Torque60', `${match.torque60} ft lbs`);
+  setText('garlock600StressValue', `${match.maxRecStress} psi`);
+  setText('garlock600ContactArea', `${match.area} in^2`);
+}
+
+function filterGarlock600Rows(query) {
+  const needle = String(query || '').trim().toLowerCase();
+  const filtered = !needle ? garlock600Data : garlock600Data.filter((row) => Object.values(row).join(' ').toLowerCase().includes(needle));
+  renderGarlock600Rows(filtered);
+}
+
+function populatePlantSelect(selectEl, rows) {
+  if (!selectEl) return;
+  const previous = selectEl.value;
+  selectEl.innerHTML = rows.map((row) => `<option value="${escapeHtml(row[0])}">${escapeHtml(row[0])}</option>`).join('');
+  if (previous && rows.some((row) => row[0] === previous)) selectEl.value = previous;
+}
+
+function updatePlantSummary(seriesKey) {
+  const rows = seriesKey === '600' ? plant600Data : plant150Data;
+  const selectEl = seriesKey === '600' ? plant600SizeSelectEl : plant150SizeSelectEl;
+  const jackEl = document.getElementById(seriesKey === '600' ? 'plant600JackBolt' : 'plant150JackBolt');
+  const packingEl = document.getElementById(seriesKey === '600' ? 'plant600Packing' : 'plant150Packing');
+  const countEl = document.getElementById(seriesKey === '600' ? 'plant600Count' : 'plant150Count');
+  const activeSize = selectEl?.value || rows[0]?.[0];
+  const match = rows.find((row) => row[0] === activeSize) || rows[0];
+  if (!match) return;
+  if (jackEl) jackEl.textContent = match[1] || '-';
+  if (packingEl) packingEl.textContent = match[2] || '-';
+  if (countEl) countEl.textContent = match[3] || '-';
+
+  const sealtiteMatch = getSealtiteJackboltRows(seriesKey).find((row) => row[0] === activeSize);
+  setPlantText(`plant${seriesKey}SealtiteSet`, sealtiteMatch?.[1]);
+  setPlantText(`plant${seriesKey}SealtiteRetracted`, sealtiteMatch?.[2]);
+  setPlantText(`plant${seriesKey}SealtiteTurnsSet`, sealtiteMatch?.[3]);
+  setPlantText(`plant${seriesKey}SealtiteTurnsRetracted`, sealtiteMatch?.[4]);
+}
+
+function filterPlantRows(seriesKey, query) {
+  const rows = seriesKey === '600' ? plant600Data : plant150Data;
+  const targetId = seriesKey === '600' ? 'plant600Body' : 'plant150Body';
+  const sealtiteTargetId = seriesKey === '600' ? 'plant600SealtiteBody' : 'plant150SealtiteBody';
+  const sealtiteRows = getSealtiteJackboltRows(seriesKey);
+  const needle = String(query || '').trim().toLowerCase();
+  const filtered = !needle ? rows : rows.filter((row) => row.join(' ').toLowerCase().includes(needle));
+  const sealtiteFiltered = !needle ? sealtiteRows : sealtiteRows.filter((row) => row.join(' ').toLowerCase().includes(needle));
+  renderSimpleTableRows(targetId, filtered);
+  renderSimpleTableRows(sealtiteTargetId, sealtiteFiltered);
+}
+
+renderSimpleTableRows('htpReferenceBody', Object.entries(htpChartData).map(([size, item]) => [size + '"', item.branch, item.head, Number(item.cutter).toFixed(3) + '"']));
+renderSimpleTableRows('plant150Body', plant150Data);
+renderSimpleTableRows('plant600Body', plant600Data);
+renderSimpleTableRows('plant150SealtiteBody', getSealtiteJackboltRows('150'));
+renderSimpleTableRows('plant600SealtiteBody', getSealtiteJackboltRows('600'));
+populatePlantSelect(plant150SizeSelectEl, plant150Data);
+populatePlantSelect(plant600SizeSelectEl, plant600Data);
+updatePlantSummary('150');
+updatePlantSummary('600');
+if (plant150SizeSelectEl) plant150SizeSelectEl.addEventListener('change', () => updatePlantSummary('150'));
+if (plant600SizeSelectEl) plant600SizeSelectEl.addEventListener('change', () => updatePlantSummary('600'));
+if (plant150SearchInputEl) plant150SearchInputEl.addEventListener('input', () => filterPlantRows('150', plant150SearchInputEl.value));
+if (plant600SearchInputEl) plant600SearchInputEl.addEventListener('input', () => filterPlantRows('600', plant600SearchInputEl.value));
+
 
 const ETA_FEED_RATE = 0.004;
 const etaMachineEl = document.getElementById('etaMachine');
@@ -776,6 +2050,7 @@ const etaCutterSizeListEl = document.getElementById('etaCutterSizeList');
 const etaBcoEl = document.getElementById('etaBco');
 const etaFeedRateDisplayEl = document.getElementById('etaFeedRateDisplay');
 const etaRpmDisplayEl = document.getElementById('etaRpmDisplay');
+const etaRpmOverrideEl = document.getElementById('etaRpmOverride');
 const etaFeedSpeedDisplayEl = document.getElementById('etaFeedSpeedDisplay');
 const etaRangeDisplayEl = document.getElementById('etaRangeDisplay');
 const etaInlineStatusEl = document.getElementById('etaInlineStatus');
@@ -807,7 +2082,7 @@ const etaRpmChart = {
 };
 
 function formatEtaMinutes(minutes) {
-  if (!Number.isFinite(minutes) || minutes < 0) return '—';
+  if (!Number.isFinite(minutes) || minutes < 0) return '-';
   const totalSeconds = Math.round(minutes * 60);
   const hours = Math.floor(totalSeconds / 3600);
   const mins = Math.floor((totalSeconds % 3600) / 60);
@@ -889,43 +2164,61 @@ function getEtaRpmMatch(machine, cutterSizeRaw) {
   };
 }
 
+function getLiveBcoValue() {
+  const direct = getMeasurementValue(bcoResultEl);
+  if (Number.isFinite(direct)) return direct;
+  const rawText = String(bcoResultEl?.textContent || '').replace(/,/g, ' ');
+  const match = rawText.match(/BCO\s*=\s*([-+]?\d*\.?\d+)/i) || rawText.match(/BCO\s*:\s*([-+]?\d*\.?\d+)/i) || rawText.match(/([-+]?\d*\.?\d+)\s*in\b/i);
+  if (!match) return NaN;
+  const parsed = parseFloat(match[1]);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
 function syncBcoToEta(options = {}) {
-  if (!etaBcoEl) return;
-  refreshBcoState();
   const force = !!options.force;
-  const currentBco = parseFloat(data?.bco);
-  if (!Number.isFinite(currentBco)) {
-    if (force) etaBcoEl.value = '';
-    return;
+  const currentCutter = getMeasurementValue(bcoCutterOdEl);
+  const currentBco = getLiveBcoValue();
+  const fmt = (value) => Number(value).toFixed(4).replace(/\.0+$/, '').replace(/(\.\d*?)0+$/, '$1');
+  if (etaCutterSizeEl && Number.isFinite(currentCutter) && (!etaCutterSizeEl.value || force)) {
+    etaCutterSizeEl.value = fmt(currentCutter);
   }
-  if (!etaBcoEl.value || force) etaBcoEl.value = currentBco.toFixed(4);
+  const etaBcoIsAuto = !etaBcoEl || etaBcoEl.dataset.autoSync !== 'false';
+  if (etaBcoEl && Number.isFinite(currentBco) && (!etaBcoEl.value || force || etaBcoIsAuto)) {
+    etaBcoEl.value = fmt(currentBco);
+    etaBcoEl.dataset.autoSync = 'true';
+  }
 }
 
 function updateEtaEstimate() {
   if (!etaMachineEl || !etaCutterSizeEl || !etaBcoEl) return;
+  syncBcoToEta();
   if (etaFeedRateDisplayEl) etaFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
   const machine = etaMachineEl.value || '360';
   const cutterSize = etaCutterSizeEl.value;
   const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, cutterSize);
   const bco = getMeasurementValue(etaBcoEl);
+  const overrideRpm = getMeasurementValue(etaRpmOverrideEl);
 
   if (etaRpmDisplayEl) {
     etaRpmDisplayEl.textContent = rpmValues.length > 1
       ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}`
-      : (rpmValues[0] ? `${rpmValues[0]}` : '—');
+      : (rpmValues[0] ? `${rpmValues[0]}` : '-');
   }
 
   if (!rpmValues.length || !Number.isFinite(bco) || bco <= 0) {
-    if (etaFeedSpeedDisplayEl) etaFeedSpeedDisplayEl.textContent = '—';
-    if (etaRangeDisplayEl) etaRangeDisplayEl.textContent = '—';
+    if (etaFeedSpeedDisplayEl) etaFeedSpeedDisplayEl.textContent = '-';
+    if (etaRangeDisplayEl) etaRangeDisplayEl.textContent = '-';
     if (etaInlineStatusEl) etaInlineStatusEl.textContent = 'Enter a valid BCO and cutter size to calculate estimated time to BCO.';
     return;
   }
 
   const minRpm = Math.min(...rpmValues);
   const maxRpm = Math.max(...rpmValues);
-  const slowFeed = minRpm * ETA_FEED_RATE;
-  const fastFeed = maxRpm * ETA_FEED_RATE;
+  const usingManualRpm = Number.isFinite(overrideRpm) && overrideRpm > 0;
+  const slowRpm = usingManualRpm ? overrideRpm : minRpm;
+  const fastRpm = usingManualRpm ? overrideRpm : maxRpm;
+  const slowFeed = slowRpm * ETA_FEED_RATE;
+  const fastFeed = fastRpm * ETA_FEED_RATE;
   const lowEta = bco / fastFeed;
   const highEta = bco / slowFeed;
 
@@ -942,12 +2235,14 @@ function updateEtaEstimate() {
   const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
   if (etaInlineStatusEl) {
     const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
-    if (exact) {
-      etaInlineStatusEl.textContent = `Estimate shown using ${rpmText} for the ${machineLabel}.`;
+    if (usingManualRpm) {
+      etaInlineStatusEl.textContent = `Using manual RPM override of ${overrideRpm} RPM. Recommended chart RPM for the ${machineLabel} is ${rpmText}.`;
+    } else if (exact) {
+      etaInlineStatusEl.textContent = `Estimate shown using recommended ${rpmText} for the ${machineLabel}.`;
     } else if (typeof interpolated !== 'undefined' && interpolated) {
-      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using interpolated recommended RPM from chart sizes ${matchedSize} at ${rpmText} for the ${machineLabel}.`;
     } else {
-      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) at ${rpmText} for the ${machineLabel}.`;
+      etaInlineStatusEl.textContent = `Custom cutter size ${cutterSize} is using the nearest charted size (${matchedSize}) with recommended ${rpmText} for the ${machineLabel}.`;
     }
   }
 }
@@ -962,17 +2257,29 @@ function initEtaCalculator() {
 
   etaMachineEl.addEventListener('change', () => {
     populateEtaCutterSizes();
+    syncBcoToEta();
     updateEtaEstimate();
   });
   etaCutterSizeEl.addEventListener('input', updateEtaEstimate);
   etaCutterSizeEl.addEventListener('change', updateEtaEstimate);
-  etaBcoEl?.addEventListener('input', updateEtaEstimate);
-  etaBcoEl?.addEventListener('change', updateEtaEstimate);
+  etaBcoEl?.addEventListener('input', () => {
+    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';
+    updateEtaEstimate();
+  });
+  etaBcoEl?.addEventListener('change', () => {
+    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';
+    updateEtaEstimate();
+  });
+  etaRpmOverrideEl?.addEventListener('input', updateEtaEstimate);
+  etaRpmOverrideEl?.addEventListener('change', updateEtaEstimate);
   etaUseCurrentBcoBtnEl?.addEventListener('click', () => {
     syncBcoToEta({ force: true });
     updateEtaEstimate();
   });
-  etaRefreshBtnEl?.addEventListener('click', updateEtaEstimate);
+  etaRefreshBtnEl?.addEventListener('click', () => {
+    syncBcoToEta();
+    updateEtaEstimate();
+  });
 }
 if (openDecimalModalBtnEl) openDecimalModalBtnEl.addEventListener('click', openDecimalModal);
 if (closeDecimalModalBtnEl) closeDecimalModalBtnEl.addEventListener('click', closeDecimalModal);
@@ -1050,7 +2357,7 @@ function getWrenchSizeForDiameter(diameter) {
     '4.00': '6-1/8',
     '4.12': '6-1/4'
   };
-  return wrenchMap[dia] || '—';
+  return wrenchMap[dia] || '-';
 }
 
 
@@ -1092,19 +2399,19 @@ function updateBoltingSummary() {
   const row = getBoltingRowsForClass(flangeClass).find((entry) => entry.size === boltingSizeSelectEl.value);
   const isDual = config?.type === 'dual';
   if (!row) {
-    if (boltingBoltCountEl) boltingBoltCountEl.textContent = '—';
-    if (boltingDiameterEl) boltingDiameterEl.textContent = '—';
-    if (boltingStudRfEl) boltingStudRfEl.textContent = '—';
-    if (boltingStudRtjEl) boltingStudRtjEl.textContent = '—';
-    if (boltingWrenchEl) boltingWrenchEl.textContent = '—';
+    if (boltingBoltCountEl) boltingBoltCountEl.textContent = '-';
+    if (boltingDiameterEl) boltingDiameterEl.textContent = '-';
+    if (boltingStudRfEl) boltingStudRfEl.textContent = '-';
+    if (boltingStudRtjEl) boltingStudRtjEl.textContent = '-';
+    if (boltingWrenchEl) boltingWrenchEl.textContent = '-';
     if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
     return;
   }
-  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts || '—';
-  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter || '—';
+  if (boltingBoltCountEl) boltingBoltCountEl.textContent = row.bolts || '-';
+  if (boltingDiameterEl) boltingDiameterEl.textContent = row.diameter || '-';
   if (boltingWrenchEl) boltingWrenchEl.textContent = row.wrench || getWrenchSizeForDiameter(row.diameter);
-  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? (row.stud_rf || '—') : (row.stud || '—');
-  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? (row.stud_rtj || '—') : '—';
+  if (boltingStudRfEl) boltingStudRfEl.textContent = isDual ? (row.stud_rf || '-') : (row.stud || '-');
+  if (boltingStudRtjEl) boltingStudRtjEl.textContent = isDual ? (row.stud_rtj || '-') : '-';
   if (boltingRtjItemEl) boltingRtjItemEl.hidden = !isDual;
 }
 
@@ -1121,13 +2428,164 @@ function initBoltingReference() {
   boltingSizeSelectEl.addEventListener('change', updateBoltingSummary);
 }
 
+
+function initReferenceWorkspaceHard() {
+  try {
+    buildDecimalChart(decimalChartSearchEl?.value || '');
+    updateFractionToDecimal();
+    updateDecimalToFraction();
+    filterGlossaryRows(glossarySearchInputEl?.value || '');
+    renderSimpleTableRows('plant150Body', plant150Data);
+    renderSimpleTableRows('plant600Body', plant600Data);
+    if (typeof initMachineReference === 'function') initMachineReference();
+    if (typeof initBoltingReference === 'function') initBoltingReference();
+    const safeView = getSafeReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl?.value || 'converter');
+    setReferenceView(safeView);
+  } catch (error) {
+    console.warn('alpha71 reference workspace init fallback failed', error);
+  }
+}
+window.initReferenceWorkspaceHard = initReferenceWorkspaceHard;
+document.addEventListener('DOMContentLoaded', initReferenceWorkspaceHard, { once: true });
+document.addEventListener('click', (event) => {
+  const trigger = event.target.closest('[data-go-screen="ref"], #openRefBtn, #referenceBackToTopBtn');
+  if (!trigger) return;
+  setTimeout(initReferenceWorkspaceHard, 0);
+});
+window.addEventListener('pageshow', () => setTimeout(initReferenceWorkspaceHard, 0));
+document.addEventListener('click', (event) => {
+  const refTab = event.target.closest('.screen-tab[data-screen="ref"]');
+  const refCard = event.target.closest('.ref-category-card, .ref-shortcut-btn');
+  if (refTab || refCard) setTimeout(initReferenceWorkspaceHard, 0);
+});
+
 initBoltingReference();
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  window.addEventListener('load', async () => {
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha200', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
+
+// ===== HTP HOT TAP =====
+const htpPipeSizeEl = document.getElementById('htpPipeSize');
+const htpBranchSizeEl = document.getElementById('htpBranchSize');
+const htpHeadEl = document.getElementById('htpHead');
+const htpCutterSizeEl = document.getElementById('htpCutterSize');
+const htpBcoEl = document.getElementById('htpBco');
+const htpMdEl = document.getElementById('htpMd');
+const htpLdEl = document.getElementById('htpLd');
+const htpLdSignEl = document.getElementById('htpLdSign');
+const htpPtcEl = document.getElementById('htpPtc');
+const htpTcoEl = document.getElementById('htpTco');
+const htpMachineEl = document.getElementById('htpMachine');
+const htpFeedRateDisplayEl = document.getElementById('htpFeedRateDisplay');
+const htpEtaRpmEl = document.getElementById('htpEtaRpm');
+const htpEtaFeedSpeedEl = document.getElementById('htpEtaFeedSpeed');
+const htpEtaRangeEl = document.getElementById('htpEtaRange');
+const htpStatusEl = document.getElementById('htpStatus');
+let lastHtp = { tco: NaN, eta: '-', cutter: NaN, bco: NaN, warnings: [] };
+
+function calcHtp() {
+  if (!htpPipeSizeEl) return;
+  const config = htpChartData[String(htpPipeSizeEl.value || '')];
+  if (!config) return;
+
+  if (htpBranchSizeEl) htpBranchSizeEl.textContent = config.branch;
+  if (htpHeadEl) htpHeadEl.textContent = config.head;
+  if (htpCutterSizeEl) htpCutterSizeEl.textContent = Number(config.cutter).toFixed(3);
+  if (htpBcoEl) htpBcoEl.textContent = Number(config.bco).toFixed(3);
+  if (htpFeedRateDisplayEl) htpFeedRateDisplayEl.textContent = ETA_FEED_RATE.toFixed(4);
+
+  const md = getMeasurementValue(htpMdEl) || 0;
+  const ldRaw = getMeasurementValue(htpLdEl) || 0;
+  const ld = (htpLdSignEl?.value || '+') === '-' ? -ldRaw : ldRaw;
+  const ptc = getMeasurementValue(htpPtcEl) || 0;
+  const bco = Number(config.bco) || 0;
+  const tco = md + ld + ptc + bco;
+
+  if (htpTcoEl) htpTcoEl.textContent = Number.isFinite(tco) ? tco.toFixed(4) : '-';
+
+  const machine = htpMachineEl?.value || '360';
+  const { rpmValues, matchedSize, exact, interpolated } = getEtaRpmMatch(machine, config.cutter);
+
+  if (htpEtaRpmEl) {
+    htpEtaRpmEl.textContent = rpmValues.length > 1 ? `${Math.min(...rpmValues)}-${Math.max(...rpmValues)}` : (rpmValues[0] ? `${rpmValues[0]}` : '-');
+  }
+
+  if (!rpmValues.length || !bco) {
+    if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = '-';
+    if (htpEtaRangeEl) htpEtaRangeEl.textContent = '-';
+    if (htpStatusEl) htpStatusEl.textContent = 'HTP ETA is waiting on chart data.';
+    lastHtp = { tco, eta: '-', cutter: config.cutter, bco, warnings: [] };
+    updateSummary();
+    return;
+  }
+
+  const minRpm = Math.min(...rpmValues);
+  const maxRpm = Math.max(...rpmValues);
+  const slowFeed = minRpm * ETA_FEED_RATE;
+  const fastFeed = maxRpm * ETA_FEED_RATE;
+  const lowEta = bco / fastFeed;
+  const highEta = bco / slowFeed;
+  const etaText = lowEta === highEta ? formatEtaMinutes(lowEta) : `${formatEtaMinutes(lowEta)} to ${formatEtaMinutes(highEta)}`;
+
+  if (htpEtaFeedSpeedEl) htpEtaFeedSpeedEl.textContent = slowFeed === fastFeed ? `${slowFeed.toFixed(3)} in/min` : `${slowFeed.toFixed(3)}-${fastFeed.toFixed(3)} in/min`;
+  if (htpEtaRangeEl) htpEtaRangeEl.textContent = etaText;
+
+  const machineLabel = machine === '1200' ? '1200-M120' : (machine === '660' ? '660 / 760' : '360 / 152');
+  const rpmText = rpmValues.length > 1 ? `${minRpm}-${maxRpm} RPM` : `${rpmValues[0]} RPM`;
+  if (htpStatusEl) {
+    if (exact) htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using cutter ${Number(config.cutter).toFixed(3)} with ${rpmText} on the ${machineLabel}.`;
+    else if (interpolated) htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using interpolated RPM from chart sizes ${matchedSize} at ${rpmText} on the ${machineLabel}.`;
+    else htpStatusEl.textContent = `HTP ${htpPipeSizeEl.value}" is using nearest chart size ${matchedSize} at ${rpmText} on the ${machineLabel}.`;
+  }
+
+  lastHtp = { tco, eta: etaText, cutter: config.cutter, bco, warnings: [] };
+  updateSummary();
+}
+
+[htpPipeSizeEl, htpMdEl, htpLdEl, htpLdSignEl, htpPtcEl, htpMachineEl].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', calcHtp);
+  el.addEventListener('change', calcHtp);
+});
+
+// ===== LINE STOP VARIANT SHELL =====
+const lineStopVariantInputEl = document.getElementById('lineStopVariant');
+const lineStopVariantBtnEls = Array.from(document.querySelectorAll('[data-line-stop-variant]'));
+const lineStopVariantPanelEls = Array.from(document.querySelectorAll('[data-line-stop-variant-panel]'));
+const lineStopVariantNoteEl = document.getElementById('lineStopVariantNote');
+const lineStopVariantCopy = {
+  standard: 'Standard line stop math uses LI = MD +/- LD + POD - Wall.',
+  htp: 'HTP uses the training chart for branch size, head, cutter, and pipe-size BCO.',
+  hiStop: 'Hi-Stop keeps cutout and plug-set math separate so PSD and Plug Set stay visible.'
+};
+function getLineStopVariant(){
+  const raw = String(lineStopVariantInputEl?.value || 'standard').trim();
+  return ['standard','htp','hiStop'].includes(raw) ? raw : 'standard';
+}
+window.getLineStopVariant = getLineStopVariant;
+function setLineStopVariant(variant){
+  const next = ['standard','htp','hiStop'].includes(String(variant || '').trim()) ? String(variant).trim() : 'standard';
+  if (lineStopVariantInputEl) {
+    lineStopVariantInputEl.value = next;
+    try { lineStopVariantInputEl.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { lineStopVariantInputEl.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+  lineStopVariantBtnEls.forEach((btn) => {
+    const active = btn.dataset.lineStopVariant === next;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+  lineStopVariantPanelEls.forEach((panel) => panel.classList.toggle('active', panel.dataset.lineStopVariantPanel === next));
+  if (lineStopVariantNoteEl) lineStopVariantNoteEl.textContent = lineStopVariantCopy[next] || lineStopVariantCopy.standard;
+  try { persistCurrentJob(); } catch {}
+  try { updateSummary(); } catch {}
+  try { updateCurrentJobLabel(); } catch {}
+}
+lineStopVariantBtnEls.forEach((btn) => btn.addEventListener('click', () => setLineStopVariant(btn.dataset.lineStopVariant || 'standard')));
+setTimeout(() => setLineStopVariant(getLineStopVariant()), 0);
 
 // ===== HOT TAP =====
 const mdEl = document.getElementById("md");
@@ -1150,11 +2608,12 @@ const hotTapWarnEl = document.getElementById("mtWarning");
 
 let lastHotTap = { li: NaN, ttd: NaN, warnings: [] };
 let lastLineStop = { li: NaN, ldRaw: NaN, warnings: [] };
+let lastHiStop = { li: NaN, tco: NaN, psd: NaN, plugSet: NaN, warnings: [] };
 let lastCompletionPlug = { li: NaN, warnings: [] };
 
 const JOB_STATE_KEY = 'measurementCardStateV1';
 const JOB_HISTORY_KEY = 'measurementCardHistoryV1';
-const ACTIVE_MODE_KEY = 'measurementCardActiveModeV1';
+const ACTIVE_MODE_KEY = WORKFLOW_MODE_KEY;
 const MAX_HISTORY_ITEMS = 8;
 const saveHistoryBtnEl = document.getElementById('saveHistoryBtn');
 const resetJobBtnEl = document.getElementById('resetJobBtn');
@@ -1172,31 +2631,17 @@ const jobInfoBodyEl = document.getElementById('jobInfoBody');
 const jobInfoSummaryEl = document.getElementById('jobInfoSummary');
 const jobInfoToggleBtnEl = document.getElementById('jobInfoToggleBtn');
 const JOB_INFO_COLLAPSED_KEY = 'measurementCardJobInfoCollapsedV1';
-const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes'];
+const jobInfoFieldIds = ['jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType'];
 const bcoGeometryFieldIds = ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD'];
-const syncJobsBtnEl = document.getElementById('syncJobsBtn');
-const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
-const testFirestoreBtnEl = document.getElementById('testFirestoreBtn');
-const jobsListEl = document.getElementById('jobsList');
-const jobsSelectEl = document.getElementById('jobsSelect');
-const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
-const jobsSearchInputEl = document.getElementById('jobsSearchInput');
-const jobsViewChipEls = Array.from(document.querySelectorAll('.jobs-view-chip'));
-const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
-const firebaseStatusEl = document.getElementById('firebaseStatus');
-const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
-const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
-let firebaseDb = null;
-let firebaseModuleCache = null;
-let cloudJobsCache = [];
-let jobsSearchTerm = '';
-let jobsBrowseMode = 'all';
-const JOB_BUNDLE_VERSION = 2;
+const JOB_BUNDLE_VERSION = 3;
 const jobOperationSelectEl = document.getElementById('jobOperationSelect');
 const jobOperationLabelEl = document.getElementById('jobOperationLabel');
+const jobOperationNotesEl = document.getElementById('jobOperationNotes');
 const jobOperationStatusEl = document.getElementById('jobOperationStatus');
+const jobOperationPreviewListEl = document.getElementById('jobOperationPreviewList');
 const addHotTapOpBtnEl = document.getElementById('addHotTapOpBtn');
 const addLineStopOpBtnEl = document.getElementById('addLineStopOpBtn');
+const addCompletionOpBtnEl = document.getElementById('addCompletionOpBtn');
 const duplicateOperationBtnEl = document.getElementById('duplicateOperationBtn');
 const deleteOperationBtnEl = document.getElementById('deleteOperationBtn');
 const SHARED_JOB_FIELD_IDS = [...jobInfoFieldIds, 'geometryLockToggle'];
@@ -1205,18 +2650,89 @@ const DEFAULT_STATE_VALUES = {
   bcoPipeMaterial: 'CarbonSteel',
   bcoSchedule: 'STD',
   ldSign: '+',
+  htpLdSign: '+',
   lsLdSign: '+',
-  lugs: 'Y',
+  hsLdSign: '+',
+  lineStopVariant: 'standard',
   lsLiManualToggle: false,
   cpLiManualToggle: false,
-  activeMode: 'bco',
+  activeMode: 'hotTap',
+  calcMode: 'bco',
   lineStopMdUserEdited: false
 };
+const syncJobsBtnEl = document.getElementById('syncJobsBtn');
+const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
+const testFirestoreBtnEl = document.getElementById('testFirestoreBtn');
+const jobsListEl = document.getElementById('jobsList');
+const jobsSelectEl = document.getElementById('jobsSelect');
+const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
+const jobsSearchInputEl = document.getElementById('jobsSearchInput');
+const jobsViewChipEls = Array.from(document.querySelectorAll('.jobs-view-chip'));
+const libraryLaneBtnEls = Array.from(document.querySelectorAll('.library-lane-btn'));
+const libraryLanePanelEls = Array.from(document.querySelectorAll('[data-library-lane-panel]'));
+const jobsCloudStatusEl = document.getElementById('jobsCloudStatus');
+const firebaseStatusEl = document.getElementById('firebaseStatus');
+const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
+const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
+let firebaseDb = null;
+let firebaseModuleCache = null;
+let firebaseInitPromise = null;
+let cloudJobsCache = [];
+let jobsSearchTerm = '';
+let jobsBrowseMode = 'all';
 let currentJobBundle = null;
 let suppressJobBundleUiSync = false;
+let jobDraftRestoreComplete = false;
+let selectedJobId = '';
+try {
+  window.tapCalcJobsSearchTerm = jobsSearchTerm;
+  window.tapCalcJobsBrowseMode = jobsBrowseMode;
+} catch {}
+
+Object.defineProperty(window, 'currentJobBundle', {
+  configurable: true,
+  get() { return currentJobBundle; },
+  set(value) { currentJobBundle = value; }
+});
+
+
+
+function buildBcoResultMarkup(payload = {}) {
+  const pipeOD = Number.isFinite(payload.pipeOD) ? payload.pipeOD.toFixed(3) : '-';
+  const pipeID = Number.isFinite(payload.pipeID) ? payload.pipeID.toFixed(3) : '-';
+  const cutterOD = Number.isFinite(payload.cutterOD) ? payload.cutterOD.toFixed(3) : '-';
+  const bco = Number.isFinite(payload.bco) ? payload.bco.toFixed(3) : null;
+  const error = payload.error || '';
+  if (error) {
+    return `<div class="bco-result-card error"><div class="bco-result-header">BCO Result</div><div class="bco-result-error">${error}</div></div>`;
+  }
+  return `<div class="bco-result-card${bco ? ' ready' : ''}">
+    <div class="bco-result-header">BCO Result</div>
+    <div class="bco-result-verify">
+      <div><span>Pipe OD</span><strong>${pipeOD}</strong></div>
+      <div><span>Pipe ID</span><strong>${pipeID}</strong></div>
+      <div><span>Cutter OD</span><strong>${cutterOD}</strong></div>
+    </div>
+    <div class="bco-result-main">${bco ? `BCO = ${bco} in` : 'BCO: -'}</div>
+    <div class="bco-result-actions">
+      <button type="button" class="secondary-btn bco-inline-copy" ${bco ? '' : 'disabled'}>Copy</button>
+    </div>
+  </div>`;
+}
+
+function renderBcoResult(payload = {}) {
+  if (!bcoResultEl) return;
+  bcoResultEl.innerHTML = buildBcoResultMarkup(payload);
+  try { syncBcoToEta(); } catch {}
+  try { updateEtaEstimate(); } catch {}
+}
 
 function cloneJson(value) {
-  return JSON.parse(JSON.stringify(value ?? null));
+  try {
+    return JSON.parse(JSON.stringify(value ?? null));
+  } catch {
+    return value ?? null;
+  }
 }
 
 function escapeHtml(value) {
@@ -1232,73 +2748,201 @@ function createBundleId(prefix = 'op') {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+function pickStateFields(source = {}, ids = []) {
+  const picked = {};
+  ids.forEach((id) => {
+    if (id in source) picked[id] = source[id];
+  });
+  return picked;
+}
+
+function formatOperationType(type = 'Hot Tap') {
+  const value = String(type || '').trim().toLowerCase();
+  const compact = value.replace(/[\s_-]+/g, '');
+  if (compact === 'completionplug') return 'Completion Plug';
+  if (compact === 'histop') return 'Hi-Stop';
+  if (compact === 'htphottap') return 'HTP Hot Tap';
+  if (compact === 'linestop') return 'Line Stop';
+  if (compact === 'hottap') return 'Hot Tap';
+  if (value.includes('completion')) return 'Completion Plug';
+  if (value.includes('hi-stop') || value.includes('histop')) return 'Hi-Stop';
+  if (value.includes('htp')) return 'HTP Hot Tap';
+  if (value.includes('line stop')) return 'Line Stop';
+  return 'Hot Tap';
+}
+
+function modeForOperationType(type = 'Hot Tap') {
+  const value = formatOperationType(type);
+  if (value === 'Completion Plug') return 'completionPlug';
+  if (value === 'Line Stop' || value === 'Hi-Stop' || value === 'HTP Hot Tap') return 'lineStop';
+  return 'hotTap';
+}
+
 function pluralizeOperationType(type = 'Operation', count = 2) {
-  const map = {
+  const safeType = formatOperationType(type);
+  const irregular = {
     'Hot Tap': count === 1 ? 'Hot Tap' : 'Hot Taps',
     'Line Stop': count === 1 ? 'Line Stop' : 'Line Stops',
     'Completion Plug': count === 1 ? 'Completion Plug' : 'Completion Plugs',
-    'BCO / Geometry': count === 1 ? 'BCO / Geometry' : 'BCO / Geometry Sets'
+    'Hi-Stop': count === 1 ? 'Hi-Stop' : 'Hi-Stops',
+    'HTP Hot Tap': count === 1 ? 'HTP Hot Tap' : 'HTP Hot Taps'
   };
-  return map[type] || (count === 1 ? type : `${type}s`);
+  return irregular[safeType] || (count === 1 ? safeType : `${safeType}s`);
 }
 
 function buildOperationCountsSummary(operations = []) {
   const counts = new Map();
   operations.forEach((operation) => {
-    const type = operation?.operationType || 'Operation';
+    const type = formatOperationType(operation?.operationType || operation?.mode || operation?.state?.activeMode);
     counts.set(type, (counts.get(type) || 0) + 1);
   });
   const parts = Array.from(counts.entries()).map(([type, count]) => `${count} ${pluralizeOperationType(type, count)}`);
-  return parts.length ? parts.join(' • ') : 'No operations yet';
-}
-
-function extractSharedStateFromLegacyState(state = {}) {
-  const shared = {};
-  SHARED_JOB_FIELD_IDS.forEach((id) => {
-    if (id in state) shared[id] = state[id];
-  });
-  return shared;
-}
-
-function extractOperationStateFromLegacyState(state = {}) {
-  const operationState = {};
-  getStateFields().forEach((id) => {
-    if (SHARED_JOB_FIELD_IDS.includes(id)) return;
-    if (id in state) operationState[id] = state[id];
-  });
-  if ('activeMode' in state) operationState.activeMode = state.activeMode;
-  if ('lineStopMdUserEdited' in state) operationState.lineStopMdUserEdited = state.lineStopMdUserEdited;
-  return operationState;
-}
-
-function mapRecordJobToSharedState(record = {}) {
-  const job = record?.job || {};
-  return {
-    jobClient: job.client || '',
-    jobDescription: job.description || '',
-    jobNumber: job.jobNumber || '',
-    jobPressure: job.pressure || '',
-    jobTemperature: job.temperature || '',
-    jobDate: job.date || '',
-    jobProduct: job.product || '',
-    jobLocation: job.location || '',
-    jobTechnician: job.technician || '',
-    jobNotes: job.notes || '',
-    geometryLockToggle: false
-  };
+  return parts.length ? parts.join('  |  ') : 'No operations yet';
 }
 
 function buildCombinedState(sharedState = {}, operationState = {}) {
   return { ...sharedState, ...operationState };
 }
 
+function getOperationStateFields() {
+  return getStateFields().filter((id) => !SHARED_JOB_FIELD_IDS.includes(id));
+}
+
+function getDefaultStateValue(id) {
+  if (id in DEFAULT_STATE_VALUES) return DEFAULT_STATE_VALUES[id];
+  const el = document.getElementById(id);
+  if (!el) return '';
+  if (el.type === 'checkbox') return !!el.defaultChecked;
+  if (el.tagName === 'SELECT') return el.options?.[0]?.value ?? '';
+  return '';
+}
+
+function collectSharedJobState() {
+  const sharedState = {};
+  SHARED_JOB_FIELD_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') sharedState[id] = !!el.checked;
+    else sharedState[id] = el.value;
+  });
+  return sharedState;
+}
+
+function collectOperationState() {
+  const state = {};
+  getOperationStateFields().forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (el.type === 'checkbox') state[id] = !!el.checked;
+    else state[id] = el.value;
+  });
+  state.activeMode = WORKFLOW_SCREEN_MODES.has(normalizeMode(getActiveWorkflowMode())) ? normalizeMode(getActiveWorkflowMode()) : 'hotTap';
+  state.calcMode = CALC_SCREEN_MODES.has(normalizeMode(getActiveCalcMode())) ? normalizeMode(getActiveCalcMode()) : 'bco';
+  state.lineStopMdUserEdited = lsMdEl?.dataset.userEdited === 'true';
+  return state;
+}
+
+function buildBlankOperationState(mode = 'hotTap', baseState = collectOperationState()) {
+  const nextMode = modeForOperationType(mode);
+  const blankState = {};
+  getOperationStateFields().forEach((id) => {
+    blankState[id] = getDefaultStateValue(id);
+  });
+  ['bcoPipeMaterial', 'bcoPipeOD', 'bcoSchedule', 'bcoPipeID', 'bcoCutterOD', 'etaMachine', 'etaCutterSize', 'etaBco', 'etaRpmOverride'].forEach((id) => {
+    if (baseState && baseState[id] !== undefined && baseState[id] !== '') blankState[id] = baseState[id];
+  });
+  blankState.activeMode = nextMode;
+  blankState.calcMode = CALC_SCREEN_MODES.has(normalizeMode(baseState?.calcMode)) ? normalizeMode(baseState.calcMode) : 'bco';
+  blankState.lineStopMdUserEdited = false;
+  if (nextMode === 'lineStop') blankState.lineStopVariant = baseState?.lineStopVariant || 'standard';
+  return blankState;
+}
+
+function mapRecordJobToSharedState(record = {}) {
+  const state = record?.state || {};
+  const metaOperation = String(record?.meta?.operationType || '').toLowerCase();
+  return {
+    jobClient: state.jobClient || record?.job?.client || '',
+    jobDescription: state.jobDescription || record?.job?.description || '',
+    jobNumber: state.jobNumber || record?.job?.jobNumber || '',
+    jobPressure: state.jobPressure || record?.job?.pressure || '',
+    jobTemperature: state.jobTemperature || record?.job?.temperature || '',
+    jobDate: state.jobDate || record?.job?.date || '',
+    jobProduct: state.jobProduct || record?.job?.product || '',
+    jobLocation: state.jobLocation || record?.job?.location || '',
+    jobTechnician: state.jobTechnician || record?.job?.technician || '',
+    jobNotes: state.jobNotes || record?.job?.notes || '',
+    machineType: state.machineType || record?.machine?.machine || '',
+    operationType: state.operationType || ((metaOperation.includes('line stop') || metaOperation.includes('completion') || metaOperation.includes('hi-stop') || metaOperation.includes('histop') || metaOperation.includes('htp')) ? 'Line Stop' : 'Hot Tap'),
+    geometryLockToggle: !!state.geometryLockToggle
+  };
+}
+
+function getBundleJobType(operations = []) {
+  return operations.some((operation) => modeForOperationType(operation?.operationType || operation?.mode || operation?.state?.activeMode) !== 'hotTap')
+    ? 'Line Stop'
+    : 'Hot Tap';
+}
+
+function syncBundleJobType(bundle) {
+  if (!bundle) return 'Hot Tap';
+  const nextType = getBundleJobType(bundle.operations);
+  bundle.sharedState.operationType = nextType;
+  return nextType;
+}
+
+function normalizeBundleItem(rawItem = {}, index = 0) {
+  const state = rawItem?.state && typeof rawItem.state === 'object'
+    ? cloneJson(rawItem.state)
+    : pickStateFields(rawItem || {}, getOperationStateFields());
+  const mode = WORKFLOW_SCREEN_MODES.has(normalizeMode(state.activeMode))
+    ? normalizeMode(state.activeMode)
+    : modeForOperationType(rawItem.operationType || rawItem.mode || inferOperationType(state));
+  state.activeMode = mode;
+  state.calcMode = CALC_SCREEN_MODES.has(normalizeMode(state.calcMode)) ? normalizeMode(state.calcMode) : 'bco';
+  if (!('lineStopMdUserEdited' in state)) state.lineStopMdUserEdited = false;
+  return {
+    id: rawItem.id || createBundleId(`op${index + 1}`),
+    label: String(rawItem.label || '').trim(),
+    notes: String(rawItem.notes || rawItem.operationNotes || '').trim(),
+    operationType: formatOperationType(rawItem.operationType || inferOperationType(state)),
+    mode,
+    createdAtIso: rawItem.createdAtIso || new Date().toISOString(),
+    updatedAtIso: rawItem.updatedAtIso || new Date().toISOString(),
+    state
+  };
+}
+
+function createOperationLabel(operationType = 'Operation', existingOperations = []) {
+  const safeType = formatOperationType(operationType);
+  const sameTypeCount = existingOperations.filter((operation) => formatOperationType(operation?.operationType) === safeType).length;
+  return `${safeType} ${sameTypeCount + 1}`;
+}
+
+function isAutoOperationLabel(label = '') {
+  return /^(Hot Tap|Line Stop|Completion Plug|Hi-Stop|HTP Hot Tap) \d+$/.test(String(label).trim());
+}
+
+function formatOperationOptionLabel(label = '', operationType = 'Operation') {
+  const safeLabel = String(label || '').trim();
+  const safeType = formatOperationType(operationType);
+  if (!safeLabel) return safeType;
+  if (safeLabel === safeType || safeLabel.startsWith(`${safeType} `)) return safeLabel;
+  return `${safeLabel}  |  ${safeType}`;
+}
+
 function buildOperationSummaryFromItem(item = {}) {
   const state = item?.state || {};
-  const operationType = item?.operationType || inferOperationType(state);
+  const operationType = formatOperationType(item?.operationType || inferOperationType(state));
   const details = [];
-  if (operationType === 'Hot Tap') {
-    if (String(state.md || '').trim()) details.push(`MD ${state.md}`);
-    if (String(state.ptc || '').trim()) details.push(`PTC ${state.ptc}`);
+  if (String(state.bcoPipeOD || '').trim()) details.push(`${state.bcoPipeOD} pipe`);
+  if (String(state.bcoCutterOD || '').trim()) details.push(`Cutter ${state.bcoCutterOD}`);
+  if (operationType === 'Hot Tap' || operationType === 'HTP Hot Tap') {
+    if (String(state.md || state.htpMd || '').trim()) details.push(`MD ${state.md || state.htpMd}`);
+    if (String(state.ptc || state.htpPtc || '').trim()) details.push(`PTC ${state.ptc || state.htpPtc}`);
+  } else if (operationType === 'Hi-Stop') {
+    if (String(state.hsMd || '').trim()) details.push(`MD ${state.hsMd}`);
+    if (String(state.hsCl || '').trim()) details.push(`CL ${state.hsCl}`);
   } else if (operationType === 'Line Stop') {
     if (String(state.lsMd || '').trim()) details.push(`MD ${state.lsMd}`);
     if (String(state.lsTravel || '').trim()) details.push(`Travel ${state.lsTravel}`);
@@ -1309,11 +2953,164 @@ function buildOperationSummaryFromItem(item = {}) {
   return {
     label: item?.label || '',
     operationType,
-    nominalSize: state.bcoPipeOD || '',
-    material: state.bcoPipeMaterial || '',
-    cutterOd: state.bcoCutterOD || '',
-    details: details.join(' • ')
+    details: details.join('  |  ') || 'No measurements yet'
   };
+}
+
+function normalizeJobBundle(rawBundle, record = null) {
+  const legacyState = rawBundle && !Array.isArray(rawBundle?.operations) ? (rawBundle.state || rawBundle) : null;
+  const sharedState = {
+    ...mapRecordJobToSharedState(record),
+    ...(legacyState && typeof legacyState === 'object' ? pickStateFields(legacyState, SHARED_JOB_FIELD_IDS) : {}),
+    ...(rawBundle?.sharedState || {})
+  };
+
+  let operations = [];
+  if (Array.isArray(rawBundle?.operations)) {
+    operations = rawBundle.operations.map((operation, index) => normalizeBundleItem(operation, index));
+  } else if (legacyState && typeof legacyState === 'object') {
+    operations = [normalizeBundleItem({ state: pickStateFields(legacyState, getOperationStateFields()), label: rawBundle?.label || '' })];
+  }
+
+  if (!operations.length) {
+    operations = [normalizeBundleItem({ state: collectOperationState(), label: '' })];
+  }
+
+  const normalizedOperations = [];
+  operations.forEach((operation, index) => {
+    const normalized = normalizeBundleItem(operation, index);
+    const normalizedLabel = String(normalized.label || '').trim();
+    const labelMatchesType = normalizedLabel === normalized.operationType || normalizedLabel.startsWith(`${normalized.operationType} `);
+    if (!normalizedLabel || (isAutoOperationLabel(normalizedLabel) && !labelMatchesType)) {
+      normalized.label = createOperationLabel(normalized.operationType, normalizedOperations);
+    }
+    normalizedOperations.push(normalized);
+  });
+  operations = normalizedOperations;
+
+  const selectedOperationId = operations.some((operation) => operation.id === rawBundle?.selectedOperationId)
+    ? rawBundle.selectedOperationId
+    : operations[0].id;
+
+  const bundle = {
+    version: JOB_BUNDLE_VERSION,
+    selectedOperationId,
+    sharedState,
+    operations
+  };
+  syncBundleJobType(bundle);
+  return bundle;
+}
+
+function ensureJobBundleInitialized() {
+  if (currentJobBundle?.operations?.length) return currentJobBundle;
+  currentJobBundle = normalizeJobBundle({
+    sharedState: collectSharedJobState(),
+    operations: [{ state: collectOperationState(), label: '' }]
+  });
+  return currentJobBundle;
+}
+window.ensureJobBundleInitialized = ensureJobBundleInitialized;
+
+function getSelectedOperationItem(bundle = currentJobBundle) {
+  const activeBundle = bundle || ensureJobBundleInitialized();
+  return activeBundle.operations.find((operation) => operation.id === activeBundle.selectedOperationId) || activeBundle.operations[0] || null;
+}
+window.getSelectedOperationItem = getSelectedOperationItem;
+window.tapCalcGetSelectedOperation = function() {
+  return getSelectedOperationItem(currentJobBundle || ensureJobBundleInitialized());
+};
+
+function getOperationNotesEl() {
+  return document.getElementById('workflowJobOperationNotes') || jobOperationNotesEl;
+}
+
+function getOperationNotesValue() {
+  const workflowNotesEl = document.getElementById('workflowJobOperationNotes');
+  const active = document.activeElement;
+  if (active === workflowNotesEl || active === jobOperationNotesEl) return String(active.value || '').trim();
+  return String(workflowNotesEl?.value || jobOperationNotesEl?.value || '').trim();
+}
+
+function setOperationNotesFields(value = '') {
+  const safeValue = String(value || '');
+  [jobOperationNotesEl, document.getElementById('workflowJobOperationNotes')].forEach((el) => {
+    if (el && document.activeElement !== el) el.value = safeValue;
+  });
+}
+
+function renderOperationPreview(bundle = ensureJobBundleInitialized()) {
+  if (!jobOperationPreviewListEl) return;
+  jobOperationPreviewListEl.innerHTML = bundle.operations.map((operation) => {
+    const active = operation.id === bundle.selectedOperationId;
+    const summary = buildOperationSummaryFromItem(operation);
+    const notes = String(operation?.notes || '').trim();
+    const details = notes ? `${summary.details}  |  Note: ${notes}` : summary.details;
+    return `<button type="button" class="job-operation-card${active ? ' active' : ''}" data-operation-id="${escapeHtml(operation.id)}" aria-pressed="${active ? 'true' : 'false'}"><small>${escapeHtml(summary.operationType)}</small><strong>${escapeHtml(operation.label || summary.operationType)}</strong><span>${escapeHtml(details)}</span></button>`;
+  }).join('');
+  jobOperationPreviewListEl.querySelectorAll('[data-operation-id]').forEach((button) => {
+    button.addEventListener('click', () => selectOperationById(button.dataset.operationId || ''));
+  });
+}
+
+function renderOperationManager() {
+  if (!jobOperationSelectEl || !jobOperationLabelEl || !jobOperationStatusEl) return;
+  const bundle = ensureJobBundleInitialized();
+  syncBundleJobType(bundle);
+  const selectedOperation = getSelectedOperationItem(bundle);
+  const optionsHtml = bundle.operations.map((operation) => {
+    const summary = buildOperationSummaryFromItem(operation);
+    const selected = operation.id === bundle.selectedOperationId ? ' selected' : '';
+    return `<option value="${escapeHtml(operation.id)}"${selected}>${escapeHtml(formatOperationOptionLabel(operation.label || summary.operationType, summary.operationType))}</option>`;
+  }).join('');
+  jobOperationSelectEl.innerHTML = optionsHtml;
+  if (selectedOperation) {
+    jobOperationSelectEl.value = selectedOperation.id;
+    jobOperationSelectEl.dataset.activeOperationId = selectedOperation.id;
+  } else {
+    delete jobOperationSelectEl.dataset.activeOperationId;
+  }
+  jobOperationLabelEl.value = selectedOperation?.label || '';
+  setOperationNotesFields(selectedOperation?.notes || '');
+  const total = bundle.operations.length;
+  jobOperationStatusEl.textContent = `${total} operation${total === 1 ? '' : 's'} in this job  |  ${buildOperationCountsSummary(bundle.operations)}`;
+  if (duplicateOperationBtnEl) duplicateOperationBtnEl.disabled = !selectedOperation;
+  if (deleteOperationBtnEl) deleteOperationBtnEl.disabled = !selectedOperation;
+  renderOperationPreview(bundle);
+}
+window.tapCalcRenderOperationManager = renderOperationManager;
+
+function syncCurrentOperationItemFromUi(options = {}) {
+  if (suppressJobBundleUiSync) return currentJobBundle || ensureJobBundleInitialized();
+  const bundle = ensureJobBundleInitialized();
+  bundle.sharedState = collectSharedJobState();
+  let selectedOperation = getSelectedOperationItem(bundle);
+  if (!selectedOperation) {
+    selectedOperation = normalizeBundleItem({ state: collectOperationState(), label: '' }, bundle.operations.length);
+    bundle.operations.push(selectedOperation);
+    bundle.selectedOperationId = selectedOperation.id;
+  }
+  selectedOperation.state = cloneJson(collectOperationState()) || {};
+  selectedOperation.mode = selectedOperation.state.activeMode || selectedOperation.mode || 'hotTap';
+  selectedOperation.operationType = formatOperationType(inferOperationType(buildCombinedState(bundle.sharedState, selectedOperation.state)));
+  selectedOperation.updatedAtIso = new Date().toISOString();
+  const previousLabel = String(selectedOperation.label || '').trim();
+  const typedLabel = String(jobOperationLabelEl?.value || '').trim();
+  selectedOperation.notes = getOperationNotesValue();
+  const autoLabel = createOperationLabel(selectedOperation.operationType, bundle.operations.filter((operation) => operation.id !== selectedOperation.id));
+  if (typedLabel) {
+    const typedLooksAuto = isAutoOperationLabel(typedLabel);
+    const previousWasAuto = isAutoOperationLabel(previousLabel);
+    const typedMatchesCurrentType = typedLabel === selectedOperation.operationType || typedLabel.startsWith(`${selectedOperation.operationType} `);
+    selectedOperation.label = typedLooksAuto && previousWasAuto && !typedMatchesCurrentType
+      ? autoLabel
+      : typedLabel;
+  } else if (!previousLabel || isAutoOperationLabel(previousLabel)) {
+    selectedOperation.label = autoLabel;
+  }
+  syncBundleJobType(bundle);
+  if (options.render !== false) renderOperationManager();
+  return bundle;
 }
 
 function buildPersistedJobBundlePayload(bundle = currentJobBundle) {
@@ -1325,52 +3122,300 @@ function buildPersistedJobBundlePayload(bundle = currentJobBundle) {
     operations: normalized.operations.map((operation) => ({
       id: operation.id,
       label: operation.label,
+      notes: operation.notes || '',
       operationType: operation.operationType,
       mode: operation.mode,
       createdAtIso: operation.createdAtIso,
       updatedAtIso: operation.updatedAtIso,
-      summary: buildOperationSummaryFromItem(operation),
       state: cloneJson(operation.state) || {}
     }))
   };
 }
+window.tapCalcBuildPersistedJobBundlePayload = buildPersistedJobBundlePayload;
 
-function getRecordOperations(record = {}) {
-  const rawOperations = Array.isArray(record?.jobBundle?.operations)
-    ? record.jobBundle.operations
-    : record?.state
-      ? [normalizeBundleItem({ state: extractOperationStateFromLegacyState(record.state), label: record?.meta?.title || '' })]
-      : [];
-  return rawOperations.map((operation, index) => normalizeBundleItem(operation, index));
-}
-
-
-function buildBcoResultMarkup(payload = {}) {
-  const pipeOD = Number.isFinite(payload.pipeOD) ? payload.pipeOD.toFixed(3) : '—';
-  const pipeID = Number.isFinite(payload.pipeID) ? payload.pipeID.toFixed(3) : '—';
-  const cutterOD = Number.isFinite(payload.cutterOD) ? payload.cutterOD.toFixed(3) : '—';
-  const bco = Number.isFinite(payload.bco) ? payload.bco.toFixed(3) : null;
-  const error = payload.error || '';
-  if (error) {
-    return `<div class="bco-result-card error"><div class="bco-result-header">BCO Result</div><div class="bco-result-error">${error}</div></div>`;
+function getStoredJobStatePayload() {
+  try {
+    const raw = localStorage.getItem(JOB_STATE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
-  return `<div class="bco-result-card${bco ? ' ready' : ''}">
-    <div class="bco-result-header">BCO Result</div>
-    <div class="bco-result-verify">
-      <div><span>Pipe OD</span><strong>${pipeOD}</strong></div>
-      <div><span>Pipe ID</span><strong>${pipeID}</strong></div>
-      <div><span>Cutter OD</span><strong>${cutterOD}</strong></div>
-    </div>
-    <div class="bco-result-main">${bco ? `BCO = ${bco} in` : 'BCO: —'}</div>
-    <div class="bco-result-actions">
-      <button type="button" class="secondary-btn bco-inline-copy" ${bco ? '' : 'disabled'}>Copy</button>
-    </div>
-  </div>`;
 }
 
-function renderBcoResult(payload = {}) {
-  if (!bcoResultEl) return;
-  bcoResultEl.innerHTML = buildBcoResultMarkup(payload);
+function isMeaningfulPersistedValue(value) {
+  const text = String(value ?? '').trim();
+  return !!text && text !== '-' && text !== '?' && text !== '0.0000';
+}
+
+function isMeaningfulPersistedJobPayload(payload) {
+  if (!payload || typeof payload !== 'object') return false;
+  const shared = payload.sharedState || payload;
+  const sharedFields = [
+    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate',
+    'jobProduct','jobLocation','jobTechnician','jobNotes','machineType'
+  ];
+  if (sharedFields.some((key) => isMeaningfulPersistedValue(shared[key]))) return true;
+  if (String(shared.operationType || '').trim() && String(shared.operationType).trim() !== 'Hot Tap') return true;
+
+  const operations = Array.isArray(payload.operations) ? payload.operations : [];
+  if (operations.length > 1) return true;
+  const meaningfulKeys = [
+    'bcoPipeOD','bcoPipeID','bcoCutterOD','md','ld','ptc','start','mt','valveBore','gtf',
+    'htpPipeSize','htpMd','htpLd','htpPtc','lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel',
+    'hsMd','hsLd','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
+    'cpStart','cpJbf','cpLd','cpPt','cpLiManual','etaBco','etaRpmOverride'
+  ];
+  return operations.some((operation, index) => {
+    const label = String(operation?.label || '').trim();
+    if (label && label !== `Hot Tap ${index + 1}`) return true;
+    if (isMeaningfulPersistedValue(operation?.notes)) return true;
+    if (String(operation?.operationType || '').trim() && String(operation.operationType).trim() !== 'Hot Tap') return true;
+    const state = operation?.state || {};
+    return meaningfulKeys.some((key) => isMeaningfulPersistedValue(state[key]));
+  });
+}
+
+function shouldHoldStartupJobPersist(bundle) {
+  if (jobDraftRestoreComplete) return false;
+  const stored = getStoredJobStatePayload();
+  const storedMeaningful = isMeaningfulPersistedJobPayload(stored);
+  const nextMeaningful = isMeaningfulPersistedJobPayload(buildPersistedJobBundlePayload(bundle));
+  if (storedMeaningful && !nextMeaningful) return true;
+  const storedOperationCount = Array.isArray(stored?.operations) ? stored.operations.length : 0;
+  const nextOperationCount = Array.isArray(bundle?.operations) ? bundle.operations.length : 0;
+  return storedOperationCount > 1 && nextOperationCount <= 1;
+}
+
+function applyJobBundle(bundle, options = {}) {
+  try {
+    suppressJobBundleUiSync = true;
+    currentJobBundle = normalizeJobBundle(bundle, options.record || null);
+    const selectedOperation = getSelectedOperationItem(currentJobBundle);
+    applyJobState(buildCombinedState(currentJobBundle.sharedState, selectedOperation?.state || {}));
+    renderOperationManager();
+  } finally {
+    suppressJobBundleUiSync = false;
+  }
+  if (options.persist !== false) {
+    try {
+      localStorage.setItem(JOB_STATE_KEY, JSON.stringify(buildPersistedJobBundlePayload(currentJobBundle)));
+      localStorage.setItem('measurementCardDraftUpdatedAtV1', new Date().toISOString());
+    } catch {}
+  }
+  if (options.expandJobInfo !== false) expandJobInfoForOperations(currentJobBundle);
+}
+window.tapCalcApplyJobBundle = applyJobBundle;
+
+function selectOperationById(operationId, options = {}) {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  if (!bundle.operations.some((operation) => operation.id === operationId)) return;
+  bundle.selectedOperationId = operationId;
+  const selectedOperation = getSelectedOperationItem(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  if (options.persist !== false) persistCurrentJob({ render: false });
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+}
+
+function addOperationForMode(mode, options = {}) {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const currentOperation = getSelectedOperationItem(bundle);
+  const nextState = options.duplicateCurrent && currentOperation
+    ? cloneJson(currentOperation.state)
+    : buildBlankOperationState(mode, currentOperation?.state || collectOperationState());
+  if (!options.duplicateCurrent) nextState.activeMode = modeForOperationType(mode);
+  const nextOperation = normalizeBundleItem({ state: nextState, label: '' }, bundle.operations.length);
+  nextOperation.label = createOperationLabel(nextOperation.operationType, bundle.operations);
+  bundle.operations.push(nextOperation);
+  bundle.selectedOperationId = nextOperation.id;
+  syncBundleJobType(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, nextOperation.state));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  expandJobInfoForOperations(bundle);
+  persistCurrentJob({ render: false });
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+}
+
+function deleteCurrentOperationItem() {
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const currentOperation = getSelectedOperationItem(bundle);
+  if (!currentOperation) return;
+  if (bundle.operations.length === 1) {
+    const replacementState = buildBlankOperationState(currentOperation.mode || 'hotTap', currentOperation.state || collectOperationState());
+    const replacement = normalizeBundleItem({ state: replacementState, label: currentOperation.label || '' }, 0);
+    replacement.label = currentOperation.label || createOperationLabel(replacement.operationType, []);
+    bundle.operations = [replacement];
+    bundle.selectedOperationId = replacement.id;
+  } else {
+    const currentIndex = bundle.operations.findIndex((operation) => operation.id === currentOperation.id);
+    bundle.operations = bundle.operations.filter((operation) => operation.id !== currentOperation.id);
+    const fallback = bundle.operations[Math.max(0, currentIndex - 1)] || bundle.operations[0];
+    bundle.selectedOperationId = fallback.id;
+  }
+  syncBundleJobType(bundle);
+  const selectedOperation = getSelectedOperationItem(bundle);
+  suppressJobBundleUiSync = true;
+  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
+  suppressJobBundleUiSync = false;
+  renderOperationManager();
+  persistCurrentJob({ render: false });
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+}
+
+function buildStateFromRecord(record = {}) {
+  if (record?.jobBundle?.operations?.length) {
+    const bundle = normalizeJobBundle(record.jobBundle, record);
+    const selectedOperation = getSelectedOperationItem(bundle);
+    return buildCombinedState(bundle.sharedState, selectedOperation?.state || {});
+  }
+  const state = { ...(record.state || {}) };
+  const opRaw = String(record?.meta?.operationType || '').trim();
+  const op = opRaw.toLowerCase();
+  if (!state.jobClient) state.jobClient = record?.job?.client || '';
+  if (!state.jobDescription) state.jobDescription = record?.job?.description || '';
+  if (!state.jobNumber) state.jobNumber = record?.job?.jobNumber || '';
+  if (!state.jobPressure) state.jobPressure = record?.job?.pressure || '';
+  if (!state.jobTemperature) state.jobTemperature = record?.job?.temperature || '';
+  if (!state.jobDate) state.jobDate = record?.job?.date || '';
+  if (!state.jobProduct) state.jobProduct = record?.job?.product || '';
+  if (!state.jobLocation) state.jobLocation = record?.job?.location || '';
+  if (!state.jobTechnician) state.jobTechnician = record?.job?.technician || '';
+  if (!state.jobNotes) state.jobNotes = record?.job?.notes || '';
+  if (!state.bcoPipeMaterial) state.bcoPipeMaterial = record?.pipe?.material || '';
+  if (!state.bcoPipeOD) state.bcoPipeOD = record?.pipe?.nominalSize || '';
+  if (!state.bcoSchedule) state.bcoSchedule = record?.pipe?.schedule || '';
+  if (!state.bcoPipeID) state.bcoPipeID = record?.pipe?.pipeId || '';
+  if (!state.bcoCutterOD) state.bcoCutterOD = record?.machine?.cutterOd || '';
+  const machine = String(record?.machine?.machine || '');
+  if (!state.machineType && machine) state.machineType = machine;
+  if (!state.operationType) {
+    if (op.includes('completion')) state.operationType = 'Completion Plug';
+    else if (op.includes('hi-stop') || op.includes('histop')) {
+      state.operationType = 'Line Stop';
+      if (!state.lineStopVariant) state.lineStopVariant = 'hiStop';
+    }
+    else if (op.includes('htp')) {
+      state.operationType = 'Line Stop';
+      if (!state.lineStopVariant) state.lineStopVariant = 'htp';
+    }
+    else if (op.includes('line stop')) state.operationType = 'Line Stop';
+    else if (op.includes('hot tap')) state.operationType = 'Hot Tap';
+    else state.operationType = 'Hot Tap';
+  }
+  if (!state.etaCutterSize && record?.machine?.cutterOd) state.etaCutterSize = record.machine.cutterOd;
+  if (!state.etaPtc && record?.measurements?.hotTap?.ptc) state.etaPtc = record.measurements.hotTap.ptc;
+  if (!state.etaMachine && machine) {
+    state.etaMachine = deriveEtaMachineFromMachine(machine);
+  }
+  if (!state.pipeOD && record?.pipe?.trueOd) state.pipeOD = record.pipe.trueOd;
+  if (!state.pipeID && record?.pipe?.pipeId) state.pipeID = record.pipe.pipeId;
+  if (!state.wallThickness && record?.pipe?.wallThickness) state.wallThickness = record.pipe.wallThickness;
+  if (!state.md && record?.measurements?.hotTap?.md) state.md = record.measurements.hotTap.md;
+  if (!state.ld && record?.measurements?.hotTap?.ld) state.ld = record.measurements.hotTap.ld;
+  if (!state.ldSign && record?.measurements?.hotTap?.ldSign) state.ldSign = record.measurements.hotTap.ldSign;
+  if (!state.ptc && record?.measurements?.hotTap?.ptc) state.ptc = record.measurements.hotTap.ptc;
+  if (!state.pod && record?.measurements?.hotTap?.pod) state.pod = record.measurements.hotTap.pod;
+  if (!state.mt && record?.measurements?.hotTap?.mt) state.mt = record.measurements.hotTap.mt;
+  if (!state.start && record?.measurements?.hotTap?.rodStart) state.start = record.measurements.hotTap.rodStart;
+  if (!state.htpMd && record?.measurements?.htp?.md) state.htpMd = record.measurements.htp.md;
+  if (!state.htpLd && record?.measurements?.htp?.ld) state.htpLd = record.measurements.htp.ld;
+  if (!state.htpLdSign && record?.measurements?.htp?.ldSign) state.htpLdSign = record.measurements.htp.ldSign;
+  if (!state.htpPtc && record?.measurements?.htp?.ptc) state.htpPtc = record.measurements.htp.ptc;
+  if (!state.htpPipeSize && record?.measurements?.htp?.pipeSize) state.htpPipeSize = record.measurements.htp.pipeSize;
+  if (!state.lineStopVariant && record?.measurements?.lineStop?.variant) state.lineStopVariant = record.measurements.lineStop.variant;
+  if (!state.hsMd && record?.measurements?.hiStop?.md) state.hsMd = record.measurements.hiStop.md;
+  if (!state.hsLd && record?.measurements?.hiStop?.ld) state.hsLd = record.measurements.hiStop.ld;
+  if (!state.hsLdSign && record?.measurements?.hiStop?.ldSign) state.hsLdSign = record.measurements.hiStop.ldSign;
+  if (!state.hsRl && record?.measurements?.hiStop?.rl) state.hsRl = record.measurements.hiStop.rl;
+  if (!state.hsCl && record?.measurements?.hiStop?.cl) state.hsCl = record.measurements.hiStop.cl;
+  if (!state.hsPtc && record?.measurements?.hiStop?.ptc) state.hsPtc = record.measurements.hiStop.ptc;
+  if (!state.hsRcd && record?.measurements?.hiStop?.rcd) state.hsRcd = record.measurements.hiStop.rcd;
+  if (!state.hsPb && record?.measurements?.hiStop?.pb) state.hsPb = record.measurements.hiStop.pb;
+  if (!state.hsPtp && record?.measurements?.hiStop?.ptp) state.hsPtp = record.measurements.hiStop.ptp;
+  if (!state.lsMd && record?.measurements?.lineStop?.md) state.lsMd = record.measurements.lineStop.md;
+  if (!state.lsLd && record?.measurements?.lineStop?.ld) state.lsLd = record.measurements.lineStop.ld;
+  if (!state.lsLdSign && record?.measurements?.lineStop?.ldSign) state.lsLdSign = record.measurements.lineStop.ldSign;
+  if (!state.lsPod && record?.measurements?.lineStop?.pod) state.lsPod = record.measurements.lineStop.pod;
+  if (!state.lsTravel && record?.measurements?.lineStop?.travel) state.lsTravel = record.measurements.lineStop.travel;
+  if (!state.lsMachineTravel && record?.measurements?.lineStop?.machineTravel) state.lsMachineTravel = record.measurements.lineStop.machineTravel;
+  if (!state.cpStart && record?.measurements?.completionPlug?.start) state.cpStart = record.measurements.completionPlug.start;
+  if (!state.cpJbf && record?.measurements?.completionPlug?.jbf) state.cpJbf = record.measurements.completionPlug.jbf;
+  if (!state.cpLd && record?.measurements?.completionPlug?.ld) state.cpLd = record.measurements.completionPlug.ld;
+  if (!state.cpLdSign && record?.measurements?.completionPlug?.ldSign) state.cpLdSign = record.measurements.completionPlug.ldSign;
+  if (!state.cpPt && record?.measurements?.completionPlug?.pt) state.cpPt = record.measurements.completionPlug.pt;
+
+  if (!state.activeMode) {
+    if (op.includes('completion')) state.activeMode = 'completionPlug';
+    else if (op.includes('line stop') || op.includes('htp') || op.includes('hi-stop') || op.includes('histop')) state.activeMode = 'lineStop';
+    else if (op.includes('hot tap')) state.activeMode = 'hotTap';
+    else state.activeMode = 'bco';
+  }
+  return state;
+}
+
+function setLibraryLane(lane) {
+  const next = lane === 'shared' ? 'shared' : 'local';
+  const jobsScreen = document.getElementById('jobsScreen');
+  libraryLaneBtnEls.forEach((btn) => { const active = btn.dataset.libraryLane === next; btn.classList.toggle('active', active); btn.setAttribute('aria-pressed', active ? 'true' : 'false'); });
+  libraryLanePanelEls.forEach((panel) => {
+    const isActive = panel.dataset.libraryLanePanel === next;
+    panel.classList.toggle('active', isActive);
+    panel.classList.remove('collapsed');
+    panel.hidden = !isActive;
+    panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
+    panel.style.display = isActive ? 'block' : 'none';
+    panel.style.visibility = isActive ? 'visible' : 'hidden';
+    panel.style.opacity = isActive ? '1' : '0';
+    panel.style.pointerEvents = isActive ? 'auto' : 'none';
+  });
+  if (jobsScreen) jobsScreen.dataset.activeLane = next;
+  try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
+  if (next === 'shared') {
+    setTimeout(() => {
+      try { renderJobsList(); } catch {}
+    }, 120);
+  }
+}
+
+libraryLaneBtnEls.forEach((btn) => btn.addEventListener('click', (event) => {
+  event.preventDefault();
+  event.stopPropagation();
+  const lane = btn.dataset.libraryLane === 'shared' ? 'shared' : 'local';
+  setLibraryLane(lane);
+  if (lane === 'shared') {
+    try { renderJobsList(); } catch {}
+    try { loadCloudJobs(); } catch {}
+    const panel = document.querySelector('[data-library-lane-panel="shared"]');
+    if (panel) {
+      panel.hidden = false;
+      panel.classList.add('active');
+      panel.style.display = 'block';
+      panel.style.visibility = 'visible';
+      panel.style.opacity = '1';
+    }
+  }
+}));
+document.addEventListener('click', (event) => {
+  const laneBtn = event.target.closest('.library-lane-btn[data-library-lane]');
+  if (!laneBtn) return;
+  event.preventDefault();
+  const lane = laneBtn.dataset.libraryLane === 'shared' ? 'shared' : 'local';
+  setLibraryLane(lane);
+  if (lane === 'shared') {
+    try { renderJobsList(); } catch {}
+    try { loadCloudJobs(); } catch {}
+  }
+});
+try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch { setLibraryLane('local'); }
+
+function openSharedLibraryLane() {
+  setLibraryLane('shared');
+  try { renderJobsList(); } catch {}
+  try { loadCloudJobs(); } catch {}
 }
 
 function getJobsGroupingValue(record, mode = 'all') {
@@ -1384,6 +3429,7 @@ function initAccordionSections() {
   const mobile = window.innerWidth <= 768;
   document.querySelectorAll('.mode-panel .section').forEach((section, index) => {
     if (section.classList.contains('job-info-section')) return;
+    if (section.closest('#jobsScreen') || section.classList.contains('library-lane')) return;
     if (section.dataset.accordionReady === 'true') return;
     const heading = section.querySelector('h3');
     if (!heading) return;
@@ -1397,7 +3443,7 @@ function initAccordionSections() {
     }
     section.appendChild(body);
     heading.classList.add('accordion-heading');
-    heading.insertAdjacentHTML('beforeend', '<span class="accordion-caret">⌄</span>');
+    heading.insertAdjacentHTML('beforeend', '<span class="accordion-caret" aria-hidden="true"></span>');
     heading.addEventListener('click', () => {
       section.classList.toggle('collapsed');
     });
@@ -1409,7 +3455,7 @@ function initAccordionSections() {
 
 function calcHotTap() {
   if (!data) {
-    if (rbcoGeomEl) rbcoGeomEl.textContent = "—";
+    if (rbcoGeomEl) rbcoGeomEl.textContent = "-";
     return;
   }
 
@@ -1445,11 +3491,11 @@ function calcHotTap() {
   const ptcLimit = (pod / 2) - wall;
 
   if (ptcLimit > 0 && ptc > ptcLimit) {
-    warnings.push(`⚠️ PTC too long: must be < (POD/2 − Wall) = ${ptcLimit.toFixed(4)}`);
+    warnings.push(`Warning: PTC too long: must be < (POD/2 - Wall) = ${ptcLimit.toFixed(4)}`);
   }
 
   if (mt && ttd > mt) {
-    warnings.push("⚠️ TTD exceeds Machine Travel (MT)");
+    warnings.push("Warning: TTD exceeds Machine Travel (MT)");
   }
 
   hotTapWarnEl.innerHTML = warnings.length ? warnings.join("<br>") : "";
@@ -1463,6 +3509,73 @@ function calcHotTap() {
   if (el) el.addEventListener("input", calcHotTap);
 });
 if (signEl) signEl.addEventListener("change", calcHotTap);
+
+// ===== HI-STOP =====
+const hsMdEl = document.getElementById('hsMd');
+const hsLdEl = document.getElementById('hsLd');
+const hsLdSignEl = document.getElementById('hsLdSign');
+const hsLiEl = document.getElementById('hsLi');
+const hsRlEl = document.getElementById('hsRl');
+const hsPodEl = document.getElementById('hsPod');
+const hsClEl = document.getElementById('hsCl');
+const hsPtcEl = document.getElementById('hsPtc');
+const hsTcoEl = document.getElementById('hsTco');
+const hsRcdEl = document.getElementById('hsRcd');
+const hsPbEl = document.getElementById('hsPb');
+const hsPtpEl = document.getElementById('hsPtp');
+const hsPsdEl = document.getElementById('hsPsd');
+const hsPlugSetEl = document.getElementById('hsPlugSet');
+const hsWarningsEl = document.getElementById('hsWarnings');
+
+function calcHiStop() {
+  const md = getMeasurementValue(hsMdEl) || 0;
+  const ldRaw = getMeasurementValue(hsLdEl) || 0;
+  const ld = (hsLdSignEl?.value || '+') === '-' ? -ldRaw : ldRaw;
+  const li = md + ld;
+  const rl = getMeasurementValue(hsRlEl);
+  const pod = getMeasurementValue(hsPodEl) || geometry.pipeOD || 0;
+  const cl = getMeasurementValue(hsClEl);
+  const ptc = getMeasurementValue(hsPtcEl) || 0;
+  const tco = Number.isFinite(rl) && Number.isFinite(pod) && Number.isFinite(cl)
+    ? (rl / 2) + (pod / 2) + cl + ptc
+    : NaN;
+  const rcd = getMeasurementValue(hsRcdEl);
+  const pb = getMeasurementValue(hsPbEl);
+  const taper = getMeasurementValue(hsPtpEl);
+  const psd = Number.isFinite(rcd) && Number.isFinite(pb) && Number.isFinite(taper) && taper !== 0
+    ? ((rcd - pb) / (2 * taper)) + 0.25
+    : NaN;
+  const plugSet = Number.isFinite(psd) && Number.isFinite(pod)
+    ? psd + md + ld + (pod / 2)
+    : NaN;
+
+  if (hsLiEl) hsLiEl.textContent = formatValue(li);
+  if (hsTcoEl) hsTcoEl.textContent = formatValue(tco);
+  if (hsPsdEl) hsPsdEl.textContent = formatValue(psd);
+  if (hsPlugSetEl) hsPlugSetEl.textContent = formatValue(plugSet);
+
+  const warnings = [];
+  if (!data) warnings.push('Warning: BCO data is not loaded. POD and wall thickness should be checked in the BCO calculator first.');
+  if (!Number.isFinite(rl) || !Number.isFinite(cl)) warnings.push('Warning: Enter reamer length and cutter length to verify Hi-Stop TCO.');
+  if (!Number.isFinite(psd)) warnings.push('Warning: Enter RCD, plug bottom, and plug taper to calculate PSD and Plug Set.');
+  if (Number.isFinite(geometry.wall) && geometry.wall > 0 && geometry.wall < 0.25) warnings.push('Warning: Training notes call for a schedule 40 minimum wall thickness. Double-check the planned Hi-Stop application.');
+  if (Number.isFinite(plugSet) && plugSet < 0) warnings.push('Warning: Plug Set is negative. Recheck MD / LD sign and PSD inputs.');
+
+  if (hsWarningsEl) {
+    hsWarningsEl.innerHTML = warnings.length ? warnings.join('<br>') : 'No Hi-Stop warnings.';
+    hsWarningsEl.classList.toggle('active', warnings.length > 0);
+    hsWarningsEl.classList.toggle('ok', warnings.length === 0);
+  }
+
+  lastHiStop = { li, tco, psd, plugSet, warnings };
+  updateSummary();
+}
+
+[hsMdEl, hsLdEl, hsLdSignEl, hsRlEl, hsPodEl, hsClEl, hsPtcEl, hsRcdEl, hsPbEl, hsPtpEl].forEach((el) => {
+  if (!el) return;
+  el.addEventListener('input', calcHiStop);
+  el.addEventListener('change', calcHiStop);
+});
 
 // ===== LINE STOP =====
 const lsMdEl = document.getElementById('lsMd');
@@ -1527,28 +3640,30 @@ function calcLineStop() {
     }
   }
 
-  let travelMarginText = '—';
+  let travelMarginText = '-';
   if (isFinite(lineStopTravel) && isFinite(machineTravel)) {
     travelMarginText = (machineTravel - lineStopTravel).toFixed(4);
+  } else if (!isFinite(lineStopTravel) && isFinite(machineTravel)) {
+    travelMarginText = 'Optional';
   }
   lsTravelMarginEl.textContent = travelMarginText;
 
   const warnings = [];
 
   if (!data) {
-    warnings.push('⚠️ BCO data is not loaded. POD and wall thickness need the BCO Calculator first.');
+    warnings.push('Warning: BCO data is not loaded. POD and wall thickness need the BCO Calculator first.');
   }
 
   if (isFinite(lineStopTravel) && isFinite(machineTravel) && lineStopTravel > machineTravel) {
-    warnings.push(`⚠️ Line Stop Travel exceeds Machine Travel by ${(lineStopTravel - machineTravel).toFixed(4)}`);
+    warnings.push(`Warning: Line Stop Travel exceeds Machine Travel by ${(lineStopTravel - machineTravel).toFixed(4)}`);
   }
 
   if (manualEnabled && isFinite(liManual) && Math.abs(liManual - liAuto) > 0.0001) {
-    warnings.push(`⚠️ Manual LI override is active. Auto LI would be ${liAuto.toFixed(4)}.`);
+    warnings.push(`Warning: Manual LI override is active. Auto LI would be ${liAuto.toFixed(4)}.`);
   }
 
   if (!manualEnabled && isFinite(liUsed) && liUsed < 0) {
-    warnings.push('⚠️ LI is negative. Double-check MD / LD inputs and sign.');
+    warnings.push('Warning: LI is negative. Double-check MD / LD inputs and sign.');
   }
 
   lsWarningsEl.innerHTML = warnings.length ? warnings.join('<br>') : 'No line stop warnings.';
@@ -1588,12 +3703,12 @@ function calcCompletionPlug() {
   }
 
   const warnings = [];
-  if (!Number.isFinite(start)) warnings.push('⚠️ Enter Completion Plug Start from the On Rod section.');
+  if (!Number.isFinite(start)) warnings.push('Warning: Enter Completion Plug Start from the On Rod section.');
   if (manualEnabled && Number.isFinite(liManual) && Math.abs(liManual - liAuto) > 0.0001) {
-    warnings.push(`⚠️ Manual LI override is active. Auto LI would be ${liAuto.toFixed(4)}.`);
+    warnings.push(`Warning: Manual LI override is active. Auto LI would be ${liAuto.toFixed(4)}.`);
   }
   if (!manualEnabled && Number.isFinite(liUsed) && liUsed < 0) {
-    warnings.push('⚠️ LI is negative. Double-check Start / JBF / LD / PT inputs.');
+    warnings.push('Warning: LI is negative. Double-check Start / JBF / LD / PT inputs.');
   }
 
   cpWarningsEl.innerHTML = warnings.length ? warnings.join('<br>') : 'No completion plug warnings.';
@@ -1606,23 +3721,29 @@ function calcCompletionPlug() {
 
 
 function formatValue(value) {
-  return Number.isFinite(value) ? value.toFixed(4) : '—';
+  return Number.isFinite(value) ? value.toFixed(4) : '-';
 }
 
 function updateSummary() {
+  const hasConfirmedBcoGeometry = !!data
+    && Number.isFinite(parseFloat(data?.pipeOD))
+    && Number.isFinite(parseFloat(data?.pipeID))
+    && Number.isFinite(parseFloat(data?.cutterOD))
+    && Number.isFinite(parseFloat(data?.bco));
+
   if (summaryEls.pipe) {
-    const odText = formatValue(geometry.pipeOD);
-    const wallText = formatValue(geometry.wall);
-    summaryEls.pipe.textContent = odText === '—' ? '—' : `OD ${odText} • Wall ${wallText}`;
+    const odText = hasConfirmedBcoGeometry ? formatValue(geometry.pipeOD) : '-';
+    const wallText = hasConfirmedBcoGeometry ? formatValue(geometry.wall) : '-';
+    summaryEls.pipe.textContent = hasConfirmedBcoGeometry && odText !== '-' ? `OD ${odText}  |  Wall ${wallText}` : '-';
   }
 
   if (summaryEls.cutter) {
-    const cutter = parseFloat(data?.cutterOD);
+    const cutter = hasConfirmedBcoGeometry ? parseFloat(data?.cutterOD) : NaN;
     summaryEls.cutter.textContent = formatValue(cutter);
   }
 
   if (summaryEls.bco) {
-    summaryEls.bco.textContent = formatValue(parseFloat(data?.bco));
+    summaryEls.bco.textContent = formatValue(hasConfirmedBcoGeometry ? parseFloat(data?.bco) : NaN);
   }
 
   if (summaryEls.hotTap) {
@@ -1630,12 +3751,15 @@ function updateSummary() {
     const li = lastHotTap.li;
     const ttd = lastHotTap.ttd;
     summaryEls.hotTap.textContent = Number.isFinite(li) || Number.isFinite(ttd) || Number.isFinite(md)
-      ? `MD ${formatValue(md)} • LI ${formatValue(li)} • TTD ${formatValue(ttd)}`
-      : '—';
+      ? `MD ${formatValue(md)}  |  LI ${formatValue(li)}  |  TTD ${formatValue(ttd)}`
+      : '-';
   }
 
   if (summaryEls.lineStopLi) {
-    summaryEls.lineStopLi.textContent = formatValue(lastLineStop.li);
+    const stopVariant = getLineStopVariant();
+    if (stopVariant === 'htp' && Number.isFinite(lastHtp.tco)) summaryEls.lineStopLi.textContent = `HTP TCO ${formatValue(lastHtp.tco)}`;
+    else if (stopVariant === 'hiStop' && Number.isFinite(lastHiStop.plugSet)) summaryEls.lineStopLi.textContent = `Plug ${formatValue(lastHiStop.plugSet)}`;
+    else summaryEls.lineStopLi.textContent = formatValue(lastLineStop.li);
   }
 
   if (summaryEls.completionLi) {
@@ -1643,7 +3767,7 @@ function updateSummary() {
   }
 
   if (summaryEls.warnings) {
-    const allWarnings = [...(lastHotTap.warnings || []), ...(lastLineStop.warnings || []), ...(lastCompletionPlug.warnings || [])];
+    const allWarnings = [...(lastHotTap.warnings || []), ...(lastHtp.warnings || []), ...(lastLineStop.warnings || []), ...(lastHiStop.warnings || []), ...(lastCompletionPlug.warnings || [])];
     summaryEls.warnings.textContent = allWarnings.length ? allWarnings.join(' | ') : 'None';
   }
 }
@@ -1676,13 +3800,14 @@ function buildJobInfoSummary() {
   if ((info.jobDate || '').trim()) parts.push(formatJobDateForSummary(info.jobDate.trim()));
   if ((info.jobTechnician || '').trim()) parts.push(info.jobTechnician.trim());
   if ((info.jobLocation || '').trim()) parts.push(info.jobLocation.trim());
-  return parts.length ? parts.join(' • ') : 'No job info yet.';
+  return parts.length ? parts.join('  |  ') : 'No job info yet.';
 }
 
 function updateJobInfoSummary() {
   if (!jobInfoSummaryEl) return;
   jobInfoSummaryEl.textContent = buildJobInfoSummary();
 }
+window.tapCalcUpdateJobInfoSummary = updateJobInfoSummary;
 
 function setJobInfoCollapsed(collapsed) {
   if (!jobInfoSectionEl || !jobInfoToggleBtnEl) return;
@@ -1692,6 +3817,27 @@ function setJobInfoCollapsed(collapsed) {
   try {
     localStorage.setItem(JOB_INFO_COLLAPSED_KEY, collapsed ? 'true' : 'false');
   } catch {}
+}
+
+function expandJobInfoForOperations(bundle = currentJobBundle, options = {}) {
+  if (!jobInfoSectionEl || !bundle?.operations?.length) return;
+  const operationCount = Number(bundle.operations.length) || 0;
+  const shouldExpand = options.force === true || operationCount > 1;
+  if (!shouldExpand) return;
+  if (jobInfoSectionEl.classList.contains('collapsed')) setJobInfoCollapsed(false);
+}
+window.tapCalcExpandJobInfoForOperations = expandJobInfoForOperations;
+
+function focusJobInfoOperations(bundle = currentJobBundle, options = {}) {
+  if (!jobInfoSectionEl || !bundle?.operations?.length) return;
+  const operationCount = Number(bundle.operations.length) || 0;
+  if (operationCount < 2) return;
+  expandJobInfoForOperations(bundle, { force: true });
+  const delay = Number.isFinite(options.delay) ? options.delay : 80;
+  const target = jobOperationSelectEl || jobOperationPreviewListEl || jobInfoSectionEl;
+  setTimeout(() => {
+    try { target?.scrollIntoView({ block: 'start', behavior: options.behavior || 'auto' }); } catch {}
+  }, delay);
 }
 
 function initJobInfoSection() {
@@ -1750,12 +3896,12 @@ function buildExportText() {
     infoLines.forEach(([label, value]) => lines.push(`${label}: ${value}`));
     lines.push('');
   }
-  lines.push(`Pipe: ${summaryEls.pipe?.textContent || '—'}`);
-  lines.push(`Cutter: ${summaryEls.cutter?.textContent || '—'}`);
-  lines.push(`BCO: ${summaryEls.bco?.textContent || '—'}`);
-  lines.push(`Hot Tap: ${summaryEls.hotTap?.textContent || '—'}`);
-  lines.push(`Line Stop LI: ${summaryEls.lineStopLi?.textContent || '—'}`);
-  lines.push(`Completion Plug LI: ${summaryEls.completionLi?.textContent || '—'}`);
+  lines.push(`Pipe: ${summaryEls.pipe?.textContent || '-'}`);
+  lines.push(`Cutter: ${summaryEls.cutter?.textContent || '-'}`);
+  lines.push(`BCO: ${summaryEls.bco?.textContent || '-'}`);
+  lines.push(`Hot Tap: ${summaryEls.hotTap?.textContent || '-'}`);
+  lines.push(`Line Stop LI: ${summaryEls.lineStopLi?.textContent || '-'}`);
+  lines.push(`Completion Plug LI: ${summaryEls.completionLi?.textContent || '-'}`);
   lines.push(`Warnings: ${summaryEls.warnings?.textContent || 'None'}`);
   return lines.join('\n');
 }
@@ -1800,264 +3946,29 @@ function exportJobImage() {
 
 function getStateFields() {
   return [
-    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','geometryLockToggle',
+    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
-    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf','lugs',
+    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf',
+    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
+    'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
     'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
-    'etaMachine','etaCutterSize','etaBco'
+    'etaMachine','etaCutterSize','etaBco','etaRpmOverride'
   ];
 }
 
-function getOperationStateFields() {
-  return getStateFields().filter((id) => !SHARED_JOB_FIELD_IDS.includes(id));
-}
-
-function getDefaultStateValue(id) {
-  if (id in DEFAULT_STATE_VALUES) return DEFAULT_STATE_VALUES[id];
-  const el = document.getElementById(id);
-  if (!el) return '';
-  if (el.type === 'checkbox') return !!el.defaultChecked;
-  if (el.tagName === 'SELECT') return el.options?.[0]?.value ?? '';
-  return '';
-}
-
-function collectSharedJobState() {
-  const sharedState = {};
-  SHARED_JOB_FIELD_IDS.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (el.type === 'checkbox') sharedState[id] = !!el.checked;
-    else sharedState[id] = el.value;
-  });
-  return sharedState;
-}
-
-function collectOperationState() {
-  const state = {};
-  getOperationStateFields().forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (el.type === 'checkbox') state[id] = !!el.checked;
-    else state[id] = el.value;
-  });
-  state.activeMode = document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
-  state.lineStopMdUserEdited = lsMdEl?.dataset.userEdited === 'true';
-  return state;
-}
-
-function buildBlankOperationState(mode = 'hotTap', baseState = collectOperationState()) {
-  const blankState = {};
-  getOperationStateFields().forEach((id) => {
-    blankState[id] = getDefaultStateValue(id);
-  });
-  ['bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','etaMachine','etaCutterSize','etaBco'].forEach((id) => {
-    if (baseState && baseState[id] !== undefined && baseState[id] !== '') blankState[id] = baseState[id];
-  });
-  blankState.activeMode = mode;
-  blankState.lineStopMdUserEdited = false;
-  if (mode === 'hotTap') {
-    blankState.ldSign = baseState?.ldSign || '+';
-    blankState.lugs = baseState?.lugs || 'Y';
-  }
-  if (mode === 'lineStop') {
-    blankState.lsLdSign = baseState?.lsLdSign || '+';
-    blankState.lsLiManualToggle = false;
-    blankState.lsLiManual = '';
-  }
-  if (mode === 'completionPlug') {
-    blankState.cpLiManualToggle = false;
-    blankState.cpLiManual = '';
-  }
-  return blankState;
-}
-
-function normalizeBundleItem(rawItem = {}, index = 0) {
-  const operationState = rawItem?.state ? cloneJson(rawItem.state) : extractOperationStateFromLegacyState(rawItem);
-  const mode = operationState.activeMode && panels[operationState.activeMode] ? operationState.activeMode : rawItem.mode || 'hotTap';
-  operationState.activeMode = mode;
-  if (!('lineStopMdUserEdited' in operationState)) operationState.lineStopMdUserEdited = false;
-  const operationType = rawItem.operationType || inferOperationType(operationState);
-  return {
-    id: rawItem.id || createBundleId(`op${index + 1}`),
-    label: String(rawItem.label || '').trim(),
-    operationType,
-    mode,
-    summary: rawItem.summary || null,
-    createdAtIso: rawItem.createdAtIso || new Date().toISOString(),
-    updatedAtIso: rawItem.updatedAtIso || new Date().toISOString(),
-    state: operationState
-  };
-}
-
-function createOperationLabel(operationType = 'Operation', existingOperations = []) {
-  const sameTypeCount = existingOperations.filter((operation) => (operation?.operationType || 'Operation') === operationType).length;
-  return `${operationType} ${sameTypeCount + 1}`;
-}
-
-function isAutoOperationLabel(label = '') {
-  return /^(Hot Tap|Line Stop|Completion Plug|BCO \/ Geometry) \d+$/.test(String(label).trim());
-}
-
-function normalizeJobBundle(rawBundle, record = null) {
-  const legacyState = rawBundle && !Array.isArray(rawBundle?.operations) ? (rawBundle.state || rawBundle) : null;
-  const sharedState = {
-    ...mapRecordJobToSharedState(record),
-    ...(legacyState ? extractSharedStateFromLegacyState(legacyState) : {}),
-    ...(rawBundle?.sharedState || {})
-  };
-
-  let operations = [];
-  if (Array.isArray(rawBundle?.operations)) {
-    operations = rawBundle.operations.map((operation, index) => normalizeBundleItem(operation, index));
-  } else if (legacyState && typeof legacyState === 'object') {
-    operations = [normalizeBundleItem({ state: extractOperationStateFromLegacyState(legacyState), label: rawBundle?.label || '' })];
-  }
-
-  if (!operations.length) {
-    operations = [normalizeBundleItem({ state: collectOperationState(), label: '' })];
-  }
-
-  operations = operations.map((operation, index) => {
-    const normalized = normalizeBundleItem(operation, index);
-    if (!normalized.label) normalized.label = createOperationLabel(normalized.operationType, operations.slice(0, index));
-    normalized.summary = buildOperationSummaryFromItem(normalized);
-    return normalized;
-  });
-
-  const selectedOperationId = operations.some((operation) => operation.id === rawBundle?.selectedOperationId)
-    ? rawBundle.selectedOperationId
-    : operations[0].id;
-
-  return {
-    version: JOB_BUNDLE_VERSION,
-    selectedOperationId,
-    sharedState,
-    operations
-  };
-}
-
-function ensureJobBundleInitialized() {
-  if (currentJobBundle?.operations?.length) return currentJobBundle;
-  currentJobBundle = normalizeJobBundle({
-    sharedState: collectSharedJobState(),
-    operations: [{ state: collectOperationState(), label: '' }]
-  });
-  return currentJobBundle;
-}
-
-function getSelectedOperationItem(bundle = currentJobBundle) {
-  const activeBundle = bundle || ensureJobBundleInitialized();
-  return activeBundle.operations.find((operation) => operation.id === activeBundle.selectedOperationId) || activeBundle.operations[0] || null;
-}
-
-function renderOperationManager() {
-  if (!jobOperationSelectEl || !jobOperationLabelEl || !jobOperationStatusEl) return;
-  const bundle = ensureJobBundleInitialized();
-  const selectedOperation = getSelectedOperationItem(bundle);
-  const optionsHtml = bundle.operations.map((operation) => {
-    const summary = buildOperationSummaryFromItem(operation);
-    const label = summary.label || createOperationLabel(summary.operationType, []);
-    const descriptor = summary.nominalSize ? ` • ${summary.nominalSize}` : '';
-    const typeLabel = summary.operationType || 'Operation';
-    const selected = operation.id === bundle.selectedOperationId ? ' selected' : '';
-    return `<option value="${escapeHtml(operation.id)}"${selected}>${escapeHtml(label)} • ${escapeHtml(typeLabel)}${escapeHtml(descriptor)}</option>`;
-  }).join('');
-  jobOperationSelectEl.innerHTML = optionsHtml;
-  if (selectedOperation) jobOperationSelectEl.value = selectedOperation.id;
-  jobOperationLabelEl.value = selectedOperation?.label || '';
-  const total = bundle.operations.length;
-  jobOperationStatusEl.textContent = `${total} operation${total === 1 ? '' : 's'} in this job • ${buildOperationCountsSummary(bundle.operations)}`;
-  if (duplicateOperationBtnEl) duplicateOperationBtnEl.disabled = !selectedOperation;
-  if (deleteOperationBtnEl) deleteOperationBtnEl.disabled = !selectedOperation;
-}
-
-function syncCurrentOperationItemFromUi(options = {}) {
-  if (suppressJobBundleUiSync) return currentJobBundle;
-  const bundle = ensureJobBundleInitialized();
-  bundle.sharedState = collectSharedJobState();
-  let selectedOperation = getSelectedOperationItem(bundle);
-  if (!selectedOperation) {
-    selectedOperation = normalizeBundleItem({ state: collectOperationState(), label: '' }, bundle.operations.length);
-    bundle.operations.push(selectedOperation);
-    bundle.selectedOperationId = selectedOperation.id;
-  }
-  selectedOperation.state = cloneJson(collectOperationState()) || {};
-  selectedOperation.mode = selectedOperation.state.activeMode || selectedOperation.mode || 'hotTap';
-  selectedOperation.operationType = inferOperationType(buildCombinedState(bundle.sharedState, selectedOperation.state));
-  selectedOperation.updatedAtIso = new Date().toISOString();
-  if (!String(selectedOperation.label || '').trim() || isAutoOperationLabel(selectedOperation.label)) {
-    selectedOperation.label = createOperationLabel(selectedOperation.operationType, bundle.operations.filter((operation) => operation.id !== selectedOperation.id));
-  }
-  selectedOperation.summary = buildOperationSummaryFromItem(selectedOperation);
-  if (options.render !== false) renderOperationManager();
-  return bundle;
-}
-
-function selectOperationById(operationId, options = {}) {
-  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
-  if (!bundle.operations.some((operation) => operation.id === operationId)) return;
-  bundle.selectedOperationId = operationId;
-  const selectedOperation = getSelectedOperationItem(bundle);
-  suppressJobBundleUiSync = true;
-  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
-  suppressJobBundleUiSync = false;
-  renderOperationManager();
-  if (options.persist !== false) persistCurrentJob();
-}
-
-function addOperationForMode(mode, options = {}) {
-  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
-  const currentOperation = getSelectedOperationItem(bundle);
-  const nextState = options.duplicateCurrent && currentOperation
-    ? cloneJson(currentOperation.state)
-    : buildBlankOperationState(mode, currentOperation?.state || collectOperationState());
-  if (!options.duplicateCurrent) nextState.activeMode = mode;
-  const nextOperation = normalizeBundleItem({ state: nextState, label: '' }, bundle.operations.length);
-  nextOperation.label = createOperationLabel(nextOperation.operationType, bundle.operations);
-  nextOperation.summary = buildOperationSummaryFromItem(nextOperation);
-  bundle.operations.push(nextOperation);
-  bundle.selectedOperationId = nextOperation.id;
-  suppressJobBundleUiSync = true;
-  applyJobState(buildCombinedState(bundle.sharedState, nextOperation.state));
-  suppressJobBundleUiSync = false;
-  renderOperationManager();
-  persistCurrentJob();
-}
-
-function deleteCurrentOperationItem() {
-  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
-  const currentOperation = getSelectedOperationItem(bundle);
-  if (!currentOperation) return;
-  if (bundle.operations.length === 1) {
-    const replacementState = buildBlankOperationState(currentOperation.mode || 'hotTap', currentOperation.state || collectOperationState());
-    const replacement = normalizeBundleItem({ state: replacementState, label: currentOperation.label || '' }, 0);
-    replacement.label = currentOperation.label || createOperationLabel(replacement.operationType, []);
-    replacement.summary = buildOperationSummaryFromItem(replacement);
-    bundle.operations = [replacement];
-    bundle.selectedOperationId = replacement.id;
-  } else {
-    const currentIndex = bundle.operations.findIndex((operation) => operation.id === currentOperation.id);
-    bundle.operations = bundle.operations.filter((operation) => operation.id !== currentOperation.id);
-    const fallback = bundle.operations[Math.max(0, currentIndex - 1)] || bundle.operations[0];
-    bundle.selectedOperationId = fallback.id;
-  }
-  const selectedOperation = getSelectedOperationItem(bundle);
-  suppressJobBundleUiSync = true;
-  applyJobState(buildCombinedState(bundle.sharedState, selectedOperation?.state || {}));
-  suppressJobBundleUiSync = false;
-  renderOperationManager();
-  persistCurrentJob();
-}
-
 function collectJobState() {
-  return buildCombinedState(collectSharedJobState(), collectOperationState());
+  const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+  const selectedOperation = getSelectedOperationItem(bundle);
+  return buildCombinedState(bundle.sharedState, selectedOperation?.state || {});
 }
 
-function persistCurrentJob() {
+function persistCurrentJob(options = {}) {
   try {
-    const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
+    const bundle = syncCurrentOperationItemFromUi({ render: options.render !== false }) || ensureJobBundleInitialized();
+    if (shouldHoldStartupJobPersist(bundle)) return;
     localStorage.setItem(JOB_STATE_KEY, JSON.stringify(buildPersistedJobBundlePayload(bundle)));
+    localStorage.setItem('measurementCardDraftUpdatedAtV1', new Date().toISOString());
   } catch {}
 }
 
@@ -2066,6 +3977,10 @@ function applyJobState(state) {
   getStateFields().forEach(id => {
     const el = document.getElementById(id);
     if (!el || !(id in state)) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(state[id], { dispatch: false });
+      return;
+    }
     if (el.type === 'checkbox') el.checked = !!state[id];
     else el.value = state[id] ?? '';
   });
@@ -2073,65 +3988,180 @@ function applyJobState(state) {
     if (state.lineStopMdUserEdited) lsMdEl.dataset.userEdited = 'true';
     else delete lsMdEl.dataset.userEdited;
   }
-  if (state.activeMode) {
+  if (CALC_SCREEN_MODES.has(normalizeMode(state.calcMode))) {
+    const calcMode = normalizeMode(state.calcMode);
+    try { localStorage.setItem(CALC_MODE_KEY, calcMode); } catch {}
+    syncCalcModeButtons(calcMode);
+    if (document.body.dataset.activeScreen === 'calc') setMode(calcMode);
+  }
+  if (WORKFLOW_SCREEN_MODES.has(normalizeMode(state.activeMode))) {
     setMode(state.activeMode);
   }
+  setLineStopVariant(state.lineStopVariant || 'standard');
+  const operationTypeEl = document.getElementById('operationType');
+  if (operationTypeEl && state.operationType) operationTypeEl.value = state.operationType;
   updateJobInfoSummary();
-}
-
-function applyJobBundle(bundle, options = {}) {
-  suppressJobBundleUiSync = true;
-  currentJobBundle = normalizeJobBundle(bundle, options.record || null);
-  const selectedOperation = getSelectedOperationItem(currentJobBundle);
-  applyJobState(buildCombinedState(currentJobBundle.sharedState, selectedOperation?.state || {}));
-  renderOperationManager();
-  suppressJobBundleUiSync = false;
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
 }
 
 function restoreCurrentJob() {
   try {
     const raw = localStorage.getItem(JOB_STATE_KEY);
     if (!raw) return;
-    applyJobBundle(JSON.parse(raw));
-  } catch {}
+    const parsed = JSON.parse(raw);
+    if (parsed?.operations?.length || parsed?.sharedState) applyJobBundle(parsed);
+    else applyJobState(parsed);
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+  } catch {} finally {
+    jobDraftRestoreComplete = true;
+  }
+}
+
+
+function sanitizeLoadedJobState(state) {
+  const next = { ...(state || {}) };
+  const allowedModes = new Set(['bco','eta','hotTap','lineStop','completionPlug']);
+  if (!allowedModes.has(String(next.activeMode || ''))) {
+    delete next.activeMode;
+  }
+  if (!next.activeMode) {
+    const op = String(next.operationType || '').toLowerCase();
+    if (op.includes('completion')) next.activeMode = 'completionPlug';
+    else if (op.includes('line stop') || op.includes('hi-stop') || op.includes('histop') || op.includes('htp')) next.activeMode = 'lineStop';
+    else next.activeMode = 'hotTap';
+  }
+  return next;
 }
 
 function loadRecordIntoCalculator(record, options = {}) {
-  if (!record) return;
+  const state = sanitizeLoadedJobState(buildStateFromRecord(record));
+  if (!state || !Object.keys(state).length) return;
+  try {
+    localStorage.setItem('tapcalcV3Screen', 'job');
+    localStorage.setItem('tapcalcLibraryLaneV1', 'local');
+    document.body.dataset.activeScreen = 'job';
+  } catch {}
+  try {
+    document.querySelectorAll('.screen-panel').forEach(panel => {
+      if (panel.id === 'jobScreen') panel.classList.add('active');
+      else panel.classList.remove('active');
+      panel.style.pointerEvents = panel.id === 'jobScreen' ? 'auto' : 'none';
+    });
+  } catch {}
+  try {
+    const jobsScreenEl = document.getElementById('jobsScreen');
+    if (jobsScreenEl) {
+      jobsScreenEl.classList.remove('active');
+      jobsScreenEl.style.pointerEvents = 'none';
+      jobsScreenEl.style.zIndex = '0';
+      jobsScreenEl.dataset.activeLane = 'local';
+    }
+    const jobsPanelEl = document.getElementById('jobsPanel');
+    if (jobsPanelEl) jobsPanelEl.classList.remove('active');
+  } catch {}
   if (record?.jobBundle?.operations?.length) applyJobBundle(record.jobBundle, { record });
-  else if (record?.state) applyJobBundle(record.state, { record });
-  else return;
+  else applyJobState(state);
+
+  const directMap = {
+    jobClient: record?.job?.client,
+    jobDescription: record?.job?.description,
+    jobNumber: record?.job?.jobNumber,
+    jobPressure: record?.job?.pressure,
+    jobTemperature: record?.job?.temperature,
+    jobDate: record?.job?.date,
+    jobProduct: record?.job?.product,
+    jobLocation: record?.job?.location,
+    jobTechnician: record?.job?.technician,
+    jobNotes: record?.job?.notes,
+    machineType: state.machineType || record?.machine?.machine,
+    operationType: state.operationType,
+    bcoPipeMaterial: state.bcoPipeMaterial,
+    bcoPipeOD: state.bcoPipeOD,
+    bcoSchedule: state.bcoSchedule,
+    bcoPipeID: state.bcoPipeID,
+    bcoCutterOD: state.bcoCutterOD,
+    etaMachine: state.etaMachine,
+    etaCutterSize: state.etaCutterSize,
+    etaBco: state.etaBco,
+    etaRpmOverride: state.etaRpmOverride
+  };
+  Object.entries(directMap).forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el && value != null && value !== '') {
+      if (id === 'machineType') {
+        setMachineTypeValue(value);
+        return;
+      }
+      el.value = value;
+      try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+    }
+  });
+
+  try {
+    const currentJobNameEl = document.getElementById('jobsCurrentJobName');
+    if (currentJobNameEl) currentJobNameEl.textContent = state.jobDescription || state.jobNumber || state.jobClient || 'Loaded Job';
+  } catch {}
+
   refreshBcoState();
   updateBcoDisplays();
   calculateIntegratedBco({ silent: true });
   calcHotTap();
+  calcHtp();
   calcLineStop();
+  calcHiStop();
   calcCompletionPlug();
   initEtaCalculator();
   syncBcoToEta({ force: true });
   updateEtaEstimate();
+
   clearTimeout(window.__tapcalcLoadJobBcoTimer);
   window.__tapcalcLoadJobBcoTimer = setTimeout(() => {
     refreshBcoState();
     updateBcoDisplays();
     calculateIntegratedBco({ silent: true });
     calcHotTap();
+    calcHtp();
     calcLineStop();
+    calcHiStop();
     calcCompletionPlug();
     syncBcoToEta({ force: true });
     updateEtaEstimate();
-    renderOperationManager();
+    updateJobInfoSummary();
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   }, 80);
+
   persistCurrentJob();
+  renderOperationManager();
+  updateJobInfoSummary();
+  if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
   if (jobsCloudStatusEl && options.message !== false) {
-    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || 'saved job'} into TapCalc.`;
+    jobsCloudStatusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
   }
-  const targetMode = getSelectedOperationItem(currentJobBundle)?.state?.activeMode || record?.state?.activeMode || 'bco';
+  const savedCalcMode = normalizeMode(state?.calcMode);
+  if (CALC_SCREEN_MODES.has(savedCalcMode)) {
+    try { localStorage.setItem(CALC_MODE_KEY, savedCalcMode); } catch {}
+  }
+  const targetMode = WORKFLOW_SCREEN_MODES.has(normalizeMode(state?.activeMode)) ? normalizeMode(state.activeMode) : 'hotTap';
   if (targetMode) setMode(targetMode);
   try {
-    document.getElementById('bcoPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
+    jobTab?.click();
+    setTimeout(() => {
+      document.body.dataset.activeScreen = 'job';
+      const jobScreen = document.getElementById('jobScreen');
+      if (jobScreen) { jobScreen.classList.add('active'); jobScreen.style.pointerEvents = 'auto'; }
+      const jobsScreenEl = document.getElementById('jobsScreen');
+      if (jobsScreenEl) { jobsScreenEl.classList.remove('active'); jobsScreenEl.style.pointerEvents = 'none'; jobsScreenEl.style.zIndex = '0'; }
+      const jobsPanelEl = document.getElementById('jobsPanel');
+      if (jobsPanelEl) jobsPanelEl.classList.remove('active');
+    }, 40);
   } catch {}
+  if (record?.jobBundle?.operations?.length > 1) {
+    focusJobInfoOperations(currentJobBundle, { behavior: 'auto', delay: 140 });
+  }
 }
+window.loadRecordIntoCalculator = loadRecordIntoCalculator;
 
 
 
@@ -2151,14 +4181,22 @@ function saveHistory(items) {
 }
 
 function inferOperationType(state = collectJobState()) {
-  const activeMode = state.activeMode || document.querySelector('.mode-btn.active')?.dataset.mode || 'bco';
-  if (activeMode === 'lineStop') return 'Line Stop';
+  const activeMode = state.activeMode || document.querySelector('.workflow-submode-btn.active')?.dataset.mode || document.querySelector('.calc-submode-btn.active')?.dataset.mode || 'bco';
+  if (activeMode === 'lineStop') {
+    const variant = String(state.lineStopVariant || getLineStopVariant() || '').trim();
+    if (variant === 'htp') return 'HTP Hot Tap';
+    if (variant === 'hiStop') return 'Hi-Stop';
+    return 'Line Stop';
+  }
   if (activeMode === 'completionPlug') return 'Completion Plug';
+  if (activeMode === 'htp') return 'HTP Hot Tap';
   if (activeMode === 'hotTap' || activeMode === 'eta') return 'Hot Tap';
   const hasLineStop = ['lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel'].some((key) => String(state[key] || '').trim() !== '');
   if (hasLineStop) return 'Line Stop';
   const hasCompletion = ['cpStart','cpJbf','cpLd','cpPt','cpLiManual'].some((key) => String(state[key] || '').trim() !== '');
   if (hasCompletion) return 'Completion Plug';
+  const hasHtp = ['htpMd','htpLd','htpPtc'].some((key) => String(state[key] || '').trim() !== '');
+  if (hasHtp) return 'HTP Hot Tap';
   const hasHotTap = ['md','ld','ptc','start','mt'].some((key) => String(state[key] || '').trim() !== '');
   if (hasHotTap) return 'Hot Tap';
   return 'BCO / Geometry';
@@ -2168,16 +4206,16 @@ function buildJobRecord(state = collectJobState()) {
   refreshBcoState();
   const bundle = syncCurrentOperationItemFromUi({ render: false }) || ensureJobBundleInitialized();
   const persistedBundle = buildPersistedJobBundlePayload(bundle);
-  const materialLabel = bcoMaterialEl?.selectedOptions?.[0]?.textContent || state.bcoPipeMaterial || '—';
-  const nominal = state.bcoPipeOD || '—';
+  const materialLabel = bcoMaterialEl?.selectedOptions?.[0]?.textContent || state.bcoPipeMaterial || '-';
+  const nominal = state.bcoPipeOD || '-';
   const machineLabelMap = { '360': '360 / 152', '660': '660 / 760', '1200': '1200-M120' };
   const operationType = persistedBundle.operations.length > 1
     ? buildOperationCountsSummary(persistedBundle.operations)
     : persistedBundle.operations[0]?.operationType || inferOperationType(state);
   const savedAtIso = new Date().toISOString();
-  const etaRpm = etaRpmDisplayEl?.textContent?.trim() || '—';
-  const etaRange = etaRangeDisplayEl?.textContent?.trim() || '—';
-  const etaFeedSpeed = etaFeedSpeedDisplayEl?.textContent?.trim() || '—';
+  const etaRpm = etaRpmDisplayEl?.textContent?.trim() || '-';
+  const etaRange = etaRangeDisplayEl?.textContent?.trim() || '-';
+  const etaFeedSpeed = etaFeedSpeedDisplayEl?.textContent?.trim() || '-';
   const wallText = Number.isFinite(geometry.wall) ? geometry.wall.toFixed(4) : '';
   const pipeOdText = Number.isFinite(geometry.pipeOD) ? geometry.pipeOD.toFixed(4) : '';
   const pipeIdText = Number.isFinite(geometry.pipeID) ? geometry.pipeID.toFixed(4) : '';
@@ -2192,7 +4230,7 @@ function buildJobRecord(state = collectJobState()) {
       savedAtIso,
       savedAtDisplay: new Date(savedAtIso).toLocaleString(),
       app: 'TapCalc',
-      version: 'v2.28b5'
+      version: `v${BUILD_VERSION}`
     },
     job: {
       client: state.jobClient || '',
@@ -2221,13 +4259,18 @@ function buildJobRecord(state = collectJobState()) {
       rpm: etaRpm,
       feedRate: ETA_FEED_RATE.toFixed(4),
       etaRange,
-      feedSpeed: etaFeedSpeed
+      feedSpeed: etaFeedSpeed,
+      htpMachine: htpMachineEl?.selectedOptions?.[0]?.textContent || state.htpMachine || '',
+      htpEtaRange: lastHtp.eta || '-'
     },
     calculations: {
       bco: formatValue(parseFloat(data?.bco)),
       hotTapLi: formatValue(lastHotTap.li),
       hotTapTtd: formatValue(lastHotTap.ttd),
+      htpTco: formatValue(lastHtp.tco),
       lineStopLi: formatValue(lastLineStop.li),
+      hiStopTco: formatValue(lastHiStop.tco),
+      hiStopPlugSet: formatValue(lastHiStop.plugSet),
       completionPlugLi: formatValue(lastCompletionPlug.li)
     },
     measurements: {
@@ -2238,11 +4281,24 @@ function buildJobRecord(state = collectJobState()) {
         pop: popEl?.textContent?.trim() || '', cop: copEl?.textContent?.trim() || '',
         rodBco: rbcoEl?.textContent?.trim() || '', rodMco: rmcoEl?.textContent?.trim() || ''
       },
+      htp: {
+        pipeSize: state.htpPipeSize || '', branchSize: htpBranchSizeEl?.textContent?.trim() || '',
+        head: htpHeadEl?.textContent?.trim() || '', cutterSize: htpCutterSizeEl?.textContent?.trim() || '',
+        bco: htpBcoEl?.textContent?.trim() || '', md: state.htpMd || '', ld: state.htpLd || '',
+        ldSign: state.htpLdSign || '+', ptc: state.htpPtc || '', tco: formatValue(lastHtp.tco), eta: lastHtp.eta || '-'
+      },
       lineStop: {
+        variant: state.lineStopVariant || getLineStopVariant(),
         md: state.lsMd || '', ld: state.lsLd || '', ldSign: state.lsLdSign || '+',
         pod: state.lsPod || pipeOdText, wallThickness: wallText, li: formatValue(lastLineStop.li),
         travel: state.lsTravel || '', machineTravel: state.lsMachineTravel || '',
         travelMargin: lsTravelMarginEl?.textContent?.trim() || ''
+      },
+      hiStop: {
+        md: state.hsMd || '', ld: state.hsLd || '', ldSign: state.hsLdSign || '+', rl: state.hsRl || '',
+        pod: state.hsPod || pipeOdText, cl: state.hsCl || '', ptc: state.hsPtc || '',
+        tco: formatValue(lastHiStop.tco), rcd: state.hsRcd || '', pb: state.hsPb || '',
+        ptp: state.hsPtp || '', psd: formatValue(lastHiStop.psd), plugSet: formatValue(lastHiStop.plugSet)
       },
       completionPlug: {
         start: state.cpStart || '', jbf: state.cpJbf || '', ld: state.cpLd || '',
@@ -2252,6 +4308,7 @@ function buildJobRecord(state = collectJobState()) {
     warnings: {
       hotTap: lastHotTap.warnings || [],
       lineStop: lastLineStop.warnings || [],
+      hiStop: lastHiStop.warnings || [],
       completionPlug: lastCompletionPlug.warnings || []
     },
     state
@@ -2261,9 +4318,8 @@ function buildJobRecord(state = collectJobState()) {
 function buildHistorySnapshot() {
   const state = collectJobState();
   const record = buildJobRecord(state);
-  const material = bcoMaterialEl?.selectedOptions?.[0]?.textContent || bcoMaterialEl?.value || '—';
-  const nominal = bcoPipeOdEl?.value || '—';
-  const operationCount = record?.jobBundle?.operations?.length || 1;
+  const material = bcoMaterialEl?.selectedOptions?.[0]?.textContent || bcoMaterialEl?.value || '-';
+  const nominal = bcoPipeOdEl?.value || '-';
   return {
     id: `${Date.now()}`,
     savedAt: record.meta.savedAtDisplay,
@@ -2274,47 +4330,71 @@ function buildHistorySnapshot() {
     summary: {
       title: record.meta.title,
       operationType: record.meta.operationType,
-      operationCount,
       pipe: `${material} ${nominal}`.trim(),
       bco: record.calculations.bco,
       hotTapLi: record.calculations.hotTapLi,
       lineStopLi: record.calculations.lineStopLi,
       completionLi: record.calculations.completionPlugLi,
-      wall: record.pipe.wallThickness || '—',
-      location: record.job.location || '—',
-      technician: record.job.technician || '—'
+      wall: record.pipe.wallThickness || '-',
+      location: record.job.location || '-',
+      technician: record.job.technician || '-'
     }
   };
 }
 
-async function ensureFirebaseReady() {
-  if (firebaseDb) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms))
+  ]);
+}
+
+async function ensureFirebaseReady(options = {}) {
+  if (firebaseDb && !options.forceRetry) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+  if (options.forceRetry) {
+    firebaseDb = null;
+    firebaseModuleCache = null;
+    firebaseInitPromise = null;
+  }
+  if (firebaseInitPromise) return firebaseInitPromise;
   const config = window.TAPCALC_FIREBASE_CONFIG;
   if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase config is missing in this build.';
     return { enabled: false };
   }
-  try {
-    const [appModule, firestoreModule, authModule] = await Promise.all([
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
-      import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
-    ]);
-    const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
-    const auth = authModule.getAuth(app);
-    if (!auth.currentUser) {
-      await authModule.signInAnonymously(auth);
+  if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connecting...';
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Connecting to shared job database...';
+  firebaseInitPromise = (async () => {
+    try {
+      const [appModule, firestoreModule, authModule] = await Promise.all([
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
+      ]);
+      const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
+      const auth = authModule.getAuth(app);
+      if (!auth.currentUser) {
+        await authModule.signInAnonymously(auth);
+      }
+      firebaseDb = firestoreModule.getFirestore(app);
+      firebaseModuleCache = firestoreModule;
+      if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Connected to shared job database (${config.projectId}).`;
+      return { enabled: true, db: firebaseDb, modules: firestoreModule };
+    } catch (error) {
+      console.error('Firebase init failed', error);
+      firebaseDb = null;
+      firebaseModuleCache = null;
+      if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
+      return { enabled: false, error };
+    } finally {
+      firebaseInitPromise = null;
+      try { syncJobsWorkspace(); } catch {}
     }
-    firebaseDb = firestoreModule.getFirestore(app);
-    firebaseModuleCache = firestoreModule;
-    if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
-    return { enabled: true, db: firebaseDb, modules: firestoreModule };
-  } catch (error) {
-    console.error('Firebase init failed', error);
-    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
-    return { enabled: false, error };
-  }
+  })();
+  return firebaseInitPromise;
 }
 
 function getJobsCollectionName() {
@@ -2326,7 +4406,7 @@ function formatFirebaseError(error) {
   const parts = [];
   if (error.code) parts.push(String(error.code));
   if (error.message) parts.push(String(error.message));
-  return parts.join(' — ') || String(error);
+  return parts.join(' - ') || String(error);
 }
 
 
@@ -2338,6 +4418,7 @@ async function uploadHistoryItemToCloud(item) {
 
   const payload = {
     ...item.record,
+    state: item.state || item.record?.state || collectJobState(),
     localId: item.id,
     syncedAt: serverTimestamp(),
     source: 'tapcalc-web'
@@ -2409,8 +4490,12 @@ async function syncLocalJobsToCloud() {
     if (jobsCloudStatusEl) {
       if (failCount === 0) {
         jobsCloudStatusEl.textContent = `Sync complete. ${successCount} job${successCount === 1 ? '' : 's'} uploaded.`;
+        if (successCount > 0) {
+          try { window.tapCalcSetSaveState?.('synced', { syncedAtIso: new Date().toISOString() }); } catch {}
+        }
       } else {
         jobsCloudStatusEl.textContent = `Sync finished with issues. Uploaded ${successCount}, failed ${failCount}.`;
+        try { window.tapCalcSetSaveState?.(successCount > 0 ? 'synced' : 'error'); } catch {}
       }
     }
   } finally {
@@ -2423,55 +4508,34 @@ function renderJobRecordDetails(record) {
   const warnings = [
     ...(record?.warnings?.hotTap || []),
     ...(record?.warnings?.lineStop || []),
+    ...(record?.warnings?.hiStop || []),
     ...(record?.warnings?.completionPlug || [])
   ].filter(Boolean);
-  const operations = getRecordOperations(record);
-  const operationsHtml = operations.length ? `
-    <div class="job-operation-list">
-      ${operations.map((operation) => {
-        const summary = operation?.summary || buildOperationSummaryFromItem(operation);
-        const label = summary.label || operation.label || operation.operationType || 'Operation';
-        const subtitle = summary.operationType || operation.operationType || 'Operation';
-        const pipeText = [summary.material, summary.nominalSize].filter(Boolean).join(' ');
-        const detailText = summary.details || 'No extra details saved.';
-        return `
-          <div class="job-operation-card">
-            <div class="job-operation-card-title">${escapeHtml(label)}</div>
-            <div class="job-operation-card-subtitle">${escapeHtml(subtitle)}</div>
-            <div class="job-operation-card-meta">
-              <div><strong>Pipe:</strong> ${escapeHtml(pipeText || '—')}</div>
-              <div><strong>Cutter:</strong> ${escapeHtml(summary.cutterOd || '—')}</div>
-              <div><strong>Notes:</strong> ${escapeHtml(detailText)}</div>
-            </div>
-          </div>`;
-      }).join('')}
-    </div>` : '';
   return `
     <div class="job-detail-grid">
-      <div><strong>Customer:</strong> ${record?.job?.client || '—'}</div>
-      <div><strong>Location:</strong> ${record?.job?.location || '—'}</div>
-      <div><strong>Technician:</strong> ${record?.job?.technician || '—'}</div>
-      <div><strong>Job #:</strong> ${record?.job?.jobNumber || '—'}</div>
-      <div><strong>Pipe:</strong> ${record?.pipe?.material || '—'} ${record?.pipe?.nominalSize || ''}</div>
-      <div><strong>Wall:</strong> ${record?.pipe?.wallThickness || '—'}</div>
-      <div><strong>Cutter:</strong> ${record?.machine?.cutterOd || '—'}</div>
-      <div><strong>Machine:</strong> ${record?.machine?.machine || '—'}</div>
-      <div><strong>BCO:</strong> ${record?.calculations?.bco || '—'}</div>
-      <div><strong>ETA:</strong> ${record?.machine?.etaRange || '—'}</div>
-      <div><strong>Operation Mix:</strong> ${record?.meta?.operationType || '—'}</div>
-      <div><strong>Operations:</strong> ${operations.length || 1}</div>
-      <div><strong>Notes:</strong> ${record?.job?.notes || '—'}</div>
+      <div><strong>Customer:</strong> ${record?.job?.client || '-'}</div>
+      <div><strong>Location:</strong> ${record?.job?.location || '-'}</div>
+      <div><strong>Technician:</strong> ${record?.job?.technician || '-'}</div>
+      <div><strong>Job #:</strong> ${record?.job?.jobNumber || '-'}</div>
+      <div><strong>Pipe:</strong> ${record?.pipe?.material || '-'} ${record?.pipe?.nominalSize || ''}</div>
+      <div><strong>Wall:</strong> ${record?.pipe?.wallThickness || '-'}</div>
+      <div><strong>Cutter:</strong> ${record?.machine?.cutterOd || '-'}</div>
+      <div><strong>Machine:</strong> ${record?.machine?.machine || '-'}</div>
+      <div><strong>BCO:</strong> ${record?.calculations?.bco || '-'}</div>
+      <div><strong>ETA:</strong> ${record?.machine?.etaRange || '-'}</div>
+      <div><strong>HTP TCO:</strong> ${record?.calculations?.htpTco || '-'}</div>
+      <div><strong>Operation:</strong> ${record?.meta?.operationType || '-'}</div>
+      <div><strong>Notes:</strong> ${record?.job?.notes || '-'}</div>
     </div>
     <div class="job-detail-grid">
-      <div><strong>Hot Tap LI:</strong> ${record?.calculations?.hotTapLi || '—'}</div>
-      <div><strong>Line Stop LI:</strong> ${record?.calculations?.lineStopLi || '—'}</div>
-      <div><strong>Completion Plug LI:</strong> ${record?.calculations?.completionPlugLi || '—'}</div>
+      <div><strong>Hot Tap LI:</strong> ${record?.calculations?.hotTapLi || '-'}</div>
+      <div><strong>Line Stop LI:</strong> ${record?.calculations?.lineStopLi || '-'}</div>
+      <div><strong>Completion Plug LI:</strong> ${record?.calculations?.completionPlugLi || '-'}</div>
       <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
-    </div>
-    ${operationsHtml}`;
+    </div>`;
 }
 
-function getCombinedJobsForDisplay() {
+window.getCombinedJobsForDisplay = function getCombinedJobsForDisplay() {
   const localItems = getHistory()
     .filter((item) => item && item.record)
     .map((item) => ({ source: item.cloudId ? 'synced' : 'local', id: item.cloudId || item.id, record: item.record, savedAt: item.savedAt }));
@@ -2486,7 +4550,8 @@ function getCombinedJobsForDisplay() {
     jobs = jobs.filter(({ record }) => {
       const haystack = [
         record?.meta?.title, record?.meta?.operationType, record?.job?.client, record?.job?.location, record?.job?.technician,
-        record?.job?.jobNumber, record?.job?.date, record?.job?.notes, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd, record?.meta?.savedAtDisplay, ...(record?.jobBundle?.operations || []).map((operation) => operation?.label || ''), ...(record?.jobBundle?.operations || []).map((operation) => operation?.operationType || '')
+        record?.job?.jobNumber, record?.job?.date, record?.job?.notes, record?.pipe?.nominalSize, record?.pipe?.material, record?.machine?.machine, record?.machine?.cutterOd, record?.meta?.savedAtDisplay,
+        ...(record?.jobBundle?.operations || []).flatMap((operation) => [operation?.label, operation?.notes, operation?.operationType])
       ].join(' ').toLowerCase();
       return haystack.includes(term);
     });
@@ -2501,6 +4566,86 @@ function getCombinedJobsForDisplay() {
   return jobs;
 }
 
+function getSelectedCombinedJob(jobs = null) {
+  const list = jobs || getCombinedJobsForDisplay();
+  if (!list.length) return null;
+  const selectedId = selectedJobId ? String(selectedJobId) : '';
+  return list.find((job) => String(job.id) === selectedId) || list[0] || null;
+}
+
+function updateJobsListSelectionUI() {
+  if (!jobsSelectEl) return;
+  jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+    const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
+    item.classList.toggle('active', active);
+    item.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function renderSelectedJobDetails(jobs = null) {
+  const list = jobs || getCombinedJobsForDisplay();
+  if (!jobsListEl) return;
+  const compactShared = (() => {
+    try {
+      const compact = window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820;
+      const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+      return compact && sharedVisible;
+    } catch { return false; }
+  })();
+  if (!list.length) {
+    jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+    return;
+  }
+  if (compactShared && !selectedJobId) {
+    jobsListEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+    return;
+  }
+  const selectedJob = getSelectedCombinedJob(list);
+  if (!selectedJob) {
+    jobsListEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+    return;
+  }
+  selectedJobId = String(selectedJob.id);
+  updateJobsListSelectionUI();
+  const record = selectedJob.record;
+  const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+  const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
+  const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '-';
+  const warnings = [
+    ...(record?.warnings?.hotTap || []),
+    ...(record?.warnings?.lineStop || []),
+    ...(record?.warnings?.hiStop || []),
+    ...(record?.warnings?.completionPlug || [])
+  ].filter(Boolean);
+  jobsListEl.innerHTML = `
+    <div class="job-detail-header">
+      <div>
+        <div class="job-detail-title">${title}</div>
+        <div class="job-detail-subtitle">${savedAtDisplay}  |  ${record?.meta?.operationType || 'Job'}  |  ${sourceLabel}</div>
+      </div>
+      <div class="job-record-badges">
+        <span class="job-source-badge ${selectedJob.source}">${sourceLabel}</span>
+      </div>
+    </div>
+    <div class="job-detail-actions">
+      <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button>
+    </div>
+    ${renderJobRecordDetails(record)}
+    <div class="job-detail-grid">
+      <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+      <div><strong>Date:</strong> ${record?.job?.date || '-'}</div>
+      <div><strong>Job Description:</strong> ${record?.job?.description || '-'}</div>
+      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+    </div>`;
+  const loadBtn = document.getElementById('jobsLoadSelectedBtn');
+  if (loadBtn) loadBtn.addEventListener('click', () => {
+    const selected = getSelectedCombinedJob(list) || { record };
+    loadRecordIntoCalculator(selected.record || record);
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+  });
+}
+
+
 function renderJobsList() {
   if (!jobsListEl) return;
   const jobs = getCombinedJobsForDisplay();
@@ -2508,24 +4653,36 @@ function renderJobsList() {
   if (jobsResultsMetaEl) {
     const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
     const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
-    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for “${jobsSearchTerm}” • ${modeLabel} view` : `${countText} • ${modeLabel} view`;
+    jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for "${jobsSearchTerm}"  |  ${modeLabel} view` : `${countText}  |  ${modeLabel} view`;
   }
 
   if (!jobs.length) {
-    if (jobsSelectEl) jobsSelectEl.innerHTML = '';
+    if (jobsSelectEl) jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
     return;
   }
 
-  const previousSelectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : '';
+  const previousSelectedId = selectedJobId ? String(selectedJobId) : '';
+  const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
+  const compactShared = (() => {
+    try {
+      const compact = window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820;
+      const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+      return compact && sharedVisible;
+    } catch { return false; }
+  })();
+  selectedJobId = compactShared ? (selectedStillExists ? previousSelectedId : '') : (selectedStillExists ? previousSelectedId : String(jobs[0].id));
 
   if (jobsSelectEl) {
-    const optionsHtml = jobs.map(({ source, id, record }) => {
-      const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+    const previousScrollTop = jobsSelectEl.scrollTop;
+    jobsSelectEl.innerHTML = '';
+    const frag = document.createDocumentFragment();
+    jobs.forEach(({ source, id, record }) => {
+      const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
       const client = record?.job?.client || 'No customer';
       const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
       const op = record?.meta?.operationType || 'Job';
-      const nominalSize = record?.pipe?.nominalSize || '—';
+      const nominalSize = record?.pipe?.nominalSize || '-';
       const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
       const groupPrefix = jobsBrowseMode === 'customer'
         ? `Customer: ${client}`
@@ -2534,61 +4691,39 @@ function renderJobsList() {
           : jobsBrowseMode === 'date'
             ? `Date: ${date}`
             : 'Search';
-      const label = `${groupPrefix} • ${title} • ${client} • ${op} • ${nominalSize} • ${sourceLabel}`;
-      const safe = label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-      const optionId = String(id);
-      const selectedAttr = optionId === previousSelectedId ? ' selected' : '';
-      return `<option value="${optionId}"${selectedAttr}>${safe}</option>`;
-    }).join('');
-
-    jobsSelectEl.innerHTML = optionsHtml;
-
-    const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
-    jobsSelectEl.value = selectedStillExists ? previousSelectedId : String(jobs[0].id);
+      const isActive = String(id) === selectedJobId;
+      const item = document.createElement('div');
+      item.className = `jobs-list-item${isActive ? ' active' : ''}`;
+      item.dataset.jobId = String(id);
+      item.setAttribute('role', 'button');
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
+      item.querySelector('.jobs-list-title').textContent = title;
+      item.querySelector('.jobs-list-meta').textContent = `${groupPrefix}  |  ${client}  |  ${op}  |  ${nominalSize}  |  ${sourceLabel}`;
+      const selectThis = (event) => {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        selectedJobId = String(id);
+        updateJobsListSelectionUI();
+        renderSelectedJobDetails(jobs);
+      };
+      item.addEventListener('click', selectThis);
+      item.addEventListener('pointerup', selectThis);
+      item.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') selectThis(event);
+      });
+      frag.appendChild(item);
+    });
+    jobsSelectEl.appendChild(frag);
+    jobsSelectEl.scrollTop = previousScrollTop;
   }
 
-  const selectedId = jobsSelectEl?.value ? String(jobsSelectEl.value) : String(jobs[0].id);
-  const selectedJob = jobs.find((job) => String(job.id) === selectedId) || jobs[0];
-  if (jobsSelectEl && selectedJob) jobsSelectEl.value = String(selectedJob.id);
-
-  const record = selectedJob.record;
-  const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
-  const sourceLabel = selectedJob.source === 'local' ? 'Local only' : selectedJob.source === 'synced' ? 'Synced' : 'Shared DB';
-  const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '—';
-  const warnings = [
-    ...(record?.warnings?.hotTap || []),
-    ...(record?.warnings?.lineStop || []),
-    ...(record?.warnings?.completionPlug || [])
-  ].filter(Boolean);
-
-  jobsListEl.innerHTML = `
-    <div class="job-detail-header">
-      <div>
-        <div class="job-detail-title">${title}</div>
-        <div class="job-detail-subtitle">${savedAtDisplay} • ${record?.meta?.operationType || 'Job'} • ${sourceLabel}</div>
-      </div>
-      <div class="job-record-badges">
-        <span class="job-source-badge ${selectedJob.source}">${sourceLabel}</span>
-      </div>
-    </div>
-    <div class="job-detail-actions">
-      <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
-    </div>
-    ${renderJobRecordDetails(record)}
-    <div class="job-detail-grid">
-      <div><strong>Saved:</strong> ${savedAtDisplay}</div>
-      <div><strong>Date:</strong> ${record?.job?.date || '—'}</div>
-      <div><strong>Job Description:</strong> ${record?.job?.description || '—'}</div>
-      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
-    </div>`;
-
-  const loadBtn = document.getElementById('jobsLoadSelectedBtn');
-  if (loadBtn) {
-    loadBtn.addEventListener('click', () => loadRecordIntoCalculator(record));
-  }
+  updateJobsListSelectionUI();
+  renderSelectedJobDetails(jobs);
 }
 
 async function loadCloudJobs() {
+
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) {
     cloudJobsCache = [];
@@ -2629,6 +4764,19 @@ async function loadCloudJobs() {
     }));
 
     renderJobsList();
+    const sharedLaneAlreadySelected = (() => {
+      try {
+        const jobsScreen = document.getElementById('jobsScreen');
+        const sharedPanel = document.querySelector('[data-library-lane-panel="shared"]');
+        const savedLane = localStorage.getItem('tapcalcLibraryLaneV1') || '';
+        return jobsScreen?.dataset.activeLane === 'shared' || sharedPanel?.classList.contains('active') || savedLane === 'shared';
+      } catch {
+        return false;
+      }
+    })();
+    if (cloudJobsCache.length && sharedLaneAlreadySelected) {
+      try { setLibraryLane('shared'); } catch { try { openSharedLibraryLane(); } catch {} }
+    }
 
     if (jobsCloudStatusEl) {
       jobsCloudStatusEl.textContent =
@@ -2698,27 +4846,35 @@ function renderHistory() {
       </div>
       <div class="history-meta">
         <span>${item.summary.operationType || 'Job'}</span>
-        <span>${item.summary.operationCount || 1} op${(item.summary.operationCount || 1) === 1 ? '' : 's'}</span>
         <span>BCO ${item.summary.bco}</span>
-        <span>Wall ${item.summary.wall || '—'}</span>
+        <span>Wall ${item.summary.wall || '-'}</span>
         <span>${item.cloudId ? 'Synced' : 'Local only'}</span>
       </div>
     </div>
   `).join('');
 }
 
+window.ensureFirebaseReady = ensureFirebaseReady;
+
 async function saveCurrentJobToHistory() {
+  persistCurrentJob({ render: false });
   const items = getHistory();
   const snapshot = buildHistorySnapshot();
   items.unshift(snapshot);
   saveHistory(items);
+  try {
+    window.tapCalcSetSaveState?.('local', {
+      savedAtIso: snapshot?.record?.meta?.savedAtIso || new Date().toISOString(),
+      label: snapshot?.summary?.title || snapshot?.record?.meta?.title || '',
+      operationCount: snapshot?.record?.meta?.operationCount || snapshot?.record?.jobBundle?.operations?.length || 1
+    });
+  } catch {}
   initHistoryDrawer();
   renderHistory();
   updateHistoryCount();
   updateUnsyncedCount();
   renderJobsList();
   setHistoryDrawerOpen(true);
-  if (historyListEl) historyListEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   if (window.innerWidth <= 768) setJobInfoCollapsed(true);
   try {
     const cloudId = await uploadHistoryItemToCloud(snapshot);
@@ -2729,6 +4885,14 @@ async function saveCurrentJobToHistory() {
         target.cloudId = cloudId;
         target.synced = true;
         saveHistory(refreshed);
+        try {
+          window.tapCalcSetSaveState?.('synced', {
+            savedAtIso: snapshot?.record?.meta?.savedAtIso || new Date().toISOString(),
+            syncedAtIso: new Date().toISOString(),
+            label: snapshot?.summary?.title || snapshot?.record?.meta?.title || '',
+            operationCount: snapshot?.record?.meta?.operationCount || snapshot?.record?.jobBundle?.operations?.length || 1
+          });
+        } catch {}
         renderHistory();
         updateUnsyncedCount();
         await loadCloudJobs();
@@ -2737,12 +4901,15 @@ async function saveCurrentJobToHistory() {
     }
   } catch (error) {
     console.error('TapCalc auto-sync failed', error);
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally only. Cloud upload was not verified. Retry from the Jobs tab. ${formatFirebaseError(error)}`;
+    try { window.tapCalcSetSaveState?.('local'); } catch {}
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Saved locally only. Cloud upload was not verified. Retry from the Library tab. ${formatFirebaseError(error)}`;
   }
 }
 
 function resetCurrentJob() {
+  currentJobBundle = null;
   localStorage.removeItem(JOB_STATE_KEY);
+  localStorage.removeItem('measurementCardDraftUpdatedAtV1');
   sessionStorage.removeItem('bcoCalculated');
   localStorage.removeItem('bcoData');
   localStorage.removeItem('pipeMaterial');
@@ -2784,38 +4951,69 @@ jobInfoFieldIds.forEach((id) => {
   el.addEventListener('input', updateJobInfoSummary);
   el.addEventListener('change', updateJobInfoSummary);
 });
-if (jobOperationSelectEl) {
-  jobOperationSelectEl.addEventListener('change', (event) => {
-    selectOperationById(event.target.value);
-  });
-}
-if (jobOperationLabelEl) {
-  jobOperationLabelEl.addEventListener('input', (event) => {
-    const bundle = ensureJobBundleInitialized();
-    const selectedOperation = getSelectedOperationItem(bundle);
-    if (!selectedOperation) return;
-    selectedOperation.label = event.target.value;
-    selectedOperation.summary = buildOperationSummaryFromItem(selectedOperation);
-    renderOperationManager();
-    persistCurrentJob();
-  });
-}
-if (addHotTapOpBtnEl) addHotTapOpBtnEl.addEventListener('click', () => addOperationForMode('hotTap'));
-if (addLineStopOpBtnEl) addLineStopOpBtnEl.addEventListener('click', () => addOperationForMode('lineStop'));
-if (duplicateOperationBtnEl) duplicateOperationBtnEl.addEventListener('click', () => {
-  const currentOperation = getSelectedOperationItem(ensureJobBundleInitialized());
-  addOperationForMode(currentOperation?.mode || currentOperation?.state?.activeMode || 'hotTap', { duplicateCurrent: true });
-});
-if (deleteOperationBtnEl) deleteOperationBtnEl.addEventListener('click', deleteCurrentOperationItem);
 if (jobInfoToggleBtnEl) jobInfoToggleBtnEl.addEventListener('click', () => {
   const collapsed = !jobInfoSectionEl?.classList.contains('collapsed');
   setJobInfoCollapsed(collapsed);
 });
 
+if (jobOperationSelectEl) {
+  const syncOperationSelect = () => {
+    const nextOperationId = String(jobOperationSelectEl.value || '').trim();
+    const activeOperationId = String(jobOperationSelectEl.dataset.activeOperationId || '').trim();
+    if (!nextOperationId || nextOperationId === activeOperationId) return;
+    selectOperationById(nextOperationId);
+  };
+  jobOperationSelectEl.addEventListener('input', syncOperationSelect);
+  jobOperationSelectEl.addEventListener('change', syncOperationSelect);
+  jobOperationSelectEl.addEventListener('blur', syncOperationSelect);
+  jobOperationSelectEl.addEventListener('keyup', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') setTimeout(syncOperationSelect, 0);
+  });
+  jobOperationSelectEl.addEventListener('click', () => setTimeout(syncOperationSelect, 0));
+}
+
+if (jobOperationLabelEl) {
+  const syncOperationLabel = () => {
+    const bundle = ensureJobBundleInitialized();
+    const selectedOperation = getSelectedOperationItem(bundle);
+    if (!selectedOperation) return;
+    selectedOperation.label = String(jobOperationLabelEl.value || '').trim();
+    selectedOperation.updatedAtIso = new Date().toISOString();
+    renderOperationManager();
+    persistCurrentJob({ render: false });
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+  };
+  jobOperationLabelEl.addEventListener('input', syncOperationLabel);
+  jobOperationLabelEl.addEventListener('change', syncOperationLabel);
+}
+
+if (jobOperationNotesEl) {
+  const syncOperationNotes = () => {
+    const bundle = ensureJobBundleInitialized();
+    const selectedOperation = getSelectedOperationItem(bundle);
+    if (!selectedOperation) return;
+    selectedOperation.notes = String(jobOperationNotesEl.value || '').trim();
+    selectedOperation.updatedAtIso = new Date().toISOString();
+    renderOperationManager();
+    persistCurrentJob({ render: false });
+    if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
+  };
+  jobOperationNotesEl.addEventListener('input', syncOperationNotes);
+  jobOperationNotesEl.addEventListener('change', syncOperationNotes);
+}
+
+if (addHotTapOpBtnEl) addHotTapOpBtnEl.addEventListener('click', () => addOperationForMode('hotTap'));
+if (addLineStopOpBtnEl) addLineStopOpBtnEl.addEventListener('click', () => addOperationForMode('lineStop'));
+if (addCompletionOpBtnEl) addCompletionOpBtnEl.addEventListener('click', () => addOperationForMode('completionPlug'));
+if (duplicateOperationBtnEl) duplicateOperationBtnEl.addEventListener('click', () => addOperationForMode(getSelectedOperationItem()?.mode || 'hotTap', { duplicateCurrent: true }));
+if (deleteOperationBtnEl) deleteOperationBtnEl.addEventListener('click', deleteCurrentOperationItem);
+
 [...document.querySelectorAll('input, select, textarea')].forEach(el => {
   el.addEventListener('input', persistCurrentJob);
   el.addEventListener('change', persistCurrentJob);
 });
+window.saveCurrentJobToHistory = saveCurrentJobToHistory;
+window.loadCloudJobs = loadCloudJobs;
 if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobToHistory);
 if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
@@ -2863,10 +5061,21 @@ async function testFirestoreUpload() {
 }
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
-if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => { jobsSearchTerm = event.target.value.trim(); renderJobsList(); });
+if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => {
+  jobsSearchTerm = event.target.value.trim();
+  try {
+    window.tapCalcJobsSearchTerm = jobsSearchTerm;
+    window.jobsSearchTerm = jobsSearchTerm;
+  } catch {}
+  renderJobsList();
+});
 jobsViewChipEls.forEach((button) => {
   button.addEventListener('click', () => {
     jobsBrowseMode = button.dataset.jobsView || 'all';
+    try {
+      window.tapCalcJobsBrowseMode = jobsBrowseMode;
+      window.jobsBrowseMode = jobsBrowseMode;
+    } catch {}
     jobsViewChipEls.forEach((btn) => btn.classList.toggle('active', btn === button));
     renderJobsList();
   });
@@ -2877,10 +5086,30 @@ if (bcoResultEl) {
   });
 }
 if (jobsSelectEl) {
-  jobsSelectEl.addEventListener('change', renderJobsList);
-  jobsSelectEl.addEventListener('click', renderJobsList);
-  jobsSelectEl.addEventListener('keyup', renderJobsList);
-  jobsSelectEl.addEventListener('mouseup', () => setTimeout(renderJobsList, 0));
+  jobsSelectEl.addEventListener('click', (event) => {
+    const item = event.target.closest('.jobs-list-item[data-job-id]');
+    if (!item) return;
+    selectedJobId = String(item.dataset.jobId || '');
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails();
+  });
+  jobsSelectEl.addEventListener('keydown', (event) => {
+    const jobs = getCombinedJobsForDisplay();
+    if (!jobs.length) return;
+    let index = jobs.findIndex((job) => String(job.id) === String(selectedJobId));
+    if (index < 0) index = 0;
+    if (event.key === 'ArrowDown') index = Math.min(jobs.length - 1, index + 1);
+    else if (event.key === 'ArrowUp') index = Math.max(0, index - 1);
+    else if (event.key === 'Home') index = 0;
+    else if (event.key === 'End') index = jobs.length - 1;
+    else return;
+    event.preventDefault();
+    selectedJobId = String(jobs[index].id);
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails(jobs);
+    const activeItem = jobsSelectEl.querySelector('.jobs-list-item.active');
+    activeItem?.scrollIntoView({ block: 'nearest' });
+  });
 }
 if (historyDrawerToggleEl) historyDrawerToggleEl.addEventListener('click', () => {
   const isOpen = historyDrawerToggleEl.getAttribute('aria-expanded') === 'true';
@@ -2890,12 +5119,10 @@ if (geometryLockToggleEl) geometryLockToggleEl.addEventListener('change', () => 
 if (exportPdfBtnEl) exportPdfBtnEl.addEventListener('click', exportJobPdf);
 if (exportImageBtnEl) exportImageBtnEl.addEventListener('click', exportJobImage);
 
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
   enableMixedMeasurementInputs();
   hydrateBcoInputsFromSavedData();
   restoreCurrentJob();
-  ensureJobBundleInitialized();
-  renderOperationManager();
   initJobInfoSection();
   try {
     const savedMode = localStorage.getItem(ACTIVE_MODE_KEY);
@@ -2904,16 +5131,9248 @@ window.addEventListener('load', () => {
   updateBcoDisplays();
   applyBcoToMeasurementCard();
   calcHotTap();
+  calcHtp();
   calcLineStop();
+  calcHiStop();
   calcCompletionPlug();
   initEtaCalculator();
+  renderOperationManager();
   persistCurrentJob();
   renderHistory();
   updateUnsyncedCount();
   renderJobsList();
   updateJobInfoSummary();
   initAccordionSections();
-  loadCloudJobs();
+  ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
 });
 
+})();
+
+var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
+var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
+var selectedJobId = window.selectedJobId || '';
+
+
+// alpha4 app shell navigation
+(function(){
+  const tabs=[...document.querySelectorAll('.screen-tab')];
+  const views={home:document.getElementById('homeScreen'),job:document.getElementById('jobScreen'),calc:document.getElementById('calcScreen'),card:document.getElementById('cardScreen'),jobs:document.getElementById('jobsScreen'),ref:document.getElementById('refScreen')};
+  function setScreen(name){
+    tabs.forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
+    document.body.dataset.activeScreen = name;
+    Object.entries(views).forEach(([k,v])=>{
+      if(!v) return;
+      const isActive = k===name;
+      v.classList.toggle('active', isActive);
+      v.style.display = isActive ? 'block' : 'none';
+      v.style.visibility = isActive ? 'visible' : 'hidden';
+      v.style.pointerEvents = isActive ? 'auto' : 'none';
+      v.style.opacity = isActive ? '1' : '0';
+    });
+    document.body.classList.toggle('show-library-screen', name === 'jobs');
+    const jobsPanelEl = document.getElementById('jobsPanel');
+    if (jobsPanelEl) jobsPanelEl.classList.toggle('active', name === 'jobs');
+    if (name !== 'jobs') {
+      const jobsScreenEl = document.getElementById('jobsScreen');
+      if (jobsScreenEl) {
+        jobsScreenEl.scrollTop = 0;
+        jobsScreenEl.style.zIndex = '0';
+      }
+    }
+    if (name === 'jobs') {
+      try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch {}
+      try { renderJobsList(); } catch {}
+      try { loadCloudJobs(); } catch {}
+    }
+    if (name === 'calc') {
+      const activeMode = getActiveCalcMode();
+      setTimeout(() => { try { window.setMode(CALC_SCREEN_MODES.has(activeMode) ? activeMode : 'bco'); } catch {} }, 40);
+    }
+    try{ localStorage.setItem('tapcalcV3Screen', name);}catch{}
+  }
+
+  function focusActiveCardPanel(mode){
+    const panelMap={hotTap:'hotTapPanel',htp:'htpPanel',lineStop:'lineStopPanel',completionPlug:'completionPlugPanel'};
+    const panel=document.getElementById(panelMap[mode]);
+    if(!panel) return;
+    setTimeout(()=>{
+      try { panel.scrollIntoView({behavior:'smooth', block:'start'}); } catch {}
+      const firstInput=panel.querySelector('input, select, textarea, button');
+      try { firstInput?.focus({preventScroll:true}); } catch {}
+    }, 80);
+  }
+  tabs.forEach(t=>t.addEventListener('click',()=>{
+    setScreen(t.dataset.screen);
+    if(t.dataset.screen==='card'){
+      setTimeout(()=>{
+        try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
+        focusActiveCardPanel(getActiveWorkflowMode());
+      }, 120);
+    }
+  }));
+  document.querySelectorAll('[data-go-screen]').forEach(b=>b.addEventListener('click',()=>{
+    const screen=b.dataset.goScreen;
+    setScreen(screen);
+    if (b.dataset.libraryLaneTarget === 'shared') setTimeout(()=>{ openSharedLibraryLane(); }, 80);
+    const targetMode = b.dataset.goMode || (screen === 'calc' ? 'bco' : '');
+    if (targetMode) setTimeout(()=>window.setMode(targetMode), 80);
+    if (screen === 'card') {
+      setTimeout(() => {
+        try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
+      }, 80);
+    }
+  }));
+  const saved=(localStorage.getItem('tapcalcV3Screen')||'home');
+  setScreen(views[saved]?saved:'home');
+  if((views[saved]?saved:'home')==='card'){
+    setTimeout(()=>{
+      try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
+      focusActiveCardPanel(getActiveWorkflowMode());
+    }, 120);
+  }
+  const oldWindowSetMode = window.setMode;
+  window.setMode = function(mode){
+    const nextMode = normalizeMode(mode);
+    oldWindowSetMode(nextMode);
+    const workflowMode = WORKFLOW_SCREEN_MODES.has(nextMode) ? nextMode : getActiveWorkflowMode();
+    document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.classList.toggle('active', card.dataset.workflowTarget===workflowMode));
+    updateCurrentJobLabel();
+    if (WORKFLOW_SCREEN_MODES.has(nextMode) && document.body.dataset.activeScreen === 'card') {
+      focusActiveCardPanel(nextMode);
+    }
+  };
+  document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.classList.toggle('active', card.dataset.workflowTarget===getActiveWorkflowMode()));
+  initAlpha8WorkspaceActions();
+  initAlpha18CoreActions();
+
+  function getText(id){ return document.getElementById(id)?.textContent?.trim() || '-'; }
+  function hasValue(id){ const v=document.getElementById(id)?.value; return !!String(v ?? '').trim(); }
+  function isWorkflowSummaryReady(value){
+    const text = String(value || '').trim();
+    if (!text || text === '-' || text === '?') return false;
+    if (/^OD\s+0(?:\.0+)?\s*\|\s*Wall\s+0(?:\.0+)?$/i.test(text)) return false;
+    return true;
+  }
+
+  function updateCurrentWorkspaceLive(){
+    const client=document.getElementById('jobClient')?.value?.trim() || '';
+    const location=document.getElementById('jobLocation')?.value?.trim() || '';
+    const description=document.getElementById('jobDescription')?.value?.trim() || '';
+    const machine=document.getElementById('machineType')?.value?.trim() || '-';
+    const selectedOperation=window.tapCalcGetSelectedOperation?.() || null;
+    const operation=selectedOperation?.label || selectedOperation?.operationType || document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
+    const jobNumber=document.getElementById('jobNumber')?.value?.trim() || '-';
+    const technician=document.getElementById('jobTechnician')?.value?.trim() || '-';
+    const pipe=getText('summaryPipe');
+    const cutter=getText('summaryCutter');
+    const bco=getText('summaryBco');
+    const titleEl=document.getElementById('currentSnapshotTitle');
+    if(titleEl) titleEl.textContent=client || description || 'No active job';
+    const metaEl=document.getElementById('currentSnapshotMeta');
+    if(metaEl) metaEl.textContent=[location, machine !== '-' ? machine : '', description].filter(Boolean).join('  |  ') || 'Start with customer and location, then add machine and pipe setup.';
+    const ids={currentMachineStat:machine,currentOperationStat:operation,currentPipeStat:pipe,currentBcoStat:bco,currentPipeSetup:pipe,currentCutterSetup:cutter,currentClientStat:client || '-',currentLocationStat:location || '-',currentJobNumberStat:jobNumber,currentTechStat:technician};
+    Object.entries(ids).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) el.textContent=val || '-'; });
+  }
+
+  function updateCardStageChecks(){
+    const activeMode=getActiveWorkflowMode();
+    const hasJobInfo = ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician'].some(id => hasValue(id));
+    const hasMachine = hasValue('machineType');
+    const summaryBco = getText('summaryBco');
+    const summaryPipe = getText('summaryPipe');
+    const summaryCutter = getText('summaryCutter');
+    const geometryReady = isWorkflowSummaryReady(summaryBco) && isWorkflowSummaryReady(summaryPipe) && isWorkflowSummaryReady(summaryCutter);
+    const baseReady = hasMachine;
+    const readOut = (id) => {
+      const el = document.getElementById(id);
+      if (!el) return '-';
+      const raw = 'value' in el ? String(el.value ?? '').trim() : String(el.textContent ?? '').trim();
+      return raw && raw !== '-' ? raw : '-';
+    };
+
+    const stageChecks = {
+      hotTap: {
+        geometry: baseReady && geometryReady,
+        inputs: hasValue('md') && hasValue('ptc') && hasValue('mt'),
+        output: readOut('ttd') !== '-'
+      },
+      htp: {
+        geometry: baseReady && geometryReady,
+        inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
+        output: readOut('htpTco') !== '-'
+      },
+      lineStop: (() => {
+        const variant = getLineStopVariant();
+        if (variant === 'htp') {
+          return {
+            geometry: baseReady,
+            inputs: hasValue('htpPipeSize') && hasValue('htpMd') && hasValue('htpPtc'),
+            output: readOut('htpTco') !== '-'
+          };
+        }
+        if (variant === 'hiStop') {
+          return {
+            geometry: baseReady && geometryReady,
+            inputs: hasValue('hsMd') && hasValue('hsRl') && hasValue('hsCl') && hasValue('hsRcd') && hasValue('hsPb') && hasValue('hsPtp'),
+            output: readOut('hsPlugSet') !== '-'
+          };
+        }
+        return {
+          geometry: baseReady && geometryReady,
+          inputs: hasValue('lsMd'),
+          output: readOut('lsLiManual') !== '-'
+        };
+      })(),
+      completionPlug: {
+        geometry: baseReady && geometryReady,
+        inputs: hasValue('cpStart') && hasValue('cpJbf') && hasValue('cpPt'),
+        output: readOut('cpLiManual') !== '-'
+      }
+    };
+
+    function describeStage(stage){
+      const fallback = { geometry: false, inputs: false, output: false };
+      const checks = stageChecks[stage] || stageChecks.hotTap || fallback;
+      const started = !!(checks.inputs || checks.output);
+      const ready = !!(checks.geometry && checks.inputs && checks.output);
+      return { ...fallback, ...checks, started, ready };
+    }
+
+    const safeActiveMode = stageChecks[activeMode] ? activeMode : 'hotTap';
+    const current = describeStage(safeActiveMode);
+    const activeVariant = getLineStopVariant();
+    const missingSetup = [];
+    if (!hasMachine) missingSetup.push('machine');
+    const needsGeometryBundle = !(safeActiveMode === 'lineStop' && activeVariant === 'htp');
+    if (needsGeometryBundle && !isWorkflowSummaryReady(getText('summaryPipe'))) missingSetup.push('pipe');
+    if (needsGeometryBundle && !isWorkflowSummaryReady(getText('summaryCutter'))) missingSetup.push('cutter');
+    if (needsGeometryBundle && !isWorkflowSummaryReady(getText('summaryBco'))) missingSetup.push('BCO');
+
+    const geometryLabel = current.geometry
+      ? 'Ready'
+      : (missingSetup.length ? `Need ${missingSetup.join(', ')}` : 'Waiting');
+
+    const labelMap = {
+      cardCheckGeometry: geometryLabel,
+      cardCheckInputs: current.inputs ? 'Ready' : (current.started ? 'In Progress' : 'Waiting on stage fields'),
+      cardCheckOutput: current.output ? 'Ready' : 'Waiting on output',
+      cardCheckReady: current.ready ? 'Ready' : (current.started || current.geometry ? 'In Progress' : 'Not Ready')
+    };
+    Object.entries(labelMap).forEach(([id,val])=>{ const el=document.getElementById(id); if(el) { el.textContent=val; el.dataset.state=(val === 'Ready' ? 'ready' : val.startsWith('Need') ? 'needs-setup' : val.toLowerCase().replace(/\s+/g,'-')); } });
+
+    const stageReadyMap = {
+      workflowStatusHotTap: describeStage('hotTap'),
+      workflowStatusLineStop: describeStage('lineStop'),
+      workflowStatusCompletionPlug: describeStage('completionPlug')
+    };
+    Object.entries(stageReadyMap).forEach(([id,state])=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      const val = state.ready ? 'Ready' : (state.started || state.geometry ? 'In Progress' : 'Not Ready');
+      el.textContent = val;
+      el.dataset.state = val.toLowerCase().replace(/\s+/g,'-');
+    });
+  }
+
+  function updateCurrentJobLabel(){
+    const client=document.getElementById('jobClient')?.value?.trim() || '';
+    const location=document.getElementById('jobLocation')?.value?.trim() || '';
+    const description=document.getElementById('jobDescription')?.value?.trim() || '';
+    const machine=document.getElementById('machineType')?.value?.trim() || '';
+    const operation=document.getElementById('operationType')?.value?.trim() || 'Hot Tap';
+    const technician=document.getElementById('jobTechnician')?.value?.trim() || '';
+    const jobNumber=document.getElementById('jobNumber')?.value?.trim() || '';
+    const date=document.getElementById('jobDate')?.value?.trim() || '';
+    const pipeLabel=document.getElementById('summaryPipe')?.textContent?.trim() || '-';
+    const bcoLabel=document.getElementById('summaryBco')?.textContent?.trim() || '-';
+    const parts=[client, location].filter(Boolean);
+    const topLabel=document.getElementById('topCurrentJobLabel');
+    if(topLabel) topLabel.textContent=parts.length?parts.join('  |  '):(description || 'No current job');
+    const homeTitle=document.getElementById('homeCurrentJobTitle');
+    if(homeTitle) homeTitle.textContent=client || description || 'No active job yet';
+    const homeSubtitle=document.getElementById('homeCurrentJobSubtitle');
+    if(homeSubtitle) homeSubtitle.textContent=[location, jobNumber ? 'Job ' + jobNumber : '', technician ? 'Tech ' + technician : ''].filter(Boolean).join('  |  ') || (description || 'Set up a customer and location to get rolling.');
+    const jobOverviewName=document.getElementById('jobOverviewName');
+    if(jobOverviewName) jobOverviewName.textContent=client || description || 'No active job';
+    const jobOverviewMeta=document.getElementById('jobOverviewMeta');
+    if(jobOverviewMeta) jobOverviewMeta.textContent=location ? `${location}${description ? '  |  ' + description : ''}` : 'Add customer and location details to start.';
+    const homePipe=document.getElementById('homePipeStat');
+    if(homePipe) homePipe.textContent=pipeLabel || '-';
+    const homeMachine=document.getElementById('homeMachineStat');
+    if(homeMachine) homeMachine.textContent=machine || '-';
+    const homeBco=document.getElementById('homeBcoStat');
+    if(homeBco) homeBco.textContent=bcoLabel || '-';
+    const homeStatus=document.getElementById('homeStatusStat');
+    if(homeStatus) homeStatus.textContent=client || location ? 'In Progress' : 'Draft';
+    const calcBco=document.getElementById('calcCurrentBco');
+    if(calcBco) calcBco.textContent=bcoLabel || '-';
+    const calcMachine=document.getElementById('calcCurrentMachine');
+    if(calcMachine) calcMachine.textContent=machine || '-';
+    const cardJob=document.getElementById('cardCurrentJob');
+    if(cardJob) cardJob.textContent=client || description || 'No active job';
+    const cardPipe=document.getElementById('cardCurrentPipe');
+    if(cardPipe) cardPipe.textContent=pipeLabel || '-';
+    const cardMeta=document.getElementById('cardCurrentMeta');
+    if(cardMeta) {
+      const missing=[];
+      if(!(client || description)) missing.push('job');
+      if(!machine) missing.push('machine');
+      if(pipeLabel === '-') missing.push('pipe');
+      if(bcoLabel === '-') missing.push('BCO');
+      const context=[location, date, technician].filter(Boolean).join('  |  ');
+      cardMeta.textContent = missing.length ? `Missing ${missing.join(', ')}. Fill out Workflow Step 1 and Pipe / Cutter to unlock the card workflow.` : (context || 'Card workflow is ready for stage inputs.');
+    }
+    const activeMode=getActiveWorkflowMode();
+    const activeLabel=getActiveWorkflowLabel();
+    const stage=document.getElementById('cardStageStat');
+    if(stage) stage.textContent=activeLabel;
+    const focusStage=document.getElementById('cardFocusStage');
+    if(focusStage) focusStage.textContent=activeLabel;
+    const focusMachine=document.getElementById('cardFocusMachine');
+    if(focusMachine) focusMachine.textContent=machine || '-';
+    const focusBco=document.getElementById('cardFocusBco');
+    if(focusBco) focusBco.textContent=bcoLabel || '-';
+    const focusOutput=document.getElementById('cardFocusOutput');
+    const readCardOutput=(id)=>{
+      const el=document.getElementById(id);
+      if(!el) return '-';
+      const raw=('value' in el ? String(el.value ?? '') : String(el.textContent ?? '')).trim();
+      return raw || '-';
+    };
+    const hotTapTtd=readCardOutput('ttd');
+    const htpTco=readCardOutput('htpTco');
+    const lsLi=readCardOutput('lsLiManual');
+    const hsPlugSet=readCardOutput('hsPlugSet');
+    const cpLi=readCardOutput('cpLiManual');
+    if(focusOutput){
+      const activeVariant = getLineStopVariant();
+      const lineStopOutput = activeVariant === 'htp'
+        ? (htpTco !== '' ? htpTco : '-')
+        : activeVariant === 'hiStop'
+          ? (hsPlugSet !== '' ? hsPlugSet : '-')
+          : (lsLi !== '' ? lsLi : '-');
+      const map={hotTap: hotTapTtd !== '' ? hotTapTtd : '-', lineStop: lineStopOutput, completionPlug: cpLi !== '' ? cpLi : '-'};
+      const safeOutputMode = map[activeMode] ? activeMode : 'hotTap';
+      focusOutput.textContent = map[safeOutputMode] || '-';
+    }
+    const focusTitle=document.getElementById('cardFocusTitle');
+    const focusDesc=document.getElementById('cardFocusDesc');
+    if(focusTitle || focusDesc){
+      const activeVariant = getLineStopVariant();
+      const lineStopCopy = activeVariant === 'htp'
+        ? ['HTP workflow','Use the HTP chart, then verify TCO, cutter, and ETA before setting the HTP plug.']
+        : activeVariant === 'hiStop'
+          ? ['Hi-Stop workflow','Verify cutout with RL, POD, CL, and PTC, then calculate PSD and Plug Set before setting the stop.']
+          : ['Line Stop workflow','Use the stop-stage fields to confirm lower-in, turns, and valve positioning before setting the stop.'];
+      const modeCopy={
+        hotTap:['Hot Tap workflow','Set MD, LD, and PTC first, then verify LI, BCO, and on-rod values before moving forward.'],
+        lineStop:lineStopCopy,
+        completionPlug:['Completion Plug workflow','Finish the operation by confirming plug dimensions, lower-in, and final checks.']
+      };
+      const copy=modeCopy[activeMode] || modeCopy.hotTap;
+      if(focusTitle) focusTitle.textContent=copy[0];
+      if(focusDesc) focusDesc.textContent=copy[1];
+    }
+    updateCurrentWorkspaceLive();
+    updateCardStageChecks();
+    syncJobsWorkspace();
+  }
+
+  function syncJobsWorkspace() {
+    const client=document.getElementById('jobClient')?.value?.trim() || '';
+    const location=document.getElementById('jobLocation')?.value?.trim() || '';
+    const description=document.getElementById('jobDescription')?.value?.trim() || '';
+    const title = client || description || 'No active job yet';
+    const meta = location ? `${location}${description ? '  |  ' + description : ''}` : 'Start a job in Workflow, then save locally or sync to shared.';
+    const currentTitle=document.getElementById('jobsCurrentTitle');
+    if(currentTitle) currentTitle.textContent=title;
+    const currentMeta=document.getElementById('jobsCurrentMeta');
+    if(currentMeta) currentMeta.textContent=meta;
+    const currentName=document.getElementById('jobsCurrentJobName');
+    if(currentName) currentName.textContent=title;
+    const unsynced=document.getElementById('unsyncedJobsCount')?.textContent?.trim() || '0';
+    const unsyncedStat=document.getElementById('jobsUnsyncedStat');
+    if(unsyncedStat) unsyncedStat.textContent=unsynced;
+    try {
+      const history = JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]');
+      const localSaved=document.getElementById('jobsLocalSavedCount');
+      if(localSaved) localSaved.textContent=String(history.length || 0);
+    } catch {}
+    const firebase=document.getElementById('firebaseStatus')?.textContent?.trim() || 'Not connected';
+    const firebaseMirror=document.getElementById('firebaseStatusMirror');
+    if(firebaseMirror) firebaseMirror.textContent=firebase;
+    const cloud=document.getElementById('jobsCloudStatus')?.textContent?.trim() || 'Connecting to shared job database...';
+    const cloudMirror=document.getElementById('jobsCloudStatusMirror');
+    if(cloudMirror) cloudMirror.textContent=cloud;
+  }
+  function initAlpha8WorkspaceActions(){
+    document.getElementById('saveHistoryBtnClone')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
+    document.getElementById('saveHistoryBtnJobs')?.addEventListener('click', ()=>document.getElementById('saveHistoryBtn')?.click());
+    document.getElementById('syncJobsBtnClone')?.addEventListener('click', ()=>document.getElementById('syncJobsBtn')?.click());
+    const jobsHistoryDrawer=document.getElementById('historyDrawerContent'); if (jobsHistoryDrawer) jobsHistoryDrawer.hidden=false;
+    document.querySelectorAll('.workflow-card[data-workflow-target]').forEach(card=>card.addEventListener('click', ()=>window.setMode(card.dataset.workflowTarget)));
+  }
+
+  function initAlpha18CoreActions(){
+    document.getElementById('currentSaveLocalBtn')?.addEventListener('click', async ()=>{ await window.saveCurrentJobToHistory(); });
+    document.getElementById('currentSyncSharedBtn')?.addEventListener('click', async ()=>{ await window.saveCurrentJobToHistory(); document.getElementById('syncJobsBtn')?.click(); });
+    document.getElementById('currentResetBtn')?.addEventListener('click', ()=>document.getElementById('resetJobBtn')?.click());
+    document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async ()=>{ await window.ensureFirebaseReady({ forceRetry:true }); await window.loadCloudJobs(); });
+    document.getElementById('cardFocusJumpBtn')?.addEventListener('click', ()=>focusActiveCardPanel(getActiveWorkflowMode()));
+  }
+  function syncOperationSelection(){
+    const selectedMode = normalizeMode(window.tapCalcGetSelectedOperation?.()?.state?.activeMode);
+    const operation=(document.getElementById('operationType')?.value || 'Hot Tap').trim();
+    const map={'Hot Tap':'hotTap','Line Stop':'lineStop','Completion Plug':'completionPlug'};
+    const target=WORKFLOW_SCREEN_MODES.has(selectedMode) ? selectedMode : (map[operation] || 'hotTap');
+    const active=getActiveWorkflowMode();
+    if(active !== target) window.setMode(target);
+  }
+  document.getElementById('operationType')?.addEventListener('change', syncOperationSelection);
+  ['jobClient','jobLocation','jobDescription','machineType','operationType','jobDate','jobNumber','jobTechnician','jobPressure','jobTemperature','jobProduct','jobNotes','bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD','md','ptc','mt','htpPipeSize','htpMd','htpPtc','lsMd','lsTravel','lsMachineTravel','hsMd','hsRl','hsCl','hsRcd','hsPb','hsPtp','cpStart','cpJbf','cpPt','lineStopVariant'].forEach(id=>{
+    const el = document.getElementById(id);
+    el?.addEventListener('input', updateCurrentJobLabel);
+    el?.addEventListener('change', updateCurrentJobLabel);
+  });
+  syncOperationSelection();
+  updateCurrentJobLabel();
+  window.addEventListener('load', async () => { syncOperationSelection(); updateCurrentJobLabel(); });
+  document.querySelectorAll('select').forEach(el=>el.addEventListener('change', updateCurrentJobLabel));
+  window.addEventListener('load', syncJobsWorkspace);
+  const mirrorTargets=['firebaseStatus','jobsCloudStatus','unsyncedJobsCount']; mirrorTargets.forEach(id=>new MutationObserver(syncJobsWorkspace).observe(document.getElementById(id) || document.body,{childList:true,subtree:id==='jobsCloudStatus',characterData:true}));
+})();
+
+
+/* ===== 3.0.0-alpha48 library picker rebuild ===== */
+(function(){
+  const getJobsSelectEl = () => document.getElementById('jobsSelect');
+  const getJobsListEl = () => document.getElementById('jobsList');
+  const getJobsResultsMetaEl = () => document.getElementById('jobsResultsMeta');
+
+  function alpha47GetJobs() {
+    try { return (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []); } catch (error) { console.error('Library jobs build failed', error); return []; }
+  }
+
+  function alpha47Escape(value) {
+    return String(value ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function alpha47SelectJob(jobId, jobs) {
+    const list = jobs || alpha47GetJobs();
+    const jobsListEl = getJobsListEl();
+    if (!list.length) {
+      selectedJobId = '';
+      updateJobsListSelectionUI();
+      if (jobsListEl) jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const exists = list.some((job) => String(job.id) === String(jobId || ''));
+    selectedJobId = exists ? String(jobId) : String(list[0].id);
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails(list);
+  }
+
+  window.alpha47SelectJobById = function(jobId) {
+    selectedJobId = String(jobId || '');
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails();
+  };
+
+  window.selectLibraryJobByIndex = function(index){ const jobs=alpha47GetJobs(); const entry=jobs[index]; if(entry){ selectedJobId = String(entry.id); updateJobsListSelectionUI(); renderSelectedJobDetails(jobs); } };
+  window.loadSelectedLibraryJob = window.alpha47LoadSelectedLibraryJob;
+
+  updateJobsListSelectionUI = function updateJobsListSelectionUIAlpha47() {
+    const jobsSelectEl = getJobsSelectEl();
+    if (!jobsSelectEl) return;
+    jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+      const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  };
+
+  window.alpha47LoadSelectedLibraryJob = function() {
+    const list = alpha47GetJobs();
+    const selected = list.find((job) => String(job.id) === String(selectedJobId || '')) || list[0];
+    if (!selected) return;
+    try {
+      loadRecordIntoCalculator(selected.record || {});
+      document.querySelector('.screen-tab[data-screen="job"]')?.click();
+    } catch (error) {
+      console.error('Load Job failed', error);
+    }
+  };
+
+  renderSelectedJobDetails = function renderSelectedJobDetailsAlpha47(jobs) {
+    const list = jobs || alpha47GetJobs();
+    const jobsListEl = getJobsListEl();
+    if (!jobsListEl) return;
+    if (!list.length) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    let selected = list.find((job) => String(job.id) === String(selectedJobId || ''));
+    if (!selected) {
+      selected = list[0];
+      selectedJobId = String(selected.id);
+    }
+    updateJobsListSelectionUI();
+    const record = selected.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || selected.savedAt || '-';
+    jobsListEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${alpha47Escape(title)}</div>
+          <div class="job-detail-subtitle">${alpha47Escape(savedAtDisplay)}  |  ${alpha47Escape(record?.meta?.operationType || 'Job')}  |  ${alpha47Escape(sourceLabel)}</div>
+        </div>
+        <div class="job-record-badges"><span class="job-source-badge ${alpha47Escape(selected.source)}">${alpha47Escape(sourceLabel)}</span></div>
+      </div>
+      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button></div>
+      ${renderJobRecordDetails(record)}
+    `;
+    const loadBtn = document.getElementById('jobsLoadSelectedBtn');
+    if (loadBtn) loadBtn.addEventListener('click', window.alpha47LoadSelectedLibraryJob);
+  };
+
+  renderJobsList = function renderJobsListAlpha47() {
+    const jobsSelectEl = getJobsSelectEl();
+    const jobsListEl = getJobsListEl();
+    const jobsResultsMetaEl = getJobsResultsMetaEl();
+    if (!jobsSelectEl || !jobsListEl) return;
+    const jobs = alpha47GetJobs();
+    if (jobsResultsMetaEl) {
+      const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
+      const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for "${jobsSearchTerm}"  |  ${modeLabel} view` : `${countText}  |  ${modeLabel} view`;
+    }
+    if (!jobs.length) {
+      jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      selectedJobId = '';
+      return;
+    }
+    const previousScrollTop = jobsSelectEl.scrollTop;
+    if (!jobs.some((job) => String(job.id) === String(selectedJobId || ''))) {
+      selectedJobId = String(jobs[0].id);
+    }
+    jobsSelectEl.innerHTML = jobs.map(({ source, id, record }, index) => {
+      const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+      const client = record?.job?.client || 'No customer';
+      const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+      const op = record?.meta?.operationType || 'Job';
+      const nominalSize = record?.pipe?.nominalSize || '-';
+      const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+      const groupPrefix = jobsBrowseMode === 'customer'
+        ? `Customer: ${client}`
+        : jobsBrowseMode === 'location'
+          ? `Location: ${record?.job?.location || 'No location'}`
+          : jobsBrowseMode === 'date'
+            ? `Date: ${date}`
+            : 'Search';
+      const active = String(id) === String(selectedJobId);
+      const escapedId = alpha47Escape(id);
+      return `
+        <div class="jobs-list-item${active ? ' active' : ''}" role="button" tabindex="0" data-job-id="${escapedId}" data-job-index="${index}" aria-pressed="${active ? 'true' : 'false'}" aria-selected="${active ? 'true' : 'false'}">
+          <span class="jobs-list-title">${alpha47Escape(title)}</span>
+          <span class="jobs-list-meta">${alpha47Escape(`${groupPrefix}  |  ${client}  |  ${op}  |  ${nominalSize}  |  ${sourceLabel}`)}</span>
+        </div>`;
+    }).join('');
+    jobsSelectEl.scrollTop = previousScrollTop;
+    updateJobsListSelectionUI();
+    renderSelectedJobDetails(jobs);
+  };
+
+  const jobsSelectContainer = getJobsSelectEl();
+  if (jobsSelectContainer) {
+    jobsSelectContainer.addEventListener('click', (event) => {
+      const item = event.target.closest('.jobs-list-item[data-job-id]');
+      if (!item) return;
+      event.preventDefault();
+      selectedJobId = String(item.dataset.jobId || '');
+      updateJobsListSelectionUI();
+      renderSelectedJobDetails();
+    });
+    jobsSelectContainer.addEventListener('keydown', (event) => {
+      const item = event.target.closest('.jobs-list-item[data-job-id]');
+      if (!item) return;
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        selectedJobId = String(item.dataset.jobId || '');
+        updateJobsListSelectionUI();
+        renderSelectedJobDetails();
+      }
+    });
+  }
+})();
+
+
+
+/* ===== 3.0.0-alpha57 library picker direct rebuild ===== */
+(function(){
+  const getJobsSelectEl = () => document.getElementById('jobsSelect');
+  const getJobsListEl = () => document.getElementById('jobsList');
+  const getJobsResultsMetaEl = () => document.getElementById('jobsResultsMeta');
+
+  function safeJobs() {
+    try {
+      const jobs = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []);
+      return Array.isArray(jobs) ? jobs : [];
+    } catch (error) {
+      console.error('alpha56 jobs build failed', error);
+      return [];
+    }
+  }
+
+  function esc(value) {
+    return String(value ?? '')
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  function sourceLabel(source) {
+    return source === 'local' ? 'Local'
+      : source === 'synced' ? 'Synced'
+      : 'Shared';
+  }
+
+  function ensureSelection(list) {
+    if (!list.length) {
+      window.__tapcalcSelectedLibraryIndex = -1;
+      window.__tapcalcSelectedLibraryRecord = null;
+      selectedJobId = '';
+      return null;
+    }
+    let idx = Number(window.__tapcalcSelectedLibraryIndex);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= list.length) {
+      const existing = list.findIndex((job) => String(job.id) === String(selectedJobId || ''));
+      idx = existing >= 0 ? existing : 0;
+    }
+    window.__tapcalcSelectedLibraryIndex = idx;
+    const selected = list[idx];
+    selectedJobId = String(selected?.id || '');
+    window.__tapcalcSelectedLibraryRecord = selected?.record || null;
+    return selected;
+  }
+
+  function renderAlpha56Detail(list) {
+    const jobsListEl = getJobsListEl();
+    if (!jobsListEl) return;
+    const selected = ensureSelection(list);
+    if (!selected) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const record = selected.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '-';
+    const op = record?.meta?.operationType || 'Job';
+    jobsListEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${esc(title)}</div>
+          <div class="job-detail-subtitle">${esc(savedAtDisplay)}  |  ${esc(op)}  |  ${esc(sourceLabel(selected.source))} DB</div>
+        </div>
+        <div class="job-record-badges"><span class="job-source-badge ${esc(selected.source)}">${esc(sourceLabel(selected.source))} DB</span></div>
+      </div>
+      <div class="job-detail-actions">
+        <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button>
+      </div>
+      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
+    `;
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (btn) btn.onclick = () => window.tapCalcLibraryLoadSelected();
+  }
+
+  function renderAlpha56SelectionUI(list) {
+    const jobsSelectEl = getJobsSelectEl();
+    if (!jobsSelectEl) return;
+    const activeId = String(selectedJobId || '');
+    jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+      const active = String(item.dataset.jobId || '') === activeId;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  window.tapCalcLibrarySelect = function(index) {
+    const list = safeJobs();
+    if (!list.length) return false;
+    const idx = Number(index);
+    if (!Number.isInteger(idx) || idx < 0 || idx >= list.length) return false;
+    window.__tapcalcSelectedLibraryIndex = idx;
+    selectedJobId = String(list[idx].id || '');
+    window.__tapcalcSelectedLibraryRecord = list[idx].record || null;
+    renderAlpha56SelectionUI(list);
+    renderAlpha56Detail(list);
+    return true;
+  };
+
+  window.tapCalcLibraryLoadSelected = function() {
+    const list = safeJobs();
+    const selected = ensureSelection(list);
+    if (!selected || !selected.record) return false;
+    try {
+      loadRecordIntoCalculator(selected.record || {}, { message: true });
+    } catch (error) {
+      console.error('alpha56 Load Job failed', error);
+      return false;
+    }
+    try {
+      if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+      else document.querySelector('.screen-tab[data-screen="job"]')?.click();
+    } catch {}
+    return true;
+  };
+
+  renderJobsList = function renderJobsListAlpha56() {
+    const jobsSelectEl = getJobsSelectEl();
+    const jobsResultsMetaEl = getJobsResultsMetaEl();
+    const list = safeJobs();
+    if (!jobsSelectEl) return;
+    if (jobsResultsMetaEl) {
+      const countText = `${list.length} job${list.length === 1 ? '' : 's'} found`;
+      const modeLabel = (typeof jobsBrowseMode === 'string' && jobsBrowseMode !== 'all')
+        ? jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1)
+        : 'Search';
+      jobsResultsMetaEl.textContent = (typeof jobsSearchTerm === 'string' && jobsSearchTerm)
+        ? `${countText} for "${jobsSearchTerm}"  |  ${modeLabel} view`
+        : `${countText}  |  ${modeLabel} view`;
+    }
+    if (!list.length) {
+      jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      renderAlpha56Detail(list);
+      return;
+    }
+    ensureSelection(list);
+    jobsSelectEl.innerHTML = list.map(({source,id,record}, index) => {
+      const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+      const client = record?.job?.client || 'No customer';
+      const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+      const op = record?.meta?.operationType || 'Job';
+      const nominalSize = record?.pipe?.nominalSize || '-';
+      const groupPrefix = jobsBrowseMode === 'customer'
+        ? `Customer: ${client}`
+        : jobsBrowseMode === 'location'
+          ? `Location: ${record?.job?.location || 'No location'}`
+          : jobsBrowseMode === 'date'
+            ? `Date: ${date}`
+            : 'Search';
+      const active = String(id) === String(selectedJobId || '');
+      return `
+        <button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${esc(id)}" data-job-index="${index}" aria-selected="${active ? 'true' : 'false'}" aria-pressed="${active ? 'true' : 'false'}" onclick="window.tapCalcLibrarySelect(${index})">
+          <span class="jobs-list-title">${esc(title)}</span>
+          <span class="jobs-list-meta">${esc(`${groupPrefix}  |  ${client}  |  ${op}  |  ${nominalSize}  |  ${sourceLabel(source)}`)}</span>
+        </button>`;
+    }).join('');
+    renderAlpha56SelectionUI(list);
+    renderAlpha56Detail(list);
+  };
+
+  const jobsSelectEl = getJobsSelectEl();
+  if (jobsSelectEl && !jobsSelectEl.dataset.alpha56Bound) {
+    jobsSelectEl.addEventListener('click', (event) => {
+      const row = event.target.closest('.jobs-list-item[data-job-index]');
+      if (!row) return;
+      event.preventDefault();
+      window.tapCalcLibrarySelect(Number(row.dataset.jobIndex));
+    });
+    jobsSelectEl.addEventListener('touchend', (event) => {
+      const row = event.target.closest('.jobs-list-item[data-job-index]');
+      if (!row) return;
+      event.preventDefault();
+      window.tapCalcLibrarySelect(Number(row.dataset.jobIndex));
+    }, { passive: false });
+    jobsSelectEl.dataset.alpha56Bound = 'true';
+  }
+})();
+
+
+/* ===== 3.0.0-alpha57 direct load-job hydration override ===== */
+(function(){
+  function normalizeDateForInput(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return '';
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+      const mm = m[1].padStart(2,'0');
+      const dd = m[2].padStart(2,'0');
+      return `${m[3]}-${mm}-${dd}`;
+    }
+    return raw;
+  }
+
+  function setFieldValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
+    if (el.type === 'checkbox') {
+      el.checked = !!value;
+    } else {
+      el.value = value == null ? '' : String(value);
+    }
+    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
+  }
+
+  function deriveOperation(record) {
+    const raw = String(record?.meta?.operationType || '').toLowerCase();
+    if (raw.includes('completion')) return 'Completion Plug';
+    if (raw.includes('line stop')) return 'Line Stop';
+    if (raw.includes('htp')) return 'HTP';
+    return 'Hot Tap';
+  }
+
+  function deriveEtaMachine(machine) {
+    return deriveEtaMachineFromMachine(machine);
+  }
+
+  function hydrateVisibleFields(record) {
+    const job = record?.job || {};
+    const pipe = record?.pipe || {};
+    const machine = record?.machine || {};
+    const calc = record?.calculations || {};
+    const h = record?.measurements?.hotTap || {};
+    const htp = record?.measurements?.htp || {};
+    const ls = record?.measurements?.lineStop || {};
+    const cp = record?.measurements?.completionPlug || {};
+
+    setFieldValue('jobClient', job.client || '');
+    setFieldValue('jobDescription', job.description || record?.meta?.title || '');
+    setFieldValue('jobNumber', job.jobNumber || '');
+    setFieldValue('jobPressure', job.pressure || '');
+    setFieldValue('jobTemperature', job.temperature || '');
+    setFieldValue('jobDate', normalizeDateForInput(job.date || ''));
+    setFieldValue('jobProduct', job.product || '');
+    setFieldValue('jobLocation', job.location || '');
+    setFieldValue('jobTechnician', job.technician || '');
+    setFieldValue('jobNotes', job.notes || '');
+
+    setFieldValue('machineType', machine.machine || '');
+    setFieldValue('operationType', deriveOperation(record));
+
+    setFieldValue('bcoPipeMaterial', pipe.material || '');
+    setFieldValue('bcoPipeOD', pipe.nominalSize || '');
+    setFieldValue('bcoSchedule', pipe.schedule || '');
+    setFieldValue('bcoPipeID', pipe.pipeId || '');
+    setFieldValue('bcoCutterOD', machine.cutterOd || '');
+
+    setFieldValue('md', h.md || '');
+    setFieldValue('ld', h.ld || '');
+    setFieldValue('ldSign', h.ldSign || '+');
+    setFieldValue('ptc', h.ptc || '');
+    setFieldValue('pod', h.pod || pipe.trueOd || '');
+    setFieldValue('mt', h.mt || '');
+    setFieldValue('start', h.rodStart || '');
+
+    setFieldValue('htpPipeSize', htp.pipeSize || '');
+    setFieldValue('htpMd', htp.md || '');
+    setFieldValue('htpLd', htp.ld || '');
+    setFieldValue('htpLdSign', htp.ldSign || '+');
+    setFieldValue('htpPtc', htp.ptc || '');
+
+    setFieldValue('lsMd', ls.md || '');
+    setFieldValue('lsLd', ls.ld || '');
+    setFieldValue('lsLdSign', ls.ldSign || '+');
+    setFieldValue('lsPod', ls.pod || pipe.trueOd || '');
+    setFieldValue('lsTravel', ls.travel || '');
+    setFieldValue('lsMachineTravel', ls.machineTravel || '');
+
+    setFieldValue('cpStart', cp.start || '');
+    setFieldValue('cpJbf', cp.jbf || '');
+    setFieldValue('cpLd', cp.ld || '');
+    setFieldValue('cpPt', cp.pt || '');
+
+    setFieldValue('etaMachine', deriveEtaMachine(machine.machine || ''));
+    setFieldValue('etaCutterSize', machine.cutterOd || '');
+    setFieldValue('etaBco', calc.bco || '');
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha57LoadSelected() {
+    try {
+      const list = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []) || [];
+      let selected = null;
+      if (window.__tapcalcSelectedLibraryRecord) {
+        selected = { record: window.__tapcalcSelectedLibraryRecord };
+      }
+      if (!selected && Number.isInteger(window.__tapcalcSelectedLibraryIndex)) {
+        selected = list[window.__tapcalcSelectedLibraryIndex] || null;
+      }
+      if (!selected && typeof selectedJobId !== 'undefined') {
+        selected = list.find((job) => String(job.id) === String(selectedJobId || '')) || null;
+      }
+      if (!selected || !selected.record) {
+        console.warn('alpha57 Load Job: no selected record found');
+        return false;
+      }
+      const record = selected.record;
+      const rebuilt = (typeof buildStateFromRecord === 'function') ? buildStateFromRecord(record) : (record.state || {});
+      if (rebuilt && typeof applyJobState === 'function') applyJobState(rebuilt);
+      hydrateVisibleFields(record);
+      try { localStorage.setItem('measurementCardStateV1', JSON.stringify(rebuilt || {})); } catch {}
+      setTimeout(() => {
+        try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+        try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+        try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+        try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+        try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+        try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+        try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
+        try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+        try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+        try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
+        try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+        try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+        try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+      }, 60);
+      const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
+      if (jobTab) jobTab.click();
+      return true;
+    } catch (error) {
+      console.error('alpha57 Load Job failed', error);
+      return false;
+    }
+  };
+})();
+
+
+/* ===== 3.0.0-alpha59 robust load-job override ===== */
+(function(){
+  function alpha58NormalizeDate(raw) {
+    raw = String(raw || '').trim();
+    if (!raw) return '';
+    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+    return raw;
+  }
+  function alpha58Set(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
+    const v = value == null ? '' : String(value);
+    if (el.type === 'checkbox') el.checked = !!value;
+    else el.value = v;
+    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
+  }
+  function alpha58Hydrate(record) {
+    const job = record?.job || {};
+    const pipe = record?.pipe || {};
+    const machine = record?.machine || {};
+    const calc = record?.calculations || {};
+    const h = record?.measurements?.hotTap || {};
+    const htp = record?.measurements?.htp || {};
+    const ls = record?.measurements?.lineStop || {};
+    const cp = record?.measurements?.completionPlug || {};
+    const rawOp = String(record?.meta?.operationType || '').toLowerCase();
+    const op = rawOp.includes('completion') ? 'Completion Plug' : rawOp.includes('line stop') ? 'Line Stop' : rawOp.includes('htp') ? 'HTP' : 'Hot Tap';
+    alpha58Set('jobClient', job.client || '');
+    alpha58Set('jobDescription', job.description || record?.meta?.title || '');
+    alpha58Set('jobNumber', job.jobNumber || '');
+    alpha58Set('jobDate', alpha58NormalizeDate(job.date || ''));
+    alpha58Set('jobLocation', job.location || '');
+    alpha58Set('jobTechnician', job.technician || '');
+    alpha58Set('jobPressure', job.pressure || '');
+    alpha58Set('jobTemperature', job.temperature || '');
+    alpha58Set('jobProduct', job.product || '');
+    alpha58Set('jobNotes', job.notes || '');
+    alpha58Set('machineType', machine.machine || '');
+    alpha58Set('operationType', op);
+    alpha58Set('bcoPipeMaterial', pipe.material || '');
+    alpha58Set('bcoPipeOD', pipe.nominalSize || '');
+    alpha58Set('bcoSchedule', pipe.schedule || '');
+    alpha58Set('bcoPipeID', pipe.pipeId || '');
+    alpha58Set('bcoCutterOD', machine.cutterOd || '');
+    alpha58Set('etaMachine', deriveEtaMachineFromMachine(machine.machine || ''));
+    alpha58Set('etaCutterSize', machine.cutterOd || '');
+    alpha58Set('etaBco', calc.bco || '');
+    alpha58Set('md', h.md || ''); alpha58Set('ld', h.ld || ''); alpha58Set('ldSign', h.ldSign || '+'); alpha58Set('ptc', h.ptc || ''); alpha58Set('pod', h.pod || pipe.trueOd || ''); alpha58Set('mt', h.mt || ''); alpha58Set('start', h.rodStart || '');
+    alpha58Set('htpPipeSize', htp.pipeSize || ''); alpha58Set('htpMd', htp.md || ''); alpha58Set('htpLd', htp.ld || ''); alpha58Set('htpLdSign', htp.ldSign || '+'); alpha58Set('htpPtc', htp.ptc || '');
+    alpha58Set('lsMd', ls.md || ''); alpha58Set('lsLd', ls.ld || ''); alpha58Set('lsLdSign', ls.ldSign || '+'); alpha58Set('lsPod', ls.pod || pipe.trueOd || ''); alpha58Set('lsTravel', ls.travel || ''); alpha58Set('lsMachineTravel', ls.machineTravel || '');
+    alpha58Set('cpStart', cp.start || ''); alpha58Set('cpJbf', cp.jbf || ''); alpha58Set('cpLd', cp.ld || ''); alpha58Set('cpPt', cp.pt || '');
+  }
+  window.tapCalcLibraryLoadSelected = function alpha58LoadSelected() {
+    try {
+      const list = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []) || [];
+      let selected = null;
+      if (window.__tapcalcSelectedLibraryRecord) selected = { record: window.__tapcalcSelectedLibraryRecord };
+      if (!selected && Number.isInteger(window.__tapcalcSelectedLibraryIndex)) selected = list[window.__tapcalcSelectedLibraryIndex] || null;
+      if (!selected && typeof selectedJobId !== 'undefined') selected = list.find((job) => String(job.id) === String(selectedJobId || '')) || null;
+      if (!selected || !selected.record) return false;
+      const record = selected.record;
+      const rebuilt = (typeof buildStateFromRecord === 'function') ? buildStateFromRecord(record) : (record.state || {});
+      try { localStorage.setItem('measurementCardStateV1', JSON.stringify(rebuilt || {})); } catch {}
+      try { if (typeof applyJobState === 'function') applyJobState(rebuilt || {}); } catch {}
+      alpha58Hydrate(record);
+      setTimeout(() => alpha58Hydrate(record), 0);
+      setTimeout(() => alpha58Hydrate(record), 120);
+      setTimeout(() => {
+        try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+        try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+        try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+        try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+        try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+        try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+        try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
+        try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+        try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+        try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+      }, 160);
+      try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); else document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      return true;
+    } catch (error) {
+      console.error('alpha58 Load Job failed', error);
+      return false;
+    }
+  };
+})();
+
+
+/* ===== 3.0.0-alpha59 audited library/load rewrite ===== */
+(function(){
+  const JOB_STATE_KEY_A59 = 'measurementCardStateV1';
+  const stateFieldIdsA59 = [
+    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
+    'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
+    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf',
+    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
+    'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
+    'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
+    'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
+    'etaMachine','etaCutterSize','etaBco','etaRpmOverride'
+  ];
+
+  function a59Esc(v){
+    return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  }
+  function a59NormalizeDate(raw){
+    raw = String(raw || '').trim();
+    if (!raw) return '';
+    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
+    return raw;
+  }
+  function a59SetField(id, value){
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
+    const v = value == null ? '' : value;
+    if (el.type === 'checkbox') el.checked = !!v;
+    else el.value = String(v);
+    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
+  }
+  function a59CollectSelected(list){
+    if (window.__tapcalcLibrarySelectedId) {
+      const found = list.find(job => String(job.id) === String(window.__tapcalcLibrarySelectedId));
+      if (found) return found;
+    }
+    try {
+      const compact = window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820;
+      const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+      if (compact && sharedVisible) return null;
+    } catch {}
+    return list[0] || null;
+  }
+  function a59DeriveEtaMachine(machine){
+    return deriveEtaMachineFromMachine(machine);
+  }
+  function a59ApplyVisibleFields(record){
+    const job = record?.job || {};
+    const pipe = record?.pipe || {};
+    const machine = record?.machine || {};
+    const calc = record?.calculations || {};
+    const h = record?.measurements?.hotTap || {};
+    const htp = record?.measurements?.htp || {};
+    const ls = record?.measurements?.lineStop || {};
+    const cp = record?.measurements?.completionPlug || {};
+    const rawOp = String(record?.meta?.operationType || '').toLowerCase();
+    const op = rawOp.includes('completion') ? 'Completion Plug' : rawOp.includes('line stop') ? 'Line Stop' : rawOp.includes('htp') ? 'HTP' : 'Hot Tap';
+
+    a59SetField('jobClient', job.client || '');
+    a59SetField('jobDescription', job.description || record?.meta?.title || '');
+    a59SetField('jobNumber', job.jobNumber || '');
+    a59SetField('jobDate', a59NormalizeDate(job.date || ''));
+    a59SetField('jobLocation', job.location || '');
+    a59SetField('jobTechnician', job.technician || '');
+    a59SetField('jobPressure', job.pressure || '');
+    a59SetField('jobTemperature', job.temperature || '');
+    a59SetField('jobProduct', job.product || '');
+    a59SetField('jobNotes', job.notes || '');
+    a59SetField('machineType', machine.machine || '');
+    a59SetField('operationType', op);
+    a59SetField('bcoPipeMaterial', pipe.material || '');
+    a59SetField('bcoPipeOD', pipe.nominalSize || '');
+    a59SetField('bcoSchedule', pipe.schedule || '');
+    a59SetField('bcoPipeID', pipe.pipeId || '');
+    a59SetField('bcoCutterOD', machine.cutterOd || '');
+    a59SetField('etaMachine', a59DeriveEtaMachine(machine.machine || ''));
+    a59SetField('etaCutterSize', machine.cutterOd || '');
+    a59SetField('etaBco', calc.bco || '');
+    a59SetField('md', h.md || ''); a59SetField('ld', h.ld || ''); a59SetField('ldSign', h.ldSign || '+'); a59SetField('ptc', h.ptc || ''); a59SetField('pod', h.pod || pipe.trueOd || ''); a59SetField('mt', h.mt || ''); a59SetField('start', h.rodStart || '');
+    a59SetField('htpPipeSize', htp.pipeSize || ''); a59SetField('htpMd', htp.md || ''); a59SetField('htpLd', htp.ld || ''); a59SetField('htpLdSign', htp.ldSign || '+'); a59SetField('htpPtc', htp.ptc || '');
+    a59SetField('lsMd', ls.md || ''); a59SetField('lsLd', ls.ld || ''); a59SetField('lsLdSign', ls.ldSign || '+'); a59SetField('lsPod', ls.pod || pipe.trueOd || ''); a59SetField('lsTravel', ls.travel || ''); a59SetField('lsMachineTravel', ls.machineTravel || '');
+    a59SetField('cpStart', cp.start || ''); a59SetField('cpJbf', cp.jbf || ''); a59SetField('cpLd', cp.ld || ''); a59SetField('cpPt', cp.pt || '');
+  }
+  function a59ApplyState(state){
+    if (!state || typeof state !== 'object') return;
+    stateFieldIdsA59.forEach(id => {
+      if (!(id in state)) return;
+      a59SetField(id, state[id]);
+    });
+    if (state.activeMode && typeof window.setMode === 'function') {
+      try { window.setMode(state.activeMode); } catch {}
+    }
+  }
+  function a59Recalc(){
+    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+    try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
+    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+    try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
+    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+  }
+  function a59RenderDetails(entry){
+    const detailsEl = document.getElementById('jobsList');
+    if (!detailsEl) return;
+    if (!entry || !entry.record) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    const record = entry.record;
+    const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = entry.source === 'local' ? 'Local only' : entry.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || entry.savedAt || '-';
+    detailsEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${a59Esc(title)}</div>
+          <div class="job-detail-subtitle">${a59Esc(savedAtDisplay)}  |  ${a59Esc(record?.meta?.operationType || 'Job')}  |  ${a59Esc(sourceLabel)}</div>
+        </div>
+        <div class="job-record-badges"><span class="job-source-badge ${a59Esc(entry.source)}">${a59Esc(sourceLabel)}</span></div>
+      </div>
+      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button></div>
+      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
+    `;
+    detailsEl.querySelector('#jobsLoadSelectedBtn')?.addEventListener('click', () => window.tapCalcLibraryLoadSelected());
+  }
+  function a59RenderLibrary(){
+    const listEl = document.getElementById('jobsSelect');
+    const metaEl = document.getElementById('jobsResultsMeta');
+    const detailsEl = document.getElementById('jobsList');
+    const jobs = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []) || [];
+    if (metaEl) metaEl.textContent = jobs.length ? `${jobs.length} job${jobs.length===1?'':'s'} found` : 'No jobs found';
+    if (!listEl) return;
+    if (!jobs.length) {
+      listEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      window.__tapcalcLibrarySelectedId = '';
+      window.__tapcalcLibrarySelectedRecord = null;
+      return;
+    }
+    const selected = a59CollectSelected(jobs);
+    window.__tapcalcLibrarySelectedId = selected ? String(selected.id) : '';
+    window.__tapcalcLibrarySelectedRecord = selected?.record || null;
+    listEl.innerHTML = jobs.map((job) => {
+      const active = String(job.id) === String(window.__tapcalcLibrarySelectedId || '');
+      const record = job.record || {};
+      const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+      const sub = [record?.job?.client || '-', record?.job?.location || '-', record?.meta?.savedAtDisplay || job.savedAt || '-'].join('  |  ');
+      return `<button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${a59Esc(job.id)}" aria-selected="${active ? 'true' : 'false'}"><span class="jobs-list-item-title">${a59Esc(title)}</span><span class="jobs-list-item-meta">${a59Esc(sub)}</span></button>`;
+    }).join('');
+    listEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        window.__tapcalcLibrarySelectedId = String(btn.dataset.jobId || '');
+        const entry = jobs.find(job => String(job.id) === String(window.__tapcalcLibrarySelectedId));
+        window.__tapcalcLibrarySelectedRecord = entry?.record || null;
+        a59RenderLibrary();
+      });
+    });
+    a59RenderDetails(selected);
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha59LoadSelected(){
+    try {
+      const jobs = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []) || [];
+      const entry = jobs.find(job => String(job.id) === String(window.__tapcalcLibrarySelectedId || '')) || null;
+      const record = entry?.record || window.__tapcalcLibrarySelectedRecord || null;
+      if (!record) return false;
+      const state = (record.state && typeof record.state === 'object' && Object.keys(record.state).length)
+        ? { ...record.state }
+        : (typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : {});
+      a59ApplyState(state || {});
+      a59ApplyVisibleFields(record);
+      try { localStorage.setItem(JOB_STATE_KEY_A59, JSON.stringify(state || {})); } catch {}
+      a59Recalc();
+      setTimeout(() => { a59ApplyVisibleFields(record); a59Recalc(); }, 80);
+      setTimeout(() => { a59ApplyVisibleFields(record); a59Recalc(); }, 220);
+      try {
+        if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+        else document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      } catch {}
+      return true;
+    } catch (error) {
+      console.error('alpha59 Load Job failed', error);
+      return false;
+    }
+  };
+
+  window.tapCalcLibrarySelect = function(id){
+    window.__tapcalcLibrarySelectedId = String(id || '');
+    a59RenderLibrary();
+    return true;
+  };
+  window.renderJobsList = a59RenderLibrary;
+  window.renderSelectedJobDetails = function(){ a59RenderLibrary(); };
+  window.updateJobsListSelectionUI = function(){ a59RenderLibrary(); };
+  document.addEventListener('DOMContentLoaded', () => setTimeout(a59RenderLibrary, 50));
+  setTimeout(a59RenderLibrary, 200);
+})();
+
+
+// alpha60 force-reload Load Job path
+(function(){
+  function alpha60GetSelectedRecord() {
+    try {
+      if (typeof window.getCombinedJobsForDisplay === 'function') {
+        const list = window.getCombinedJobsForDisplay() || [];
+        const selectedId = (typeof selectedJobId !== 'undefined' ? String(selectedJobId || '') : '');
+        const selected = list.find((job) => String(job.id) === selectedId) || list[0];
+        return selected && selected.record ? selected.record : null;
+      }
+    } catch (error) {
+      console.error('alpha60 get selected record failed', error);
+    }
+    return null;
+  }
+
+  function alpha60PersistAndReload(record) {
+    const state = (typeof buildStateFromRecord === 'function') ? buildStateFromRecord(record) : (record && record.state ? record.state : null);
+    if (!state || typeof state !== 'object') {
+      console.warn('alpha60: no loadable state found for selected record');
+      return;
+    }
+    try {
+      localStorage.setItem(JOB_STATE_KEY, JSON.stringify(state));
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      localStorage.setItem('tapcalcV3LoadedFromLibrary', '1');
+    } catch (error) {
+      console.error('alpha60 persist failed', error);
+      return;
+    }
+    try {
+      window.location.reload();
+    } catch (error) {
+      console.error('alpha60 reload failed', error);
+    }
+  }
+
+  window.loadSelectedLibraryJob = function alpha60LoadSelectedLibraryJob() {
+    const record = alpha60GetSelectedRecord();
+    if (!record) return;
+    alpha60PersistAndReload(record);
+  };
+  window.alpha47LoadSelectedLibraryJob = window.loadSelectedLibraryJob;
+})();
+
+
+
+/* ===== 3.0.0-alpha61 pending-load restore override ===== */
+(function(){
+  const PENDING_LOAD_KEY = 'tapcalcPendingLoadedRecordV1';
+  function tc61SafeParse(raw){ try { return JSON.parse(raw); } catch { return null; } }
+  function tc61Set(id, value){
+    const el = document.getElementById(id);
+    if (!el) return false;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return true;
+    }
+    if (el.type === 'checkbox') el.checked = !!value;
+    else el.value = value ?? '';
+    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
+    return true;
+  }
+  function tc61ApplyRecord(record){
+    if (!record || typeof record !== 'object') return false;
+    const state = (record.state && typeof record.state === 'object' && Object.keys(record.state).length)
+      ? { ...record.state }
+      : (typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : {});
+    try {
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+    } catch {}
+    try {
+      if (state && typeof state === 'object') localStorage.setItem('measurementCardStateV1', JSON.stringify(state));
+    } catch {}
+    const job = record.job || {};
+    const pipe = record.pipe || {};
+    const machine = record.machine || {};
+    const calc = record.calculations || {};
+    const rawOp = String(record?.meta?.operationType || '').toLowerCase();
+    const op = rawOp.includes('completion') ? 'Completion Plug' : rawOp.includes('line stop') ? 'Line Stop' : rawOp.includes('htp') ? 'HTP' : 'Hot Tap';
+    const mapping = {
+      jobClient: job.client || '',
+      jobDescription: job.description || record?.meta?.title || '',
+      jobNumber: job.jobNumber || '',
+      jobDate: job.date || '',
+      jobLocation: job.location || '',
+      jobTechnician: job.technician || '',
+      jobPressure: job.pressure || '',
+      jobTemperature: job.temperature || '',
+      jobProduct: job.product || '',
+      jobNotes: job.notes || '',
+      machineType: machine.machine || '',
+      operationType: op,
+      bcoPipeMaterial: pipe.material || '',
+      bcoPipeOD: pipe.nominalSize || '',
+      bcoSchedule: pipe.schedule || '',
+      bcoPipeID: pipe.pipeId || '',
+      bcoCutterOD: machine.cutterOd || '',
+      etaMachine: (typeof a59DeriveEtaMachine === 'function' ? a59DeriveEtaMachine(machine.machine || '') : (machine.machine || '')),
+      etaCutterSize: machine.cutterOd || '',
+      etaBco: calc.bco || ''
+    };
+    Object.entries(mapping).forEach(([id,val]) => tc61Set(id,val));
+    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({silent:true}); } catch {}
+    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+    try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
+    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+    try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({force:true}); } catch {}
+    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+    return true;
+  }
+  function tc61ApplyPending(){
+    const raw = localStorage.getItem(PENDING_LOAD_KEY);
+    if (!raw) return false;
+    const record = tc61SafeParse(raw);
+    if (!record) { localStorage.removeItem(PENDING_LOAD_KEY); return false; }
+    // apply multiple times to beat old listeners/restore paths
+    tc61ApplyRecord(record);
+    setTimeout(() => tc61ApplyRecord(record), 60);
+    setTimeout(() => tc61ApplyRecord(record), 220);
+    setTimeout(() => tc61ApplyRecord(record), 600);
+    try { localStorage.removeItem(PENDING_LOAD_KEY); } catch {}
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    return true;
+  }
+  window.tapCalcLibraryLoadSelected = function alpha61LoadSelected(){
+    const record = window.__tapcalcLibrarySelectedRecord || null;
+    if (!record) return false;
+    try {
+      localStorage.setItem(PENDING_LOAD_KEY, JSON.stringify(record));
+      localStorage.setItem('tapcalcV3Screen', 'job');
+    } catch {}
+    // apply immediately for same-page success, then hard navigate to same page for clean restore
+    tc61ApplyRecord(record);
+    setTimeout(() => tc61ApplyRecord(record), 40);
+    setTimeout(() => {
+      try {
+        const url = new URL(window.location.href);
+        url.searchParams.set('loaded', 'alpha61');
+        url.hash = '#current';
+        window.location.assign(url.toString());
+      } catch {
+        try { window.location.reload(); } catch {}
+      }
+    }, 120);
+    return true;
+  };
+  document.addEventListener('DOMContentLoaded', () => setTimeout(tc61ApplyPending, 150));
+  window.addEventListener('load', () => setTimeout(tc61ApplyPending, 250));
+})();
+
+
+
+/* ===== 3.0.0-alpha62 unified load-job fix ===== */
+(function(){
+  function tc62FindSelectedEntry() {
+    try {
+      const list = (typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : []) || [];
+      const candidates = [
+        window.__tapcalcLibrarySelectedId,
+        typeof selectedJobId !== 'undefined' ? selectedJobId : '',
+        window.__tapcalcSelectedLibraryId,
+      ].map(v => String(v || '')).filter(Boolean);
+      for (const id of candidates) {
+        const found = list.find(job => String(job?.id || '') === id);
+        if (found && found.record) return found;
+      }
+      if (window.__tapcalcLibrarySelectedRecord) return { record: window.__tapcalcLibrarySelectedRecord };
+      if (window.__tapcalcSelectedLibraryRecord) return { record: window.__tapcalcSelectedLibraryRecord };
+      if (Number.isInteger(window.__tapcalcSelectedLibraryIndex) && list[window.__tapcalcSelectedLibraryIndex]) {
+        return list[window.__tapcalcSelectedLibraryIndex];
+      }
+      const first = list[0];
+      return first && first.record ? first : null;
+    } catch (error) {
+      console.error('alpha62 find selected entry failed', error);
+      return null;
+    }
+  }
+
+  function tc62RunRecalc() {
+    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+    try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
+    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+    try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
+    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+  }
+
+  function tc62LoadRecord(record) {
+    if (!record || typeof record !== 'object') return false;
+    try {
+      const state = (typeof buildStateFromRecord === 'function') ? buildStateFromRecord(record) : (record.state || {});
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+      try { localStorage.setItem('measurementCardStateV1', JSON.stringify(state || {})); } catch {}
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(record, { message: true });
+      } else {
+        tc62RunRecalc();
+      }
+      setTimeout(tc62RunRecalc, 80);
+      setTimeout(tc62RunRecalc, 220);
+      setTimeout(tc62RunRecalc, 500);
+      try {
+        if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+        else document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      } catch {}
+      return true;
+    } catch (error) {
+      console.error('alpha62 load record failed', error);
+      return false;
+    }
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha62LoadSelected(){
+    const entry = tc62FindSelectedEntry();
+    const record = entry?.record || null;
+    if (!record) {
+      console.warn('alpha62 Load Job: no selected record found');
+      return false;
+    }
+    window.__tapcalcLibrarySelectedRecord = record;
+    if (entry?.id != null) {
+      window.__tapcalcLibrarySelectedId = String(entry.id);
+      try { selectedJobId = String(entry.id); } catch {}
+    }
+    return tc62LoadRecord(record);
+  };
+
+  window.loadSelectedLibraryJob = window.tapCalcLibraryLoadSelected;
+})();
+
+
+/* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
+(function(){
+const TC63_VERSION = '3.0.0-alpha200';
+
+  function tc63SetValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
+    if (el.type === 'checkbox') {
+      el.checked = !!value;
+    } else {
+      el.value = value == null ? '' : String(value);
+    }
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+
+  function tc63BuildState(record) {
+    try {
+      if (typeof buildStateFromRecord === 'function') return buildStateFromRecord(record) || {};
+    } catch (error) {
+      console.error('alpha63 build state failed', error);
+    }
+    return { ...(record?.state || {}) };
+  }
+
+  function tc63FindSelectedEntry() {
+    try {
+      const list = (typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : []) || [];
+      const wanted = [
+        window.__tapcalcLibrarySelectedId,
+        typeof selectedJobId !== 'undefined' ? selectedJobId : '',
+        window.__tapcalcSelectedLibraryId,
+      ].map(v => String(v || '')).filter(Boolean);
+      for (const id of wanted) {
+        const found = list.find(job => String(job?.id || '') === id);
+        if (found?.record) return found;
+      }
+      if (window.__tapcalcLibrarySelectedRecord) return { id: window.__tapcalcLibrarySelectedId || '', record: window.__tapcalcLibrarySelectedRecord };
+      if (window.__tapcalcSelectedLibraryRecord) return { id: window.__tapcalcSelectedLibraryId || '', record: window.__tapcalcSelectedLibraryRecord };
+      return null;
+    } catch (error) {
+      console.error('alpha63 find selected entry failed', error);
+      return null;
+    }
+  }
+
+  function tc63Hydrate(record) {
+    if (!record || typeof record !== 'object') return false;
+    const state = tc63BuildState(record);
+    try { localStorage.setItem('measurementCardStateV1', JSON.stringify(state || {})); } catch {}
+
+    try { if (typeof applyJobState === 'function') applyJobState(state); } catch (error) { console.error('alpha63 applyJobState failed', error); }
+
+    const directMap = {
+      jobClient: state.jobClient ?? record?.job?.client ?? '',
+      jobDescription: state.jobDescription ?? record?.job?.description ?? '',
+      jobNumber: state.jobNumber ?? record?.job?.jobNumber ?? '',
+      jobPressure: state.jobPressure ?? record?.job?.pressure ?? '',
+      jobTemperature: state.jobTemperature ?? record?.job?.temperature ?? '',
+      jobDate: state.jobDate ?? record?.job?.date ?? '',
+      jobProduct: state.jobProduct ?? record?.job?.product ?? '',
+      jobLocation: state.jobLocation ?? record?.job?.location ?? '',
+      jobTechnician: state.jobTechnician ?? record?.job?.technician ?? '',
+      jobNotes: state.jobNotes ?? record?.job?.notes ?? '',
+      machineType: state.machineType ?? record?.machine?.machine ?? '',
+      operationType: state.operationType ?? record?.meta?.operationType ?? '',
+      geometryLockToggle: !!state.geometryLockToggle,
+      bcoPipeMaterial: state.bcoPipeMaterial ?? record?.pipe?.material ?? '',
+      bcoPipeOD: state.bcoPipeOD ?? record?.pipe?.nominalSize ?? '',
+      bcoSchedule: state.bcoSchedule ?? record?.pipe?.schedule ?? '',
+      bcoPipeID: state.bcoPipeID ?? record?.pipe?.pipeId ?? '',
+      bcoCutterOD: state.bcoCutterOD ?? record?.machine?.cutterOd ?? '',
+      md: state.md ?? record?.measurements?.hotTap?.md ?? '',
+      ld: state.ld ?? record?.measurements?.hotTap?.ld ?? '',
+      ldSign: state.ldSign ?? record?.measurements?.hotTap?.ldSign ?? '+',
+      ptc: state.ptc ?? record?.measurements?.hotTap?.ptc ?? '',
+      pod: state.pod ?? record?.measurements?.hotTap?.pod ?? '',
+      start: state.start ?? record?.measurements?.hotTap?.rodStart ?? '',
+      mt: state.mt ?? record?.measurements?.hotTap?.mt ?? '',
+      htpPipeSize: state.htpPipeSize ?? record?.measurements?.htp?.pipeSize ?? '',
+      htpMd: state.htpMd ?? record?.measurements?.htp?.md ?? '',
+      htpLd: state.htpLd ?? record?.measurements?.htp?.ld ?? '',
+      htpLdSign: state.htpLdSign ?? record?.measurements?.htp?.ldSign ?? '+',
+      htpPtc: state.htpPtc ?? record?.measurements?.htp?.ptc ?? '',
+      lsMd: state.lsMd ?? record?.measurements?.lineStop?.md ?? '',
+      lsLd: state.lsLd ?? record?.measurements?.lineStop?.ld ?? '',
+      lsLdSign: state.lsLdSign ?? record?.measurements?.lineStop?.ldSign ?? '+',
+      lsPod: state.lsPod ?? record?.measurements?.lineStop?.pod ?? '',
+      lsTravel: state.lsTravel ?? record?.measurements?.lineStop?.travel ?? '',
+      lsMachineTravel: state.lsMachineTravel ?? record?.measurements?.lineStop?.machineTravel ?? '',
+      cpStart: state.cpStart ?? record?.measurements?.completionPlug?.start ?? '',
+      cpJbf: state.cpJbf ?? record?.measurements?.completionPlug?.jbf ?? '',
+      cpLd: state.cpLd ?? record?.measurements?.completionPlug?.ld ?? '',
+      cpPt: state.cpPt ?? record?.measurements?.completionPlug?.pt ?? '',
+      etaMachine: state.etaMachine ?? '',
+      etaCutterSize: state.etaCutterSize ?? record?.machine?.cutterOd ?? '',
+      etaBco: state.etaBco ?? record?.calculations?.bco ?? ''
+    };
+
+    Object.entries(directMap).forEach(([id, value]) => tc63SetValue(id, value));
+
+    if (state.activeMode) {
+      try { if (typeof window.setMode === 'function') window.setMode(state.activeMode); } catch {}
+    }
+    try { if (typeof setGeometryLocked === 'function') setGeometryLocked(!!state.geometryLockToggle); } catch {}
+
+    const rerun = () => {
+      Object.entries(directMap).forEach(([id, value]) => tc63SetValue(id, value));
+      try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+      try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+      try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent: true }); } catch {}
+      try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+      try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+      try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+      try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+      try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+      try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force: true }); } catch {}
+      try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+      try { if (typeof persistCurrentJob === 'function') persistCurrentJob(); } catch {}
+      try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+      try {
+        const title = state.jobDescription || state.jobNumber || state.jobClient || record?.meta?.title || 'Loaded Job';
+        const currentJobNameEl = document.getElementById('jobsCurrentJobName');
+        if (currentJobNameEl) currentJobNameEl.textContent = title;
+      } catch {}
+    };
+
+    rerun();
+    setTimeout(rerun, 60);
+    setTimeout(rerun, 180);
+    setTimeout(rerun, 450);
+
+    try {
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
+      jobTab?.click();
+      if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+    } catch {}
+
+    try {
+      const statusEl = document.getElementById('jobsCloudStatus');
+      if (statusEl) statusEl.textContent = `Loaded ${record?.meta?.title || state.jobDescription || state.jobNumber || 'saved job'} into TapCalc.`;
+    } catch {}
+    return true;
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha63LoadSelected(){
+    const entry = tc63FindSelectedEntry();
+    const record = entry?.record || null;
+    if (!record) {
+      console.warn('alpha63 Load Job: no selected record found');
+      return false;
+    }
+    window.__tapcalcLibrarySelectedRecord = record;
+    if (entry?.id != null) {
+      window.__tapcalcLibrarySelectedId = String(entry.id);
+      try { selectedJobId = String(entry.id); } catch {}
+    }
+    return tc63Hydrate(record);
+  };
+
+  window.loadSelectedLibraryJob = window.tapCalcLibraryLoadSelected;
+
+  function tc64LoadSelectedFromAnySource() {
+    let entry = null;
+    try { entry = tc63FindSelectedEntry(); } catch {}
+    if (!entry?.record) {
+      try {
+        const list = (typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : []) || [];
+        const activeBtn = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect [data-job-id][aria-selected="true"], #jobsSelect [data-job-id][aria-pressed="true"]');
+        const domId = String(activeBtn?.dataset?.jobId || window.__tapcalcLibrarySelectedId || '').trim();
+        if (domId) entry = list.find(job => String(job?.id || '') === domId) || null;
+        if (!entry?.record && list.length) entry = list[0];
+      } catch {}
+    }
+    if (!entry?.record) {
+      try {
+        const statusEl = document.getElementById('jobsCloudStatus');
+        if (statusEl) statusEl.textContent = 'Load Job failed: no selected library record found.';
+      } catch {}
+      return false;
+    }
+    try {
+      window.__tapcalcLibrarySelectedRecord = entry.record;
+      window.__tapcalcLibrarySelectedId = String(entry.id || '');
+      if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || '');
+    } catch {}
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false });
+      }
+    } catch (error) {
+      console.error('alpha64 loadRecordIntoCalculator failed', error);
+    }
+    try { tc63Hydrate(entry.record); } catch (error) { console.error('alpha64 tc63Hydrate failed', error); }
+    try {
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+    } catch {}
+    try {
+      const statusEl = document.getElementById('jobsCloudStatus');
+      if (statusEl) statusEl.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    } catch {}
+    return true;
+  }
+
+  window.tapCalcLibraryLoadSelected = function alpha64LoadSelected(){
+    return tc64LoadSelectedFromAnySource();
+  };
+  window.loadSelectedLibraryJob = window.tapCalcLibraryLoadSelected;
+  window.tapCalcForceLoadSelectedJob = tc64LoadSelectedFromAnySource;
+
+  function tc64HandleLoadTap(event) {
+    const btn = event.target.closest('#jobsLoadSelectedBtn');
+    if (!btn) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    tc64LoadSelectedFromAnySource();
+  }
+
+  document.addEventListener('click', tc64HandleLoadTap, true);
+  document.addEventListener('pointerup', tc64HandleLoadTap, true);
+  document.addEventListener('touchend', tc64HandleLoadTap, true);
+
+  const _renderSelectedJobDetailsAlpha64 = window.renderSelectedJobDetails;
+  window.renderSelectedJobDetails = function alpha64RenderSelectedJobDetails(){
+    const result = typeof _renderSelectedJobDetailsAlpha64 === 'function' ? _renderSelectedJobDetailsAlpha64.apply(this, arguments) : undefined;
+    try {
+      const btn = document.getElementById('jobsLoadSelectedBtn');
+      if (btn) {
+        btn.setAttribute('onclick', 'return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();');
+        btn.dataset.alpha64Bound = 'true';
+      }
+    } catch {}
+    return result;
+  };
+})();
+
+
+/* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
+(function(){
+const VERSION = '3.0.0-alpha200';
+
+  function tc65GetJobs() {
+    try {
+      const list = (typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : []) || [];
+      return Array.isArray(list) ? list : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function tc65FindSelectedEntry() {
+    const list = tc65GetJobs();
+    if (!list.length) return null;
+    const domActive = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect [data-job-id][aria-selected="true"], #jobsSelect [data-job-id][aria-pressed="true"]');
+    const selectedId = String(domActive?.dataset?.jobId || window.__tapcalcLibrarySelectedId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+    const found = selectedId ? list.find((job) => String(job?.id || '') === selectedId) : null;
+    return found || list[0] || null;
+  }
+
+  function tc65SyncSelection(entry) {
+    if (!entry) return;
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcLibrarySelectedId = String(entry.id || ''); } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || ''); } catch {}
+    try {
+      document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item) => {
+        const active = String(item.dataset.jobId || '') === String(entry.id || '');
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    } catch {}
+  }
+
+  function tc65LoadSelected() {
+    const entry = tc65FindSelectedEntry();
+    if (!entry?.record) {
+      try {
+        const statusEl = document.getElementById('jobsCloudStatus');
+        if (statusEl) statusEl.textContent = 'Load Job failed: no selected library record found.';
+      } catch {}
+      return false;
+    }
+    tc65SyncSelection(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false });
+    } catch (error) {
+      console.error('alpha65 loadRecordIntoCalculator failed', error);
+      return false;
+    }
+    try {
+      localStorage.setItem('tapcalcV3Screen', 'job');
+      document.querySelector('.screen-tab[data-screen="job"]')?.click();
+      if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
+    } catch {}
+    try {
+      const statusEl = document.getElementById('jobsCloudStatus');
+      if (statusEl) statusEl.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    } catch {}
+    return true;
+  }
+
+  function tc65BindLoadButton() {
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (!btn) return;
+    const fresh = btn.cloneNode(true);
+    fresh.removeAttribute('onclick');
+    fresh.dataset.tc65Bound = 'true';
+    btn.replaceWith(fresh);
+    const handler = (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+      tc65LoadSelected();
+      return false;
+    };
+    fresh.addEventListener('click', handler, { capture: true });
+    fresh.addEventListener('pointerup', handler, { capture: true });
+    fresh.addEventListener('touchend', handler, { capture: true });
+  }
+
+  function tc65RenderDetails() {
+    const detailsEl = document.getElementById('jobsList');
+    if (!detailsEl) return;
+    const entry = tc65FindSelectedEntry();
+    if (!entry?.record) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    tc65SyncSelection(entry);
+    const record = entry.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = entry.source === 'local' ? 'Local only' : entry.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '-';
+    const warnings = [
+      ...(record?.warnings?.hotTap || []),
+      ...(record?.warnings?.lineStop || []),
+      ...(record?.warnings?.hiStop || []),
+      ...(record?.warnings?.completionPlug || [])
+    ].filter(Boolean);
+    const detailsHtml = typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : '';
+    detailsEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${title}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay}  |  ${record?.meta?.operationType || 'Job'}  |  ${sourceLabel}</div>
+        </div>
+        <div class="job-record-badges">
+          <span class="job-source-badge ${entry.source}">${sourceLabel}</span>
+        </div>
+      </div>
+      <div class="job-detail-actions">
+        <button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button>
+      </div>
+      ${detailsHtml}
+      <div class="job-detail-grid">
+        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || '-'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || '-'}</div>
+        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      </div>`;
+    tc65BindLoadButton();
+  }
+
+  const originalRenderJobsList = typeof window.renderJobsList === 'function' ? window.renderJobsList : null;
+  window.renderJobsList = function alpha65RenderJobsList(){
+    const result = originalRenderJobsList ? originalRenderJobsList.apply(this, arguments) : undefined;
+    tc65RenderDetails();
+    return result;
+  };
+
+  window.renderSelectedJobDetails = function alpha65RenderSelectedJobDetails(){
+    tc65RenderDetails();
+    return true;
+  };
+
+  window.tapCalcLibraryLoadSelected = tc65LoadSelected;
+  window.loadSelectedLibraryJob = tc65LoadSelected;
+  window.tapCalcForceLoadSelectedJob = tc65LoadSelected;
+
+  document.addEventListener('click', (event) => {
+    const row = event.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (!row) return;
+    const list = tc65GetJobs();
+    const entry = list.find((job) => String(job?.id || '') === String(row.dataset.jobId || '')) || null;
+    if (!entry) return;
+    tc65SyncSelection(entry);
+    setTimeout(tc65RenderDetails, 0);
+  }, true);
+
+  const detailsEl = document.getElementById('jobsList');
+  if (detailsEl) {
+    const observer = new MutationObserver(() => {
+      const btn = document.getElementById('jobsLoadSelectedBtn');
+      if (btn && btn.dataset.tc65Bound !== 'true') tc65BindLoadButton();
+    });
+    observer.observe(detailsEl, { childList: true, subtree: true });
+  }
+
+  setTimeout(() => {
+    try {
+      const badge = document.querySelector('.version-badge');
+      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-14`;
+      const title = document.querySelector('.top-app-title');
+      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-14`;
+      tc65RenderDetails();
+    } catch {}
+  }, 0);
+})();
+
+
+/* ===== 3.0.0-alpha87 mobile shared-library selection fix ===== */
+(function(){
+  function tc81IsCompactLibrary() {
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function tc81ClearLibrarySelection() {
+    try { window.__tapcalcLibrarySelectedId = ''; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = null; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = ''; } catch {}
+    try {
+      document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item) => {
+        item.classList.remove('active');
+        item.setAttribute('aria-selected', 'false');
+        item.setAttribute('aria-pressed', 'false');
+      });
+    } catch {}
+    try {
+      const detailsEl = document.getElementById('jobsList');
+      if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a shared job from the list to view its details.</div>';
+    } catch {}
+  }
+
+  const originalSetLibraryLane81 = window.setLibraryLane || (typeof setLibraryLane === 'function' ? setLibraryLane : null);
+  window.setLibraryLane = function(lane) {
+    const next = lane === 'shared' ? 'shared' : 'local';
+    const result = originalSetLibraryLane81 ? originalSetLibraryLane81(next) : undefined;
+    if (next === 'shared' && tc81IsCompactLibrary()) {
+      setTimeout(tc81ClearLibrarySelection, 30);
+      setTimeout(tc81ClearLibrarySelection, 180);
+    }
+    return result;
+  };
+  try { setLibraryLane = window.setLibraryLane; } catch {}
+
+  const originalRenderJobsList81 = window.renderJobsList;
+  window.renderJobsList = function() {
+    const result = originalRenderJobsList81 ? originalRenderJobsList81.apply(this, arguments) : undefined;
+    const screenVisible = document.getElementById('jobsScreen')?.classList.contains('active');
+    const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+    if (screenVisible && sharedVisible && tc81IsCompactLibrary()) setTimeout(tc81ClearLibrarySelection, 0);
+    return result;
+  };
+})();
+
+
+/* ===== 3.0.0-alpha87 garlock init + compact library lane guard ===== */
+(function(){
+  function tc83IsCompact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function tc83InitGarlock(){
+    try { populateGarlock600Select(); } catch {}
+    try { renderGarlock600Rows(garlock600Data); } catch {}
+    try { if (garlock600SearchInputEl && !garlock600SearchInputEl.dataset.tc83Bound) {
+      garlock600SearchInputEl.dataset.tc83Bound = '1';
+      garlock600SearchInputEl.addEventListener('input', () => filterGarlock600Rows(garlock600SearchInputEl.value || ''));
+    } } catch {}
+    try { if (garlock600SizeSelectEl && !garlock600SizeSelectEl.dataset.tc83Bound) {
+      garlock600SizeSelectEl.dataset.tc83Bound = '1';
+      garlock600SizeSelectEl.addEventListener('change', updateGarlock600Summary);
+      garlock600SizeSelectEl.addEventListener('input', updateGarlock600Summary);
+    } } catch {}
+    try {
+      if (garlock600SizeSelectEl && !garlock600SizeSelectEl.value && garlock600Data[0]?.size) garlock600SizeSelectEl.value = garlock600Data[0].size;
+      updateGarlock600Summary();
+    } catch {}
+  }
+  function tc83ForceLocalOnCompactLibrary(){
+    if (!tc83IsCompact()) return;
+    try {
+      if (typeof window.setLibraryLane === 'function') window.setLibraryLane('local');
+      localStorage.setItem('tapcalcLibraryLaneV1', 'local');
+    } catch {}
+    try {
+      window.__tapcalcLibrarySelectedId = '';
+      window.__tapcalcLibrarySelectedRecord = null;
+    } catch {}
+    try {
+      document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item) => {
+        item.classList.remove('active');
+        item.setAttribute('aria-selected', 'false');
+        item.setAttribute('aria-pressed', 'false');
+      });
+    } catch {}
+    try {
+      const detailsEl = document.getElementById('jobsList');
+      if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+    } catch {}
+  }
+  const tc83OldSetScreen = window.tapCalcSetScreen;
+  if (typeof tc83OldSetScreen === 'function' && !window.__tc83WrappedScreen) {
+    window.__tc83WrappedScreen = true;
+    window.tapCalcSetScreen = function(name){
+      const result = tc83OldSetScreen.apply(this, arguments);
+      if (name === 'jobs') setTimeout(tc83ForceLocalOnCompactLibrary, 0);
+      if (name === 'ref') setTimeout(tc83InitGarlock, 0);
+      return result;
+    };
+  }
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(tc83InitGarlock, 20);
+    setTimeout(tc83ForceLocalOnCompactLibrary, 30);
+  });
+  setTimeout(tc83InitGarlock, 80);
+  document.addEventListener('click', (event) => {
+    const refBtn = event.target.closest('[data-reference-target="garlock600"]');
+    if (refBtn) setTimeout(tc83InitGarlock, 0);
+    const libTab = event.target.closest('.screen-tab[data-screen="jobs"]');
+    if (libTab) setTimeout(tc83ForceLocalOnCompactLibrary, 0);
+  });
+})();
+
+
+/* ===== 3.0.0-alpha87 dropdown + mobile library hard fix ===== */
+(function(){
+  function tc84Compact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function tc84SharedVisible(){
+    try { return !!document.querySelector('[data-library-lane-panel="shared"].active'); } catch { return false; }
+  }
+  function tc84ApplyLocalLane(){
+    if (!tc84Compact()) return;
+    try { localStorage.setItem('tapcalcLibraryLaneV1', 'local'); } catch {}
+    try {
+      document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((btn)=>{
+        const active = btn.dataset.libraryLane === 'local';
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-library-lane-panel]').forEach((panel)=>{
+        const active = panel.dataset.libraryLanePanel === 'local';
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+        panel.style.display = active ? 'block' : 'none';
+        panel.style.pointerEvents = active ? 'auto' : 'none';
+      });
+      const jobsScreen = document.getElementById('jobsScreen');
+      if (jobsScreen) jobsScreen.dataset.activeLane = 'local';
+    } catch {}
+    try { selectedJobId = ''; } catch {}
+    try { window.__tapcalcLibrarySelectedId = ''; window.__tapcalcLibrarySelectedRecord = null; } catch {}
+    try { renderJobsList(); } catch {}
+    try {
+      const detailsEl = document.getElementById('jobsList');
+      if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+    } catch {}
+  }
+  function tc84InitGarlock(){
+    try {
+      const select = document.getElementById('garlock600SizeSelect');
+      if (select) {
+        const current = select.value;
+        const markup = garlock600Data.map((row) => `<option value="${row.size}">${row.size}</option>`).join('');
+        if (!select.options.length || !select.innerHTML.trim()) select.innerHTML = markup;
+        if (current && [...select.options].some((o)=>o.value===current)) select.value = current;
+        if (!select.value && garlock600Data[0]?.size) select.value = garlock600Data[0].size;
+      }
+    } catch {}
+    try { populateGarlock600Select(); } catch {}
+    try { renderGarlock600Rows(garlock600Data); } catch {}
+    try { updateGarlock600Summary(); } catch {}
+  }
+  document.addEventListener('click', (event) => {
+    const libTab = event.target.closest('.screen-tab[data-screen="jobs"]');
+    if (libTab) setTimeout(tc84ApplyLocalLane, 0);
+    const otherTab = event.target.closest('.screen-tab:not([data-screen="jobs"])');
+    if (otherTab) {
+      try {
+        const jobs = document.getElementById('jobsScreen');
+        if (jobs) { jobs.classList.remove('active'); jobs.style.pointerEvents = 'none'; }
+      } catch {}
+    }
+    if (event.target.closest('[data-reference-target="garlock600"]') || event.target.closest('#referenceViewSelect')) {
+      setTimeout(tc84InitGarlock, 0);
+      setTimeout(tc84InitGarlock, 120);
+    }
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target && event.target.id === 'referenceViewSelect' && event.target.value === 'garlock600') {
+      setTimeout(tc84InitGarlock, 0);
+      setTimeout(tc84InitGarlock, 120);
+    }
+  });
+  window.addEventListener('pageshow', () => { setTimeout(tc84InitGarlock, 60); });
+  document.addEventListener('DOMContentLoaded', () => { setTimeout(tc84InitGarlock, 60); setTimeout(tc84ApplyLocalLane, 60); });
+})();
+
+
+/* ===== 3.0.0-alpha87 garlock summary + mobile library hard stop ===== */
+(function(){
+  function tc85Compact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function tc85GarlockSelect(){ return document.getElementById('garlock600SizeSelect'); }
+  function tc85SetText(id, value){ const el = document.getElementById(id); if (el) el.textContent = value || '-'; }
+  function tc85NormalizeSize(value){
+    return String(value || '').replace(/[""]/g, '').replace(/\s+/g, '').toLowerCase();
+  }
+  function tc85UpdateGarlock(){
+    try {
+      const select = tc85GarlockSelect();
+      const activeSize = select?.value || garlock600Data[0]?.size || '';
+      const match = garlock600Data.find((row) => tc85NormalizeSize(row.size) === tc85NormalizeSize(activeSize)) || garlock600Data[0] || null;
+      if (!match) return;
+      tc85SetText('garlock600BoltCount', match.bolts);
+      tc85SetText('garlock600BoltSize', match.boltSize);
+      tc85SetText('garlock600MinTorque', `${match.minTorque} ft lbs`);
+      tc85SetText('garlock600PreferredTorque', `${match.preferredTorque} ft lbs`);
+      tc85SetText('garlock600Torque60', `${match.torque60} ft lbs`);
+      tc85SetText('garlock600StressValue', `${match.maxRecStress} psi`);
+      tc85SetText('garlock600ContactArea', `${match.area} in^2`);
+    } catch {}
+  }
+  function tc85InitGarlock(){
+    try { populateGarlock600Select(); } catch {}
+    try { renderGarlock600Rows(garlock600Data); } catch {}
+    try {
+      const select = tc85GarlockSelect();
+      if (select && !select.value && garlock600Data[0]?.size) select.value = garlock600Data[0].size;
+    } catch {}
+    setTimeout(tc85UpdateGarlock, 0);
+    setTimeout(tc85UpdateGarlock, 120);
+  }
+  document.addEventListener('change', (event) => {
+    if (event.target && event.target.id === 'garlock600SizeSelect') tc85UpdateGarlock();
+    if (event.target && event.target.id === 'referenceViewSelect' && event.target.value === 'garlock600') tc85InitGarlock();
+  }, true);
+  document.addEventListener('input', (event) => {
+    if (event.target && event.target.id === 'garlock600SizeSelect') tc85UpdateGarlock();
+  }, true);
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('[data-reference-target="garlock600"]')) {
+      setTimeout(tc85InitGarlock, 0);
+      setTimeout(tc85InitGarlock, 120);
+    }
+  }, true);
+  window.addEventListener('pageshow', () => { setTimeout(tc85InitGarlock, 80); });
+  document.addEventListener('DOMContentLoaded', () => { setTimeout(tc85InitGarlock, 80); });
+
+  const originalOpenSharedLane85 = window.openSharedLibraryLane || (typeof openSharedLibraryLane === 'function' ? openSharedLibraryLane : null);
+  window.openSharedLibraryLane = function(){
+    if (tc85Compact()) {
+      try { if (typeof window.setLibraryLane === 'function') window.setLibraryLane('local'); } catch {}
+      try { localStorage.setItem('tapcalcLibraryLaneV1', 'local'); } catch {}
+      try { selectedJobId = ''; } catch {}
+      try { window.__tapcalcLibrarySelectedId = ''; window.__tapcalcLibrarySelectedRecord = null; } catch {}
+      try {
+        const detailsEl = document.getElementById('jobsList');
+        if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      } catch {}
+      return;
+    }
+    return originalOpenSharedLane85 ? originalOpenSharedLane85.apply(this, arguments) : undefined;
+  };
+  try { openSharedLibraryLane = window.openSharedLibraryLane; } catch {}
+
+  const originalSetScreen85 = window.tapCalcSetScreen || null;
+  if (typeof originalSetScreen85 === 'function' && !window.__tc85ScreenWrapped) {
+    window.__tc85ScreenWrapped = true;
+    window.tapCalcSetScreen = function(name){
+      const result = originalSetScreen85.apply(this, arguments);
+      if (name === 'jobs' && tc85Compact()) {
+        try { window.openSharedLibraryLane(); } catch {}
+        try {
+          document.querySelectorAll('[data-library-lane-panel="shared"] .jobs-list-item.active').forEach((item)=>item.classList.remove('active'));
+        } catch {}
+      }
+      return result;
+    };
+  }
+
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('.screen-tab[data-screen]');
+    if (!tab) return;
+    if (tab.dataset.screen !== 'jobs') {
+      try {
+        const jobsScreen = document.getElementById('jobsScreen');
+        if (jobsScreen) {
+          jobsScreen.classList.remove('active');
+          jobsScreen.style.pointerEvents = 'none';
+          jobsScreen.style.zIndex = '0';
+        }
+      } catch {}
+    }
+  }, true);
+})();
+
+
+/* ===== 3.0.0-alpha87 garlock self-contained init + mobile library escape hatch ===== */
+(function(){
+  const GARLOCK_ROWS = [
+    { size:'1/2', area:'0.94', bolts:'4', boltSize:'0.50', torque60:'60', minTorque:'11', preferredTorque:'37', maxRecStress:'20000' },
+    { size:'3/4', area:'1.36', bolts:'4', boltSize:'0.63', torque60:'120', minTorque:'20', preferredTorque:'67', maxRecStress:'20000' },
+    { size:'1', area:'1.79', bolts:'4', boltSize:'0.63', torque60:'120', minTorque:'27', preferredTorque:'89', maxRecStress:'20000' },
+    { size:'1-1/4', area:'2.74', bolts:'4', boltSize:'0.63', torque60:'120', minTorque:'41', preferredTorque:'120', maxRecStress:'17664' },
+    { size:'1-1/2', area:'3.65', bolts:'4', boltSize:'0.75', torque60:'200', minTorque:'60', preferredTorque:'200', maxRecStress:'19862' },
+    { size:'2', area:'5.84', bolts:'8', boltSize:'0.63', torque60:'120', minTorque:'43', preferredTorque:'120', maxRecStress:'16593' },
+    { size:'2-1/2', area:'6.82', bolts:'8', boltSize:'0.75', torque60:'200', minTorque:'56', preferredTorque:'188', maxRecStress:'20000' },
+    { size:'3', area:'10.01', bolts:'8', boltSize:'0.75', torque60:'200', minTorque:'83', preferredTorque:'200', maxRecStress:'14476' },
+    { size:'4', area:'14.19', bolts:'8', boltSize:'0.88', torque60:'320', minTorque:'135', preferredTorque:'320', maxRecStress:'14174' },
+    { size:'5', area:'17.69', bolts:'8', boltSize:'1.00', torque60:'490', minTorque:'197', preferredTorque:'490', maxRecStress:'14952' },
+    { size:'6', area:'22.33', bolts:'12', boltSize:'1.00', torque60:'490', minTorque:'165', preferredTorque:'490', maxRecStress:'17770' },
+    { size:'8', area:'30.22', bolts:'12', boltSize:'1.13', torque60:'710', minTorque:'246', preferredTorque:'710', maxRecStress:'17344' },
+    { size:'10', area:'36.91', bolts:'16', boltSize:'1.25', torque60:'1000', minTorque:'248', preferredTorque:'828', maxRecStress:'20000' },
+    { size:'12', area:'49.04', bolts:'20', boltSize:'1.25', torque60:'1000', minTorque:'264', preferredTorque:'880', maxRecStress:'20000' },
+    { size:'14', area:'53.46', bolts:'20', boltSize:'1.38', torque60:'1360', minTorque:'315', preferredTorque:'1049', maxRecStress:'20000' },
+    { size:'16', area:'67.74', bolts:'20', boltSize:'1.50', torque60:'1600', minTorque:'386', preferredTorque:'1286', maxRecStress:'20000' },
+    { size:'18', area:'91.89', bolts:'20', boltSize:'1.63', torque60:'2200', minTorque:'602', preferredTorque:'2006', maxRecStress:'20000' },
+    { size:'20', area:'101.32', bolts:'24', boltSize:'1.63', torque60:'2200', minTorque:'553', preferredTorque:'1843', maxRecStress:'20000' },
+    { size:'24', area:'130.82', bolts:'24', boltSize:'1.88', torque60:'4000', minTorque:'946', preferredTorque:'3154', maxRecStress:'20000' }
+  ];
+  const $ = (id) => document.getElementById(id);
+  const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
+  function setText(id, value){ const el=$(id); if(el) el.textContent = value || '-'; }
+  function renderGarlockTable(rows){ const body=$('garlock600Body'); if(!body) return; body.innerHTML = rows.map(r=>`<tr><td>${r.size}</td><td>${r.bolts}</td><td>${r.boltSize}</td><td>${r.torque60}</td><td>${r.minTorque}</td><td>${r.preferredTorque}</td><td>${r.maxRecStress}</td><td>${r.area}</td></tr>`).join(''); }
+  function garlockUpdate(){
+    const sel=$('garlock600SizeSelect');
+    const row = GARLOCK_ROWS.find(r => r.size === (sel?.value || '')) || GARLOCK_ROWS[0];
+    if(!row) return;
+    setText('garlock600BoltCount', row.bolts);
+    setText('garlock600BoltSize', row.boltSize);
+    setText('garlock600MinTorque', `${row.minTorque} ft lbs`);
+    setText('garlock600PreferredTorque', `${row.preferredTorque} ft lbs`);
+    setText('garlock600Torque60', `${row.torque60} ft lbs`);
+    setText('garlock600StressValue', `${row.maxRecStress} psi`);
+    setText('garlock600ContactArea', `${row.area} in^2`);
+  }
+  function garlockFilter(){
+    const q = String($('garlock600SearchInput')?.value || '').trim().toLowerCase();
+    const rows = !q ? GARLOCK_ROWS : GARLOCK_ROWS.filter(r => Object.values(r).join(' ').toLowerCase().includes(q));
+    renderGarlockTable(rows);
+  }
+  function garlockInit(){
+    const sel=$('garlock600SizeSelect');
+    if(sel){
+      const markup = GARLOCK_ROWS.map(r=>`<option value="${r.size}">${r.size}</option>`).join('');
+      if(sel.innerHTML.trim() !== markup.trim()) sel.innerHTML = markup;
+      if(!sel.value) sel.value = GARLOCK_ROWS[0].size;
+      if(!sel.dataset.alpha87Bound){
+        sel.dataset.alpha87Bound='1';
+        sel.addEventListener('change', garlockUpdate);
+        sel.addEventListener('input', garlockUpdate);
+      }
+    }
+    const search=$('garlock600SearchInput');
+    if(search && !search.dataset.alpha87Bound){ search.dataset.alpha87Bound='1'; search.addEventListener('input', garlockFilter); }
+    renderGarlockTable(GARLOCK_ROWS);
+    garlockUpdate();
+  }
+  function clearLibraryTrap(){
+    try {
+      document.querySelectorAll('.job-card.active,.job-row.active,[data-job-key].active,[data-cloud-job-id].active,[data-selected="true"]').forEach(el=>{el.classList.remove('active'); el.removeAttribute('data-selected'); el.setAttribute('aria-selected','false');});
+      ['jobsDetailPanel','jobsSharedDetailPanel','jobLibraryDetail','jobDetailCard','selectedJobDetails'].forEach(id=>{ const el=$(id); if(el){ el.hidden=true; el.style.display='none'; }});
+      if(typeof window.setLibraryLane==='function') window.setLibraryLane('local');
+      const jobsScreen=$('jobsScreen');
+      if(jobsScreen){ jobsScreen.dataset.activeLane='local'; jobsScreen.style.pointerEvents='auto'; jobsScreen.style.zIndex=''; }
+      const shared=document.querySelector('[data-library-lane-panel="shared"]');
+      const local=document.querySelector('[data-library-lane-panel="local"]');
+      if(shared){ shared.hidden=true; shared.classList.remove('active'); shared.style.display='none'; shared.style.visibility='hidden'; shared.style.opacity='0'; shared.style.pointerEvents='none'; }
+      if(local){ local.hidden=false; local.classList.add('active'); local.classList.remove('collapsed'); local.style.display='block'; local.style.visibility='visible'; local.style.opacity='1'; local.style.pointerEvents='auto'; }
+      document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach(btn=>{ const active=btn.dataset.libraryLane==='local'; btn.classList.toggle('active',active); btn.setAttribute('aria-pressed', active?'true':'false'); });
+      try { localStorage.setItem('tapcalcLibraryLaneV1','local'); } catch {}
+    } catch {}
+  }
+  function repairOrClearLibraryTrap(){
+    let requestedLane = 'local';
+    try { requestedLane = localStorage.getItem('tapcalcLibraryLaneV1') === 'shared' ? 'shared' : 'local'; } catch {}
+    if(requestedLane === 'shared'){
+      try { window.tapCalcRepairLibraryLane?.(); } catch {}
+      return;
+    }
+    clearLibraryTrap();
+  }
+  function hardShowScreen(name){
+    if (typeof window.tapCalcSetScreen === 'function') {
+      const result = window.tapCalcSetScreen(name);
+      if (name === 'jobs') clearLibraryTrap();
+      return result;
+    }
+    const views={home:$('homeScreen'),job:$('jobScreen'),calc:$('calcScreen'),card:$('cardScreen'),jobs:$('jobsScreen'),ref:$('refScreen')};
+    document.querySelectorAll('.screen-tab[data-screen]').forEach(t=>t.classList.toggle('active', t.dataset.screen===name));
+    document.body.dataset.activeScreen = name;
+    Object.entries(views).forEach(([k,v])=>{ if(v){ const on=k===name; v.classList.toggle('active', on); v.style.pointerEvents = on ? 'auto' : 'none'; if(!on && k==='jobs'){ v.style.zIndex='0'; } else if(on && k==='jobs'){ v.style.zIndex=''; } } });
+    document.body.classList.toggle('show-library-screen', name==='jobs');
+    try { localStorage.setItem('tapcalcV3Screen', name); } catch {}
+    if(name==='jobs') clearLibraryTrap();
+  }
+  // block auto-switch to shared lane on mobile after cloud loads
+  const origLoad = window.loadCloudJobs;
+  if(typeof origLoad === 'function' && !window.__alpha87LoadWrapped){
+    window.__alpha87LoadWrapped = true;
+    window.loadCloudJobs = async function(){
+      const res = await origLoad.apply(this, arguments);
+      if(compact()) setTimeout(repairOrClearLibraryTrap, 50);
+      return res;
+    };
+    try { loadCloudJobs = window.loadCloudJobs; } catch {}
+  }
+  const origOpenShared = window.openSharedLibraryLane;
+  if(typeof origOpenShared === 'function' && !window.__alpha87OpenSharedWrapped){
+    window.__alpha87OpenSharedWrapped = true;
+    window.openSharedLibraryLane = function(){ if(compact()) return clearLibraryTrap(); return origOpenShared.apply(this, arguments); };
+    try { openSharedLibraryLane = window.openSharedLibraryLane; } catch {}
+  }
+  document.addEventListener('click', (e)=>{
+    const tab=e.target.closest('.screen-tab[data-screen]');
+    if(tab && tab.dataset.screen !== 'jobs'){
+      e.preventDefault(); e.stopPropagation();
+      hardShowScreen(tab.dataset.screen);
+      return;
+    }
+    if(e.target.closest('[data-reference-target="garlock600"]') || (e.target.id==='referenceViewSelect' && e.target.value==='garlock600')){
+      setTimeout(garlockInit,0); setTimeout(garlockInit,120);
+    }
+  }, true);
+  document.addEventListener('touchend', (e)=>{
+    const tab=e.target.closest('.screen-tab[data-screen]');
+    if(tab && tab.dataset.screen !== 'jobs'){
+      e.preventDefault(); e.stopPropagation();
+      hardShowScreen(tab.dataset.screen);
+    }
+  }, true);
+  document.addEventListener('change', (e)=>{
+    if(e.target && e.target.id==='referenceViewSelect' && e.target.value==='garlock600'){ setTimeout(garlockInit,0); setTimeout(garlockInit,120); }
+  }, true);
+  window.addEventListener('pageshow', ()=>{ setTimeout(garlockInit,80); if(compact()) setTimeout(repairOrClearLibraryTrap,120); });
+  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(garlockInit,80); if(compact()) setTimeout(repairOrClearLibraryTrap,120); });
+  setTimeout(garlockInit, 200);
+})();
+
+
+/* ===== 3.0.0-alpha87 load job restore + garlock direct bind + mobile library escape ===== */
+(function(){
+  const GARLOCK_ROWS = [
+    { size:'1/2', area:'0.94', bolts:'4', boltSize:'0.50', torque60:'60', minTorque:'11', preferredTorque:'37', maxRecStress:'20000' },
+    { size:'3/4', area:'1.36', bolts:'4', boltSize:'0.63', torque60:'120', minTorque:'20', preferredTorque:'67', maxRecStress:'20000' },
+    { size:'1', area:'1.79', bolts:'4', boltSize:'0.63', torque60:'120', minTorque:'27', preferredTorque:'89', maxRecStress:'20000' },
+    { size:'1-1/4', area:'2.74', bolts:'4', boltSize:'0.63', torque60:'120', minTorque:'41', preferredTorque:'120', maxRecStress:'17664' },
+    { size:'1-1/2', area:'3.65', bolts:'4', boltSize:'0.75', torque60:'200', minTorque:'60', preferredTorque:'200', maxRecStress:'19862' },
+    { size:'2', area:'5.84', bolts:'8', boltSize:'0.63', torque60:'120', minTorque:'43', preferredTorque:'120', maxRecStress:'16593' },
+    { size:'2-1/2', area:'6.82', bolts:'8', boltSize:'0.75', torque60:'200', minTorque:'56', preferredTorque:'188', maxRecStress:'20000' },
+    { size:'3', area:'10.01', bolts:'8', boltSize:'0.75', torque60:'200', minTorque:'83', preferredTorque:'200', maxRecStress:'14476' },
+    { size:'4', area:'14.19', bolts:'8', boltSize:'0.88', torque60:'320', minTorque:'135', preferredTorque:'320', maxRecStress:'14174' },
+    { size:'5', area:'17.69', bolts:'8', boltSize:'1.00', torque60:'490', minTorque:'197', preferredTorque:'490', maxRecStress:'14952' },
+    { size:'6', area:'22.33', bolts:'12', boltSize:'1.00', torque60:'490', minTorque:'165', preferredTorque:'490', maxRecStress:'17770' },
+    { size:'8', area:'30.22', bolts:'12', boltSize:'1.13', torque60:'710', minTorque:'246', preferredTorque:'710', maxRecStress:'17344' },
+    { size:'10', area:'36.91', bolts:'16', boltSize:'1.25', torque60:'1000', minTorque:'248', preferredTorque:'828', maxRecStress:'20000' },
+    { size:'12', area:'49.04', bolts:'20', boltSize:'1.25', torque60:'1000', minTorque:'264', preferredTorque:'880', maxRecStress:'20000' },
+    { size:'14', area:'53.46', bolts:'20', boltSize:'1.38', torque60:'1360', minTorque:'315', preferredTorque:'1049', maxRecStress:'20000' },
+    { size:'16', area:'67.74', bolts:'20', boltSize:'1.50', torque60:'1600', minTorque:'386', preferredTorque:'1286', maxRecStress:'20000' },
+    { size:'18', area:'91.89', bolts:'20', boltSize:'1.63', torque60:'2200', minTorque:'602', preferredTorque:'2006', maxRecStress:'20000' },
+    { size:'20', area:'101.32', bolts:'24', boltSize:'1.63', torque60:'2200', minTorque:'553', preferredTorque:'1843', maxRecStress:'20000' },
+    { size:'24', area:'130.82', bolts:'24', boltSize:'1.88', torque60:'4000', minTorque:'946', preferredTorque:'3154', maxRecStress:'20000' }
+  ];
+  const $ = (id) => document.getElementById(id);
+  const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
+  const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', ref:'refScreen', jobs:'jobsScreen' };
+
+  function setText(id, value){ const el=$(id); if(el) el.textContent = value || '-'; }
+  function showScreen(name){
+    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab)=>{
+      const active = tab.dataset.screen === name;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    Object.entries(screens).forEach(([key, id])=>{
+      const el = $(id); if(!el) return;
+      const active = key === name;
+      el.classList.toggle('active', active);
+      el.style.pointerEvents = active ? 'auto' : 'none';
+      el.hidden = !active;
+    });
+    document.body.classList.toggle('show-library-screen', name === 'jobs');
+    try { localStorage.setItem('tapcalcV3Screen', name); } catch {}
+  }
+
+  function getCombinedJobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? window.getCombinedJobsForDisplay() : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function getSelectedJobEntry(){
+    const list = getCombinedJobs();
+    if(!list.length) return null;
+    const active = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id]');
+    const selectedId = String(active?.dataset?.jobId || window.__tapcalcLibrarySelectedId || window.__alpha87SelectedJobId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+    const match = selectedId ? list.find((job)=> String(job?.id || '') === selectedId) : null;
+    return match || window.__tapcalcLibrarySelectedRecord && { id: selectedId || 'manual', record: window.__tapcalcLibrarySelectedRecord } || null;
+  }
+  function syncSelectedJob(entry){
+    if(!entry) return;
+    try { window.__alpha87SelectedJobId = String(entry.id || ''); } catch {}
+    try { window.__tapcalcLibrarySelectedId = String(entry.id || ''); } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || ''); } catch {}
+    try {
+      document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item)=>{
+        const active = String(item.dataset.jobId || '') === String(entry.id || '');
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-selected', active ? 'true' : 'false');
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    } catch {}
+  }
+  function hardLoadSelectedJob(){
+    const entry = getSelectedJobEntry();
+    if(!entry?.record){
+      const status = $('jobsCloudStatus');
+      if(status) status.textContent = 'Load Job failed: no selected library record found.';
+      return false;
+    }
+    syncSelectedJob(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false });
+    } catch (error) {
+      console.error('alpha87 loadRecordIntoCalculator failed', error);
+      return false;
+    }
+    showScreen('job');
+    const status = $('jobsCloudStatus');
+    if(status) status.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    return false;
+  }
+  window.tapCalcForceLoadSelectedJob = hardLoadSelectedJob;
+  window.loadSelectedLibraryJob = hardLoadSelectedJob;
+  window.tapCalcLibraryLoadSelected = hardLoadSelectedJob;
+
+  function bindLoadButton(){
+    const btn = $('jobsLoadSelectedBtn');
+    if(!btn || btn.dataset.alpha87Bound === '1') return;
+    btn.dataset.alpha87Bound = '1';
+    btn.onclick = hardLoadSelectedJob;
+    ['click','pointerup','touchend'].forEach((evt)=> btn.addEventListener(evt, (e)=>{ e.preventDefault(); e.stopPropagation(); if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation(); hardLoadSelectedJob(); return false; }, true));
+  }
+
+  function renderGarlockTable(rows){
+    const body = $('garlock600Body');
+    if(!body) return;
+    body.innerHTML = rows.map((r)=>`<tr><td>${r.size}</td><td>${r.bolts}</td><td>${r.boltSize}</td><td>${r.torque60}</td><td>${r.minTorque}</td><td>${r.preferredTorque}</td><td>${r.maxRecStress}</td><td>${r.area}</td></tr>`).join('');
+  }
+  function updateGarlockSummary(){
+    const sel = $('garlock600SizeSelect');
+    const val = String(sel?.value || '').trim();
+    const row = GARLOCK_ROWS.find((r)=> String(r.size) === val) || GARLOCK_ROWS[0] || null;
+    if(!row) return;
+    setText('garlock600BoltCount', row.bolts);
+    setText('garlock600BoltSize', row.boltSize);
+    setText('garlock600MinTorque', `${row.minTorque} ft lbs`);
+    setText('garlock600PreferredTorque', `${row.preferredTorque} ft lbs`);
+    setText('garlock600Torque60', `${row.torque60} ft lbs`);
+    setText('garlock600StressValue', `${row.maxRecStress} psi`);
+    setText('garlock600ContactArea', `${row.area} in^2`);
+  }
+  function filterGarlockTable(){
+    const q = String($('garlock600SearchInput')?.value || '').trim().toLowerCase();
+    const rows = !q ? GARLOCK_ROWS : GARLOCK_ROWS.filter((r)=>Object.values(r).join(' ').toLowerCase().includes(q));
+    renderGarlockTable(rows);
+  }
+  function initGarlock(){
+    const sel = $('garlock600SizeSelect');
+    if(sel){
+      const current = sel.value;
+      const markup = GARLOCK_ROWS.map((r)=>`<option value="${r.size}">${r.size}</option>`).join('');
+      if(sel.innerHTML.trim() !== markup.trim()) sel.innerHTML = markup;
+      if(current && GARLOCK_ROWS.some((r)=>r.size===current)) sel.value = current;
+      if(!sel.value) sel.value = GARLOCK_ROWS[0].size;
+      sel.onchange = updateGarlockSummary;
+      sel.oninput = updateGarlockSummary;
+    }
+    const search = $('garlock600SearchInput');
+    if(search){ search.oninput = filterGarlockTable; }
+    renderGarlockTable(GARLOCK_ROWS);
+    updateGarlockSummary();
+  }
+
+  function forceLocalLibrary(){
+    if(!compact()) return;
+    try { localStorage.setItem('tapcalcLibraryLaneV1', 'local'); } catch {}
+    try {
+      document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((btn)=>{
+        const active = btn.dataset.libraryLane === 'local';
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      document.querySelectorAll('[data-library-lane-panel]').forEach((panel)=>{
+        const active = panel.dataset.libraryLanePanel === 'local';
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+        panel.style.display = active ? 'block' : 'none';
+        panel.style.pointerEvents = active ? 'auto' : 'none';
+      });
+      const jobsScreen = $('jobsScreen');
+      if(jobsScreen){ jobsScreen.style.pointerEvents='auto'; jobsScreen.style.zIndex=''; jobsScreen.dataset.activeLane='local'; }
+    } catch {}
+  }
+
+  document.addEventListener('click', (e)=>{
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(row){
+      const list = getCombinedJobs();
+      const entry = list.find((job)=> String(job?.id || '') === String(row.dataset.jobId || '')) || null;
+      if(entry){ syncSelectedJob(entry); window.__alpha87UserPickedJob = '1'; }
+      setTimeout(bindLoadButton,0);
+      return;
+    }
+    const loadBtn = e.target.closest('#jobsLoadSelectedBtn');
+    if(loadBtn){ e.preventDefault(); e.stopPropagation(); if(typeof e.stopImmediatePropagation==='function') e.stopImmediatePropagation(); hardLoadSelectedJob(); return; }
+    const tab = e.target.closest('.screen-tab[data-screen]');
+    if(tab && tab.dataset.screen === 'jobs'){
+      setTimeout(()=>{
+        try {
+          if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('jobs');
+          else if (typeof showScreen === 'function') showScreen('jobs');
+        } catch {}
+        forceLocalLibrary();
+        bindLoadButton();
+      }, 0);
+    }
+    if(tab && tab.dataset.screen !== 'jobs'){ setTimeout(()=> showScreen(tab.dataset.screen), 0); }
+    if(e.target.closest('[data-reference-target="garlock600"]') || (e.target.id === 'referenceViewSelect' && $('referenceViewSelect')?.value === 'garlock600')) setTimeout(initGarlock, 0);
+  }, true);
+  document.addEventListener('change', (e)=>{
+    if(e.target?.id === 'garlock600SizeSelect') updateGarlockSummary();
+    if(e.target?.id === 'referenceViewSelect' && e.target.value === 'garlock600') setTimeout(initGarlock, 0);
+  }, true);
+  document.addEventListener('input', (e)=>{
+    if(e.target?.id === 'garlock600SizeSelect') updateGarlockSummary();
+  }, true);
+  window.addEventListener('pageshow', ()=>{ setTimeout(()=>{ initGarlock(); bindLoadButton(); forceLocalLibrary(); }, 60); });
+  document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(()=>{ initGarlock(); bindLoadButton(); forceLocalLibrary(); }, 60); });
+  setTimeout(()=>{ initGarlock(); bindLoadButton(); }, 120);
+})();
+
+
+/* ===== 3.0.0-alpha134 load job exact-record bind + mobile library hard exit ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
+
+  function getJobsList(){
+    try { return typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : []; }
+    catch { return []; }
+  }
+
+  function pinSelectedRecordFromList(list){
+    try {
+      const jobs = Array.isArray(list) ? list : getJobsList();
+      const selectedId = String(window.__alpha87SelectedJobId || window.__tapcalcLibrarySelectedId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+      const entry = jobs.find((job)=> String(job?.id || '') === selectedId) || jobs[0] || null;
+      if(entry?.record){
+        window.__tapcalcPinnedLoadJob = { id: String(entry.id || ''), record: entry.record };
+      }
+    } catch {}
+  }
+
+  const origRenderSelectedJobDetails = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRenderSelectedJobDetails === 'function' && !window.__alpha88RenderWrapped) {
+    window.__alpha88RenderWrapped = true;
+    const wrapped = function(jobs){
+      const result = origRenderSelectedJobDetails.apply(this, arguments);
+      try {
+        const list = Array.isArray(jobs) ? jobs : getJobsList();
+        const selectedId = String(window.__alpha87SelectedJobId || window.__tapcalcLibrarySelectedId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+        const entry = list.find((job)=> String(job?.id || '') === selectedId) || list[0] || null;
+        if(entry?.record){
+          window.__tapcalcPinnedLoadJob = { id: String(entry.id || ''), record: entry.record };
+          window.__tapcalcLibrarySelectedId = String(entry.id || '');
+          window.__tapcalcLibrarySelectedRecord = entry.record;
+        }
+        const btn = $('jobsLoadSelectedBtn');
+        if (btn && !btn.dataset.alpha88Bound) {
+          btn.dataset.alpha88Bound = '1';
+          btn.onclick = function(e){ if(e){ e.preventDefault(); e.stopPropagation(); } return window.tapCalcForceLoadSelectedJob ? window.tapCalcForceLoadSelectedJob() : false; };
+        }
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+
+  function exactSelectedEntry(){
+    const pinned = window.__tapcalcPinnedLoadJob;
+    if (pinned?.record) return pinned;
+    const list = getJobsList();
+    const active = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id]');
+    const selectedId = String(active?.dataset?.jobId || window.__tapcalcLibrarySelectedId || window.__alpha87SelectedJobId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+    return (selectedId ? list.find((job)=> String(job?.id || '') === selectedId) : null) || list[0] || null;
+  }
+
+  function forceLoadExactJob(){
+    const entry = exactSelectedEntry();
+    if (!entry?.record) {
+      const status = $('jobsCloudStatus');
+      if (status) status.textContent = 'Load Job failed: no selected library record found.';
+      return false;
+    }
+    try {
+      window.__tapcalcLibrarySelectedId = String(entry.id || '');
+      window.__tapcalcLibrarySelectedRecord = entry.record;
+      window.__tapcalcPinnedLoadJob = { id: String(entry.id || ''), record: entry.record };
+      if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || '');
+    } catch {}
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+    } catch (error) {
+      console.error('alpha88 exact load failed', error);
+      return false;
+    }
+    setTimeout(()=>{
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      try { document.getElementById('jobScreen')?.classList.add('active'); } catch {}
+    }, 20);
+    const status = $('jobsCloudStatus');
+    if (status) status.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    return false;
+  }
+  window.tapCalcForceLoadSelectedJob = forceLoadExactJob;
+  window.loadSelectedLibraryJob = forceLoadExactJob;
+  window.tapCalcLibraryLoadSelected = forceLoadExactJob;
+
+  document.addEventListener('click', (e)=>{
+    const item = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(item){
+      const list = getJobsList();
+      const entry = list.find((job)=> String(job?.id || '') === String(item.dataset.jobId || '')) || null;
+      if(entry?.record){
+        window.__tapcalcPinnedLoadJob = { id: String(entry.id || ''), record: entry.record };
+        window.__tapcalcLibrarySelectedId = String(entry.id || '');
+        window.__tapcalcLibrarySelectedRecord = entry.record;
+        try { if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || ''); } catch {}
+      }
+    }
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if(btn){
+      e.preventDefault(); e.stopPropagation();
+      if(typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      forceLoadExactJob();
+      return false;
+    }
+    const nav = e.target.closest('.screen-tab[data-screen], [data-go-screen]');
+    const next = nav?.dataset?.screen || nav?.dataset?.goScreen;
+    if(next && next !== 'jobs'){
+      setTimeout(()=>{
+        const jobsScreen = $('jobsScreen');
+        if(jobsScreen){ jobsScreen.classList.remove('active'); jobsScreen.hidden = true; jobsScreen.style.pointerEvents = 'none'; jobsScreen.style.display = 'none'; jobsScreen.style.zIndex = '0'; }
+        document.body.classList.remove('show-library-screen');
+      }, 0);
+    }
+  }, true);
+
+  document.addEventListener('pointerup', (e)=>{
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if(btn){
+      e.preventDefault(); e.stopPropagation();
+      if(typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      forceLoadExactJob();
+      return false;
+    }
+  }, true);
+
+  function hardExitLibrary(){
+    const jobsScreen = $('jobsScreen');
+    if(jobsScreen){ jobsScreen.classList.remove('active'); jobsScreen.hidden = true; jobsScreen.style.pointerEvents='none'; jobsScreen.style.display='none'; jobsScreen.style.zIndex='0'; }
+    document.body.classList.remove('show-library-screen');
+  }
+  if (!window.__alpha88TabHardExitBound) {
+    window.__alpha88TabHardExitBound = true;
+    document.querySelectorAll('.screen-tab[data-screen], [data-go-screen]').forEach((el)=>{
+      ['click','touchend'].forEach((evt)=> el.addEventListener(evt, ()=>{
+        const next = el.dataset.screen || el.dataset.goScreen;
+        if (next && next !== 'jobs') setTimeout(hardExitLibrary, 10);
+        if (next === 'jobs' && compact()) {
+          setTimeout(()=>{
+            const jobsScreen = $('jobsScreen');
+            if(jobsScreen){ jobsScreen.hidden = false; jobsScreen.style.display = ''; jobsScreen.style.pointerEvents='auto'; }
+          }, 10);
+        }
+      }, true));
+    });
+  }
+
+  setTimeout(()=>{ pinSelectedRecordFromList(); const btn = $('jobsLoadSelectedBtn'); if(btn && !btn.dataset.alpha88Bound){ btn.dataset.alpha88Bound='1'; btn.onclick=forceLoadExactJob; } }, 250);
+})();
+
+
+/* ===== 3.0.0-alpha134 library selection/load stabilization ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
+
+  function allJobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function pinEntry(entry){
+    if(!entry) return;
+    const id = String(entry.id || '');
+    window.__tapcalcExactLibrarySelectedId = id;
+    window.__tapcalcLibrarySelectedId = id;
+    window.__alpha87SelectedJobId = id;
+    window.__tapcalcPinnedLoadJob = { id, record: entry.record || null };
+    window.__tapcalcLibrarySelectedRecord = entry.record || null;
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    try {
+      document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item)=>{
+        const active = String(item.dataset.jobId || '') === id;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-selected', active ? 'true' : 'false');
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    } catch {}
+  }
+  function entryFromId(id){
+    const sid = String(id || '').trim();
+    if(!sid) return null;
+    return allJobs().find((job)=> String(job?.id || '') === sid) || null;
+  }
+  function exactSelectedEntry(){
+    const domActive = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id]');
+    const ids = [
+      domActive?.dataset?.jobId,
+      window.__tapcalcExactLibrarySelectedId,
+      window.__tapcalcLibrarySelectedId,
+      window.__alpha87SelectedJobId,
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '')
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids) {
+      const match = entryFromId(id);
+      if (match?.record) return match;
+    }
+    const pinned = window.__tapcalcPinnedLoadJob;
+    if (pinned?.record && String(pinned.id || '').trim()) return pinned;
+    return null;
+  }
+  function showJobsScreen(){
+    const jobsScreen = $('jobsScreen');
+    if(!jobsScreen) return;
+    jobsScreen.hidden = false;
+    jobsScreen.style.display = '';
+    jobsScreen.style.pointerEvents = 'auto';
+    jobsScreen.style.zIndex = '';
+    document.body.classList.add('show-library-screen');
+  }
+  function hideJobsScreen(){
+    const jobsScreen = $('jobsScreen');
+    if(!jobsScreen) return;
+    jobsScreen.classList.remove('active');
+    jobsScreen.hidden = true;
+    jobsScreen.style.display = 'none';
+    jobsScreen.style.pointerEvents = 'none';
+    jobsScreen.style.zIndex = '0';
+    document.body.classList.remove('show-library-screen');
+  }
+  function forceLoadSelectedJob(){
+    const entry = exactSelectedEntry();
+    const status = $('jobsCloudStatus');
+    if(!entry?.record){
+      if(status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pinEntry(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (error) {
+      console.error('alpha95 Load Job failed', error);
+      if(status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(()=>{
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      try { hideJobsScreen(); } catch {}
+    }, 20);
+    if(status) status.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    return false;
+  }
+  window.tapCalcForceLoadSelectedJob = forceLoadSelectedJob;
+  window.loadSelectedLibraryJob = forceLoadSelectedJob;
+  window.tapCalcLibraryLoadSelected = forceLoadSelectedJob;
+
+  document.addEventListener('pointerdown', (e)=>{
+    const item = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(!item) return;
+    const entry = entryFromId(item.dataset.jobId);
+    if(entry) pinEntry(entry);
+  }, true);
+  document.addEventListener('click', (e)=>{
+    const item = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(item){
+      const entry = entryFromId(item.dataset.jobId);
+      if(entry) pinEntry(entry);
+    }
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if(btn){
+      e.preventDefault(); e.stopPropagation();
+      if(typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      return forceLoadSelectedJob();
+    }
+    const tab = e.target.closest('.screen-tab[data-screen], [data-go-screen]');
+    const next = tab?.dataset?.screen || tab?.dataset?.goScreen;
+    if(next === 'jobs') setTimeout(showJobsScreen, 0);
+    if(next && next !== 'jobs') setTimeout(hideJobsScreen, 0);
+  }, true);
+  document.addEventListener('touchstart', (e)=>{
+    const item = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(!item) return;
+    const entry = entryFromId(item.dataset.jobId);
+    if(entry) pinEntry(entry);
+  }, {capture:true, passive:true});
+  document.addEventListener('touchend', (e)=>{
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if(btn){
+      e.preventDefault(); e.stopPropagation();
+      if(typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      return forceLoadSelectedJob();
+    }
+    const tab = e.target.closest('.screen-tab[data-screen], [data-go-screen]');
+    const next = tab?.dataset?.screen || tab?.dataset?.goScreen;
+    if(next === 'jobs') setTimeout(showJobsScreen, 0);
+    if(next && next !== 'jobs') setTimeout(hideJobsScreen, 0);
+  }, true);
+
+  const origRender = window.renderJobsList || (typeof renderJobsList === 'function' ? renderJobsList : null);
+  if (typeof origRender === 'function' && !window.__alpha95RenderJobsWrapped) {
+    window.__alpha95RenderJobsWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const exactId = String(window.__tapcalcExactLibrarySelectedId || '').trim();
+        if(exactId){
+          const item = document.querySelector(`#jobsSelect .jobs-list-item[data-job-id="${CSS.escape(exactId)}"]`);
+          if(item){
+            document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((el)=>{
+              const active = el === item;
+              el.classList.toggle('active', active);
+              el.setAttribute('aria-selected', active ? 'true' : 'false');
+              el.setAttribute('aria-pressed', active ? 'true' : 'false');
+            });
+          }
+        }
+        const btn = $('jobsLoadSelectedBtn');
+        if(btn){ btn.onclick = forceLoadSelectedJob; }
+      } catch {}
+      return result;
+    };
+    window.renderJobsList = wrapped;
+    try { renderJobsList = wrapped; } catch {}
+  }
+
+  const origShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
+  if (typeof origShow === 'function' && !window.__alpha95ShowWrapped) {
+    window.__alpha95ShowWrapped = true;
+    const wrappedShow = function(name){
+      const result = origShow.apply(this, arguments);
+      try {
+        if(name === 'jobs') showJobsScreen(); else hideJobsScreen();
+      } catch {}
+      return result;
+    };
+    window.showScreen = wrappedShow;
+    try { showScreen = wrappedShow; } catch {}
+  }
+
+  function mobileScrollFix(){
+    const list = $('jobsSelect');
+    if(!list) return;
+    list.style.overflowY = 'auto';
+    list.style.overflowX = 'hidden';
+    list.style.webkitOverflowScrolling = 'touch';
+    list.style.touchAction = 'pan-y';
+    list.style.pointerEvents = 'auto';
+    const screen = $('jobsScreen');
+    if(screen){ screen.style.touchAction = 'pan-y'; }
+  }
+  window.addEventListener('pageshow', ()=>setTimeout(mobileScrollFix, 60));
+  document.addEventListener('DOMContentLoaded', ()=>setTimeout(mobileScrollFix, 60));
+  setTimeout(mobileScrollFix, 250);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile load job direct detail bind ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+
+  function jobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if(!sid) return null;
+    return jobs().find((job)=> String(job?.id || '') === sid) || null;
+  }
+
+  function pinEntry(entry){
+    if(!entry) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record || null }; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+  }
+
+  function bestEntry(){
+    const ids = [
+      window.__tapcalcDetailSelectedId,
+      window.__tapcalcExactLibrarySelectedId,
+      window.__tapcalcLibrarySelectedId,
+      window.__alpha87SelectedJobId,
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '')
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids) {
+      const entry = entryById(id);
+      if (entry?.record) return entry;
+    }
+    if (window.__tapcalcDetailSelectedRecord) return { id: String(window.__tapcalcDetailSelectedId || window.__tapcalcLibrarySelectedId || 'detail'), record: window.__tapcalcDetailSelectedRecord };
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    if (window.__tapcalcLibrarySelectedRecord) return { id: String(window.__tapcalcLibrarySelectedId || 'selected'), record: window.__tapcalcLibrarySelectedRecord };
+    try {
+      const list = jobs();
+      const fallback = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null;
+      if (fallback?.record) return fallback;
+    } catch {}
+    return null;
+  }
+
+  function forceMobileFriendlyLoad(){
+    const entry = bestEntry();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pinEntry(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (error) {
+      console.error('alpha95 mobile load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(()=>{
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      try { document.getElementById('jobScreen')?.classList.add('active'); } catch {}
+      try { document.getElementById('jobsScreen')?.classList.remove('active'); } catch {}
+      try { document.getElementById('jobsScreen').hidden = true; } catch {}
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+    }, 20);
+    return false;
+  }
+
+  window.tapCalcForceLoadSelectedJob = forceMobileFriendlyLoad;
+  window.loadSelectedLibraryJob = forceMobileFriendlyLoad;
+  window.tapCalcLibraryLoadSelected = forceMobileFriendlyLoad;
+
+  function bindLoadButton(){
+    const btn = $('jobsLoadSelectedBtn');
+    if(!btn) return;
+    btn.onclick = forceMobileFriendlyLoad;
+    btn.ontouchend = function(e){
+      if (e) { e.preventDefault(); e.stopPropagation(); if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); }
+      return forceMobileFriendlyLoad();
+    };
+    btn.onpointerup = function(e){
+      if (e) { e.preventDefault(); e.stopPropagation(); if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); }
+      return forceMobileFriendlyLoad();
+    };
+  }
+
+  const origRenderSelected = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRenderSelected === 'function' && !window.__alpha95RenderSelectedWrapped) {
+    window.__alpha95RenderSelectedWrapped = true;
+    const wrapped = function(){
+      const result = origRenderSelected.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : jobs();
+        let entry = null;
+        try { entry = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null; } catch {}
+        if (entry?.record) pinEntry(entry);
+        bindLoadButton();
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+
+  document.addEventListener('touchstart', (e)=>{
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(!row) return;
+    const entry = entryById(row.dataset.jobId);
+    if(entry) pinEntry(entry);
+  }, {capture:true, passive:true});
+
+  document.addEventListener('click', (e)=>{
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(row){
+      const entry = entryById(row.dataset.jobId);
+      if(entry) pinEntry(entry);
+    }
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if(btn){
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      return forceMobileFriendlyLoad();
+    }
+  }, true);
+
+  window.addEventListener('pageshow', ()=> setTimeout(bindLoadButton, 60));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bindLoadButton, 60));
+  setTimeout(bindLoadButton, 120);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile load job touchstart fix ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  function isCompact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function jobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if(!sid) return null;
+    return jobs().find((job)=> String(job?.id || '') === sid) || null;
+  }
+  function activeRowId(){
+    try {
+      const row = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id]');
+      return String(row?.dataset?.jobId || '').trim();
+    } catch { return ''; }
+  }
+  function currentEntry(){
+    const btn = $('jobsLoadSelectedBtn');
+    const ids = [
+      btn?.dataset?.jobId,
+      activeRowId(),
+      window.__tapcalcDetailSelectedId,
+      window.__tapcalcExactLibrarySelectedId,
+      window.__tapcalcLibrarySelectedId,
+      window.__alpha87SelectedJobId,
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '')
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids) {
+      const entry = entryById(id);
+      if (entry?.record) return entry;
+    }
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    if (window.__tapcalcDetailSelectedRecord) return { id: String(window.__tapcalcDetailSelectedId || 'detail'), record: window.__tapcalcDetailSelectedRecord };
+    if (window.__tapcalcLibrarySelectedRecord) return { id: String(window.__tapcalcLibrarySelectedId || 'selected'), record: window.__tapcalcLibrarySelectedRecord };
+    return null;
+  }
+  function pin(entry){
+    if(!entry) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record || null }; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record || null; } catch {}
+  }
+  function hardExitLibrary(){
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+        jobsScreen.style.zIndex = '0';
+      }
+    } catch {}
+    try { document.body.classList.remove('show-library-screen'); } catch {}
+  }
+  function doLoad(e){
+    if (e) {
+      try { e.preventDefault(); } catch {}
+      try { e.stopPropagation(); } catch {}
+      try { if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch {}
+    }
+    const entry = currentEntry();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pin(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (error) {
+      console.error('alpha95 mobile load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(hardExitLibrary, 0);
+    setTimeout(hardExitLibrary, 80);
+    return false;
+  }
+  function syncButtonJobId(){
+    const btn = $('jobsLoadSelectedBtn');
+    if(!btn) return;
+    const entry = currentEntry();
+    if (entry?.id) btn.dataset.jobId = String(entry.id);
+  }
+  function bind(){
+    const btn = $('jobsLoadSelectedBtn');
+    if(!btn || btn.dataset.tc92Bound === '1') { syncButtonJobId(); return; }
+    btn.dataset.tc92Bound = '1';
+    syncButtonJobId();
+    const handler = (e) => doLoad(e);
+    btn.onclick = handler;
+    btn.ontouchstart = handler;
+    btn.onpointerdown = handler;
+    btn.addEventListener('touchstart', handler, { capture:true, passive:false });
+    btn.addEventListener('pointerdown', handler, { capture:true });
+    btn.addEventListener('click', handler, { capture:true });
+  }
+  document.addEventListener('touchstart', (e)=>{
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (row) {
+      const entry = entryById(row.dataset.jobId);
+      if (entry) pin(entry);
+      setTimeout(syncButtonJobId, 0);
+      return;
+    }
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if (btn && isCompact()) return doLoad(e);
+  }, { capture:true, passive:false });
+  document.addEventListener('pointerdown', (e)=>{
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (row) {
+      const entry = entryById(row.dataset.jobId);
+      if (entry) pin(entry);
+      setTimeout(syncButtonJobId, 0);
+      return;
+    }
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if (btn && isCompact()) return doLoad(e);
+  }, true);
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha95RenderWrapped) {
+    window.__alpha95RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try { syncButtonJobId(); bind(); } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  window.tapCalcForceLoadSelectedJob = doLoad;
+  window.loadSelectedLibraryJob = doLoad;
+  window.tapCalcLibraryLoadSelected = doLoad;
+  window.addEventListener('pageshow', ()=> setTimeout(()=>{ syncButtonJobId(); bind(); }, 30));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ syncButtonJobId(); bind(); }, 30));
+  setTimeout(()=>{ syncButtonJobId(); bind(); }, 120);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile library viewport + direct load button fix ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  function compact(){
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  }
+  function setBodyLibraryLock(on){
+    if (!compact()) return;
+    try {
+      document.body.classList.toggle('show-library-screen', !!on);
+      document.body.style.overflow = '';
+      document.body.style.height = '';
+    } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.style.overflowY = on ? 'auto' : '';
+        jobsScreen.style.webkitOverflowScrolling = on ? 'touch' : '';
+      }
+    } catch {}
+  }
+  function jobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if (!sid) return null;
+    return jobs().find((job) => String(job?.id || '') === sid) || null;
+  }
+  function activeRowId(){
+    try {
+      const row = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[data-selected="true"][data-job-id]');
+      return String(row?.dataset?.jobId || '').trim();
+    } catch { return ''; }
+  }
+  function currentEntry(){
+    const btn = $('jobsLoadSelectedBtn');
+    const ids = [btn?.dataset?.jobId, activeRowId(), window.__tapcalcDetailSelectedId, window.__tapcalcExactLibrarySelectedId, window.__tapcalcLibrarySelectedId, window.__alpha87SelectedJobId, (typeof selectedJobId !== 'undefined' ? selectedJobId : '')]
+      .map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids) {
+      const entry = entryById(id);
+      if (entry?.record) return entry;
+    }
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    if (window.__tapcalcDetailSelectedRecord) return { id: String(window.__tapcalcDetailSelectedId || 'detail'), record: window.__tapcalcDetailSelectedRecord };
+    if (window.__tapcalcLibrarySelectedRecord) return { id: String(window.__tapcalcLibrarySelectedId || 'selected'), record: window.__tapcalcLibrarySelectedRecord };
+    return null;
+  }
+  function pin(entry){
+    if (!entry) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record || null }; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record || null; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+  }
+  function exitLibrary(){
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.classList.add('active'); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+      }
+    } catch {}
+    setBodyLibraryLock(false);
+  }
+  function doLoad(e){
+    if (e) {
+      try { e.preventDefault(); } catch {}
+      try { e.stopPropagation(); } catch {}
+      try { if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch {}
+    }
+    const entry = currentEntry();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pin(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (error) {
+      console.error('alpha95 mobile load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(exitLibrary, 0);
+    setTimeout(exitLibrary, 80);
+    return false;
+  }
+  function bindButton(){
+    const btn = $('jobsLoadSelectedBtn');
+    if (!btn) return;
+    btn.setAttribute('onclick', 'return false;');
+    btn.setAttribute('ontouchstart', 'return false;');
+    btn.setAttribute('onpointerdown', 'return false;');
+    btn.style.touchAction = 'manipulation';
+    btn.style.pointerEvents = 'auto';
+    if (btn.dataset.tc93Bound === '1') return;
+    btn.dataset.tc93Bound = '1';
+    const handler = (ev) => doLoad(ev);
+    btn.addEventListener('touchstart', handler, { capture:true, passive:false });
+    btn.addEventListener('touchend', handler, { capture:true, passive:false });
+    btn.addEventListener('pointerdown', handler, { capture:true });
+    btn.addEventListener('click', handler, { capture:true });
+  }
+  function wireRowSelection(){
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((row) => {
+      if (row.dataset.tc93Bound === '1') return;
+      row.dataset.tc93Bound = '1';
+      const selectRow = () => { const entry = entryById(row.dataset.jobId); if (entry) pin(entry); };
+      row.addEventListener('touchstart', selectRow, { capture:true, passive:true });
+      row.addEventListener('pointerdown', selectRow, { capture:true });
+      row.addEventListener('click', selectRow, { capture:true });
+    });
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha95RenderWrapped) {
+    window.__alpha95RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try { bindButton(); wireRowSelection(); } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  document.addEventListener('click', (e) => {
+    const tab = e.target.closest('.screen-tab[data-screen]');
+    if (!tab) return;
+    setBodyLibraryLock(tab.dataset.screen === 'jobs');
+  }, true);
+  document.addEventListener('touchstart', (e) => {
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if (btn && compact()) return doLoad(e);
+    const tab = e.target.closest('.screen-tab[data-screen]');
+    if (tab) setBodyLibraryLock(tab.dataset.screen === 'jobs');
+  }, { capture:true, passive:false });
+  window.tapCalcForceLoadSelectedJob = doLoad;
+  window.loadSelectedLibraryJob = doLoad;
+  window.tapCalcLibraryLoadSelected = doLoad;
+  window.addEventListener('pageshow', ()=> setTimeout(()=>{ bindButton(); wireRowSelection(); }, 60));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ bindButton(); wireRowSelection(); }, 60));
+  setTimeout(()=>{ bindButton(); wireRowSelection(); }, 150);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile library visible-detail load fix ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  };
+  function jobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if(!sid) return null;
+    return jobs().find((job)=> String(job?.id || '') === sid) || null;
+  }
+  function setVisibleEntry(entry){
+    if(!entry?.record) return;
+    const id = String(entry.id || '');
+    window.__tapcalcMobileVisibleDetail = { id, record: entry.record };
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+  }
+  function currentVisibleEntry(){
+    const btn = $('jobsLoadSelectedBtn');
+    const ids = [
+      btn?.dataset?.jobId,
+      window.__tapcalcMobileVisibleDetail?.id,
+      window.__tapcalcDetailSelectedId,
+      window.__tapcalcLibrarySelectedId,
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '')
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids){
+      const entry = entryById(id);
+      if (entry?.record) return entry;
+    }
+    if (window.__tapcalcMobileVisibleDetail?.record) return window.__tapcalcMobileVisibleDetail;
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    return null;
+  }
+  function exitToCurrent(){
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+        jobsScreen.style.zIndex = '0';
+      }
+    } catch {}
+    try { document.body.classList.remove('show-library-screen'); } catch {}
+  }
+  function mobileLoadFromVisibleDetail(e){
+    if(!isMobile()) return true;
+    if (e) {
+      try { e.preventDefault(); } catch {}
+      try { e.stopPropagation(); } catch {}
+      try { if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch {}
+    }
+    const entry = currentVisibleEntry();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    setVisibleEntry(entry);
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (error) {
+      console.error('alpha96 mobile visible-detail load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(exitToCurrent, 10);
+    setTimeout(exitToCurrent, 80);
+    return false;
+  }
+  function bindMobileLoadButton(){
+    const btn = $('jobsLoadSelectedBtn');
+    if(!btn) return;
+    const handler = (e) => mobileLoadFromVisibleDetail(e);
+    btn.onclick = handler;
+    btn.ontouchstart = handler;
+    btn.ontouchend = handler;
+    btn.onpointerdown = handler;
+    btn.onpointerup = handler;
+    if (btn.dataset.tc96Bound !== '1') {
+      btn.dataset.tc96Bound = '1';
+      btn.addEventListener('touchstart', handler, { capture:true, passive:false });
+      btn.addEventListener('touchend', handler, { capture:true, passive:false });
+      btn.addEventListener('pointerdown', handler, { capture:true });
+      btn.addEventListener('click', handler, { capture:true });
+    }
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha96RenderWrapped) {
+    window.__alpha96RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : jobs();
+        let entry = null;
+        try { entry = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null; } catch {}
+        if (entry?.record) setVisibleEntry(entry);
+        bindMobileLoadButton();
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  document.addEventListener('touchstart', (e) => {
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (!row) return;
+    const entry = entryById(row.dataset.jobId);
+    if (entry) {
+      setVisibleEntry(entry);
+      setTimeout(bindMobileLoadButton, 30);
+    }
+  }, { capture:true, passive:true });
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (row) {
+      const entry = entryById(row.dataset.jobId);
+      if (entry) {
+        setVisibleEntry(entry);
+        setTimeout(bindMobileLoadButton, 30);
+      }
+      return;
+    }
+    const btn = e.target.closest('#jobsLoadSelectedBtn');
+    if (btn && isMobile()) {
+      return mobileLoadFromVisibleDetail(e);
+    }
+  }, true);
+  const priorLoad = window.tapCalcForceLoadSelectedJob;
+  if (!window.tapCalcForceLoadSelectedJobOriginal && typeof priorLoad === 'function') {
+    window.tapCalcForceLoadSelectedJobOriginal = priorLoad;
+  }
+  window.tapCalcForceLoadSelectedJob = function(e){
+    if (isMobile()) return mobileLoadFromVisibleDetail(e);
+    return window.tapCalcForceLoadSelectedJobOriginal ? window.tapCalcForceLoadSelectedJobOriginal(e) : true;
+  };
+  window.addEventListener('pageshow', ()=> setTimeout(bindMobileLoadButton, 60));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(bindMobileLoadButton, 60));
+  setTimeout(bindMobileLoadButton, 180);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile load job exact detail record ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  };
+  function setExactDetailRecord(entry){
+    if (!entry || !entry.record) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactMobileDetailEntry = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+  }
+  function getExactDetailRecord(){
+    const direct = window.__tapcalcExactMobileDetailEntry;
+    if (direct && direct.record) return direct;
+    const id = String(window.__tapcalcDetailSelectedId || window.__tapcalcLibrarySelectedId || '').trim();
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      if (id && Array.isArray(list)) {
+        const found = list.find(job => String(job?.id || '') === id);
+        if (found?.record) return found;
+      }
+    } catch {}
+    return null;
+  }
+  function hardExitLibrary(){
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.classList.add('active'); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+        jobsScreen.style.zIndex = '0';
+      }
+    } catch {}
+    try { document.body.classList.remove('show-library-screen'); } catch {}
+  }
+  function mobileExactLoad(ev){
+    if (!isMobile()) return true;
+    if (ev) {
+      try { ev.preventDefault(); } catch {}
+      try { ev.stopPropagation(); } catch {}
+      try { if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation(); } catch {}
+    }
+    const entry = getExactDetailRecord();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    setExactDetailRecord(entry);
+    try {
+      loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+    } catch (error) {
+      console.error('alpha97 mobile exact load failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    setTimeout(hardExitLibrary, 20);
+    setTimeout(hardExitLibrary, 120);
+    return false;
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha97RenderWrapped) {
+    window.__alpha97RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : (typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : []);
+        let entry = null;
+        try { entry = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null; } catch {}
+        if (entry?.record) setExactDetailRecord(entry);
+        const btn = $('jobsLoadSelectedBtn');
+        if (btn && btn.dataset.tc97Bound !== '1') {
+          btn.dataset.tc97Bound = '1';
+          btn.style.width = '100%';
+          btn.style.display = 'block';
+          const handler = (e) => mobileExactLoad(e);
+          btn.addEventListener('touchend', handler, { capture:true, passive:false });
+          btn.addEventListener('click', handler, { capture:true });
+        }
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  document.addEventListener('click', (e) => {
+    const row = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if (!row) return;
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      const entry = Array.isArray(list) ? list.find(job => String(job?.id || '') === String(row.dataset.jobId || '')) : null;
+      if (entry?.record) setExactDetailRecord(entry);
+    } catch {}
+  }, true);
+  window.tapCalcMobileExactLoad = mobileExactLoad;
+  const prevForce = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcForceLoadSelectedJob = function(e){
+    if (isMobile()) return mobileExactLoad(e);
+    return typeof prevForce === 'function' ? prevForce(e) : true;
+  };
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile load job single-bind + delayed hydrate ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  };
+  function jobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if(!sid) return null;
+    return jobs().find((job)=> String(job?.id || '') === sid) || null;
+  }
+  function activeRowId(){
+    try {
+      const row = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[data-selected="true"][data-job-id]');
+      return String(row?.dataset?.jobId || '').trim();
+    } catch { return ''; }
+  }
+  function pinEntry(entry){
+    if(!entry?.record) return null;
+    const id = String(entry.id || '').trim();
+    try { window.__tapcalcMobilePinnedEntry = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcExactMobileDetailEntry = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record }; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcExactLibrarySelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+    return entry;
+  }
+  function currentEntry(){
+    const btn = $('jobsLoadSelectedBtn');
+    const ids = [
+      btn?.dataset?.jobId,
+      activeRowId(),
+      window.__tapcalcMobilePinnedEntry?.id,
+      window.__tapcalcExactMobileDetailEntry?.id,
+      window.__tapcalcDetailSelectedId,
+      window.__tapcalcLibrarySelectedId,
+      window.__tapcalcExactLibrarySelectedId,
+      window.__alpha87SelectedJobId,
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '')
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids){
+      const entry = entryById(id);
+      if (entry?.record) return pinEntry(entry);
+    }
+    if (window.__tapcalcMobilePinnedEntry?.record) return window.__tapcalcMobilePinnedEntry;
+    if (window.__tapcalcExactMobileDetailEntry?.record) return window.__tapcalcExactMobileDetailEntry;
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    return null;
+  }
+  function hydrateAfterLoad(record){
+    try { if (typeof hydrateVisibleFields === 'function') hydrateVisibleFields(record); } catch {}
+    try { if (typeof alpha58Hydrate === 'function') alpha58Hydrate(record); } catch {}
+    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: true, skipPersist: false, message: true }); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+  }
+  function exitLibrary(){
+    try { document.body.classList.remove('show-library-screen'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+        jobsScreen.style.zIndex = '0';
+      }
+    } catch {}
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+  }
+  function mobileLoadJob(e){
+    if (!isMobile()) return true;
+    if (e) {
+      try { e.preventDefault(); } catch {}
+      try { e.stopPropagation(); } catch {}
+      try { if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch {}
+    }
+    const status = $('jobsCloudStatus');
+    const entry = currentEntry();
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pinEntry(entry);
+    try {
+      hydrateAfterLoad(entry.record);
+      setTimeout(() => hydrateAfterLoad(entry.record), 30);
+      setTimeout(() => hydrateAfterLoad(entry.record), 140);
+      setTimeout(exitLibrary, 220);
+      if (status) status.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.id || 'saved job'} into TapCalc.`;
+    } catch (error) {
+      console.error('alpha100 mobile Load Job failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    return false;
+  }
+  function replaceAndBindButton(){
+    const btn = $('jobsLoadSelectedBtn');
+    if (!btn || !isMobile()) return;
+    if (btn.dataset.tc98Fresh === '1') return;
+    const clone = btn.cloneNode(true);
+    clone.dataset.tc98Fresh = '1';
+    clone.style.width = '100%';
+    clone.style.display = 'block';
+    clone.style.margin = '0';
+    clone.style.touchAction = 'manipulation';
+    clone.onclick = null;
+    clone.ontouchstart = null;
+    clone.ontouchend = null;
+    clone.onpointerdown = null;
+    clone.onpointerup = null;
+    btn.replaceWith(clone);
+    const handler = (ev) => mobileLoadJob(ev);
+    clone.addEventListener('touchstart', handler, { capture:true, passive:false });
+    clone.addEventListener('click', handler, { capture:true });
+    clone.addEventListener('pointerdown', handler, { capture:true });
+  }
+  function wireRows(){
+    if (!isMobile()) return;
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((row) => {
+      if (row.dataset.tc98Bound === '1') return;
+      row.dataset.tc98Bound = '1';
+      const select = () => {
+        const entry = entryById(row.dataset.jobId);
+        if (entry) pinEntry(entry);
+        setTimeout(replaceAndBindButton, 25);
+      };
+      row.addEventListener('touchstart', select, { capture:true, passive:true });
+      row.addEventListener('pointerdown', select, { capture:true });
+      row.addEventListener('click', select, { capture:true });
+    });
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha100RenderWrapped) {
+    window.__alpha100RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : jobs();
+        let entry = null;
+        try { entry = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null; } catch {}
+        if (entry?.record) pinEntry(entry);
+        replaceAndBindButton();
+        wireRows();
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  const prevForce = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcForceLoadSelectedJob = function(e){
+    if (isMobile()) return mobileLoadJob(e);
+    return typeof prevForce === 'function' ? prevForce(e) : true;
+  };
+  window.loadSelectedLibraryJob = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcLibraryLoadSelected = window.tapCalcForceLoadSelectedJob;
+  window.addEventListener('pageshow', ()=> setTimeout(()=>{ replaceAndBindButton(); wireRows(); }, 80));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ replaceAndBindButton(); wireRows(); }, 80));
+  setTimeout(()=>{ replaceAndBindButton(); wireRows(); }, 200);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile load job use canonical desktop loader ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; }
+  };
+  function combinedJobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function selectedId(){
+    const btn = $('jobsLoadSelectedBtn');
+    const active = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[data-selected="true"][data-job-id]');
+    return String(btn?.dataset?.jobId || active?.dataset?.jobId || window.__tapcalcLibrarySelectedId || window.__alpha87SelectedJobId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+  }
+  function pin(id){
+    id = String(id || '').trim();
+    if (!id) return '';
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+    const entry = combinedJobs().find((job)=> String(job?.id || '') === id);
+    if (entry?.record) {
+      try { window.__tapcalcLibrarySelectedRecord = entry.record; } catch {}
+      try { window.__tapcalcPinnedLoadJob = { id, record: entry.record }; } catch {}
+    }
+    return id;
+  }
+  function exitLibrary(){
+    try { document.body.classList.remove('show-library-screen'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+        jobsScreen.style.zIndex = '0';
+      }
+    } catch {}
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+  }
+  function mobileLoadCanonical(e){
+    if (!isMobile()) return true;
+    if (e) {
+      try { e.preventDefault(); } catch {}
+      try { e.stopPropagation(); } catch {}
+      try { if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); } catch {}
+    }
+    const status = $('jobsCloudStatus');
+    const id = pin(selectedId());
+    if (!id) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    try {
+      if (typeof window.alpha47LoadSelectedLibraryJob === 'function') {
+        window.alpha47LoadSelectedLibraryJob();
+      } else if (typeof window.tapCalcForceLoadSelectedJob === 'function' && window.tapCalcForceLoadSelectedJob !== mobileLoadCanonical) {
+        window.tapCalcForceLoadSelectedJob();
+      }
+      setTimeout(() => {
+        try {
+          const entry = combinedJobs().find((job)=> String(job?.id || '') === id);
+          if (entry?.record && typeof hydrateVisibleFields === 'function') hydrateVisibleFields(entry.record);
+        } catch {}
+      }, 40);
+      setTimeout(exitLibrary, 120);
+      return false;
+    } catch (error) {
+      console.error('alpha100 mobile Load Job failed', error);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+  }
+  function rebindButton(){
+    if (!isMobile()) return;
+    const btn = $('jobsLoadSelectedBtn');
+    if (!btn) return;
+    if (btn.dataset.tc99Fresh === '1') return;
+    const clone = btn.cloneNode(true);
+    clone.dataset.tc99Fresh = '1';
+    clone.style.width = '100%';
+    clone.style.display = 'block';
+    clone.style.margin = '0';
+    clone.style.touchAction = 'manipulation';
+    btn.replaceWith(clone);
+    const handler = (ev) => mobileLoadCanonical(ev);
+    clone.addEventListener('touchstart', handler, {capture:true, passive:false});
+    clone.addEventListener('click', handler, {capture:true});
+    clone.addEventListener('pointerdown', handler, {capture:true});
+  }
+  function bindRows(){
+    if (!isMobile()) return;
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((row) => {
+      if (row.dataset.tc99Bound === '1') return;
+      row.dataset.tc99Bound = '1';
+      const select = () => {
+        pin(row.dataset.jobId || '');
+        setTimeout(rebindButton, 25);
+      };
+      row.addEventListener('touchstart', select, {capture:true, passive:true});
+      row.addEventListener('pointerdown', select, {capture:true});
+      row.addEventListener('click', select, {capture:true});
+    });
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha100RenderWrapped) {
+    window.__alpha100RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : combinedJobs();
+        let selected = null;
+        const id = selectedId();
+        if (id) selected = list.find((job)=> String(job?.id || '') === id) || null;
+        if (!selected && typeof getSelectedCombinedJob === 'function') selected = getSelectedCombinedJob(list);
+        if (selected?.id) pin(selected.id);
+        rebindButton();
+        bindRows();
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  window.tapCalcForceLoadSelectedJob = function(e){
+    if (isMobile()) return mobileLoadCanonical(e);
+    return typeof window.alpha47LoadSelectedLibraryJob === 'function' ? window.alpha47LoadSelectedLibraryJob(e) : true;
+  };
+  window.loadSelectedLibraryJob = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcLibraryLoadSelected = window.tapCalcForceLoadSelectedJob;
+  window.addEventListener('pageshow', ()=> setTimeout(()=>{ bindRows(); rebindButton(); }, 60));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ bindRows(); rebindButton(); }, 60));
+  setTimeout(()=>{ bindRows(); rebindButton(); }, 180);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile load job post-tab force hydrate ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
+  function allJobs(){
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      return Array.isArray(list) ? list : [];
+    } catch { return []; }
+  }
+  function entryById(id){
+    const sid = String(id || '').trim();
+    if(!sid) return null;
+    return allJobs().find((job)=> String(job?.id || '') === sid) || null;
+  }
+  function selectedEntry(){
+    const btn = $('jobsLoadSelectedBtn');
+    const active = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id], #jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id]');
+    const ids = [
+      btn?.dataset?.jobId,
+      active?.dataset?.jobId,
+      window.__tapcalcExactLibrarySelectedId,
+      window.__tapcalcDetailSelectedId,
+      window.__tapcalcLibrarySelectedId,
+      window.__alpha87SelectedJobId,
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '')
+    ].map(v => String(v || '').trim()).filter(Boolean);
+    for (const id of ids) {
+      const entry = entryById(id);
+      if (entry?.record) return entry;
+    }
+    if (window.__tapcalcPinnedLoadJob?.record) return window.__tapcalcPinnedLoadJob;
+    if (window.__tapcalcDetailSelectedRecord) return { id: String(window.__tapcalcDetailSelectedId || 'detail'), record: window.__tapcalcDetailSelectedRecord };
+    if (window.__tapcalcLibrarySelectedRecord) return { id: String(window.__tapcalcLibrarySelectedId || 'selected'), record: window.__tapcalcLibrarySelectedRecord };
+    return null;
+  }
+  function pin(entry){
+    if(!entry) return;
+    const id = String(entry.id || '');
+    try { window.__tapcalcExactLibrarySelectedId = id; } catch {}
+    try { window.__tapcalcDetailSelectedId = id; } catch {}
+    try { window.__tapcalcLibrarySelectedId = id; } catch {}
+    try { window.__alpha87SelectedJobId = id; } catch {}
+    try { if (typeof selectedJobId !== 'undefined') selectedJobId = id; } catch {}
+    try { window.__tapcalcPinnedLoadJob = { id, record: entry.record || null }; } catch {}
+    try { window.__tapcalcDetailSelectedRecord = entry.record || null; } catch {}
+    try { window.__tapcalcLibrarySelectedRecord = entry.record || null; } catch {}
+    const btn = $('jobsLoadSelectedBtn');
+    if (btn) btn.dataset.jobId = id;
+  }
+  function exitLibraryToCurrent(){
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+    try { $('jobScreen')?.classList.add('active'); } catch {}
+    try {
+      const jobsScreen = $('jobsScreen');
+      if (jobsScreen) {
+        jobsScreen.classList.remove('active');
+        jobsScreen.hidden = true;
+        jobsScreen.style.display = 'none';
+        jobsScreen.style.pointerEvents = 'none';
+        jobsScreen.style.zIndex = '0';
+      }
+    } catch {}
+    try { document.body.classList.remove('show-library-screen'); } catch {}
+  }
+  function rehydrateRecord(record){
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: false, skipPersist: false, message: false });
+    } catch {}
+    try {
+      if (typeof hydrateVisibleFields === 'function') hydrateVisibleFields(record);
+    } catch {}
+    try {
+      if (typeof buildStateFromRecord === 'function' && typeof applyJobState === 'function') {
+        const state = buildStateFromRecord(record) || {};
+        applyJobState(state);
+      }
+    } catch {}
+    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+    try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
+    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
+    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+    try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
+    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
+    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+  }
+  function mobileLoad(ev){
+    if (!isMobile()) return true;
+    if (ev) {
+      try { ev.preventDefault(); } catch {}
+      try { ev.stopPropagation(); } catch {}
+      try { if (typeof ev.stopImmediatePropagation === 'function') ev.stopImmediatePropagation(); } catch {}
+    }
+    const entry = selectedEntry();
+    const status = $('jobsCloudStatus');
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    pin(entry);
+    exitLibraryToCurrent();
+    rehydrateRecord(entry.record);
+    [40, 140, 320, 650].forEach((ms) => setTimeout(() => { exitLibraryToCurrent(); rehydrateRecord(entry.record); }, ms));
+    if (status) status.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    return false;
+  }
+  function bindRows(){
+    if (!isMobile()) return;
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((row) => {
+      if (row.dataset.alpha100Bound === '1') return;
+      row.dataset.alpha100Bound = '1';
+      const select = () => {
+        const entry = entryById(row.dataset.jobId || '');
+        if (entry) pin(entry);
+        setTimeout(bindButton, 10);
+      };
+      row.addEventListener('touchstart', select, {capture:true, passive:true});
+      row.addEventListener('pointerdown', select, {capture:true});
+      row.addEventListener('click', select, {capture:true});
+    });
+  }
+  function bindButton(){
+    if (!isMobile()) return;
+    const btn = $('jobsLoadSelectedBtn');
+    if (!btn) return;
+    const currentId = String(window.__tapcalcExactLibrarySelectedId || window.__tapcalcDetailSelectedId || window.__tapcalcLibrarySelectedId || '').trim();
+    if (currentId) btn.dataset.jobId = currentId;
+    if (btn.dataset.alpha100Fresh !== '1') {
+      const clone = btn.cloneNode(true);
+      clone.dataset.alpha100Fresh = '1';
+      clone.style.width = '100%';
+      clone.style.display = 'block';
+      clone.style.margin = '0';
+      clone.style.touchAction = 'manipulation';
+      btn.replaceWith(clone);
+      const handler = (e) => mobileLoad(e);
+      clone.addEventListener('touchstart', handler, {capture:true, passive:false});
+      clone.addEventListener('pointerdown', handler, {capture:true});
+      clone.addEventListener('click', handler, {capture:true});
+    }
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha100RenderWrapped) {
+    window.__alpha100RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : allJobs();
+        const entry = selectedEntry() || list.find((job)=> String(job?.id || '') === String(window.__tapcalcLibrarySelectedId || '')) || null;
+        if (entry?.record) pin(entry);
+      } catch {}
+      setTimeout(() => { bindRows(); bindButton(); }, 0);
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  const prevForce = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcForceLoadSelectedJob = function(e){
+    if (isMobile()) return mobileLoad(e);
+    return typeof prevForce === 'function' ? prevForce(e) : true;
+  };
+  window.loadSelectedLibraryJob = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcLibraryLoadSelected = window.tapCalcForceLoadSelectedJob;
+  window.addEventListener('pageshow', ()=> setTimeout(()=>{ bindRows(); bindButton(); }, 80));
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(()=>{ bindRows(); bindButton(); }, 80));
+  setTimeout(()=>{ bindRows(); bindButton(); }, 200);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile load job post-hydrate exit ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
+  };
+  function allJobs(){
+    try {
+      const jobs = window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : [];
+      return Array.isArray(jobs) ? jobs : [];
+    } catch { return []; }
+  }
+  function findEntryById(id){
+    const key = String(id || '').trim();
+    if (!key) return null;
+    return allJobs().find((job) => String(job?.id || '').trim() === key) || null;
+  }
+  function captureVisibleDetailEntry(){
+    try {
+      const active = document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id]');
+      const id = String(active?.dataset?.jobId || window.__tapcalcExactLibrarySelectedId || window.__tapcalcDetailSelectedId || window.__tapcalcLibrarySelectedId || '').trim();
+      const entry = findEntryById(id);
+      if (entry?.record) {
+        window.__tapcalcMobileVisibleEntry = entry;
+        window.__tapcalcMobileVisibleJobId = id;
+        const btn = $('jobsLoadSelectedBtn');
+        if (btn) btn.dataset.jobId = id;
+        return entry;
+      }
+    } catch {}
+    return window.__tapcalcMobileVisibleEntry || null;
+  }
+  function hideLibraryLater(){
+    const hide = () => {
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+      try {
+        const jobsScreen = $('jobsScreen');
+        if (jobsScreen) {
+          jobsScreen.classList.remove('active');
+          jobsScreen.hidden = true;
+          jobsScreen.style.display = 'none';
+          jobsScreen.style.pointerEvents = 'none';
+          jobsScreen.style.zIndex = '0';
+        }
+      } catch {}
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+    };
+    [80, 220, 500].forEach((ms) => setTimeout(hide, ms));
+  }
+  function mobileLoadFromVisible(e){
+    if (!isMobile()) return true;
+    try { e?.preventDefault?.(); } catch {}
+    try { e?.stopPropagation?.(); } catch {}
+    try { e?.stopImmediatePropagation?.(); } catch {}
+    const status = $('jobsCloudStatus');
+    const entry = captureVisibleDetailEntry();
+    if (!entry?.record) {
+      if (status) status.textContent = 'Load Job failed: select the job you want to load first.';
+      return false;
+    }
+    try {
+      window.__tapcalcExactLibrarySelectedId = String(entry.id || '');
+      window.__tapcalcDetailSelectedId = String(entry.id || '');
+      window.__tapcalcLibrarySelectedId = String(entry.id || '');
+      window.__tapcalcPinnedLoadJob = { id: String(entry.id || ''), record: entry.record };
+      window.__tapcalcDetailSelectedRecord = entry.record;
+      window.__tapcalcLibrarySelectedRecord = entry.record;
+      if (typeof selectedJobId !== 'undefined') selectedJobId = String(entry.id || '');
+    } catch {}
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+    } catch (err) {
+      console.error('alpha101 mobile visible-detail load failed', err);
+      if (status) status.textContent = 'Load Job failed. See console.';
+      return false;
+    }
+    try {
+      if (typeof buildStateFromRecord === 'function' && typeof applyJobState === 'function') {
+        const state = buildStateFromRecord(entry.record) || {};
+        [50, 140, 320].forEach((ms) => setTimeout(() => {
+          try { applyJobState(state); } catch {}
+          try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+          try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+        }, ms));
+      }
+    } catch {}
+    hideLibraryLater();
+    if (status) status.textContent = `Loaded ${entry.record?.meta?.title || entry.record?.job?.description || entry.record?.job?.jobNumber || 'saved job'} into Current.`;
+    return false;
+  }
+  function bindRows(){
+    if (!isMobile()) return;
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((row) => {
+      if (row.dataset.alpha101Bound === '1') return;
+      row.dataset.alpha101Bound = '1';
+      const remember = () => {
+        const entry = findEntryById(row.dataset.jobId || '');
+        if (entry?.record) {
+          window.__tapcalcMobileVisibleEntry = entry;
+          window.__tapcalcMobileVisibleJobId = String(entry.id || '');
+          const btn = $('jobsLoadSelectedBtn');
+          if (btn) btn.dataset.jobId = String(entry.id || '');
+        }
+      };
+      row.addEventListener('touchstart', remember, {capture:true, passive:true});
+      row.addEventListener('pointerdown', remember, {capture:true});
+      row.addEventListener('click', remember, {capture:true});
+    });
+  }
+  function bindButton(){
+    if (!isMobile()) return;
+    const btn = $('jobsLoadSelectedBtn');
+    if (!btn) return;
+    const freshNeeded = btn.dataset.alpha101Fresh !== '1';
+    let target = btn;
+    if (freshNeeded) {
+      const clone = document.createElement('button');
+      clone.type = 'button';
+      clone.id = 'jobsLoadSelectedBtn';
+      clone.className = btn.className || 'secondary-btn';
+      clone.textContent = btn.textContent || 'Load Job';
+      clone.dataset.alpha101Fresh = '1';
+      clone.style.width = '100%';
+      clone.style.display = 'block';
+      clone.style.margin = '0';
+      clone.style.touchAction = 'manipulation';
+      btn.replaceWith(clone);
+      target = clone;
+    }
+    if (window.__tapcalcMobileVisibleJobId) target.dataset.jobId = window.__tapcalcMobileVisibleJobId;
+    if (target.dataset.alpha101Bound === '1') return;
+    target.dataset.alpha101Bound = '1';
+    const handler = (ev) => mobileLoadFromVisible(ev);
+    target.addEventListener('touchstart', handler, {capture:true, passive:false});
+    target.addEventListener('pointerdown', handler, {capture:true});
+    target.addEventListener('click', handler, {capture:true});
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha101RenderWrapped) {
+    window.__alpha101RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try { captureVisibleDetailEntry(); } catch {}
+      setTimeout(() => { bindRows(); bindButton(); captureVisibleDetailEntry(); }, 0);
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+  const prevForce = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcForceLoadSelectedJob = function(e){
+    if (isMobile()) return mobileLoadFromVisible(e);
+    return typeof prevForce === 'function' ? prevForce(e) : true;
+  };
+  window.loadSelectedLibraryJob = window.tapCalcForceLoadSelectedJob;
+  window.tapCalcLibraryLoadSelected = window.tapCalcForceLoadSelectedJob;
+  document.addEventListener('click', (event) => {
+    if (event.target.closest('#jobsSelect .jobs-list-item[data-job-id]')) setTimeout(() => { captureVisibleDetailEntry(); bindButton(); }, 0);
+    if (event.target.closest('.screen-tab[data-screen="jobs"]')) setTimeout(() => { bindRows(); bindButton(); captureVisibleDetailEntry(); }, 80);
+  }, true);
+  window.addEventListener('pageshow', () => setTimeout(() => { bindRows(); bindButton(); captureVisibleDetailEntry(); }, 120));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(() => { bindRows(); bindButton(); captureVisibleDetailEntry(); }, 120));
+  setTimeout(() => { bindRows(); bindButton(); captureVisibleDetailEntry(); }, 240);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile visible-record hardfix ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  function isMobile(){
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
+  }
+  function clone(v){
+    try { return JSON.parse(JSON.stringify(v)); } catch { return v; }
+  }
+  function pinVisibleRecord(record, id){
+    if(!record) return;
+    try { window.__tapcalcVisibleLibraryRecord = clone(record); } catch { window.__tapcalcVisibleLibraryRecord = record; }
+    try { window.__tapcalcVisibleLibraryRecordId = String(id || record?.id || ''); } catch {}
+    try { window.__tapcalcDetailSelectedRecord = window.__tapcalcVisibleLibraryRecord; } catch {}
+    try { window.__tapcalcDetailSelectedId = String(id || ''); } catch {}
+  }
+  const origRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  if (typeof origRender === 'function' && !window.__alpha102RenderWrapped) {
+    window.__alpha102RenderWrapped = true;
+    const wrapped = function(){
+      const result = origRender.apply(this, arguments);
+      try {
+        const list = Array.isArray(arguments[0]) ? arguments[0] : (typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : []);
+        const activeId = String((typeof selectedJobId !== 'undefined' ? selectedJobId : window.__tapcalcExactLibrarySelectedId || window.__tapcalcLibrarySelectedId || '') || '').trim();
+        const selected = list.find((job)=> String(job?.id || '') === activeId) || (typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null) || list[0] || null;
+        if (selected?.record) pinVisibleRecord(selected.record, selected.id);
+        const btn = $('jobsLoadSelectedBtn');
+        if (btn && isMobile()) {
+          const fresh = btn.cloneNode(true);
+          try { fresh.removeAttribute('onclick'); } catch {}
+          fresh.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if (typeof window.tapCalcMobileHardLoad === 'function') return window.tapCalcMobileHardLoad(); }, true);
+          fresh.addEventListener('touchend', function(e){ e.preventDefault(); e.stopPropagation(); if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation(); if (typeof window.tapCalcMobileHardLoad === 'function') return window.tapCalcMobileHardLoad(); }, {capture:true, passive:false});
+          btn.parentNode && btn.parentNode.replaceChild(fresh, btn);
+        }
+      } catch {}
+      return result;
+    };
+    window.renderSelectedJobDetails = wrapped;
+    try { renderSelectedJobDetails = wrapped; } catch {}
+  }
+
+  document.addEventListener('click', function(e){
+    const item = e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(!item) return;
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      const selected = list.find((job)=> String(job?.id || '') === String(item.dataset.jobId || '')) || null;
+      if (selected?.record) pinVisibleRecord(selected.record, selected.id);
+    } catch {}
+  }, true);
+
+  function hardHydrate(record){
+    if(!record) return;
+    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen:true, skipPersist:false, message:true }); } catch {}
+    const rerun = () => { try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen:false, skipPersist:false, message:false }); } catch {} };
+    setTimeout(rerun, 0);
+    setTimeout(rerun, 120);
+    setTimeout(rerun, 300);
+    setTimeout(()=>{ try { updateCurrentJobLabel(); } catch {} try { updateJobInfoSummary(); } catch {} }, 60);
+  }
+
+  function getBestVisibleRecord(){
+    if (window.__tapcalcVisibleLibraryRecord) return window.__tapcalcVisibleLibraryRecord;
+    if (window.__tapcalcDetailSelectedRecord) return window.__tapcalcDetailSelectedRecord;
+    if (window.__tapcalcLibrarySelectedRecord) return window.__tapcalcLibrarySelectedRecord;
+    try {
+      const list = typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+      const activeId = String(window.__tapcalcVisibleLibraryRecordId || window.__tapcalcDetailSelectedId || window.__tapcalcExactLibrarySelectedId || window.__tapcalcLibrarySelectedId || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+      const selected = list.find((job)=> String(job?.id || '') === activeId) || (typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(list) : null) || null;
+      return selected?.record || null;
+    } catch { return null; }
+  }
+
+  window.tapCalcMobileHardLoad = function(){
+    const status = $('jobsCloudStatus');
+    const record = getBestVisibleRecord();
+    if (!record) {
+      if (status) status.textContent = 'Load Job failed: no visible library record found.';
+      return false;
+    }
+    if (status) status.textContent = 'Loading selected job...';
+    hardHydrate(record);
+    setTimeout(()=>{ try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {} }, 180);
+    setTimeout(()=>{ hardHydrate(record); }, 260);
+    setTimeout(()=>{
+      try { document.getElementById('jobsScreen')?.classList.remove('active'); } catch {}
+      try { document.getElementById('jobsScreen').hidden = true; } catch {}
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+      if (status) status.textContent = `Loaded ${record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'saved job'} into Current.`;
+    }, 420);
+    return false;
+  };
+})();
+
+
+/* alpha115 canonical library loader reset */
+(function(){
+  function tc103IsMobileCompact(){
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
+  }
+  function tc103SharedVisible(){
+    try { return !!document.querySelector('[data-library-lane-panel="shared"].active'); } catch { return false; }
+  }
+  function tc103GetJobs(){
+    try { return typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : []; } catch { return []; }
+  }
+  function tc103GetSelected(jobs){
+    const list = Array.isArray(jobs) ? jobs : tc103GetJobs();
+    if (!list.length) return null;
+    const id = String(selectedJobId || '');
+    return list.find(j => String(j?.id) === id) || null;
+  }
+  function tc103UpdateSelectionUI(){
+    try {
+      if (!jobsSelectEl) return;
+      jobsSelectEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+        const active = String(item.dataset.jobId || '') === String(selectedJobId || '');
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+    } catch {}
+  }
+  function tc103ShowCurrent(){
+    try {
+      if (typeof openScreen === 'function') { openScreen('job'); return; }
+    } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+  }
+  function tc103CanonicalLoad(record){
+    if (!record) return false;
+    try { window.__tapCalcSelectedLibraryRecord = record; } catch {}
+    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: false, message: true }); } catch (e) { console.error('alpha115 loadRecordIntoCalculator failed', e); }
+    try { if (typeof tc63Hydrate === 'function') tc63Hydrate(record); } catch {}
+    const delays = [0, 60, 180, 360];
+    delays.forEach((ms) => setTimeout(() => {
+      try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen: false, message: false }); } catch {}
+      try { if (typeof tc63Hydrate === 'function') tc63Hydrate(record); } catch {}
+      try { if (typeof updateCurrentJobLabel === 'function') updateCurrentJobLabel(); } catch {}
+      try { if (typeof updateCardStageChecks === 'function') updateCardStageChecks(); } catch {}
+    }, ms));
+    setTimeout(tc103ShowCurrent, 40);
+    return true;
+  }
+  window.tapCalcForceLoadSelectedJob = function tc103ForceLoadSelectedJob(){
+    const jobs = tc103GetJobs();
+    const selected = tc103GetSelected(jobs);
+    const record = selected?.record || window.__tapCalcSelectedLibraryRecord || window.__tapCalcVisibleLibraryRecord || null;
+    if (!record) return false;
+    return tc103CanonicalLoad(record);
+  };
+  window.renderSelectedJobDetails = function tc103RenderSelectedJobDetails(jobs){
+    const list = Array.isArray(jobs) ? jobs : tc103GetJobs();
+    if (!jobsListEl) return;
+    const compactShared = tc103IsMobileCompact() && tc103SharedVisible();
+    if (!list.length) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const selected = tc103GetSelected(list) || (!compactShared ? list[0] : null);
+    if (!selected) {
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    selectedJobId = String(selected.id);
+    try { window.__tapCalcSelectedLibraryRecord = selected.record; window.__tapCalcVisibleLibraryRecord = selected.record; } catch {}
+    tc103UpdateSelectionUI();
+    const record = selected.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '-';
+    const warnings = [
+      ...((record?.warnings?.hotTap) || []),
+      ...((record?.warnings?.lineStop) || []),
+      ...((record?.warnings?.hiStop) || []),
+      ...((record?.warnings?.completionPlug) || [])
+    ].filter(Boolean);
+    jobsListEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${title}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay}  |  ${record?.meta?.operationType || 'Job'}  |  ${sourceLabel}</div>
+        </div>
+        <div class="job-record-badges"><span class="job-source-badge ${selected.source}">${sourceLabel}</span></div>
+      </div>
+      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn">Load Job</button></div>
+      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
+      <div class="job-detail-grid">
+        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || '-'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || '-'}</div>
+        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      </div>`;
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (btn) {
+      const fresh = btn.cloneNode(true);
+      btn.replaceWith(fresh);
+      fresh.addEventListener('click', (event) => { event.preventDefault(); event.stopPropagation(); window.tapCalcForceLoadSelectedJob(); });
+      fresh.addEventListener('touchstart', (event) => { event.stopPropagation(); }, { passive: true });
+    }
+  };
+  window.renderJobsList = function tc103RenderJobsList(){
+    if (!jobsListEl) return;
+    const jobs = tc103GetJobs();
+    if (jobsResultsMetaEl) {
+      const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
+      const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for "${jobsSearchTerm}"  |  ${modeLabel} view` : `${countText}  |  ${modeLabel} view`;
+    }
+    if (!jobs.length) {
+      if (jobsSelectEl) jobsSelectEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      jobsListEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const previousSelectedId = selectedJobId ? String(selectedJobId) : '';
+    const selectedStillExists = jobs.some((job) => String(job.id) === previousSelectedId);
+    const compactShared = tc103IsMobileCompact() && tc103SharedVisible();
+    selectedJobId = compactShared ? (selectedStillExists ? previousSelectedId : '') : (selectedStillExists ? previousSelectedId : String(jobs[0].id));
+    if (jobsSelectEl) {
+      const previousScrollTop = jobsSelectEl.scrollTop;
+      jobsSelectEl.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      jobs.forEach(({ source, id, record }) => {
+        const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+        const client = record?.job?.client || 'No customer';
+        const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+        const op = record?.meta?.operationType || 'Job';
+        const nominalSize = record?.pipe?.nominalSize || '-';
+        const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+        const groupPrefix = jobsBrowseMode === 'customer'
+          ? `Customer: ${client}`
+          : jobsBrowseMode === 'location'
+            ? `Location: ${record?.job?.location || 'No location'}`
+            : jobsBrowseMode === 'date'
+              ? `Date: ${date}`
+              : 'Search';
+        const isActive = String(id) === String(selectedJobId || '');
+        const item = document.createElement('div');
+        item.className = `jobs-list-item${isActive ? ' active' : ''}`;
+        item.dataset.jobId = String(id);
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
+        item.querySelector('.jobs-list-title').textContent = title;
+        item.querySelector('.jobs-list-meta').textContent = `${groupPrefix}  |  ${client}  |  ${op}  |  ${nominalSize}  |  ${sourceLabel}`;
+        const selectThis = (event) => {
+          if (event) { event.preventDefault(); event.stopPropagation(); }
+          selectedJobId = String(id);
+          try { window.__tapCalcSelectedLibraryRecord = record; window.__tapCalcVisibleLibraryRecord = record; } catch {}
+          tc103UpdateSelectionUI();
+          window.renderSelectedJobDetails(jobs);
+        };
+        item.addEventListener('click', selectThis);
+        item.addEventListener('keydown', (event) => { if (event.key === 'Enter' || event.key === ' ') selectThis(event); });
+        frag.appendChild(item);
+      });
+      jobsSelectEl.appendChild(frag);
+      jobsSelectEl.scrollTop = previousScrollTop;
+      try {
+        jobsSelectEl.style.overflowY = 'auto';
+        jobsSelectEl.style.webkitOverflowScrolling = 'touch';
+      } catch {}
+    }
+    tc103UpdateSelectionUI();
+    window.renderSelectedJobDetails(jobs);
+  };
+  try { renderJobsList = window.renderJobsList; } catch {}
+  try { renderSelectedJobDetails = window.renderSelectedJobDetails; } catch {}
+  try { setTimeout(() => { if (typeof window.renderJobsList === 'function') window.renderJobsList(); }, 0); } catch {}
+})();
+
+
+/* alpha115 mobile pending load bridge */
+(function(){
+  const MOBILE_MEDIA='(max-width: 820px)';
+  const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
+  const $=(id)=>document.getElementById(id);
+  function getJobs(){
+    try {
+      if (typeof window.getCombinedJobsForDisplay === 'function') return window.getCombinedJobsForDisplay() || [];
+    } catch {}
+    return [];
+  }
+  function getSelectedId(){
+    try {
+      const active=document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id]');
+      if(active?.dataset?.jobId) return String(active.dataset.jobId);
+    } catch {}
+    try {
+      const btn=$('jobsLoadSelectedBtn');
+      if(btn?.dataset?.jobId) return String(btn.dataset.jobId);
+    } catch {}
+    try { if (typeof selectedJobId !== 'undefined' && selectedJobId) return String(selectedJobId); } catch {}
+    return '';
+  }
+  function getSelectedEntry(){
+    const jobs=getJobs();
+    const id=getSelectedId();
+    if(id){
+      const match=jobs.find(j => String(j.id)===String(id));
+      if(match) return match;
+    }
+    try {
+      const active=document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id]');
+      if(active?.dataset?.jobId){
+        const match=jobs.find(j => String(j.id)===String(active.dataset.jobId));
+        if(match) return match;
+      }
+    } catch {}
+    return null;
+  }
+  function applyRecord(record){
+    if(!record) return false;
+    try { window.__tapcalcMobilePendingRecord = record; } catch {}
+    try { sessionStorage.setItem('tapcalc-mobile-pending-record', JSON.stringify(record)); } catch {}
+    let ok=false;
+    const run=()=>{
+      try {
+        if (typeof loadRecordIntoCalculator === 'function') {
+          loadRecordIntoCalculator(record, { switchScreen: false, message: true });
+          ok=true;
+        }
+      } catch(e) { console.error('alpha115 mobile applyRecord failed', e); }
+    };
+    run();
+    setTimeout(run, 0);
+    setTimeout(run, 60);
+    setTimeout(run, 180);
+    setTimeout(run, 360);
+    return ok;
+  }
+  function showCurrentLikeDesktop(){
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    setTimeout(()=>{ try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {} }, 50);
+  }
+  function mobileLoadSelected(ev){
+    if(ev){ try { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); } catch {} }
+    const entry=getSelectedEntry();
+    if(!entry?.record){
+      try { $('jobsCloudStatus').textContent = 'Select a job first.'; } catch {}
+      return false;
+    }
+    try { window.__tapcalcLastExplicitSelectedJobId = String(entry.id); } catch {}
+    applyRecord(entry.record);
+    showCurrentLikeDesktop();
+    setTimeout(()=>applyRecord(entry.record), 80);
+    setTimeout(()=>applyRecord(entry.record), 220);
+    return false;
+  }
+  window.tapCalcForceLoadSelectedJob = function(){
+    if(!isMobile()){
+      const entry=getSelectedEntry();
+      if(entry?.record && typeof loadRecordIntoCalculator === 'function'){
+        try { loadRecordIntoCalculator(entry.record, { switchScreen: true, skipPersist: false, message: true }); return false; } catch {}
+      }
+    }
+    return mobileLoadSelected();
+  };
+  function bindBtn(){
+    const btn=$('jobsLoadSelectedBtn');
+    if(!btn) return;
+    const entry=getSelectedEntry();
+    if(entry?.id) btn.dataset.jobId = String(entry.id);
+    if(btn.dataset.alpha115Bound==='1') return;
+    btn.dataset.alpha115Bound='1';
+    btn.removeAttribute('onclick');
+    ['touchstart','touchend','pointerdown','pointerup','click'].forEach(type=>{
+      btn.addEventListener(type, function(e){ if(isMobile()) mobileLoadSelected(e); }, {capture:true});
+    });
+  }
+  function pinFromRow(el){
+    if(!el?.dataset?.jobId) return;
+    try { window.__tapcalcLastExplicitSelectedJobId = String(el.dataset.jobId); } catch {}
+    const btn=$('jobsLoadSelectedBtn');
+    if(btn) btn.dataset.jobId = String(el.dataset.jobId);
+  }
+  document.addEventListener('touchstart', function(e){
+    const row=e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(row) pinFromRow(row);
+  }, {capture:true, passive:true});
+  document.addEventListener('pointerdown', function(e){
+    const row=e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(row) pinFromRow(row);
+  }, {capture:true});
+  document.addEventListener('click', function(e){
+    const row=e.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
+    if(row) pinFromRow(row);
+    const btn=e.target.closest('#jobsLoadSelectedBtn');
+    if(btn) bindBtn();
+  }, {capture:true});
+  const origRender=window.renderSelectedJobDetails || (typeof renderSelectedJobDetails==='function' ? renderSelectedJobDetails : null);
+  if(typeof origRender==='function'){
+    const wrapped=function(){
+      const result=origRender.apply(this, arguments);
+      setTimeout(bindBtn, 0);
+      return result;
+    };
+    window.renderSelectedJobDetails=wrapped;
+    try { renderSelectedJobDetails=wrapped; } catch {}
+  } else {
+    setInterval(bindBtn, 500);
+  }
+})();
+
+
+/* ===== 3.0.0-alpha134 canonical final library/load reset ===== */
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const isCompact = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
+  };
+  const getJobs = () => {
+    try { return typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : []; } catch { return []; }
+  };
+  const getSelected = (jobs = null) => {
+    const list = Array.isArray(jobs) ? jobs : getJobs();
+    const activeId = String(
+      (window.__tapcalcLibrarySelectedId || '') ||
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '') ||
+      document.querySelector('.jobs-list-item.active')?.dataset?.jobId || ''
+    ).trim();
+    return list.find((job) => String(job.id) === activeId) || list[0] || null;
+  };
+  const syncSelected = (id) => {
+    try { selectedJobId = String(id || ''); } catch {}
+    try { window.__tapcalcLibrarySelectedId = String(id || ''); } catch {}
+    try { updateJobsListSelectionUI(); } catch {}
+  };
+
+  function loadSelectedCanonical(event){
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+      try { event.stopImmediatePropagation(); } catch {}
+    }
+    const jobs = getJobs();
+    const selected = getSelected(jobs);
+    if (!selected?.record) return false;
+    syncSelected(selected.id);
+    try { loadRecordIntoCalculator(selected.record, { message: true }); } catch (error) { console.error('alpha115 canonical load failed', error); }
+    setTimeout(() => {
+      try { loadRecordIntoCalculator(selected.record, { message: false }); } catch {}
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+      try { $('jobsScreen')?.classList.remove('active'); } catch {}
+    }, 60);
+    setTimeout(() => { try { loadRecordIntoCalculator(selected.record, { message: false }); } catch {} }, 180);
+    return false;
+  }
+
+  function renderSelectedCanonical(jobs = null) {
+    const list = Array.isArray(jobs) ? jobs : getJobs();
+    const detailsEl = $('jobsList');
+    if (!detailsEl) return;
+    if (!list.length) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const compactShared = (() => {
+      try {
+        const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+        return isCompact() && sharedVisible;
+      } catch { return false; }
+    })();
+    const selected = getSelected(list);
+    if (compactShared && !selected?.id) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    if (!selected?.record) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    syncSelected(selected.id);
+    const record = selected.record || {};
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '-';
+    const warnings = [
+      ...(record?.warnings?.hotTap || []),
+      ...(record?.warnings?.lineStop || []),
+      ...(record?.warnings?.hiStop || []),
+      ...(record?.warnings?.completionPlug || [])
+    ].filter(Boolean);
+    detailsEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${title}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay}  |  ${record?.meta?.operationType || 'Job'}  |  ${sourceLabel}</div>
+        </div>
+        <div class="job-record-badges">
+          <span class="job-source-badge ${selected.source}">${sourceLabel}</span>
+        </div>
+      </div>
+      <div class="job-detail-actions">
+        <button type="button" id="jobsLoadSelectedBtnFinal" class="secondary-btn">Load Job</button>
+      </div>
+      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
+      <div class="job-detail-grid">
+        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || '-'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || '-'}</div>
+        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      </div>`;
+    const btn = $('jobsLoadSelectedBtnFinal');
+    if (btn) {
+      btn.dataset.jobId = String(selected.id || '');
+      btn.addEventListener('click', loadSelectedCanonical, { capture: true });
+      btn.addEventListener('touchstart', loadSelectedCanonical, { capture: true, passive: false });
+    }
+  }
+
+  function renderJobsCanonical() {
+    const detailsEl = $('jobsList');
+    if (!detailsEl) return;
+    const listEl = $('jobsSelect');
+    const jobs = getJobs();
+    if (typeof jobsResultsMetaEl !== 'undefined' && jobsResultsMetaEl) {
+      const countText = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
+      const modeLabel = jobsBrowseMode === 'all' ? 'Search' : jobsBrowseMode.charAt(0).toUpperCase() + jobsBrowseMode.slice(1);
+      jobsResultsMetaEl.textContent = jobsSearchTerm ? `${countText} for "${jobsSearchTerm}"  |  ${modeLabel} view` : `${countText}  |  ${modeLabel} view`;
+    }
+    if (!jobs.length) {
+      if (listEl) listEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      detailsEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const prev = String((window.__tapcalcLibrarySelectedId || '') || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+    const selectedStillExists = jobs.some((job) => String(job.id) === prev);
+    const compactShared = (() => {
+      try {
+        const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
+        return isCompact() && sharedVisible;
+      } catch { return false; }
+    })();
+    syncSelected(compactShared ? (selectedStillExists ? prev : '') : (selectedStillExists ? prev : String(jobs[0].id)));
+    if (listEl) {
+      const previousScrollTop = listEl.scrollTop;
+      listEl.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      jobs.forEach(({ source, id, record }) => {
+        const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+        const client = record?.job?.client || 'No customer';
+        const date = record?.job?.date || record?.meta?.savedAtDisplay || 'No date';
+        const op = record?.meta?.operationType || 'Job';
+        const nominalSize = record?.pipe?.nominalSize || '-';
+        const sourceLabel = source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+        const groupPrefix = jobsBrowseMode === 'customer'
+          ? `Customer: ${client}`
+          : jobsBrowseMode === 'location'
+            ? `Location: ${record?.job?.location || 'No location'}`
+            : jobsBrowseMode === 'date'
+              ? `Date: ${date}`
+              : 'Search';
+        const active = String(id) === String((window.__tapcalcLibrarySelectedId || '') || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '');
+        const item = document.createElement('div');
+        item.className = `jobs-list-item${active ? ' active' : ''}`;
+        item.dataset.jobId = String(id);
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-pressed', active ? 'true' : 'false');
+        item.innerHTML = `<span class="jobs-list-title"></span><span class="jobs-list-meta"></span>`;
+        item.querySelector('.jobs-list-title').textContent = title;
+        item.querySelector('.jobs-list-meta').textContent = `${groupPrefix}  |  ${client}  |  ${op}  |  ${nominalSize}  |  ${sourceLabel}`;
+        const selectThis = (event) => {
+          if (event) {
+            try { event.preventDefault(); } catch {}
+            try { event.stopPropagation(); } catch {}
+          }
+          syncSelected(id);
+          renderSelectedCanonical(jobs);
+        };
+        item.addEventListener('click', selectThis, { capture: true });
+        item.addEventListener('touchstart', selectThis, { capture: true, passive: false });
+        item.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') selectThis(event);
+        });
+        frag.appendChild(item);
+      });
+      listEl.appendChild(frag);
+      listEl.scrollTop = previousScrollTop;
+    }
+    try { updateJobsListSelectionUI(); } catch {}
+    renderSelectedCanonical(jobs);
+  }
+
+  window.tapCalcForceLoadSelectedJob = loadSelectedCanonical;
+  window.renderSelectedJobDetails = renderSelectedCanonical;
+  window.renderJobsList = renderJobsCanonical;
+  try { renderSelectedJobDetails = renderSelectedCanonical; } catch {}
+  try { renderJobsList = renderJobsCanonical; } catch {}
+  setTimeout(() => { try { renderJobsCanonical(); } catch (e) { console.error('alpha115 initial render failed', e); } }, 50);
+})();
+
+
+// alpha115 mobile Load Job debug tracer
+(function(){
+  const isCompact = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
+  };
+  const status = (msg) => {
+    try {
+      const el = document.getElementById('jobsCloudStatus');
+      if (el) el.textContent = msg;
+      console.log('[alpha115-mobile-debug]', msg);
+    } catch {}
+  };
+  const txt = (sel) => (document.querySelector(sel)?.textContent || '').trim();
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
+  const mobileTrace = (phase) => {
+    if (!isCompact()) return;
+    const activeId = (window.selectedJobId || '').toString();
+    const title = txt('.job-detail-title');
+    const subtitle = txt('.job-detail-subtitle');
+    const currentClient = val('jobClient');
+    const currentJob = val('jobDescription') || val('jobNumber');
+    status(`${phase} | selectedJobId=${activeId || 'none'} | detail=${title || 'none'} | currentClient=${currentClient || 'blank'} | currentJob=${currentJob || 'blank'} | ${subtitle || ''}`);
+  };
+  document.addEventListener('click', (e) => {
+    if (!isCompact()) return;
+    const item = e.target.closest('.jobs-list-item[data-job-id]');
+    if (item) {
+      setTimeout(() => {
+        status(`ROW CLICK | rowId=${item.dataset.jobId || 'none'} | detail=${txt('.job-detail-title') || 'none'}`);
+      }, 25);
+    }
+  }, true);
+  const bindBtn = () => {
+    if (!isCompact()) return;
+    const btn = document.getElementById('jobsLoadSelectedBtn');
+    if (!btn || btn.dataset.alpha115DebugBound) return;
+    btn.dataset.alpha115DebugBound = '1';
+    ['touchstart','pointerdown','click'].forEach((evt) => {
+      btn.addEventListener(evt, () => {
+        mobileTrace(`LOAD BTN ${evt}`);
+        setTimeout(() => mobileTrace(`POST ${evt} 150ms`), 150);
+        setTimeout(() => mobileTrace(`POST ${evt} 500ms`), 500);
+        setTimeout(() => mobileTrace(`POST ${evt} 1200ms`), 1200);
+      }, true);
+    });
+  };
+  const mo = new MutationObserver(() => bindBtn());
+  const start = () => {
+    bindBtn();
+    try { mo.observe(document.body, {childList:true, subtree:true}); } catch {}
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});
+  else start();
+})();
+
+
+
+/* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
+(() => {
+const VERSION = '3.0.0-alpha200';
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
+  };
+  const getJobs = () => {
+    try { return typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : []; } catch { return []; }
+  };
+  const getSelected = () => {
+    const jobs = getJobs();
+    const activeId = String((window.__tapcalcLibrarySelectedId || '') || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || document.querySelector('.jobs-list-item.active')?.dataset?.jobId || '').trim();
+    return jobs.find((job) => String(job.id) === activeId) || null;
+  };
+  function forceHydrateRecord(record, message = true) {
+    if (!record) return false;
+    try {
+      if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(record, { switchScreen: false, skipPersist: false, message });
+      }
+    } catch (error) {
+      console.error('alpha115 forceHydrateRecord failed', error);
+    }
+    try {
+      const state = typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : null;
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+      const directMap = {
+        jobClient: record?.job?.client,
+        jobDescription: record?.job?.description,
+        jobNumber: record?.job?.jobNumber,
+        jobPressure: record?.job?.pressure,
+        jobTemperature: record?.job?.temperature,
+        jobDate: record?.job?.date,
+        jobProduct: record?.job?.product,
+        jobLocation: record?.job?.location,
+        jobTechnician: record?.job?.technician,
+        jobNotes: record?.job?.notes
+      };
+      Object.entries(directMap).forEach(([id, value]) => {
+        const el = $(id);
+        if (!el) return;
+        el.value = value == null ? '' : String(value);
+        try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+        try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+      });
+      try { if (typeof persistCurrentJob === 'function') persistCurrentJob(); } catch {}
+      try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+    } catch (error) {
+      console.error('alpha115 direct field hydrate failed', error);
+    }
+    return true;
+  }
+  function setPending(record) {
+    window.__tapcalcPendingMobileLoadRecord = record || null;
+    try { sessionStorage.setItem('tapcalcPendingMobileLoadRecord', JSON.stringify(record || null)); } catch {}
+  }
+  function getPending() {
+    if (window.__tapcalcPendingMobileLoadRecord) return window.__tapcalcPendingMobileLoadRecord;
+    try {
+      const raw = sessionStorage.getItem('tapcalcPendingMobileLoadRecord');
+      if (raw) return JSON.parse(raw);
+    } catch {}
+    return null;
+  }
+  function clearPending() {
+    window.__tapcalcPendingMobileLoadRecord = null;
+    try { sessionStorage.removeItem('tapcalcPendingMobileLoadRecord'); } catch {}
+  }
+  function applyPendingAfterSwitch() {
+    if (!isMobile()) return;
+    const record = getPending();
+    if (!record) return;
+    const run = (delay, message = false) => setTimeout(() => forceHydrateRecord(record, message), delay);
+    run(20, true);
+    run(120, false);
+    run(320, false);
+    setTimeout(clearPending, 800);
+  }
+  function mobileLoadFromFinalButton(event) {
+    if (!isMobile()) return;
+    const btn = event.target.closest('#jobsLoadSelectedBtnFinal');
+    if (!btn) return;
+    try { event.preventDefault(); } catch {}
+    try { event.stopPropagation(); } catch {}
+    try { event.stopImmediatePropagation(); } catch {}
+    const selected = getSelected();
+    const record = selected?.record || null;
+    if (!record) return false;
+    setPending(record);
+    forceHydrateRecord(record, true);
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    applyPendingAfterSwitch();
+    setTimeout(() => {
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+      try { $('jobsScreen')?.classList.remove('active'); } catch {}
+    }, 450);
+    return false;
+  }
+  document.addEventListener('click', mobileLoadFromFinalButton, true);
+  document.addEventListener('touchstart', mobileLoadFromFinalButton, { capture: true, passive: false });
+  document.addEventListener('pointerdown', mobileLoadFromFinalButton, true);
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('.screen-tab[data-screen="job"]');
+    if (!tab || !isMobile()) return;
+    applyPendingAfterSwitch();
+  }, true);
+  window.addEventListener('pageshow', () => { if (isMobile()) setTimeout(applyPendingAfterSwitch, 40); });
+  window.tapCalcApplyPendingMobileLoad = applyPendingAfterSwitch;
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile direct library load final override ===== */
+(() => {
+  const isMobile = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
+  };
+  const $ = (id) => document.getElementById(id);
+  const getJobs = () => {
+    try { return typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : []; } catch { return []; }
+  };
+  const getSelected = (jobs = null) => {
+    const list = Array.isArray(jobs) ? jobs : getJobs();
+    const activeId = String((window.__tapcalcLibrarySelectedId || '') || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+    return list.find((job) => String(job.id) === activeId) || null;
+  };
+  const syncSelected = (id) => {
+    try { selectedJobId = String(id || ''); } catch {}
+    try { window.__tapcalcLibrarySelectedId = String(id || ''); } catch {}
+    try { updateJobsListSelectionUI(); } catch {}
+  };
+  const dispatchValue = (id, value) => {
+    const el = $(id);
+    if (!el) return;
+    if (id === 'machineType') {
+      setMachineTypeValue(value);
+      return;
+    }
+    if (el.type === 'checkbox') {
+      el.checked = !!value;
+    } else {
+      el.value = value ?? '';
+    }
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  };
+  const hardApplyRecord = (record) => {
+    if (!record) return;
+    try {
+      const state = typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : null;
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+      const job = record.job || {};
+      const machine = record.machine || {};
+      const pipe = record.pipe || {};
+      const calc = record.calculations || {};
+      const directMap = {
+        jobClient: job.client || '',
+        jobDescription: job.description || '',
+        jobNumber: job.jobNumber || '',
+        jobDate: job.date || '',
+        jobLocation: job.location || '',
+        jobTechnician: job.technician || '',
+        jobPressure: job.pressure || '',
+        jobTemperature: job.temperature || '',
+        jobProduct: job.product || '',
+        jobNotes: job.notes || '',
+        machineType: machine.machine || '',
+        operationType: (state && state.operationType) || record?.meta?.operationType || '',
+        bcoPipeMaterial: (state && state.bcoPipeMaterial) || pipe.material || '',
+        bcoPipeOD: (state && state.bcoPipeOD) || pipe.nominalSize || '',
+        bcoPipeID: (state && state.bcoPipeID) || pipe.id || '',
+        bcoSchedule: (state && state.bcoSchedule) || pipe.schedule || '',
+        bcoCutterOD: (state && state.bcoCutterOD) || machine.cutterOd || '',
+        md: (state && state.md) || calc.hotTapMd || '',
+        ptc: (state && state.ptc) || calc.hotTapPtc || '',
+        mt: (state && state.mt) || calc.hotTapMachineTravel || '',
+        lsMd: (state && state.lsMd) || calc.lineStopMd || '',
+        lsTravel: (state && state.lsTravel) || calc.lineStopTravel || '',
+        lsMachineTravel: (state && state.lsMachineTravel) || calc.lineStopMachineTravel || '',
+      };
+      Object.entries(directMap).forEach(([id, value]) => dispatchValue(id, value));
+      try { refreshBcoState(); } catch {}
+      try { updateBcoDisplays(); } catch {}
+      try { calculateIntegratedBco({ silent: true }); } catch {}
+      try { calcHotTap(); } catch {}
+      try { calcHtp(); } catch {}
+      try { calcLineStop(); } catch {}
+      try { calcHiStop(); } catch {}
+      try { calcCompletionPlug(); } catch {}
+      try { initEtaCalculator(); } catch {}
+      try { syncBcoToEta({ force: true }); } catch {}
+      try { updateEtaEstimate(); } catch {}
+      try { updateJobInfoSummary(); } catch {}
+      try { if (typeof persistCurrentJob === 'function') persistCurrentJob(); } catch {}
+      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+      try {
+        const currentJobNameEl = $('jobsCurrentJobName');
+        if (currentJobNameEl) currentJobNameEl.textContent = job.description || job.jobNumber || job.client || 'Loaded Job';
+      } catch {}
+    } catch (e) {
+      console.error('alpha115 hardApplyRecord failed', e);
+    }
+  };
+  const mobileDirectLoad = (record) => {
+    if (!record) return false;
+    try { window.__tapcalcVisibleDetailRecord = record; } catch {}
+    const switchToCurrent = () => {
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    };
+    hardApplyRecord(record);
+    switchToCurrent();
+    [60, 180, 420, 900].forEach((delay) => setTimeout(() => hardApplyRecord(record), delay));
+    setTimeout(() => {
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+      try { $('jobsScreen')?.classList.remove('active'); } catch {}
+    }, 700);
+    return false;
+  };
+
+  function finalRenderSelectedJobDetails(jobs = null) {
+    const list = Array.isArray(jobs) ? jobs : getJobs();
+    const detailsEl = $('jobsList');
+    if (!detailsEl) return;
+    if (!list.length) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
+      return;
+    }
+    const selected = getSelected(list) || list[0];
+    if (!selected?.record) {
+      detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
+      return;
+    }
+    syncSelected(selected.id);
+    const record = selected.record || {};
+    try { window.__tapcalcVisibleDetailRecord = record; } catch {}
+    const title = record?.meta?.title || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+    const sourceLabel = selected.source === 'local' ? 'Local only' : selected.source === 'synced' ? 'Synced' : 'Shared DB';
+    const savedAtDisplay = record?.meta?.savedAtDisplay || record?.savedAt || '-';
+    const warnings = [
+      ...(record?.warnings?.hotTap || []),
+      ...(record?.warnings?.lineStop || []),
+      ...(record?.warnings?.hiStop || []),
+      ...(record?.warnings?.completionPlug || [])
+    ].filter(Boolean);
+    detailsEl.innerHTML = `
+      <div class="job-detail-header">
+        <div>
+          <div class="job-detail-title">${title}</div>
+          <div class="job-detail-subtitle">${savedAtDisplay}  |  ${record?.meta?.operationType || 'Job'}  |  ${sourceLabel}</div>
+        </div>
+        <div class="job-record-badges">
+          <span class="job-source-badge ${selected.source}">${sourceLabel}</span>
+        </div>
+      </div>
+      <div class="job-detail-actions">
+        <button type="button" id="jobsLoadSelectedBtnFinal" class="secondary-btn">Load Job</button>
+      </div>
+      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
+      <div class="job-detail-grid">
+        <div><strong>Saved:</strong> ${savedAtDisplay}</div>
+        <div><strong>Date:</strong> ${record?.job?.date || '-'}</div>
+        <div><strong>Job Description:</strong> ${record?.job?.description || '-'}</div>
+        <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      </div>`;
+    const btn = $('jobsLoadSelectedBtnFinal');
+    if (btn) {
+      const handler = (event) => {
+        if (event) {
+          try { event.preventDefault(); } catch {}
+          try { event.stopPropagation(); } catch {}
+          try { event.stopImmediatePropagation(); } catch {}
+        }
+        mobileDirectLoad(record);
+        return false;
+      };
+      ['click','touchstart','pointerdown'].forEach((type) => btn.addEventListener(type, handler, { capture: true }));
+    }
+  }
+
+  const origRenderJobsList = (window.renderJobsList || (typeof renderJobsList === 'function' ? renderJobsList : null));
+  function bindRowSelection() {
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item) => {
+      if (item.dataset.alpha115Bound === '1') return;
+      item.dataset.alpha115Bound = '1';
+      const selectThis = (event) => {
+        if (event) {
+          try { event.preventDefault(); } catch {}
+          try { event.stopPropagation(); } catch {}
+        }
+        const id = String(item.dataset.jobId || '');
+        syncSelected(id);
+        finalRenderSelectedJobDetails();
+      };
+      item.addEventListener('touchstart', selectThis, { capture: true, passive: false });
+      item.addEventListener('pointerdown', selectThis, { capture: true });
+      item.addEventListener('click', selectThis, { capture: true });
+    });
+  }
+  function finalRenderJobsList() {
+    if (typeof origRenderJobsList === 'function') origRenderJobsList();
+    setTimeout(() => {
+      bindRowSelection();
+      finalRenderSelectedJobDetails();
+    }, 0);
+  }
+
+  window.tapCalcMobileDirectLoad = mobileDirectLoad;
+  window.renderSelectedJobDetails = finalRenderSelectedJobDetails;
+  try { renderSelectedJobDetails = finalRenderSelectedJobDetails; } catch {}
+  window.renderJobsList = finalRenderJobsList;
+  try { renderJobsList = finalRenderJobsList; } catch {}
+  setTimeout(() => { try { finalRenderJobsList(); } catch {} }, 0);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile current hydrate bridge ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
+  };
+  function currentDirectMap(record, state){
+    return {
+      jobClient: record?.job?.client,
+      jobDescription: record?.job?.description,
+      jobNumber: record?.job?.jobNumber,
+      jobPressure: record?.job?.pressure,
+      jobTemperature: record?.job?.temperature,
+      jobDate: record?.job?.date,
+      jobProduct: record?.job?.product,
+      jobLocation: record?.job?.location,
+      jobTechnician: record?.job?.technician,
+      jobNotes: record?.job?.notes,
+      machineType: state?.machineType || record?.machine?.machine,
+      operationType: state?.operationType,
+      bcoPipeMaterial: state?.bcoPipeMaterial,
+      bcoPipeOD: state?.bcoPipeOD,
+      bcoSchedule: state?.bcoSchedule,
+      bcoPipeID: state?.bcoPipeID,
+      bcoCutterOD: state?.bcoCutterOD,
+      etaMachine: state?.etaMachine,
+      etaCutterSize: state?.etaCutterSize,
+      etaBco: state?.etaBco,
+      md: state?.md,
+      ptc: state?.ptc,
+      mt: state?.mt,
+      htpMd: state?.htpMd,
+      htpPtc: state?.htpPtc,
+      lsMd: state?.lsMd,
+      lsTravel: state?.lsTravel,
+      lsMachineTravel: state?.lsMachineTravel,
+      cpStart: state?.cpStart,
+      cpJbf: state?.cpJbf,
+      cpPt: state?.cpPt,
+    };
+  }
+  function forceApplyCurrentRecord(record){
+    if (!record) return false;
+    let state = {};
+    try { state = typeof buildStateFromRecord === 'function' ? (buildStateFromRecord(record) || {}) : {}; } catch {}
+    try {
+      if (state && Object.keys(state).length && typeof applyJobState === 'function') applyJobState(state);
+    } catch {}
+    const map = currentDirectMap(record, state);
+    Object.entries(map).forEach(([id, value]) => {
+      const el = $(id);
+      if (!el) return;
+      if (id === 'machineType') {
+        setMachineTypeValue(value);
+        return;
+      }
+      if (el.type === 'checkbox') {
+        el.checked = !!value;
+      } else if (value != null && value !== '') {
+        el.value = value;
+      }
+      try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+    });
+    try {
+      if (state && Object.keys(state).length) localStorage.setItem(JOB_STATE_KEY, JSON.stringify(state));
+    } catch {}
+    try { refreshBcoState(); } catch {}
+    try { updateBcoDisplays(); } catch {}
+    try { calculateIntegratedBco({ silent: true }); } catch {}
+    try { calcHotTap(); } catch {}
+    try { calcHtp(); } catch {}
+    try { calcLineStop(); } catch {}
+    try { calcHiStop(); } catch {}
+    try { calcCompletionPlug(); } catch {}
+    try { initEtaCalculator(); } catch {}
+    try { syncBcoToEta({ force: true }); } catch {}
+    try { updateEtaEstimate(); } catch {}
+    try { updateCurrentJobLabel(); } catch {}
+    try { updateJobInfoSummary(); } catch {}
+    try { window.updateTapCalcShell && window.updateTapCalcShell(); } catch {}
+    const top = $('topCurrentJobLabel');
+    if (top) top.textContent = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Loaded job';
+    return true;
+  }
+  function getVisibleDetailRecord(){
+    try {
+      return window.__tapcalcVisibleLibraryRecord || window.__tapCalcVisibleDetailRecord || window.__tapcalcSelectedExactRecord || null;
+    } catch { return null; }
+  }
+  function getSelectedRecord(){
+    try {
+      const jobs = typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : [];
+      const sel = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(jobs) : null;
+      return sel?.record || getVisibleDetailRecord();
+    } catch { return getVisibleDetailRecord(); }
+  }
+  const oldRender = typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null;
+  if (oldRender) {
+    renderSelectedJobDetails = function(...args){
+      const out = oldRender.apply(this,args);
+      try {
+        const jobs = typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : [];
+        const sel = typeof getSelectedCombinedJob === 'function' ? getSelectedCombinedJob(jobs) : null;
+        window.__tapcalcVisibleLibraryRecord = sel?.record || null;
+      } catch {}
+      return out;
+    };
+  }
+  const oldShow = window.showScreen;
+  if (typeof oldShow === 'function') {
+    window.showScreen = function(name, ...rest){
+      const res = oldShow.apply(this, [name, ...rest]);
+      if ((name === 'job' || name === 'current') && window.__tapcalcPendingMobileRecord) {
+        const rec = window.__tapcalcPendingMobileRecord;
+        [0, 40, 120, 280, 700].forEach(ms => setTimeout(() => forceApplyCurrentRecord(rec), ms));
+      }
+      return res;
+    };
+  }
+  function mobileLoadJob(e){
+    if (!isMobile()) return;
+    const btn = e.target && e.target.closest ? e.target.closest('#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnCanonical') : null;
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+    const record = getSelectedRecord();
+    window.__tapcalcPendingMobileRecord = record || null;
+    if (!record) return false;
+    forceApplyCurrentRecord(record);
+    try { localStorage.setItem('tapcalcV3Screen', 'job'); } catch {}
+    try {
+      const tab = document.querySelector('.screen-tab[data-screen="job"]');
+      if (tab) tab.click(); else if (typeof showScreen === 'function') showScreen('job');
+    } catch {}
+    [40, 120, 280, 700, 1200].forEach(ms => setTimeout(() => forceApplyCurrentRecord(record), ms));
+    return false;
+  }
+  ['click','touchstart','pointerdown'].forEach(evt => document.addEventListener(evt, mobileLoadJob, true));
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile current debug ===== */
+(function(){
+  const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
+  const $ = (id) => document.getElementById(id);
+  function dbg(msg){
+    try {
+      const panel = $('mobileLoadDebugPanel');
+      const text = $('mobileLoadDebugText');
+      if(panel) panel.style.display = isMobile() ? 'block' : 'none';
+      const stamp = new Date().toLocaleTimeString();
+      if(text) text.textContent = `[${stamp}] ${msg}\n` + (text.textContent || '').slice(0, 3000);
+      try { console.log('[alpha115 mobile dbg]', msg); } catch {}
+    } catch {}
+  }
+  function summarizeRecord(record){
+    if(!record) return 'record=<none>';
+    const state = (typeof buildStateFromRecord === 'function') ? (buildStateFromRecord(record) || {}) : {};
+    const title = record?.meta?.title || state.jobDescription || state.jobNumber || state.jobClient || '<untitled>';
+    const keys = Object.keys(state).slice(0,12).join(',');
+    return `title=${title} | id=${record?.id || record?.meta?.id || '<none>'} | stateKeys=${Object.keys(state).length} [${keys}]`;
+  }
+  function inspectCurrent(){
+    const ids=['jobClient','jobLocation','jobDescription','jobNumber','jobDate','machineType','operationType'];
+    return ids.map(id=>`${id}=${$(''+id)?.value || ''}`).join(' | ');
+  }
+  function getSelectedRecord(){
+    try { if(window.__tapcalcSelectedJobRecord) return window.__tapcalcSelectedJobRecord; } catch {}
+    try { if(window.__tapcalcPinnedSelectedRecord) return window.__tapcalcPinnedSelectedRecord; } catch {}
+    try {
+      const id = window.selectedJobId || window.__tapcalcSelectedJobId;
+      const jobs = (typeof getAllJobs==='function') ? getAllJobs() : [];
+      const entry = jobs.find(j=>String(j.id)===String(id));
+      if(entry?.record) return entry.record;
+    } catch {}
+    return null;
+  }
+  function forceApply(record, label){
+    dbg(`${label}: start | ${summarizeRecord(record)}`);
+    try { if(typeof loadRecordIntoCalculator==='function') loadRecordIntoCalculator(record, { switchScreen:false, skipPersist:false, message:true }); } catch(e){ dbg(`${label}: loader error ${e.message}`); }
+    setTimeout(()=>dbg(`${label}: fields@80 ${inspectCurrent()}`),80);
+    setTimeout(()=>dbg(`${label}: fields@240 ${inspectCurrent()}`),240);
+    setTimeout(()=>dbg(`${label}: fields@600 ${inspectCurrent()}`),600);
+  }
+  function bindMobileDebugLoad(){
+    const btn = $('jobsLoadSelectedBtn') || $('jobsLoadSelectedBtnFinal') || $('jobsLoadSelectedBtnCanonical');
+    if(!btn || btn.dataset.alpha115Bound==='1') return;
+    const clone = btn.cloneNode(true);
+    clone.dataset.alpha115Bound='1';
+    btn.replaceWith(clone);
+    const handler = function(ev){
+      if(!isMobile()) return;
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation && ev.stopImmediatePropagation();
+      const record = getSelectedRecord();
+      dbg(`tap load | ${summarizeRecord(record)}`);
+      const tab = document.querySelector('.screen-tab[data-screen="job"]');
+      try { if(tab) tab.click(); else if(typeof showScreen==='function') showScreen('job'); } catch(e){ dbg(`screen switch error ${e.message}`); }
+      setTimeout(()=>forceApply(record,'post-switch'),20);
+      setTimeout(()=>forceApply(record,'post-switch-2'),180);
+      return false;
+    };
+    clone.addEventListener('click', handler, true);
+    clone.addEventListener('touchstart', handler, true);
+    clone.addEventListener('pointerdown', handler, true);
+    dbg('bound mobile debug load button');
+  }
+  function pinRecordFromSelection(){
+    try {
+      const id = window.selectedJobId || window.__tapcalcSelectedJobId;
+      const jobs = (typeof getAllJobs==='function') ? getAllJobs() : [];
+      const entry = jobs.find(j=>String(j.id)===String(id));
+      if(entry?.record){
+        window.__tapcalcSelectedJobRecord = entry.record;
+        dbg(`pin selected | ${summarizeRecord(entry.record)}`);
+      }
+    } catch(e){ dbg(`pin error ${e.message}`); }
+  }
+  document.addEventListener('click', function(e){
+    const row = e.target.closest && e.target.closest('.jobs-entry, .jobs-list-item, [data-job-id]');
+    if(row){ setTimeout(pinRecordFromSelection, 10); setTimeout(bindMobileDebugLoad, 20); }
+    const libTab = e.target.closest && e.target.closest('.screen-tab[data-screen="jobs"]');
+    if(libTab){ setTimeout(bindMobileDebugLoad, 80); }
+  }, true);
+  window.addEventListener('load', ()=>{ setTimeout(bindMobileDebugLoad, 300); if(isMobile()){ try{ const p=$('mobileLoadDebugTop'); if(p) p.style.display='block'; }catch{} dbg('alpha115 debug active'); } });
+  window.addEventListener('pageshow', ()=>{ setTimeout(bindMobileDebugLoad, 200); });
+  const oldShow = window.showScreen;
+  if(typeof oldShow==='function'){
+    window.showScreen = function(name, ...rest){
+      const result = oldShow.call(this, name, ...rest);
+      if(name==='jobs') setTimeout(bindMobileDebugLoad, 80);
+      if(name==='job' && isMobile()) setTimeout(()=>dbg(`entered Current | ${inspectCurrent()}`),100);
+      return result;
+    };
+  }
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile unique-button canonical load ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const isMobile = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
+  };
+  function getCombined(){
+    try { return typeof getCombinedJobsForDisplay === 'function' ? getCombinedJobsForDisplay() : []; } catch { return []; }
+  }
+  function currentSelectedRecord(){
+    const id = String((window.__tapcalcLibrarySelectedId || '') || (typeof selectedJobId !== 'undefined' ? selectedJobId : '') || '').trim();
+    const jobs = getCombined();
+    return jobs.find(j => String(j.id) === id) || null;
+  }
+  function hardLoadRecord(record){
+    if (!record) return false;
+    try { window.__alpha115MobileRecord = record; } catch {}
+    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen:false, skipPersist:false, message:true }); } catch(e) { console.error('alpha115 loadRecordIntoCalculator', e); }
+    try {
+      const state = typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : null;
+      if (state && typeof applyJobState === 'function') applyJobState(state);
+    } catch(e) { console.error('alpha115 applyJobState', e); }
+    const directMap = {
+      jobClient: record?.job?.client,
+      jobDescription: record?.job?.description,
+      jobNumber: record?.job?.jobNumber,
+      jobPressure: record?.job?.pressure,
+      jobTemperature: record?.job?.temperature,
+      jobDate: record?.job?.date,
+      jobProduct: record?.job?.product,
+      jobLocation: record?.job?.location,
+      jobTechnician: record?.job?.technician,
+      jobNotes: record?.job?.notes,
+      machineType: record?.machine?.machine,
+      bcoCutterOD: record?.machine?.cutterOd,
+    };
+    Object.entries(directMap).forEach(([id,val]) => {
+      const el = $(id);
+      if (!el) return;
+      if (id === 'machineType') {
+        setMachineTypeValue(val);
+        return;
+      }
+      el.value = val == null ? '' : String(val);
+      try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
+      try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
+    });
+    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
+    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
+    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
+    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
+    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
+    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
+    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+    try { if (typeof persistCurrentJob === 'function') persistCurrentJob(); } catch {}
+    return true;
+  }
+  function forceAfterSwitch(){
+    const rec = window.__alpha115MobileRecord;
+    if (!rec) return;
+    [20,120,350,800].forEach(delay => setTimeout(() => hardLoadRecord(rec), delay));
+  }
+  function mobileButtonHandler(event){
+    const btn = event.target.closest('#jobsLoadSelectedBtnMobileCanonical');
+    if (!btn || !isMobile()) return;
+    try { event.preventDefault(); event.stopPropagation(); event.stopImmediatePropagation(); } catch {}
+    let record = null;
+    try { record = JSON.parse(btn.dataset.recordJson || 'null'); } catch {}
+    if (!record) record = currentSelectedRecord()?.record || window.__tapcalcVisibleDetailRecord || null;
+    if (!record) {
+      try { const s=$('jobsCloudStatus'); if(s) s.textContent='alpha115: no record found for mobile load'; } catch {}
+      return false;
+    }
+    hardLoadRecord(record);
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    forceAfterSwitch();
+    setTimeout(() => {
+      try { document.body.classList.remove('show-library-screen'); } catch {}
+      try { $('jobsScreen')?.classList.remove('active'); } catch {}
+      forceAfterSwitch();
+    }, 150);
+    return false;
+  }
+  document.addEventListener('click', mobileButtonHandler, true);
+  document.addEventListener('touchstart', mobileButtonHandler, { capture:true, passive:false });
+  document.addEventListener('pointerdown', mobileButtonHandler, true);
+  const oldRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  function wrappedRender(jobs){
+    if (typeof oldRender === 'function') oldRender.apply(this, arguments);
+    if (!isMobile()) return;
+    const details = $('jobsList');
+    if (!details) return;
+    const selected = currentSelectedRecord() || (Array.isArray(jobs) ? jobs.find(j=>String(j.id)===String(window.__tapcalcLibrarySelectedId||'')) : null);
+    const rec = selected?.record || window.__tapcalcVisibleDetailRecord || null;
+    const actions = details.querySelector('.job-detail-actions');
+    if (!actions || !rec) return;
+    actions.innerHTML = '<button type="button" id="jobsLoadSelectedBtnMobileCanonical" class="secondary-btn">Load Job</button>';
+    const btn = $('jobsLoadSelectedBtnMobileCanonical');
+    if (btn) {
+      btn.dataset.recordJson = JSON.stringify(rec).slice(0, 900000);
+      btn.style.display='block'; btn.style.width='100%'; btn.style.margin='0 auto'; btn.style.textAlign='center';
+    }
+  }
+  window.renderSelectedJobDetails = wrappedRender;
+  try { renderSelectedJobDetails = wrappedRender; } catch {}
+  const oldShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
+  if (typeof oldShow === 'function') {
+    const wrappedShow = function(name, ...rest){ const out = oldShow.call(this,name,...rest); if (name==='job' && isMobile()) forceAfterSwitch(); return out; };
+    window.showScreen = wrappedShow; try { showScreen = wrappedShow; } catch {}
+  }
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile canonical desktop loader bind ===== */
+(function(){
+  const MOBILE_MEDIA='(max-width: 820px)';
+  const isMobile=()=>{ try { return window.matchMedia ? window.matchMedia(MOBILE_MEDIA).matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } };
+  const $=(id)=>document.getElementById(id);
+  function getCombined(){
+    try { return typeof getCombinedJobsForDisplay === 'function' ? (getCombinedJobsForDisplay() || []) : []; } catch { return []; }
+  }
+  function getSelectedEntry(){
+    const jobs=getCombined();
+    const active=document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id], #jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id], #jobsSelect .jobs-list-item[aria-selected="true"][data-job-id]');
+    const id=String(active?.dataset?.jobId || window.__tapcalcLibrarySelectedId || window.__alpha87SelectedJobId || window.__tapcalcSelectedJobId || (typeof selectedJobId!=='undefined' ? selectedJobId : '') || '').trim();
+    let match=id ? jobs.find(j => String(j?.id||'')===id) : null;
+    if (!match && window.__tapcalcVisibleLibraryRecord) match = { id: id || 'visible', record: window.__tapcalcVisibleLibraryRecord, source:'shared' };
+    return match || null;
+  }
+  function canonicalMobileLoad(record){
+    if (!record) return false;
+    let state=null;
+    try { state = typeof buildStateFromRecord === 'function' ? (buildStateFromRecord(record) || null) : null; } catch {}
+    try { window.__alpha115MobileRecord = record; } catch {}
+    try { if (state && typeof localStorage !== 'undefined') localStorage.setItem(JOB_STATE_KEY, JSON.stringify(state)); } catch {}
+    try { if (state && typeof applyJobState === 'function') applyJobState(state); } catch {}
+    try { if (typeof loadRecordIntoCalculator === 'function') loadRecordIntoCalculator(record, { switchScreen:false, skipPersist:false, message:true }); } catch(e) { console.error('alpha115 mobile load', e); }
+    try { if (typeof persistCurrentJob === 'function') persistCurrentJob(); } catch {}
+    const showCurrent=()=>{
+      try { const tab=document.querySelector('.screen-tab[data-screen="job"]'); if(tab) tab.click(); else if (typeof openScreen==='function') openScreen('job'); else if (typeof showScreen==='function') showScreen('job'); } catch {}
+    };
+    showCurrent();
+    [0,80,220,480,900].forEach(ms => setTimeout(() => {
+      try { if (state && typeof applyJobState === 'function') applyJobState(state); } catch {}
+      try { if (typeof restoreCurrentJob === 'function') restoreCurrentJob(); } catch {}
+      try { if (typeof updateCurrentJobLabel === 'function') updateCurrentJobLabel(); } catch {}
+      try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
+      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+    }, ms));
+    return true;
+  }
+  window.tapCalcCanonicalMobileLoadFromSelected = function(){
+    const entry=getSelectedEntry();
+    if (!entry?.record) return false;
+    try { window.__tapcalcLibrarySelectedId = String(entry.id || ''); } catch {}
+    return canonicalMobileLoad(entry.record);
+  };
+  const oldRender = window.renderSelectedJobDetails || (typeof renderSelectedJobDetails === 'function' ? renderSelectedJobDetails : null);
+  function wrappedRender(){
+    const out = typeof oldRender === 'function' ? oldRender.apply(this, arguments) : undefined;
+    if (!isMobile()) return out;
+    const details = $('jobsList');
+    if (!details) return out;
+    const actions = details.querySelector('.job-detail-actions');
+    const entry = getSelectedEntry();
+    if (!actions || !entry?.record) return out;
+    actions.innerHTML = '<button type="button" id="jobsLoadSelectedBtnMobile114" class="secondary-btn" onclick="return window.tapCalcCanonicalMobileLoadFromSelected && window.tapCalcCanonicalMobileLoadFromSelected();">Load Job</button>';
+    const btn = $('jobsLoadSelectedBtnMobile114');
+    if (btn) {
+      btn.style.display='block';
+      btn.style.width='100%';
+      btn.style.margin='0 auto';
+      btn.style.textAlign='center';
+    }
+    return out;
+  }
+  window.renderSelectedJobDetails = wrappedRender;
+  try { renderSelectedJobDetails = wrappedRender; } catch {}
+  document.addEventListener('click', function(e){
+    const row=e.target.closest && e.target.closest('#jobsSelect .jobs-list-item[data-job-id], [data-job-id]');
+    if(!row) return;
+    const id=String(row.dataset.jobId || '');
+    if(id) { try { window.__tapcalcLibrarySelectedId = id; if (typeof selectedJobId!=='undefined') selectedJobId = id; } catch {} }
+  }, true);
+  setTimeout(()=>{ try { if (typeof window.renderSelectedJobDetails === 'function') window.renderSelectedJobDetails(); } catch {} }, 50);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile library overlay/nav isolation ===== */
+(() => {
+  const isCompact = () => {
+    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
+  };
+  const syncLibraryOverlayState = () => {
+    try {
+      const jobs = document.getElementById('jobsScreen');
+      const open = !!(jobs && jobs.classList.contains('active'));
+      document.body.classList.toggle('show-library-screen', open);
+      const nav = document.querySelector('.screen-nav');
+      if (nav) {
+        nav.style.display = open && isCompact() ? 'none' : '';
+        nav.style.pointerEvents = open && isCompact() ? 'none' : '';
+      }
+      if (jobs && open && isCompact()) {
+        jobs.style.pointerEvents = 'auto';
+        jobs.style.zIndex = '1001';
+        jobs.style.display = 'block';
+        jobs.hidden = false;
+      }
+    } catch {}
+  };
+
+  const loadBtnHandler = (event) => {
+    if (!isCompact()) return;
+    const btn = event.target.closest('#jobsLoadSelectedBtnFinal');
+    if (!btn) return;
+    try { event.preventDefault(); } catch {}
+    try { event.stopPropagation(); } catch {}
+    try { event.stopImmediatePropagation(); } catch {}
+    if (typeof window.tapCalcForceLoadSelectedJob === 'function') {
+      window.tapCalcForceLoadSelectedJob(event);
+    }
+  };
+
+  document.addEventListener('pointerdown', loadBtnHandler, true);
+  document.addEventListener('touchstart', loadBtnHandler, { capture: true, passive: false });
+  document.addEventListener('click', loadBtnHandler, true);
+
+  const origShow = window.showScreen || (typeof showScreen === 'function' ? showScreen : null);
+  if (typeof origShow === 'function') {
+    const wrapped = function(name){
+      const result = origShow.apply(this, arguments);
+      setTimeout(syncLibraryOverlayState, 0);
+      return result;
+    };
+    window.showScreen = wrapped;
+    try { showScreen = wrapped; } catch {}
+  }
+  window.addEventListener('pageshow', syncLibraryOverlayState);
+  window.addEventListener('resize', syncLibraryOverlayState);
+  setTimeout(syncLibraryOverlayState, 0);
+})();
+
+
+/* ===== 3.0.0-alpha134 mobile library screen ownership reset ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const compact = () => { try { return window.matchMedia('(max-width: 820px)').matches; } catch { return window.innerWidth <= 820; } };
+  const screens = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
+
+  function finalShowScreen(name){
+    Object.entries(screens).forEach(([key, id])=>{
+      const el = $(id); if(!el) return;
+      const active = key === name;
+      el.classList.toggle('active', active);
+      el.hidden = !active;
+      el.style.display = active ? 'block' : 'none';
+      el.style.pointerEvents = active ? 'auto' : 'none';
+      el.style.visibility = active ? 'visible' : 'hidden';
+      el.style.zIndex = active ? (name === 'jobs' ? '1001' : '2') : '0';
+      if (!active && key === 'jobs') {
+        el.style.position = '';
+      }
+      if (active && key === 'jobs') {
+        el.style.position = 'relative';
+        el.style.overflowX = 'hidden';
+      }
+    });
+    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab)=>{
+      const active = tab.dataset.screen === name;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    document.body.classList.toggle('show-library-screen', name === 'jobs');
+    try { localStorage.setItem('tapcalcV3Screen', name); } catch {}
+    if (name === 'jobs') setTimeout(forceLibraryInteractive, 0);
+  }
+
+  function forceLibraryInteractive(){
+    const jobs = $('jobsScreen');
+    if (!jobs) return;
+    jobs.hidden = false;
+    jobs.classList.add('active');
+    jobs.style.display = 'block';
+    jobs.style.visibility = 'visible';
+    jobs.style.pointerEvents = 'auto';
+    jobs.style.position = 'relative';
+    jobs.style.zIndex = '1001';
+    jobs.querySelectorAll('button, input, select, textarea, a, .jobs-list-item, .library-lane-btn, .jobs-chip-btn').forEach((el)=>{
+      el.style.pointerEvents = 'auto';
+      el.style.position = el.style.position || 'relative';
+      if (!el.style.zIndex) el.style.zIndex = '1002';
+    });
+  }
+
+  function handleTab(e){
+    const tab = e.target.closest('.screen-tab[data-screen]');
+    if (!tab || !compact()) return;
+    const next = String(tab.dataset.screen || '').trim();
+    if (!next) return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+    finalShowScreen(next);
+    return false;
+  }
+
+  document.addEventListener('pointerdown', handleTab, true);
+  document.addEventListener('click', handleTab, true);
+  window.addEventListener('pageshow', ()=>{ if (compact()) setTimeout(forceLibraryInteractive, 40); });
+  document.addEventListener('DOMContentLoaded', ()=>{ if (compact()) setTimeout(forceLibraryInteractive, 40); });
+  window.tapCalcFinalShowScreen = finalShowScreen;
+})();
+
+
+(function(){
+  function bindCollapsible(btnId, contentId){
+    const btn=document.getElementById(btnId);
+    const content=document.getElementById(contentId);
+    if(!btn||!content||btn.dataset.boundToggle==='1') return;
+    btn.dataset.boundToggle='1';
+    const setOpen=(open)=>{
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      content.hidden=!open;
+    };
+    setOpen(true);
+    btn.addEventListener('click', ()=>{
+      const open=btn.getAttribute('aria-expanded')!=='true';
+      setOpen(open);
+    });
+  }
+  function initAuditToggles(){
+    bindCollapsible('referenceToolsToggleBtn','referenceWorkspaceContent');
+    bindCollapsible('sharedJobsToggleBtn','sharedJobsContent');
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', initAuditToggles, {once:true});
+  } else {
+    initAuditToggles();
+  }
+  window.addEventListener('pageshow', initAuditToggles);
+})();
+
+
+/* ===== 3.0.0-alpha134 guided workflow shell ===== */
+(function(){
+  const JOB_TYPES = {
+    'Hot Tap': {
+      title: 'Hot Tap job roadmap',
+      copy: 'Keep it simple: set the job, confirm pipe and cutter, run the hot tap, then review ETA and output.',
+      shellTitle: 'Hot Tap job selected',
+      shellCopy: 'Only the Hot Tap workflow stays on screen so the crew does not have to sort through Line Stop or Plug fields.',
+      choiceTitle: 'Selected path: Hot Tap',
+      choiceCopy: 'Use this path when the job only needs Job Setup, Pipe / Cutter, Hot Tap, and review.',
+      startLabel: 'Start Hot Tap Workflow',
+      steps: ['1 Job Setup','2 Pipe / Cutter','3 Hot Tap','4 ETA / Review']
+    },
+    'Line Stop': {
+      title: 'Line Stop job roadmap',
+      copy: 'Run the full sequence in order: job setup, pipe and cutter, hot tap, line stop, completion plug, then review.',
+      shellTitle: 'Line Stop job selected',
+      shellCopy: 'This job shows the full path: Hot Tap, Line Stop, and Completion Plug, in one guided sequence.',
+      choiceTitle: 'Selected path: Line Stop',
+      choiceCopy: 'Use this path when the job needs Hot Tap, Line Stop, Completion Plug, and final review in order.',
+      startLabel: 'Start Line Stop Workflow',
+      steps: ['1 Job Setup','2 Pipe / Cutter','3 Hot Tap','4 Line Stop','5 Completion Plug','6 ETA / Review']
+    }
+  };
+
+  function normalizeJobType(raw){
+    const value = String(raw || '').trim().toLowerCase();
+    if (value.includes('line stop') || value.includes('completion')) return 'Line Stop';
+    return 'Hot Tap';
+  }
+
+  function renderStepPills(targetId, steps){
+    const host = document.getElementById(targetId);
+    if (!host) return;
+    host.innerHTML = steps.map((label, index) => `<span class="${targetId === 'workflowStageRoadmap' ? 'workflow-roadmap-pill' : 'workflow-phase-step'} ${index===0 ? 'active' : ''}"><span>${label}</span>${targetId === 'workflowPhaseSteps' ? `<small>${index < steps.length - 1 ? 'Next' : 'Finish'}</small>` : ''}</span>`).join('');
+  }
+
+  function applyWorkflowShell(){
+    const select = document.getElementById('operationType');
+    if (!select) return;
+    const jobType = normalizeJobType(select.value);
+    if (select.value !== jobType) select.value = jobType;
+    const config = JOB_TYPES[jobType] || JOB_TYPES['Hot Tap'];
+    document.querySelectorAll('[data-jobtype-choice]').forEach((button) => {
+      const selected = button.dataset.jobtypeChoice === jobType;
+      button.classList.toggle('active', selected);
+      button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+      button.setAttribute('aria-label', selected ? `${button.dataset.jobtypeChoice} selected path` : `Switch to ${button.dataset.jobtypeChoice} path`);
+      const state = button.querySelector('.workflow-jobtype-state');
+      if (state) state.textContent = selected ? 'Selected path' : 'Tap to switch';
+    });
+    const shellTitle = document.getElementById('workflowShellTitle');
+    const shellCopy = document.getElementById('workflowShellCopy');
+    const choiceAlert = document.getElementById('workflowChoiceAlert');
+    const choiceTitle = document.getElementById('workflowChoiceTitle');
+    const choiceCopy = document.getElementById('workflowChoiceCopy');
+    const startButton = document.getElementById('workflowStartBtn');
+    const phaseTitle = document.getElementById('workflowPhaseTitle');
+    const phaseCopy = document.getElementById('workflowPhaseCopy');
+    if (shellTitle) shellTitle.textContent = config.shellTitle;
+    if (shellCopy) shellCopy.textContent = config.shellCopy;
+    if (choiceAlert) choiceAlert.dataset.jobtype = jobType === 'Line Stop' ? 'line-stop' : 'hot-tap';
+    if (choiceTitle) choiceTitle.textContent = config.choiceTitle;
+    if (choiceCopy) choiceCopy.textContent = config.choiceCopy;
+    if (startButton) startButton.textContent = config.startLabel;
+    if (phaseTitle) phaseTitle.textContent = config.title;
+    if (phaseCopy) phaseCopy.textContent = config.copy;
+    renderStepPills('workflowStageRoadmap', config.steps);
+    renderStepPills('workflowPhaseSteps', config.steps);
+
+    const isLineStop = jobType === 'Line Stop';
+    document.querySelectorAll('[data-jobtype-only="lineStop"]').forEach((el) => {
+      el.hidden = !isLineStop;
+      el.classList.toggle('jobtype-hidden', !isLineStop);
+    });
+    const stageStat = document.getElementById('cardStageStat');
+    if (stageStat && !isLineStop && /line stop|completion/i.test(stageStat.textContent || '')) stageStat.textContent = 'Hot Tap';
+    const focusOutputLabel = document.querySelector('.card-focus-stat span');
+    if (focusOutputLabel) focusOutputLabel.textContent = 'Stage';
+    const currentOperation = document.getElementById('currentOperationStat');
+    if (currentOperation) currentOperation.textContent = jobType;
+    const workflowMeta = document.getElementById('cardCurrentMeta');
+    if (workflowMeta) {
+      workflowMeta.textContent = isLineStop
+        ? 'Follow the full sequence: Job Setup, Pipe / Cutter, Hot Tap, Line Stop, Completion Plug, then review.'
+        : 'This job only needs Job Setup, Pipe / Cutter, Hot Tap, and review.';
+    }
+    const workflowJump = document.getElementById('cardFocusJumpBtn');
+    if (workflowJump) workflowJump.textContent = isLineStop ? 'Jump to Active Stage' : 'Jump to Hot Tap Inputs';
+
+    const activeMode = getActiveWorkflowMode();
+    if (!isLineStop && (activeMode === 'lineStop' || activeMode === 'completionPlug')) {
+      try { if (typeof window.setMode === 'function') window.setMode('hotTap'); } catch {}
+    }
+  }
+
+  function bindJobTypeCards(){
+    document.querySelectorAll('[data-jobtype-choice]').forEach((button) => {
+      if (button.dataset.boundJobtypeChoice === 'true') return;
+      button.dataset.boundJobtypeChoice = 'true';
+      button.addEventListener('click', () => {
+        const select = document.getElementById('operationType');
+        if (!select) return;
+        select.value = button.dataset.jobtypeChoice || 'Hot Tap';
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        select.dispatchEvent(new Event('input', { bubbles: true }));
+        applyWorkflowShell();
+      });
+    });
+  }
+
+  bindJobTypeCards();
+  document.getElementById('operationType')?.addEventListener('change', applyWorkflowShell);
+  document.getElementById('operationType')?.addEventListener('input', applyWorkflowShell);
+  window.addEventListener('load', () => { setTimeout(applyWorkflowShell, 120); setTimeout(applyWorkflowShell, 500); });
+  window.addEventListener('pageshow', () => setTimeout(applyWorkflowShell, 120));
+  document.addEventListener('click', (event) => {
+    const tab = event.target.closest('.screen-tab[data-screen], [data-go-screen]');
+    if (!tab) return;
+    setTimeout(applyWorkflowShell, 80);
+  }, true);
+
+  const originalLoader = window.loadRecordIntoCalculator;
+  if (typeof originalLoader === 'function' && !window.__alpha134WorkflowWrappedLoader) {
+    window.__alpha134WorkflowWrappedLoader = true;
+    window.loadRecordIntoCalculator = function(...args){
+      const result = originalLoader.apply(this, args);
+      setTimeout(applyWorkflowShell, 30);
+      setTimeout(applyWorkflowShell, 220);
+      return result;
+    };
+  }
+
+  const originalShow = window.showScreen;
+  if (typeof originalShow === 'function' && !window.__alpha134WorkflowWrappedShow) {
+    window.__alpha134WorkflowWrappedShow = true;
+    const wrappedShow = function(name, ...rest){
+      const result = originalShow.call(this, name, ...rest);
+      setTimeout(applyWorkflowShell, 30);
+      return result;
+    };
+    window.showScreen = wrappedShow;
+    try { showScreen = wrappedShow; } catch {}
+  }
+
+  setTimeout(applyWorkflowShell, 120);
+})();
+
+/* ===== 3.0.0-alpha134 guided workflow stage flow ===== */
+(function(){
+  const STORAGE_KEY = 'tapcalcWorkflowStageV2';
+  const MODE_STAGES = new Set(['hotTap','lineStop','completionPlug']);
+  const PANEL_FOR_STAGE = {
+    hotTap: 'hotTapPanel',
+    lineStop: 'lineStopPanel',
+    completionPlug: 'completionPlugPanel'
+  };
+  const STAGE_META = {
+    setup: {
+      title: 'Step 1  -  Job Setup',
+      lead: 'Confirm who, where, and what kind of job this is before you jump into measurements.',
+      short: 'Job Setup',
+      eyebrow: 'Step 1',
+      copy: 'Start with the basics so the workflow can guide the rest of the job.'
+    },
+    pipe: {
+      title: 'Step 2  -  Pipe / Cutter Setup',
+      lead: 'Lock in pipe geometry, cutter size, and BCO first so the stage math has the right numbers to work from.',
+      short: 'Pipe / Cutter',
+      eyebrow: 'Step 2',
+      copy: 'Use the inline BCO and ETA setup here, or open standalone BCO for a quick check.'
+    },
+    hotTap: {
+      title: 'Step 3  -  Hot Tap',
+      lead: 'Enter the hot tap measurements here and verify the output before moving forward.',
+      short: 'Hot Tap',
+      eyebrow: 'Step 3',
+      copy: 'This is the first active calculation stage.'
+    },
+    lineStop: {
+      title: 'Step 4  -  Line Stop',
+      lead: 'Now calculate lower-in, travel margin, and stop-specific checks.',
+      short: 'Line Stop',
+      eyebrow: 'Step 4',
+      copy: 'Only appears on Line Stop jobs.'
+    },
+    completionPlug: {
+      title: 'Step 5  -  Completion Plug',
+      lead: 'Finish the job with the plug measurements and completion checks.',
+      short: 'Completion Plug',
+      eyebrow: 'Step 5',
+      copy: 'Only appears on Line Stop jobs.'
+    },
+    review: {
+      title: 'Final Step  -  Review & Save',
+      lead: 'Check stage status, confirm BCO and ETA, then save or sync the job.',
+      short: 'Review',
+      eyebrow: 'Final Step',
+      copy: 'Wrap everything up before you send the crew out.'
+    }
+  };
+
+  function normalizeJobType(raw){
+    const value = String(raw || '').trim().toLowerCase();
+    return value.includes('line stop') || value.includes('completion') ? 'Line Stop' : 'Hot Tap';
+  }
+  function getJobType(){ return normalizeJobType(document.getElementById('operationType')?.value || 'Hot Tap'); }
+  function getStages(){
+    return getJobType() === 'Line Stop'
+      ? ['setup','pipe','hotTap','lineStop','completionPlug','review']
+      : ['setup','pipe','hotTap','review'];
+  }
+  function stageStatusText(stage){
+    const map = {
+      hotTap: document.getElementById('workflowStatusHotTap')?.textContent?.trim() || 'Not Ready',
+      lineStop: document.getElementById('workflowStatusLineStop')?.textContent?.trim() || 'Not Ready',
+      completionPlug: document.getElementById('workflowStatusCompletionPlug')?.textContent?.trim() || 'Not Ready'
+    };
+    if (map[stage]) return map[stage];
+    if (stage === 'setup') {
+      const customer = document.getElementById('jobClient')?.value?.trim();
+      const location = document.getElementById('jobLocation')?.value?.trim();
+      const machine = document.getElementById('machineType')?.value?.trim();
+      const touched = ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician']
+        .some((id) => !!document.getElementById(id)?.value?.trim());
+      return customer && location && machine ? 'Ready' : (touched || machine ? 'In Progress' : 'Waiting');
+    }
+    if (stage === 'pipe') {
+      const pipeReady = workflowTextReady('summaryPipe');
+      const cutterReady = workflowTextReady('summaryCutter');
+      const bcoReady = workflowTextReady('summaryBco');
+      return pipeReady && cutterReady && bcoReady ? 'Ready' : ((pipeReady || cutterReady || bcoReady) ? 'In Progress' : 'Waiting');
+    }
+    if (stage === 'review') {
+      return getStages().filter(s => MODE_STAGES.has(s)).every(s => stageStatusText(s) === 'Ready') ? 'Ready' : 'Review';
+    }
+    return 'Waiting';
+  }
+  function stageStatusKey(stage){
+    const normalized = String(stageStatusText(stage) || '').trim().toLowerCase();
+    if (!normalized) return 'waiting';
+    if (normalized === 'ready') return 'ready';
+    if (normalized.includes('progress')) return 'in-progress';
+    if (normalized.includes('not ready')) return 'not-ready';
+    if (normalized.includes('review')) return 'review';
+    if (normalized.includes('wait')) return 'waiting';
+    return normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'waiting';
+  }
+  function workflowFieldValue(id){
+    const el = document.getElementById(id);
+    if (!el) return '';
+    return String(('value' in el ? el.value : el.textContent) || '').trim();
+  }
+  function workflowTextReady(id){
+    const value = workflowFieldValue(id);
+    if (id === 'summaryPipe' && /^OD\s+0(?:\.0+)?\s*\|\s*Wall\s+0(?:\.0+)?$/i.test(value)) return false;
+    return !!value && value !== '-' && value !== '?' && !/^not ready$/i.test(value);
+  }
+  function workflowAnyFilled(ids){
+    return ids.some((id) => !!workflowFieldValue(id));
+  }
+  function workflowMissingIf(missing, condition, label){
+    if (!condition) missing.push(label);
+  }
+  function workflowStatusFromMissing(missing, started = false){
+    if (!missing.length) return 'Ready';
+    return started ? 'In Progress' : 'Waiting';
+  }
+  function workflowStatusKeyFromText(value){
+    const normalized = String(value || '').trim().toLowerCase();
+    if (normalized === 'ready') return 'ready';
+    if (normalized.includes('progress')) return 'in-progress';
+    if (normalized.includes('review')) return 'review';
+    if (normalized.includes('not ready')) return 'not-ready';
+    if (normalized.includes('wait')) return 'waiting';
+    return normalized.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'waiting';
+  }
+  function workflowEscape(value){
+    return String(value || '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+  }
+  function getWorkflowRequirementState(stage){
+    const pipeReady = workflowTextReady('summaryPipe');
+    const cutterReady = workflowTextReady('summaryCutter');
+    const bcoReady = workflowTextReady('summaryBco');
+    const machineReady = !!workflowFieldValue('machineType');
+    const geometryReady = pipeReady && cutterReady && bcoReady;
+    const state = {
+      status: stageStatusText(stage),
+      missing: [],
+      title: 'Keep this step moving',
+      copy: 'Fill the missing items below, then continue to the next step.'
+    };
+
+    if (stage === 'setup') {
+      workflowMissingIf(state.missing, !!workflowFieldValue('jobClient'), 'Customer');
+      workflowMissingIf(state.missing, !!workflowFieldValue('jobLocation'), 'Location');
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      state.status = workflowStatusFromMissing(state.missing, workflowAnyFilled(['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician','machineType']));
+      state.title = state.missing.length ? 'Start with the job basics' : 'Job setup is ready';
+      state.copy = state.missing.length
+        ? 'Fill the setup fields on this step so the rest of the workflow has a clear setup.'
+        : 'Move to Pipe / Cutter and lock in the geometry before using job math.';
+      return state;
+    }
+
+    if (stage === 'pipe') {
+      workflowMissingIf(state.missing, pipeReady, 'Pipe size / wall');
+      workflowMissingIf(state.missing, cutterReady, 'Cutter O.D.');
+      workflowMissingIf(state.missing, bcoReady, 'BCO result');
+      state.status = workflowStatusFromMissing(state.missing, pipeReady || cutterReady || bcoReady);
+      state.title = state.missing.length ? 'Lock in pipe, cutter, and BCO' : 'Pipe / Cutter is ready';
+      state.copy = state.missing.length
+        ? 'Enter the pipe and cutter values here, then confirm the BCO result.'
+        : 'Use the active stage next. The workflow can now carry BCO forward.';
+      return state;
+    }
+
+    if (stage === 'hotTap') {
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      workflowMissingIf(state.missing, geometryReady, 'Pipe / Cutter / BCO');
+      workflowMissingIf(state.missing, !!workflowFieldValue('md'), 'MD');
+      workflowMissingIf(state.missing, !!workflowFieldValue('ptc'), 'PTC');
+      workflowMissingIf(state.missing, !!workflowFieldValue('mt'), 'Machine travel');
+      workflowMissingIf(state.missing, workflowTextReady('ttd'), 'Hot Tap output');
+      state.status = stageStatusText('hotTap');
+      state.title = state.missing.length ? 'Finish the Hot Tap inputs' : 'Hot Tap is ready';
+      state.copy = state.missing.length
+        ? 'Enter the Hot Tap measurements, then check the calculated output before moving on.'
+        : 'Hot Tap is ready. Continue to the next job stage or review.';
+      return state;
+    }
+
+    if (stage === 'lineStop') {
+      const variant = typeof getLineStopVariant === 'function' ? getLineStopVariant() : 'standard';
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      if (variant !== 'htp') workflowMissingIf(state.missing, geometryReady, 'Pipe / Cutter / BCO');
+      if (variant === 'htp') {
+        workflowMissingIf(state.missing, !!workflowFieldValue('htpPipeSize'), 'HTP pipe size');
+        workflowMissingIf(state.missing, !!workflowFieldValue('htpMd'), 'HTP MD');
+        workflowMissingIf(state.missing, !!workflowFieldValue('htpPtc'), 'HTP PTC');
+        workflowMissingIf(state.missing, workflowTextReady('htpTco'), 'HTP output');
+      } else if (variant === 'hiStop') {
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsMd'), 'MD');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsRl'), 'RL');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsCl'), 'CL');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsRcd'), 'RCD');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsPb'), 'PB');
+        workflowMissingIf(state.missing, !!workflowFieldValue('hsPtp'), 'PTP');
+        workflowMissingIf(state.missing, workflowTextReady('hsPlugSet'), 'Hi-Stop output');
+      } else {
+        workflowMissingIf(state.missing, !!workflowFieldValue('lsMd'), 'MD');
+        workflowMissingIf(state.missing, workflowTextReady('lsLiManual'), 'Lower-in output');
+      }
+      state.status = stageStatusText('lineStop');
+      state.title = state.missing.length ? 'Finish the Line Stop checks' : 'Line Stop is ready';
+      state.copy = state.missing.length
+        ? 'Fill the Line Stop values for the selected stop type, then verify the output.'
+        : 'Line Stop is ready. Continue to Completion Plug.';
+      return state;
+    }
+
+    if (stage === 'completionPlug') {
+      workflowMissingIf(state.missing, machineReady, 'Machine');
+      workflowMissingIf(state.missing, geometryReady, 'Pipe / Cutter / BCO');
+      workflowMissingIf(state.missing, !!workflowFieldValue('cpStart'), 'Start');
+      workflowMissingIf(state.missing, !!workflowFieldValue('cpJbf'), 'JBF');
+      workflowMissingIf(state.missing, !!workflowFieldValue('cpPt'), 'PT');
+      workflowMissingIf(state.missing, workflowTextReady('cpLiManual'), 'Completion output');
+      state.status = stageStatusText('completionPlug');
+      state.title = state.missing.length ? 'Finish the Completion Plug checks' : 'Completion Plug is ready';
+      state.copy = state.missing.length
+        ? 'Enter the plug measurements and confirm the completion output.'
+        : 'Completion Plug is ready. Move to review and save.';
+      return state;
+    }
+
+    if (stage === 'review') {
+      const activeStages = getStages().filter((item) => MODE_STAGES.has(item));
+      state.missing = activeStages
+        .filter((item) => stageStatusText(item) !== 'Ready')
+        .map((item) => (STAGE_META[item] || {}).short || item);
+      state.status = state.missing.length ? 'Review' : 'Ready';
+      state.title = state.missing.length ? 'Review what still needs attention' : 'Ready to save';
+      state.copy = state.missing.length
+        ? 'Use the step chips to jump back to any stage that is not ready yet.'
+        : 'All active stages are ready. Save locally or sync the job.';
+      return state;
+    }
+
+    return state;
+  }
+  function updateWorkflowReadiness(stage){
+    const panel = document.getElementById('workflowReadinessPanel');
+    if (!panel) return;
+    const state = getWorkflowRequirementState(stage);
+    const statusEl = document.getElementById('workflowCurrentStepStatus');
+    const titleEl = document.getElementById('workflowNextActionTitle');
+    const copyEl = document.getElementById('workflowNextActionCopy');
+    const listEl = document.getElementById('workflowMissingList');
+    const stateKey = workflowStatusKeyFromText(state.status);
+    panel.dataset.state = stateKey;
+    if (statusEl) {
+      statusEl.textContent = state.status;
+      statusEl.dataset.state = stateKey;
+    }
+    if (titleEl) titleEl.textContent = state.title;
+    if (copyEl) copyEl.textContent = state.copy;
+    if (listEl) {
+      listEl.innerHTML = state.missing.length
+        ? state.missing.map((item) => `<li>${workflowEscape(item)}</li>`).join('')
+        : '<li>Nothing missing for this step.</li>';
+    }
+  }
+  function clearWorkflowGateNotice(){
+    const notice = document.getElementById('workflowGateNotice');
+    if (!notice) return;
+    notice.hidden = true;
+    notice.textContent = '';
+    delete notice.dataset.state;
+  }
+  function showWorkflowGateNotice(stage, state){
+    const notice = document.getElementById('workflowGateNotice');
+    if (!notice) return;
+    const meta = STAGE_META[stage] || { short: 'This step' };
+    const missingText = (state?.missing || []).join(', ');
+    notice.textContent = `Finish ${meta.short} before continuing: ${missingText}.`;
+    notice.dataset.state = 'blocked';
+    notice.hidden = false;
+    try { notice.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch {}
+  }
+  function guardWorkflowAdvance(targetStage){
+    const stages = getStages();
+    const current = activeStage();
+    const currentIndex = stages.indexOf(current);
+    const targetIndex = stages.indexOf(targetStage);
+    if (targetIndex <= currentIndex || current === 'review') {
+      clearWorkflowGateNotice();
+      return true;
+    }
+    const state = getWorkflowRequirementState(current);
+    if (!state.missing.length) {
+      clearWorkflowGateNotice();
+      return true;
+    }
+    showWorkflowGateNotice(current, state);
+    updateWorkflowReadiness(current);
+    return false;
+  }
+  function activeStage(){
+    const stages = getStages();
+    let stage = window.__tapCalcWorkflowStage || '';
+    if (!stage) {
+      try { stage = localStorage.getItem(STORAGE_KEY) || ''; } catch {}
+    }
+    return stages.includes(stage) ? stage : stages[0];
+  }
+  function setPhaseStepActive(index){
+    ['workflowPhaseSteps','workflowStageRoadmap'].forEach((id)=>{
+      const host = document.getElementById(id);
+      if (!host) return;
+      [...host.children].forEach((child, childIndex)=>child.classList.toggle('active', childIndex === index));
+    });
+  }
+  function renderStageNav(current){
+    const stages = getStages();
+    const nav = document.getElementById('workflowStageNav');
+    if (!nav) return;
+    const currentIndex = Math.max(0, stages.indexOf(current));
+    nav.innerHTML = stages.map((stage, index)=>{
+      const meta = STAGE_META[stage] || { short: stage, eyebrow: `Step ${index+1}`, copy: '' };
+      const status = stageStatusText(stage);
+      const ready = status === 'Ready';
+      const state = index < currentIndex ? (ready ? 'done' : 'incomplete') : (index === currentIndex ? 'current' : 'upcoming');
+      const detail = state === 'current' ? `Current  -  ${status}` : state === 'done' ? `Done  -  ${status}` : state === 'incomplete' ? `Needs Info  -  ${status}` : `Up Next  -  ${status}`;
+      return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-stage-state="${state}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}" ${stage===current ? 'aria-current="step"' : ''}><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${detail}</em></button>`;
+    }).join('');
+    nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
+  }
+  function renderStageNavByStatus(current){
+    const stages = getStages();
+    const nav = document.getElementById('workflowStageNav');
+    if (!nav) return;
+    const currentIndex = Math.max(0, stages.indexOf(current));
+    nav.innerHTML = stages.map((stage, index) => {
+      const meta = STAGE_META[stage] || { short: stage, eyebrow: `Step ${index+1}`, copy: '' };
+      const status = stageStatusText(stage);
+      const ready = status === 'Ready';
+      const state = index < currentIndex ? (ready ? 'done' : 'incomplete') : (index === currentIndex ? 'current' : 'upcoming');
+      const progress = state === 'done' ? 'ready' : (state === 'current' ? stageStatusKey(stage) : 'waiting');
+      const detail = stage === current
+        ? 'Current Step'
+        : state === 'done'
+          ? 'Done'
+          : state === 'incomplete'
+            ? 'Needs Info'
+          : index === currentIndex + 1
+            ? 'Next Step'
+            : 'Upcoming';
+      return `<button type="button" class="workflow-stage-chip ${stage===current ? 'active' : ''}" data-stage-state="${state}" data-stage-progress="${progress}" data-workflow-stage="${stage}" aria-pressed="${stage===current ? 'true' : 'false'}" ${stage===current ? 'aria-current="step"' : ''}><small>${meta.eyebrow}</small><span>${meta.short}</span><em>${detail}</em></button>`;
+    }).join('');
+    nav.querySelectorAll('[data-workflow-stage]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.workflowStage || 'setup')));
+  }
+  function workflowReviewStateForStage(stage){
+    const requirement = getWorkflowRequirementState(stage);
+    const meta = STAGE_META[stage] || { short: stage };
+    const ready = !requirement.missing.length && requirement.status === 'Ready';
+    const blocked = requirement.missing.length > 0;
+    return {
+      stage,
+      label: meta.short,
+      status: requirement.status,
+      ready,
+      blocked,
+      state: ready ? 'ready' : blocked ? 'blocked' : 'review',
+      detail: blocked ? `Missing: ${requirement.missing.join(', ')}` : (ready ? 'Ready for save.' : requirement.copy)
+    };
+  }
+  function updateWorkflowReviewDetails(){
+    const stages = getStages();
+    const reviewStages = stages.filter((stage) => stage !== 'review');
+    const reviewStates = reviewStages.map(workflowReviewStateForStage);
+    const readyCount = reviewStates.filter((item) => item.ready).length;
+    const blockedCount = reviewStates.filter((item) => item.blocked).length;
+    const activeModeStages = reviewStates.filter((item) => MODE_STAGES.has(item.stage));
+    const activeReadyCount = activeModeStages.filter((item) => item.ready).length;
+    const allReady = blockedCount === 0 && activeReadyCount === activeModeStages.length;
+
+    const statusCard = document.getElementById('workflowReviewStatusCard');
+    const statusTitle = document.getElementById('workflowReviewStatusTitle');
+    const statusCopy = document.getElementById('workflowReviewStatusCopy');
+    const statusPill = document.getElementById('workflowReviewStatusPill');
+    if (statusCard) statusCard.dataset.state = allReady ? 'ready' : blockedCount ? 'blocked' : 'review';
+    if (statusTitle) {
+      statusTitle.textContent = allReady
+        ? 'Ready to save this job'
+        : blockedCount
+          ? 'Some steps still need info'
+          : 'Review before saving';
+    }
+    if (statusCopy) {
+      statusCopy.textContent = allReady
+        ? 'All required workflow steps are ready. Save locally now, then sync shared when the job is ready for the library.'
+        : blockedCount
+          ? `${blockedCount} step${blockedCount === 1 ? '' : 's'} need attention before this job is fully ready. You can still save the draft while you work.`
+          : 'The job can be saved as a draft. Double-check the checklist and operations list before syncing shared.';
+    }
+    if (statusPill) statusPill.textContent = allReady ? 'Ready' : blockedCount ? 'Needs Info' : 'Review';
+
+    const countEl = document.getElementById('workflowReviewChecklistCount');
+    if (countEl) countEl.textContent = `${readyCount} of ${reviewStates.length} ready`;
+    const checklist = document.getElementById('workflowReviewChecklist');
+    if (checklist) {
+      checklist.innerHTML = reviewStates.map((item) => (
+        `<div class="workflow-review-check-item" data-state="${item.state}"><strong>${workflowEscape(item.label)}</strong><div><small>${workflowEscape(item.status)}</small><span>${workflowEscape(item.detail)}</span></div></div>`
+      )).join('');
+    }
+
+    const operationCount = document.getElementById('workflowReviewOperationCount');
+    const operationsList = document.getElementById('workflowReviewOperationsList');
+    let operations = [];
+    try {
+      const bundle = typeof syncCurrentOperationItemFromUi === 'function'
+        ? syncCurrentOperationItemFromUi({ render: false })
+        : (window.ensureJobBundleInitialized?.() || null);
+      operations = Array.isArray(bundle?.operations) ? bundle.operations : [];
+    } catch {}
+    if (operationCount) operationCount.textContent = `${operations.length || 0} operation${operations.length === 1 ? '' : 's'}`;
+    if (operationsList) {
+      operationsList.innerHTML = operations.length
+        ? operations.map((operation, index) => {
+          const summary = typeof buildOperationSummaryFromItem === 'function'
+            ? buildOperationSummaryFromItem(operation)
+            : { operationType: operation?.operationType || 'Operation', label: operation?.label || `Operation ${index + 1}`, details: 'No measurements yet' };
+          const notes = String(operation?.notes || '').trim();
+          const noteLine = notes ? `<span class="workflow-review-operation-note">${workflowEscape(notes)}</span>` : '';
+          return `<div class="workflow-review-operation-item"><small>${workflowEscape(summary.operationType || `Operation ${index + 1}`)}</small><strong>${workflowEscape(operation?.label || summary.label || `Operation ${index + 1}`)}</strong><span>${workflowEscape(summary.details || 'No measurements yet')}</span>${noteLine}</div>`;
+        }).join('')
+        : '<div class="workflow-review-operation-item"><strong>No operations yet</strong><span>Add a Hot Tap, Line Stop, or Completion operation before saving.</span></div>';
+    }
+  }
+  function updateHelperSummaries(){
+    const customer = document.getElementById('jobClient')?.value?.trim() || '-';
+    const location = document.getElementById('jobLocation')?.value?.trim() || '-';
+    const machine = document.getElementById('machineType')?.value?.trim() || '-';
+    const jobType = getJobType();
+    const pipe = document.getElementById('summaryPipe')?.textContent?.trim() || '-';
+    const cutter = document.getElementById('summaryCutter')?.textContent?.trim() || '-';
+    const bco = document.getElementById('summaryBco')?.textContent?.trim() || '-';
+    const eta = document.getElementById('etaRangeDisplay')?.textContent?.trim() || '-';
+    const pipeReady = workflowTextReady('summaryPipe');
+    const cutterReady = workflowTextReady('summaryCutter');
+    const bcoReady = workflowTextReady('summaryBco');
+    const setValue = (id, value, state = '') => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = value;
+      const safeState = state || (value && value !== '-' && value !== '?' ? 'ready' : 'waiting');
+      el.dataset.state = safeState;
+      const card = el.closest('.workflow-helper-card');
+      if (card) card.dataset.state = safeState;
+    };
+    const setStatusValue = (id, value) => setValue(id, value, workflowStatusKeyFromText(value));
+    setValue('workflowSetupCustomer', customer);
+    setValue('workflowSetupLocation', location);
+    setValue('workflowSetupMachine', machine);
+    setValue('workflowSetupType', jobType, 'ready');
+    setValue('workflowPipeSummary', pipe, pipeReady ? 'ready' : 'waiting');
+    setValue('workflowCutterSummary', cutter, cutterReady ? 'ready' : 'waiting');
+    setValue('workflowBcoSummary', bco, bcoReady ? 'ready' : 'waiting');
+    setStatusValue('workflowPipeStatus', bcoReady ? 'Ready' : ((pipeReady || cutterReady) ? 'In Progress' : 'Waiting on BCO'));
+    setValue('workflowReviewBco', bco, bcoReady ? 'ready' : 'waiting');
+    setValue('workflowReviewEta', eta);
+    setStatusValue('workflowReviewHotTap', stageStatusText('hotTap'));
+    setStatusValue('workflowReviewLineStop', stageStatusText('lineStop'));
+    setStatusValue('workflowReviewCompletionPlug', stageStatusText('completionPlug'));
+    const setupNote = document.getElementById('workflowSetupNote');
+    if (setupNote) setupNote.textContent = (customer !== '-' && location !== '-' && machine !== '-')
+      ? 'Setup is ready. Move on to pipe and cutter so the job math has a solid base.'
+      : 'Fill the setup fields here, then continue to pipe and cutter.';
+    const pipeNote = document.getElementById('workflowPipeNote');
+    if (pipeNote) pipeNote.textContent = bco !== '-'
+      ? 'BCO is ready. The active workflow stages can use that number now.'
+      : 'Once BCO is calculated, the workflow can carry that number into the stages that need it.';
+    const pipeGate = document.getElementById('workflowPipeGateBanner');
+    if (pipeGate) {
+      const pipeState = getWorkflowRequirementState('pipe');
+      if (!pipeState.missing.length) {
+        pipeGate.dataset.state = 'ready';
+        pipeGate.innerHTML = '<strong>Pipe / Cutter Ready</strong><span>Pipe, cutter, and BCO are locked in for the workflow math.</span>';
+      } else {
+        const started = pipeState.status === 'In Progress';
+        pipeGate.dataset.state = started ? 'waiting' : 'blocked';
+        pipeGate.innerHTML = `<strong>${started ? 'Pipe / Cutter In Progress' : 'Waiting on Pipe / Cutter'}</strong><span>Missing: ${workflowEscape(pipeState.missing.join(', '))}.</span>`;
+      }
+    }
+    updateWorkflowReviewDetails();
+    const reviewNote = document.getElementById('workflowReviewNote');
+    if (reviewNote) {
+      const modeStages = getStages().filter((stage)=>MODE_STAGES.has(stage));
+      const readyCount = modeStages.filter((stage)=>stageStatusText(stage) === 'Ready').length;
+      reviewNote.textContent = readyCount === modeStages.length
+        ? 'All active stages are reading Ready. Save locally or sync the job when you are done.'
+        : `You have ${readyCount} of ${modeStages.length} active stages reading Ready. Use the status chips above to see what still needs attention.`;
+    }
+    updateWorkflowReadiness(activeStage());
+  }
+  function setWorkflowStage(stage, opts={}){
+    const stages = getStages();
+    const nextStage = stages.includes(stage) ? stage : stages[0];
+    window.__tapCalcWorkflowStage = nextStage;
+    try { localStorage.setItem(STORAGE_KEY, nextStage); } catch {}
+    clearWorkflowGateNotice();
+    const meta = STAGE_META[nextStage] || STAGE_META.setup;
+    const index = stages.indexOf(nextStage);
+    const title = document.getElementById('workflowStageTitle');
+    const lead = document.getElementById('workflowStageLead');
+    if (title) title.textContent = meta.title;
+    if (lead) lead.textContent = meta.lead;
+    renderStageNavByStatus(nextStage);
+    setPhaseStepActive(index);
+    updateHelperSummaries();
+
+    const nextBannerTitle = document.getElementById('workflowNextBannerTitle');
+    const nextBannerCopy = document.getElementById('workflowNextBannerCopy');
+    const nextBannerBtn = document.getElementById('workflowNextPrimaryBtn');
+    const stepProgress = document.getElementById('workflowStepProgress');
+    const stepHint = document.getElementById('workflowStepHint');
+    const upcomingStage = stages[Math.min(index + 1, stages.length - 1)];
+    const nextMeta = STAGE_META[upcomingStage] || meta;
+    if (stepProgress) stepProgress.textContent = `Step ${index + 1} of ${stages.length}`;
+    if (stepHint) stepHint.textContent = index === stages.length - 1 ? 'Finish here: review the job, then save or sync it.' : `Next up: ${nextMeta.short}`;
+    if (nextBannerTitle) nextBannerTitle.textContent = index === stages.length - 1 ? 'Finish with Review & Save' : `Next Step: ${nextMeta.short}`;
+    if (nextBannerCopy) nextBannerCopy.textContent = index === stages.length - 1 ? 'You are on the final step. Review the job, save it, and sync it when you are ready.' : nextMeta.copy;
+    if (nextBannerBtn) nextBannerBtn.textContent = index === stages.length - 1 ? 'Stay on Review' : `Go to ${nextMeta.short}`;
+
+    const helperPanels = document.querySelectorAll('[data-workflow-stage-panel]');
+    helperPanels.forEach((panel)=>panel.classList.toggle('active', panel.dataset.workflowStagePanel === nextStage));
+
+    const cardFocusShell = document.querySelector('.card-focus-shell');
+    const isModeStage = MODE_STAGES.has(nextStage);
+    if (cardFocusShell) cardFocusShell.classList.toggle('workflow-mode-shell-hidden', !isModeStage);
+
+    const prevBtn = document.getElementById('workflowPrevBtn');
+    const nextBtn = document.getElementById('workflowNextBtn');
+    if (prevBtn) {
+      prevBtn.disabled = index === 0;
+      prevBtn.textContent = index === 0 ? 'Start' : 'Back';
+    }
+    if (nextBtn) {
+      nextBtn.disabled = index === stages.length - 1;
+      nextBtn.textContent = index === stages.length - 1 ? 'Reviewing' : `Next: ${(STAGE_META[stages[index + 1]] || {}).short || 'Next Step'}`;
+    }
+
+    Object.values(PANEL_FOR_STAGE).forEach((panelId) => {
+      const panel = document.getElementById(panelId);
+      if (!panel) return;
+      const isTargetPanel = panelId === PANEL_FOR_STAGE[nextStage];
+      panel.classList.toggle('workflow-mode-shell-hidden', !isModeStage || !isTargetPanel);
+    });
+    if (isModeStage && typeof window.setMode === 'function' && !opts.skipSetMode) {
+      try { window.setMode(nextStage); } catch {}
+    }
+
+    setTimeout(()=>{
+      const focusTarget = isModeStage
+        ? document.querySelector('.card-focus-shell')
+        : document.querySelector('.workflow-guided-shell') || document.querySelector(`[data-workflow-stage-panel="${nextStage}"]`);
+      try { focusTarget?.scrollIntoView({ behavior:'smooth', block:'start' }); } catch {}
+    }, 40);
+  }
+
+  function jumpBy(delta, opts={}){
+    const stages = getStages();
+    const current = activeStage();
+    const index = stages.indexOf(current);
+    const target = stages[Math.max(0, Math.min(stages.length - 1, index + delta))];
+    if (delta > 0 && opts.guard !== false && !guardWorkflowAdvance(target)) return false;
+    setWorkflowStage(target);
+    return true;
+  }
+
+  function goToWorkflowStage(stage, opts={}){
+    const stages = getStages();
+    const target = stages.includes(stage) ? stage : stages[0];
+    if (opts.guard !== false && !guardWorkflowAdvance(target)) return false;
+    setWorkflowStage(target, opts);
+    return true;
+  }
+
+  function runWorkflowAction(trigger, event){
+    if (!trigger || trigger.disabled) return false;
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+      try { if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation(); } catch {}
+    }
+    if (trigger.matches?.('[data-workflow-setup-next]')) {
+      goToWorkflowStage('pipe');
+      return false;
+    }
+    switch (trigger.id) {
+      case 'workflowPrevBtn':
+        jumpBy(-1);
+        break;
+      case 'workflowNextBtn':
+      case 'workflowNextPrimaryBtn':
+        jumpBy(1);
+        break;
+      case 'workflowSetupNextBtn':
+        goToWorkflowStage('pipe');
+        break;
+      case 'workflowPipeNextBtn':
+        goToWorkflowStage(normalizeMode(window.getActiveWorkflowMode?.() || 'hotTap'));
+        break;
+      default:
+        return false;
+    }
+    return false;
+  }
+
+  function workflowActionHandler(event){
+    const trigger = event.target && event.target.closest
+      ? event.target.closest('[data-workflow-setup-next], #workflowPrevBtn, #workflowNextBtn, #workflowSetupNextBtn, #workflowPipeNextBtn, #workflowNextPrimaryBtn')
+      : null;
+    if (!trigger) return;
+    runWorkflowAction(trigger, event);
+  }
+
+  ['touchend', 'click'].forEach((evt) => {
+    document.addEventListener(evt, workflowActionHandler, true);
+  });
+
+  window.tapCalcWorkflowGo = function(stage){
+    try { goToWorkflowStage(stage || activeStage()); } catch {}
+    return false;
+  };
+  window.tapCalcWorkflowJump = function(delta){
+    try { jumpBy(Number(delta) || 0); } catch {}
+    return false;
+  };
+
+  document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.addEventListener('click', ()=>setWorkflowStage(card.dataset.workflowTarget || 'hotTap', { skipSetMode:false })));
+  document.querySelectorAll('.workflow-submode-btn[data-mode]').forEach((btn)=>btn.addEventListener('click', ()=>setWorkflowStage(btn.dataset.mode || 'hotTap', { skipSetMode:false })));
+  document.getElementById('operationType')?.addEventListener('change', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 60));
+  document.getElementById('operationType')?.addEventListener('input', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 60));
+
+  const currentSyncIds = ['jobClient','jobLocation','machineType','summaryPipe','summaryCutter','summaryBco','workflowStatusHotTap','workflowStatusLineStop','workflowStatusCompletionPlug','etaRangeDisplay'];
+  currentSyncIds.forEach((id)=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    const evt = ('value' in el) ? 'input' : 'change';
+      el.addEventListener(evt, ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNavByStatus(activeStage()); }, 20));
+  });
+  document.querySelectorAll('input, select, textarea').forEach((el)=>{
+      el.addEventListener('input', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNavByStatus(activeStage()); }, 40));
+      el.addEventListener('change', ()=>setTimeout(()=>{ updateHelperSummaries(); renderStageNavByStatus(activeStage()); }, 40));
+  });
+
+  window.addEventListener('load', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 160));
+  window.addEventListener('pageshow', ()=>setTimeout(()=>setWorkflowStage(activeStage()), 120));
+  document.addEventListener('click', (event)=>{
+    const gotoCard = event.target.closest('[data-go-screen="card"]');
+    if (!gotoCard) return;
+    setTimeout(()=>setWorkflowStage(activeStage()), 120);
+  }, true);
+  window.tapCalcSetWorkflowStage = setWorkflowStage;
+})();
+
+/* ===== 3.0.0-alpha200 inline workflow job setup ===== */
+(function(){
+  const fieldPairs = [
+    ['workflowJobClient', 'jobClient'],
+    ['workflowJobLocation', 'jobLocation'],
+    ['workflowJobDescription', 'jobDescription'],
+    ['workflowJobNumber', 'jobNumber'],
+    ['workflowJobDate', 'jobDate'],
+    ['workflowJobTechnician', 'jobTechnician'],
+    ['workflowMachineType', 'machineType'],
+    ['workflowOperationType', 'operationType'],
+    ['workflowJobPressure', 'jobPressure'],
+    ['workflowJobTemperature', 'jobTemperature'],
+    ['workflowJobProduct', 'jobProduct'],
+    ['workflowJobNotes', 'jobNotes']
+  ];
+  let syncingWorkflowSetup = false;
+  let lastWorkflowSetupSignature = '';
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function fireInputChange(el){
+    if (!el) return;
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+
+  function hasOption(select, value){
+    return Array.from(select?.options || []).some((option) => option.value === value);
+  }
+
+  function copySelectOptions(workflowEl, sourceEl){
+    if (!workflowEl || !sourceEl || workflowEl.tagName !== 'SELECT' || sourceEl.tagName !== 'SELECT') return;
+    const signature = sourceEl.innerHTML;
+    const desiredValue = sourceEl.value || workflowEl.value || '';
+    if (workflowEl.dataset.optionSignature !== signature) {
+      workflowEl.innerHTML = signature;
+      workflowEl.dataset.optionSignature = signature;
+    }
+    if (desiredValue && !hasOption(workflowEl, desiredValue)) {
+      const option = document.createElement('option');
+      option.value = desiredValue;
+      option.textContent = desiredValue;
+      workflowEl.appendChild(option);
+    }
+  }
+
+  function sourceSignature(){
+    return fieldPairs.map(([, sourceId]) => {
+      const sourceEl = byId(sourceId);
+      return `${sourceId}:${sourceEl?.type === 'checkbox' ? !!sourceEl.checked : (sourceEl?.value || '')}`;
+    }).join('|');
+  }
+
+  function syncWorkflowField(workflowId, sourceId){
+    const workflowEl = byId(workflowId);
+    const sourceEl = byId(sourceId);
+    if (!workflowEl || !sourceEl) return;
+    copySelectOptions(workflowEl, sourceEl);
+    const nextValue = sourceEl.type === 'checkbox' ? !!sourceEl.checked : (sourceEl.value || '');
+    if (workflowEl.type === 'checkbox') workflowEl.checked = !!nextValue;
+    else workflowEl.value = nextValue;
+  }
+
+  function syncAllToWorkflow(){
+    if (syncingWorkflowSetup) return;
+    syncingWorkflowSetup = true;
+    try {
+      fieldPairs.forEach(([workflowId, sourceId]) => syncWorkflowField(workflowId, sourceId));
+      lastWorkflowSetupSignature = sourceSignature();
+    } finally {
+      syncingWorkflowSetup = false;
+    }
+  }
+
+  function setSourceValue(sourceId, value){
+    const sourceEl = byId(sourceId);
+    if (!sourceEl) return false;
+    if (sourceId === 'machineType' && typeof window.tapCalcSetMachineTypeValue === 'function') {
+      window.tapCalcSetMachineTypeValue(value);
+      return true;
+    }
+    if (sourceEl.tagName === 'SELECT' && value && !hasOption(sourceEl, value)) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      sourceEl.appendChild(option);
+    }
+    if (sourceEl.type === 'checkbox') sourceEl.checked = !!value;
+    else sourceEl.value = value ?? '';
+    fireInputChange(sourceEl);
+    return true;
+  }
+
+  function refreshWorkflowAfterSetupEdit(){
+    try { window.tapCalcUpdateJobInfoSummary?.(); } catch {}
+    try { window.updateTapCalcShell?.(); } catch {}
+    try { if (typeof persistCurrentJob === 'function') persistCurrentJob({ render: true }); } catch {}
+    setTimeout(() => {
+      try { window.tapCalcSetWorkflowStage?.(window.__tapCalcWorkflowStage || 'setup'); } catch {}
+      syncAllToWorkflow();
+    }, 30);
+  }
+
+  function handleWorkflowEdit(event){
+    if (syncingWorkflowSetup) return;
+    const workflowEl = event.currentTarget;
+    const sourceId = workflowEl?.dataset?.jobSync;
+    if (!sourceId) return;
+    syncingWorkflowSetup = true;
+    try {
+      setSourceValue(sourceId, workflowEl.type === 'checkbox' ? workflowEl.checked : workflowEl.value);
+    } finally {
+      syncingWorkflowSetup = false;
+    }
+    refreshWorkflowAfterSetupEdit();
+  }
+
+  function bindWorkflowSetup(){
+    if (!byId('workflowInlineJobSetup')) return;
+    fieldPairs.forEach(([workflowId, sourceId]) => {
+      const workflowEl = byId(workflowId);
+      const sourceEl = byId(sourceId);
+      if (workflowEl && !workflowEl.dataset.workflowSetupBound) {
+        workflowEl.dataset.workflowSetupBound = '1';
+        workflowEl.addEventListener('input', handleWorkflowEdit);
+        workflowEl.addEventListener('change', handleWorkflowEdit);
+      }
+      if (sourceEl && !sourceEl.dataset.workflowSetupSourceBound) {
+        sourceEl.dataset.workflowSetupSourceBound = '1';
+        sourceEl.addEventListener('input', () => setTimeout(syncAllToWorkflow, 0));
+        sourceEl.addEventListener('change', () => setTimeout(syncAllToWorkflow, 0));
+      }
+    });
+    syncAllToWorkflow();
+  }
+
+  function watchWorkflowSetup(){
+    const signature = sourceSignature();
+    if (signature !== lastWorkflowSetupSignature) syncAllToWorkflow();
+  }
+
+  document.addEventListener('DOMContentLoaded', bindWorkflowSetup);
+  window.addEventListener('load', () => {
+    bindWorkflowSetup();
+    setTimeout(syncAllToWorkflow, 150);
+    setTimeout(syncAllToWorkflow, 600);
+  });
+  window.addEventListener('pageshow', () => setTimeout(syncAllToWorkflow, 120));
+  document.addEventListener('click', () => setTimeout(watchWorkflowSetup, 120), true);
+  document.addEventListener('change', () => setTimeout(watchWorkflowSetup, 80), true);
+  setInterval(watchWorkflowSetup, 1200);
+  window.tapCalcSyncWorkflowJobSetup = syncAllToWorkflow;
+})();
+
+/* ===== 3.0.0-alpha200 workflow operation manager mirror ===== */
+(function(){
+  const SOURCE = {
+    select: 'jobOperationSelect',
+    label: 'jobOperationLabel',
+    notes: 'jobOperationNotes',
+    status: 'jobOperationStatus',
+    preview: 'jobOperationPreviewList',
+    addHotTap: 'addHotTapOpBtn',
+    addLineStop: 'addLineStopOpBtn',
+    addCompletion: 'addCompletionOpBtn',
+    duplicate: 'duplicateOperationBtn',
+    delete: 'deleteOperationBtn'
+  };
+  const WORKFLOW = {
+    select: 'workflowJobOperationSelect',
+    label: 'workflowJobOperationLabel',
+    notes: 'workflowJobOperationNotes',
+    status: 'workflowJobOperationStatus',
+    preview: 'workflowJobOperationPreviewList',
+    addHotTap: 'workflowAddHotTapOpBtn',
+    addLineStop: 'workflowAddLineStopOpBtn',
+    addCompletion: 'workflowAddCompletionOpBtn',
+    duplicate: 'workflowDuplicateOperationBtn',
+    delete: 'workflowDeleteOperationBtn'
+  };
+  let syncingWorkflowOperations = false;
+  let lastWorkflowOperationsSignature = '';
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function fireInputChange(el){
+    if (!el) return;
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+
+  function sourceSignature(){
+    return [
+      byId(SOURCE.select)?.innerHTML || '',
+      byId(SOURCE.select)?.value || '',
+      byId(SOURCE.label)?.value || '',
+      byId(SOURCE.notes)?.value || '',
+      byId(SOURCE.status)?.textContent || '',
+      byId(SOURCE.preview)?.innerHTML || '',
+      byId(SOURCE.duplicate)?.disabled ? 'duplicate-off' : 'duplicate-on',
+      byId(SOURCE.delete)?.disabled ? 'delete-off' : 'delete-on'
+    ].join('|');
+  }
+
+  function syncWorkflowOperations(){
+    if (syncingWorkflowOperations || !byId('workflowOperationsCard')) return;
+    const sourceSelect = byId(SOURCE.select);
+    const sourceLabel = byId(SOURCE.label);
+    if (!sourceSelect || !sourceLabel) return;
+    syncingWorkflowOperations = true;
+    try {
+      const workflowSelect = byId(WORKFLOW.select);
+      if (workflowSelect) {
+        if (workflowSelect.innerHTML !== sourceSelect.innerHTML) workflowSelect.innerHTML = sourceSelect.innerHTML;
+        workflowSelect.value = sourceSelect.value;
+      }
+      const workflowLabel = byId(WORKFLOW.label);
+      if (workflowLabel && document.activeElement !== workflowLabel) workflowLabel.value = sourceLabel.value || '';
+      const workflowNotes = byId(WORKFLOW.notes);
+      const sourceNotes = byId(SOURCE.notes);
+      if (workflowNotes && sourceNotes && document.activeElement !== workflowNotes) workflowNotes.value = sourceNotes.value || '';
+      const workflowStatus = byId(WORKFLOW.status);
+      const sourceStatus = byId(SOURCE.status);
+      if (workflowStatus && sourceStatus) workflowStatus.textContent = sourceStatus.textContent || '1 operation in this job.';
+      const workflowPreview = byId(WORKFLOW.preview);
+      const sourcePreview = byId(SOURCE.preview);
+      if (workflowPreview && sourcePreview && workflowPreview.innerHTML !== sourcePreview.innerHTML) {
+        workflowPreview.innerHTML = sourcePreview.innerHTML;
+      }
+      ['duplicate', 'delete'].forEach((key) => {
+        const workflowButton = byId(WORKFLOW[key]);
+        const sourceButton = byId(SOURCE[key]);
+        if (workflowButton && sourceButton) workflowButton.disabled = !!sourceButton.disabled;
+      });
+      lastWorkflowOperationsSignature = sourceSignature();
+    } finally {
+      syncingWorkflowOperations = false;
+    }
+  }
+
+  function refreshAfterOperationChange(updateStage = true){
+    try { window.tapCalcRenderOperationManager?.(); } catch {}
+    try { window.tapCalcSyncWorkflowJobSetup?.(); } catch {}
+    try { window.tapCalcUpdateJobInfoSummary?.(); } catch {}
+    try { window.updateTapCalcShell?.(); } catch {}
+    if (updateStage) {
+      setTimeout(() => {
+        try { window.tapCalcSetWorkflowStage?.(window.__tapCalcWorkflowStage || 'setup'); } catch {}
+      }, 40);
+    }
+    setTimeout(syncWorkflowOperations, 40);
+    setTimeout(syncWorkflowOperations, 180);
+  }
+
+  function selectWorkflowOperation(operationId){
+    const sourceSelect = byId(SOURCE.select);
+    if (!sourceSelect || !operationId) return;
+    sourceSelect.value = operationId;
+    fireInputChange(sourceSelect);
+    refreshAfterOperationChange(true);
+  }
+
+  function clickSourceButton(sourceId){
+    const sourceButton = byId(sourceId);
+    if (!sourceButton || sourceButton.disabled) return;
+    sourceButton.click();
+    refreshAfterOperationChange(true);
+  }
+
+  function bindWorkflowOperations(){
+    if (!byId('workflowOperationsCard')) return;
+    const workflowSelect = byId(WORKFLOW.select);
+    if (workflowSelect && !workflowSelect.dataset.workflowOperationsBound) {
+      workflowSelect.dataset.workflowOperationsBound = '1';
+      workflowSelect.addEventListener('input', () => selectWorkflowOperation(workflowSelect.value));
+      workflowSelect.addEventListener('change', () => selectWorkflowOperation(workflowSelect.value));
+    }
+    const workflowLabel = byId(WORKFLOW.label);
+    if (workflowLabel && !workflowLabel.dataset.workflowOperationsBound) {
+      workflowLabel.dataset.workflowOperationsBound = '1';
+      const syncLabel = () => {
+        if (syncingWorkflowOperations) return;
+        const sourceLabel = byId(SOURCE.label);
+        if (!sourceLabel) return;
+        sourceLabel.value = workflowLabel.value || '';
+        fireInputChange(sourceLabel);
+        refreshAfterOperationChange(false);
+      };
+      workflowLabel.addEventListener('input', syncLabel);
+      workflowLabel.addEventListener('change', syncLabel);
+    }
+    const workflowNotes = byId(WORKFLOW.notes);
+    if (workflowNotes && !workflowNotes.dataset.workflowOperationsBound) {
+      workflowNotes.dataset.workflowOperationsBound = '1';
+      const syncNotes = () => {
+        if (syncingWorkflowOperations) return;
+        const sourceNotes = byId(SOURCE.notes);
+        if (!sourceNotes) return;
+        sourceNotes.value = workflowNotes.value || '';
+        fireInputChange(sourceNotes);
+        refreshAfterOperationChange(false);
+      };
+      workflowNotes.addEventListener('input', syncNotes);
+      workflowNotes.addEventListener('change', syncNotes);
+    }
+    [
+      ['addHotTap', SOURCE.addHotTap],
+      ['addLineStop', SOURCE.addLineStop],
+      ['addCompletion', SOURCE.addCompletion],
+      ['duplicate', SOURCE.duplicate],
+      ['delete', SOURCE.delete]
+    ].forEach(([workflowKey, sourceId]) => {
+      const workflowButton = byId(WORKFLOW[workflowKey]);
+      if (!workflowButton || workflowButton.dataset.workflowOperationsBound) return;
+      workflowButton.dataset.workflowOperationsBound = '1';
+      workflowButton.addEventListener('click', () => clickSourceButton(sourceId));
+    });
+    const workflowPreview = byId(WORKFLOW.preview);
+    if (workflowPreview && !workflowPreview.dataset.workflowOperationsBound) {
+      workflowPreview.dataset.workflowOperationsBound = '1';
+      workflowPreview.addEventListener('click', (event) => {
+        const card = event.target?.closest?.('[data-operation-id]');
+        if (!card) return;
+        selectWorkflowOperation(card.dataset.operationId || '');
+      });
+    }
+    ['select', 'label', 'notes', 'status', 'preview'].forEach((key) => {
+      const sourceEl = byId(SOURCE[key]);
+      if (!sourceEl || sourceEl.dataset.workflowOperationsSourceBound) return;
+      sourceEl.dataset.workflowOperationsSourceBound = '1';
+      sourceEl.addEventListener('input', () => setTimeout(syncWorkflowOperations, 0));
+      sourceEl.addEventListener('change', () => setTimeout(syncWorkflowOperations, 0));
+      sourceEl.addEventListener('click', () => setTimeout(syncWorkflowOperations, 0));
+    });
+    refreshAfterOperationChange(false);
+  }
+
+  function watchWorkflowOperations(){
+    const signature = sourceSignature();
+    if (signature !== lastWorkflowOperationsSignature) syncWorkflowOperations();
+  }
+
+  document.addEventListener('DOMContentLoaded', bindWorkflowOperations);
+  window.addEventListener('load', () => {
+    bindWorkflowOperations();
+    setTimeout(syncWorkflowOperations, 250);
+    setTimeout(syncWorkflowOperations, 900);
+  });
+  document.addEventListener('click', () => setTimeout(watchWorkflowOperations, 80), true);
+  document.addEventListener('input', () => setTimeout(watchWorkflowOperations, 80), true);
+  document.addEventListener('change', () => setTimeout(watchWorkflowOperations, 80), true);
+  window.addEventListener('pageshow', () => setTimeout(bindWorkflowOperations, 100));
+  setInterval(watchWorkflowOperations, 1200);
+  window.tapCalcSyncWorkflowOperations = syncWorkflowOperations;
+})();
+
+/* ===== 3.0.0-alpha200 inline workflow BCO/ETA tools ===== */
+(function(){
+  const fieldPairs = [
+    ['workflowBcoPipeMaterial', 'bcoPipeMaterial'],
+    ['workflowBcoPipeOD', 'bcoPipeOD'],
+    ['workflowBcoSchedule', 'bcoSchedule'],
+    ['workflowBcoPipeID', 'bcoPipeID'],
+    ['workflowBcoCutterOD', 'bcoCutterOD'],
+    ['workflowEtaMachine', 'etaMachine'],
+    ['workflowEtaCutterSize', 'etaCutterSize'],
+    ['workflowEtaBco', 'etaBco'],
+    ['workflowEtaRpmOverride', 'etaRpmOverride']
+  ];
+  let syncingWorkflowTools = false;
+  let lastWorkflowToolsSignature = '';
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function fireInputChange(el){
+    if (!el) return;
+    try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+    try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+  }
+
+  function hasOption(select, value){
+    return Array.from(select?.options || []).some((option) => option.value === value);
+  }
+
+  function copySelectOptions(workflowEl, sourceEl){
+    if (!workflowEl || !sourceEl || workflowEl.tagName !== 'SELECT' || sourceEl.tagName !== 'SELECT') return;
+    const signature = sourceEl.innerHTML || '';
+    if (workflowEl.dataset.optionSignature !== signature) {
+      workflowEl.innerHTML = signature;
+      workflowEl.dataset.optionSignature = signature;
+    }
+    const desiredValue = sourceEl.value || workflowEl.value || '';
+    if (desiredValue && !hasOption(workflowEl, desiredValue)) {
+      const option = document.createElement('option');
+      option.value = desiredValue;
+      option.textContent = desiredValue;
+      workflowEl.appendChild(option);
+    }
+  }
+
+  function copyDatalist(){
+    const sourceList = byId('etaCutterSizeList');
+    const workflowList = byId('workflowEtaCutterSizeList');
+    if (!sourceList || !workflowList) return;
+    const signature = sourceList.innerHTML || '';
+    if (workflowList.dataset.optionSignature !== signature) {
+      workflowList.innerHTML = signature;
+      workflowList.dataset.optionSignature = signature;
+    }
+  }
+
+  function fieldValue(el){
+    if (!el) return '';
+    if (el.type === 'checkbox') return el.checked ? '1' : '0';
+    return String(el.value || '');
+  }
+
+  function resultText(id){
+    const value = String(byId(id)?.textContent || '').trim();
+    return value && value !== '-' && value !== '?' ? value : '';
+  }
+
+  function sourceSignature(){
+    const fieldSignature = fieldPairs.map(([, sourceId]) => {
+      const sourceEl = byId(sourceId);
+      return `${sourceId}:${fieldValue(sourceEl)}:${sourceEl?.tagName === 'SELECT' ? sourceEl.innerHTML : ''}`;
+    }).join('|');
+    return [
+      fieldSignature,
+      byId('etaCutterSizeList')?.innerHTML || '',
+      resultText('summaryPipe'),
+      resultText('summaryCutter'),
+      resultText('summaryBco'),
+      resultText('etaRangeDisplay')
+    ].join('|');
+  }
+
+  function syncWorkflowField(workflowId, sourceId){
+    const workflowEl = byId(workflowId);
+    const sourceEl = byId(sourceId);
+    if (!workflowEl || !sourceEl) return;
+    copySelectOptions(workflowEl, sourceEl);
+    if (document.activeElement === workflowEl) return;
+    if (workflowEl.type === 'checkbox') workflowEl.checked = !!sourceEl.checked;
+    else workflowEl.value = sourceEl.value || '';
+  }
+
+  function syncWorkflowResults(){
+    const bco = resultText('summaryBco') || '?';
+    const eta = resultText('etaRangeDisplay') || '?';
+    const bcoResult = byId('workflowBcoInlineResult');
+    const etaResult = byId('workflowEtaInlineResult');
+    if (bcoResult) bcoResult.textContent = bco === '?' ? 'BCO pending' : `BCO ${bco}`;
+    if (etaResult) etaResult.textContent = `ETA: ${eta}`;
+  }
+
+  function syncAllToWorkflowTools(){
+    if (syncingWorkflowTools || !byId('workflowInlinePipeSetup')) return;
+    syncingWorkflowTools = true;
+    try {
+      copyDatalist();
+      fieldPairs.forEach(([workflowId, sourceId]) => syncWorkflowField(workflowId, sourceId));
+      syncWorkflowResults();
+      lastWorkflowToolsSignature = sourceSignature();
+    } finally {
+      syncingWorkflowTools = false;
+    }
+  }
+
+  function setSourceValue(sourceId, value){
+    const sourceEl = byId(sourceId);
+    if (!sourceEl) return false;
+    if (sourceEl.tagName === 'SELECT' && value && !hasOption(sourceEl, value)) {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      sourceEl.appendChild(option);
+    }
+    if (sourceEl.type === 'checkbox') sourceEl.checked = !!value;
+    else sourceEl.value = value || '';
+    fireInputChange(sourceEl);
+    return true;
+  }
+
+  function refreshWorkflowTools(){
+    setTimeout(syncAllToWorkflowTools, 40);
+    setTimeout(syncAllToWorkflowTools, 180);
+    setTimeout(() => {
+      try { window.tapCalcSetWorkflowStage?.(window.__tapCalcWorkflowStage || 'pipe', { skipSetMode: true }); } catch {}
+    }, 120);
+  }
+
+  function bindWorkflowTools(){
+    if (!byId('workflowInlinePipeSetup')) return;
+    fieldPairs.forEach(([workflowId, sourceId]) => {
+      const workflowEl = byId(workflowId);
+      const sourceEl = byId(sourceId);
+      if (workflowEl && !workflowEl.dataset.workflowToolBound) {
+        workflowEl.dataset.workflowToolBound = '1';
+        const updateSource = () => {
+          if (syncingWorkflowTools) return;
+          setSourceValue(sourceId, workflowEl.type === 'checkbox' ? workflowEl.checked : workflowEl.value);
+          refreshWorkflowTools();
+        };
+        workflowEl.addEventListener('input', updateSource);
+        workflowEl.addEventListener('change', updateSource);
+      }
+      if (sourceEl && !sourceEl.dataset.workflowToolSourceBound) {
+        sourceEl.dataset.workflowToolSourceBound = '1';
+        sourceEl.addEventListener('input', () => setTimeout(syncAllToWorkflowTools, 0));
+        sourceEl.addEventListener('change', () => setTimeout(syncAllToWorkflowTools, 0));
+      }
+    });
+    syncAllToWorkflowTools();
+  }
+
+  function watchWorkflowTools(){
+    const signature = sourceSignature();
+    if (signature !== lastWorkflowToolsSignature) syncAllToWorkflowTools();
+  }
+
+  document.addEventListener('DOMContentLoaded', bindWorkflowTools);
+  window.addEventListener('load', () => {
+    bindWorkflowTools();
+    setTimeout(syncAllToWorkflowTools, 250);
+    setTimeout(syncAllToWorkflowTools, 900);
+  });
+  window.addEventListener('pageshow', () => setTimeout(bindWorkflowTools, 100));
+  document.addEventListener('input', () => setTimeout(watchWorkflowTools, 80), true);
+  document.addEventListener('change', () => setTimeout(watchWorkflowTools, 80), true);
+  document.addEventListener('click', () => setTimeout(watchWorkflowTools, 120), true);
+  setInterval(watchWorkflowTools, 1200);
+  window.tapCalcSyncWorkflowTools = syncAllToWorkflowTools;
+})();
+
+/* ===== 3.0.0-alpha200 workflow save actions ===== */
+(function(){
+  let savingWorkflowJob = false;
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function setStatus(message, state = 'info'){
+    const statusEl = byId('workflowSaveStatus');
+    if (!statusEl) return;
+    statusEl.textContent = message;
+    statusEl.dataset.state = state;
+  }
+
+  function setButtonsDisabled(disabled){
+    document.querySelectorAll('[data-workflow-save-job], #workflowReviewSyncSharedBtn').forEach((button) => {
+      button.disabled = !!disabled;
+    });
+  }
+
+  function savedCount(){
+    try {
+      const history = JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]');
+      return Array.isArray(history) ? history.length : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function timeLabel(){
+    try {
+      return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return 'now';
+    }
+  }
+
+  function currentJobSaveLabel(){
+    const customer = byId('jobClient')?.value?.trim() || '';
+    const location = byId('jobLocation')?.value?.trim() || '';
+    const description = byId('jobDescription')?.value?.trim() || '';
+    const jobNumber = byId('jobNumber')?.value?.trim() || '';
+    const base = [customer || description, location].filter(Boolean).join(' - ');
+    const label = base || 'current draft';
+    return jobNumber ? `${label} (${jobNumber})` : label;
+  }
+
+  function currentOperationSaveLabel(){
+    try {
+      const bundle = typeof syncCurrentOperationItemFromUi === 'function'
+        ? syncCurrentOperationItemFromUi({ render: false })
+        : window.ensureJobBundleInitialized?.();
+      const count = Array.isArray(bundle?.operations) ? bundle.operations.length : 1;
+      return `${count} operation${count === 1 ? '' : 's'}`;
+    } catch {
+      return '1 operation';
+    }
+  }
+
+  async function saveWorkflowJob(options = {}){
+    if (savingWorkflowJob) return;
+    savingWorkflowJob = true;
+    setButtonsDisabled(true);
+    setStatus(options.sync ? 'Saving job and starting shared sync...' : 'Saving job...', 'saving');
+    try {
+      if (typeof window.saveCurrentJobToHistory === 'function') {
+        await window.saveCurrentJobToHistory();
+      } else {
+        byId('saveHistoryBtn')?.click();
+      }
+
+      if (options.sync) {
+        byId('syncJobsBtn')?.click();
+      }
+
+      const cloudText = byId('jobsCloudStatus')?.textContent?.trim() || '';
+      const syncedText = /uploaded|synced|connected/i.test(cloudText) && !/saved locally only|could not|failed|not verified/i.test(cloudText)
+        ? ' Shared sync is available.'
+        : '';
+      const count = savedCount();
+      const label = currentJobSaveLabel();
+      setStatus(`Saved ${label} with ${currentOperationSaveLabel()} at ${timeLabel()}. ${count} local save${count === 1 ? '' : 's'} stored.${syncedText}`, 'saved');
+      try { window.updateTapCalcShell?.(); } catch {}
+      try { window.tapCalcUpdateDraftStatus?.(); } catch {}
+    } catch (error) {
+      console.error('Workflow save failed', error);
+      setStatus('Could not save from Workflow. Open Library and try Save Local.', 'error');
+    } finally {
+      savingWorkflowJob = false;
+      setButtonsDisabled(false);
+    }
+  }
+
+  function bindWorkflowSaveActions(){
+    document.querySelectorAll('[data-workflow-save-job]').forEach((button) => {
+      if (button.dataset.workflowSaveBound) return;
+      button.dataset.workflowSaveBound = '1';
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        saveWorkflowJob();
+      });
+    });
+    const syncButton = byId('workflowReviewSyncSharedBtn');
+    if (syncButton && !syncButton.dataset.workflowSaveBound) {
+      syncButton.dataset.workflowSaveBound = '1';
+      syncButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        saveWorkflowJob({ sync: true });
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', bindWorkflowSaveActions);
+  window.addEventListener('load', () => {
+    bindWorkflowSaveActions();
+    setTimeout(bindWorkflowSaveActions, 400);
+  });
+  window.tapCalcSaveWorkflowJob = saveWorkflowJob;
+})();
+
+/* ===== 3.0.0-alpha200 workflow draft recovery ===== */
+(function(){
+  const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
+  const WORKFLOW_STAGE_KEY = 'tapcalcWorkflowStageV2';
+  const draftStateKey = typeof JOB_STATE_KEY !== 'undefined' ? JOB_STATE_KEY : 'measurementCardStateV1';
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function safeParse(raw){
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+
+  function meaningfulValue(value){
+    const text = String(value ?? '').trim();
+    return !!text && text !== '-' && text !== '?' && text !== '0.0000';
+  }
+
+  function hasMeaningfulDraftState(state){
+    if (!state || typeof state !== 'object') return false;
+    const shared = state.sharedState || {};
+    const sharedFields = [
+      'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate',
+      'jobProduct','jobLocation','jobTechnician','jobNotes','machineType'
+    ];
+    if (sharedFields.some((key) => meaningfulValue(shared[key]))) return true;
+    if (String(shared.operationType || '').trim() && String(shared.operationType).trim() !== 'Hot Tap') return true;
+
+    const operations = Array.isArray(state.operations) ? state.operations : [];
+    if (operations.length > 1) return true;
+    return operations.some((operation, index) => {
+      const label = String(operation?.label || '').trim();
+      if (label && label !== `Hot Tap ${index + 1}`) return true;
+      if (meaningfulValue(operation?.notes)) return true;
+      if (String(operation?.operationType || '').trim() && String(operation.operationType).trim() !== 'Hot Tap') return true;
+      const opState = operation?.state || {};
+      const meaningfulKeys = [
+        'bcoPipeOD','bcoPipeID','bcoCutterOD','md','ld','ptc','start','mt','valveBore','gtf',
+        'htpPipeSize','htpMd','htpLd','htpPtc','lsMd','lsLd','lsLiManual','lsTravel','lsMachineTravel',
+        'hsMd','hsLd','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
+        'cpStart','cpJbf','cpLd','cpPt','cpLiManual','etaBco','etaRpmOverride'
+      ];
+      return meaningfulKeys.some((key) => meaningfulValue(opState[key]));
+    });
+  }
+
+  function hasDraftPayload(){
+    try {
+      return hasMeaningfulDraftState(safeParse(localStorage.getItem(draftStateKey)));
+    } catch {
+      return false;
+    }
+  }
+
+  function currentDraftLabel(){
+    const customer = byId('jobClient')?.value?.trim() || '';
+    const location = byId('jobLocation')?.value?.trim() || '';
+    const description = byId('jobDescription')?.value?.trim() || '';
+    const jobNumber = byId('jobNumber')?.value?.trim() || '';
+    const label = [customer || description, location].filter(Boolean).join(' - ') || 'Current draft';
+    return jobNumber ? `${label} (${jobNumber})` : label;
+  }
+
+  function draftTimeLabel(){
+    try {
+      const raw = localStorage.getItem(DRAFT_UPDATED_KEY);
+      if (!raw) return '';
+      return new Date(raw).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  function hasVisibleDraftValues(){
+    return ['jobClient','jobLocation','jobDescription','jobNumber','jobTechnician','machineType','summaryPipe','summaryBco']
+      .some((id) => {
+        const el = byId(id);
+        const value = String(('value' in (el || {}) ? el.value : el?.textContent) || '').trim();
+        return meaningfulValue(value);
+      });
+  }
+
+  function updateDraftStatus(){
+    const status = byId('workflowDraftStatus');
+    const draftExists = hasDraftPayload() || hasVisibleDraftValues();
+    const time = draftTimeLabel();
+    const label = currentDraftLabel();
+    if (status) {
+      status.textContent = draftExists
+        ? `${label} is auto-saved${time ? ` as of ${time}` : ''}.`
+        : 'Draft auto-saves as you type.';
+      status.dataset.state = draftExists ? 'draft' : 'empty';
+    }
+    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn','homeResumeDraftQuickBtn'].forEach((id) => {
+      const button = byId(id);
+      if (!button) return;
+      button.textContent = draftExists ? 'Resume Draft' : 'Open Workflow';
+      button.dataset.state = draftExists ? 'draft' : 'empty';
+      if (id.startsWith('home')) button.hidden = !draftExists;
+    });
+    try { window.tapCalcUpdateSaveStateIndicators?.(); } catch {}
+  }
+
+  function resumeDraft(event){
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+    }
+    try { window.tapCalcSetScreen?.('card'); } catch {}
+    let stage = '';
+    try { stage = localStorage.getItem(WORKFLOW_STAGE_KEY) || ''; } catch {}
+    stage = stage || window.__tapCalcWorkflowStage || 'setup';
+    setTimeout(() => {
+      try { window.tapCalcSetWorkflowStage?.(stage); } catch {}
+      const target = document.querySelector('.workflow-guided-shell') || byId('cardScreen');
+      try { target?.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch {}
+      updateDraftStatus();
+    }, 80);
+  }
+
+  function startNewJob(event){
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+    }
+    const hasDraft = hasDraftPayload() || hasVisibleDraftValues();
+    if (hasDraft && !window.confirm('Start a new blank job? This clears the current draft from this device. Save first if you want to keep it.')) return;
+    byId('resetJobBtn')?.click();
+  }
+
+  function bindDraftControls(){
+    ['workflowResumeDraftBtn','homeResumeDraftBtn','homeResumeDraftHeroBtn','homeResumeDraftQuickBtn'].forEach((id) => {
+      const button = byId(id);
+      if (!button || button.dataset.workflowDraftBound) return;
+      button.dataset.workflowDraftBound = '1';
+      button.addEventListener('click', resumeDraft);
+    });
+    ['workflowStartNewJobBtn','workflowStartNewJobInlineBtn'].forEach((id) => {
+      const button = byId(id);
+      if (!button || button.dataset.workflowStartNewBound) return;
+      button.dataset.workflowStartNewBound = '1';
+      button.addEventListener('click', startNewJob);
+    });
+    updateDraftStatus();
+  }
+
+  document.addEventListener('DOMContentLoaded', bindDraftControls);
+  window.addEventListener('load', () => {
+    bindDraftControls();
+    setTimeout(updateDraftStatus, 250);
+    setTimeout(updateDraftStatus, 900);
+  });
+  window.addEventListener('pageshow', () => setTimeout(bindDraftControls, 100));
+  document.addEventListener('input', () => setTimeout(updateDraftStatus, 120), true);
+  document.addEventListener('change', () => setTimeout(updateDraftStatus, 120), true);
+  window.tapCalcHasMeaningfulDraftPayload = () => hasDraftPayload() || hasVisibleDraftValues();
+  window.tapCalcUpdateDraftStatus = updateDraftStatus;
+})();
+
+/* ===== 3.0.0-alpha200 workflow save state indicators ===== */
+(function(){
+  const SAVE_STATE_KEY = 'tapcalcWorkflowSaveStateV1';
+  const DRAFT_UPDATED_KEY = 'measurementCardDraftUpdatedAtV1';
+  const STATE_COPY = {
+    draft: {
+      label: 'Draft Only',
+      copy: 'This job is auto-saved as a draft on this device.'
+    },
+    local: {
+      label: 'Saved Local',
+      copy: 'This job has been saved to the local Library on this device.'
+    },
+    synced: {
+      label: 'Synced Shared',
+      copy: 'This job has been saved locally and uploaded to the shared Library.'
+    },
+    error: {
+      label: 'Save Issue',
+      copy: 'TapCalc saved what it could, but the last shared sync was not verified.'
+    }
+  };
+
+  function byId(id){
+    return document.getElementById(id);
+  }
+
+  function safeParse(raw){
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+
+  function readSaveState(){
+    try { return safeParse(localStorage.getItem(SAVE_STATE_KEY)) || { state: 'draft' }; } catch { return { state: 'draft' }; }
+  }
+
+  function operationCount(){
+    try {
+      const bundle = typeof window.ensureJobBundleInitialized === 'function' ? window.ensureJobBundleInitialized() : null;
+      const count = Array.isArray(bundle?.operations) ? bundle.operations.length : 0;
+      return count || 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  function currentJobLabel(){
+    const customer = byId('jobClient')?.value?.trim() || '';
+    const location = byId('jobLocation')?.value?.trim() || '';
+    const description = byId('jobDescription')?.value?.trim() || '';
+    const jobNumber = byId('jobNumber')?.value?.trim() || '';
+    const label = [customer || description, location].filter(Boolean).join(' - ') || 'Current draft';
+    return jobNumber ? `${label} (${jobNumber})` : label;
+  }
+
+  function timeText(iso){
+    if (!iso) return '';
+    try {
+      return new Date(iso).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  function hasDraft(){
+    try {
+      if (typeof window.tapCalcHasMeaningfulDraftPayload === 'function') return window.tapCalcHasMeaningfulDraftPayload();
+    } catch {}
+    return ['jobClient','jobLocation','jobDescription','jobNumber','machineType','summaryPipe','summaryBco'].some((id) => {
+      const el = byId(id);
+      const value = String(('value' in (el || {}) ? el.value : el?.textContent) || '').trim();
+      return !!value && value !== '-' && value !== '?';
+    });
+  }
+
+  function setPill(el, state){
+    if (!el) return;
+    const normalized = STATE_COPY[state] ? state : 'draft';
+    el.textContent = STATE_COPY[normalized].label;
+    el.dataset.state = normalized;
+  }
+
+  function updateSaveStateIndicators(){
+    const saved = readSaveState();
+    const state = STATE_COPY[saved.state] ? saved.state : 'draft';
+    const draftExists = hasDraft();
+    const draftTime = timeText(saved.updatedAtIso || saved.savedAtIso || saved.syncedAtIso || (() => {
+      try { return localStorage.getItem(DRAFT_UPDATED_KEY); } catch { return ''; }
+    })());
+    const count = operationCount();
+    const countLabel = `${count} operation${count === 1 ? '' : 's'}`;
+    const label = saved.label || currentJobLabel();
+    const timeSuffix = draftTime ? ` at ${draftTime}` : '';
+
+    setPill(byId('workflowSaveStatePill'), state);
+    setPill(byId('workflowReviewSaveStatePill'), state);
+    setPill(byId('homeDraftResumeStatus'), state);
+
+    const reviewCopy = byId('workflowReviewSaveStateCopy');
+    if (reviewCopy) reviewCopy.textContent = `${STATE_COPY[state].copy}${timeSuffix ? ` Last updated${timeSuffix}.` : ''}`;
+
+    const draftCard = byId('homeDraftResumeCard');
+    if (draftCard) {
+      draftCard.hidden = !draftExists;
+      draftCard.dataset.state = draftExists ? state : 'empty';
+    }
+    const draftTitle = byId('homeDraftResumeTitle');
+    if (draftTitle) draftTitle.textContent = draftExists ? label : 'No active draft';
+    const draftMeta = byId('homeDraftResumeMeta');
+    if (draftMeta) {
+      draftMeta.textContent = draftExists
+        ? `${STATE_COPY[state].copy}${timeSuffix ? ` Last updated${timeSuffix}.` : ''}`
+        : 'Start a workflow and TapCalc will keep the draft ready here.';
+    }
+    const draftOps = byId('homeDraftResumeOperations');
+    if (draftOps) draftOps.textContent = draftExists ? countLabel : '0 operations';
+
+    const homeStatus = byId('homeStatusStat');
+    if (homeStatus) homeStatus.textContent = draftExists ? STATE_COPY[state].label : 'No Draft';
+  }
+
+  function setSaveState(state, detail = {}){
+    const nowIso = new Date().toISOString();
+    const next = {
+      ...readSaveState(),
+      ...detail,
+      state: STATE_COPY[state] ? state : 'draft',
+      label: detail.label || currentJobLabel(),
+      operationCount: detail.operationCount || operationCount(),
+      updatedAtIso: nowIso
+    };
+    if (next.state === 'local' && !next.savedAtIso) next.savedAtIso = nowIso;
+    if (next.state === 'synced' && !next.syncedAtIso) next.syncedAtIso = nowIso;
+    try { localStorage.setItem(SAVE_STATE_KEY, JSON.stringify(next)); } catch {}
+    updateSaveStateIndicators();
+  }
+
+  document.addEventListener('DOMContentLoaded', updateSaveStateIndicators);
+  window.addEventListener('load', () => {
+    updateSaveStateIndicators();
+    setTimeout(updateSaveStateIndicators, 300);
+    setTimeout(updateSaveStateIndicators, 1000);
+  });
+  window.addEventListener('pageshow', () => setTimeout(updateSaveStateIndicators, 120));
+  document.addEventListener('input', () => setTimeout(updateSaveStateIndicators, 120), true);
+  document.addEventListener('change', () => setTimeout(updateSaveStateIndicators, 120), true);
+  window.tapCalcSetSaveState = setSaveState;
+  window.tapCalcUpdateSaveStateIndicators = updateSaveStateIndicators;
+})();
+
+
+/* ===== 3.0.0-alpha139 shell screen/router reset ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const screenMap = { home:'homeScreen', job:'jobScreen', calc:'calcScreen', card:'cardScreen', jobs:'jobsScreen', ref:'refScreen' };
+  const calcModes = new Set(['bco', 'eta']);
+
+  function normalizeScreen(name){
+    const safe = String(name || '').trim();
+    if (safe === 'job') return 'card';
+    return screenMap[safe] ? safe : 'home';
+  }
+
+  function normalizeLane(lane){
+    return String(lane || '').trim() === 'shared' ? 'shared' : 'local';
+  }
+
+  function calcModeForEntry(preferredMode){
+    const preferred = String(preferredMode || '').trim();
+    if (calcModes.has(preferred)) return preferred;
+    return typeof window.getStoredCalcMode === 'function' ? window.getStoredCalcMode() : 'bco';
+  }
+
+  function applyCalcMode(preferredMode){
+    const nextMode = calcModeForEntry(preferredMode);
+    try { if (typeof window.setMode === 'function') window.setMode(nextMode); } catch {}
+    return nextMode;
+  }
+
+  function applyLibraryLaneDom(lane){
+    const nextLane = normalizeLane(lane);
+    document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((btn) => {
+      const active = btn.dataset.libraryLane === nextLane;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-library-lane-panel]').forEach((panel) => {
+      const active = panel.dataset.libraryLanePanel === nextLane;
+      panel.classList.toggle('active', active);
+      panel.classList.remove('collapsed');
+      panel.hidden = !active;
+      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+      panel.style.display = active ? 'block' : 'none';
+      panel.style.visibility = active ? 'visible' : 'hidden';
+      panel.style.pointerEvents = active ? 'auto' : 'none';
+      panel.style.opacity = active ? '1' : '0';
+      panel.querySelectorAll('.accordion-body').forEach((body) => {
+        body.style.display = active ? 'block' : '';
+      });
+    });
+    const jobs = $('jobsScreen');
+    if (jobs) jobs.dataset.activeLane = nextLane;
+    return nextLane;
+  }
+
+  function syncTabs(activeScreen){
+    document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
+      const active = tab.dataset.screen === activeScreen;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+  }
+
+  function syncVisibleScreens(activeScreen){
+    document.body.dataset.activeScreen = activeScreen;
+    document.body.classList.toggle('show-library-screen', activeScreen === 'jobs');
+
+    ['bcoPanel', 'etaPanel', 'jobsPanel', 'glossaryPanel'].forEach((panelId) => {
+      const panel = $(panelId);
+      if (!panel) return;
+      panel.classList.remove('workflow-mode-shell-hidden');
+    });
+
+    Object.entries(screenMap).forEach(([key, id]) => {
+      const el = $(id);
+      if (!el) return;
+      const active = key === activeScreen;
+      el.classList.toggle('active', active);
+      el.hidden = !active;
+      el.style.display = active ? 'block' : 'none';
+      el.style.visibility = active ? 'visible' : 'hidden';
+      el.style.pointerEvents = active ? 'auto' : 'none';
+      el.style.opacity = active ? '1' : '0';
+      el.style.zIndex = active ? '2' : '0';
+      el.style.position = 'relative';
+      el.style.overflowX = 'hidden';
+    });
+
+    const jobsPanel = $('jobsPanel');
+    if (jobsPanel) jobsPanel.classList.toggle('active', activeScreen === 'jobs');
+  }
+
+  function setLibraryLaneCore(lane){
+    const nextLane = applyLibraryLaneDom(lane);
+    try { localStorage.setItem('tapcalcLibraryLaneV1', nextLane); } catch {}
+    setTimeout(() => { try { if (typeof renderJobsList === 'function') renderJobsList(); } catch {} }, 20);
+    if (nextLane === 'shared') {
+      setTimeout(() => { try { if (typeof loadCloudJobs === 'function') loadCloudJobs(); } catch {} }, 40);
+      setTimeout(() => { try { if (typeof renderJobsList === 'function') renderJobsList(); } catch {} }, 140);
+    }
+    return nextLane;
+  }
+
+  function openScreenCore(name, options = {}){
+    const previousScreen = normalizeScreen(document.body.dataset.activeScreen || 'home');
+    const activeScreen = normalizeScreen(name);
+    syncVisibleScreens(activeScreen);
+    syncTabs(activeScreen);
+
+    if (activeScreen === 'calc') {
+      applyCalcMode(options.mode);
+    }
+    if (activeScreen === 'card' && previousScreen !== 'card' && options.keepWorkflowStage !== true) {
+      setTimeout(() => {
+        try { window.tapCalcSetWorkflowStage?.('setup'); } catch {}
+      }, 40);
+    }
+    if (activeScreen === 'jobs') {
+      const forcedLane = String(options.libraryLane || '').trim();
+      if (forcedLane) {
+        setLibraryLaneCore(forcedLane);
+      } else {
+        let savedLane = 'local';
+        try { savedLane = normalizeLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch {}
+        setLibraryLaneCore(savedLane);
+      }
+    }
+
+    try { localStorage.setItem('tapcalcV3Screen', activeScreen); } catch {}
+    return activeScreen;
+  }
+
+  function enforceActiveScreenOnly(){
+    const activeScreen = normalizeScreen(document.body.dataset.activeScreen || 'home');
+    syncVisibleScreens(activeScreen);
+    syncTabs(activeScreen);
+    if (activeScreen === 'jobs') {
+      let lane = $('jobsScreen')?.dataset.activeLane || 'local';
+      try { lane = localStorage.getItem('tapcalcLibraryLaneV1') || lane; } catch {}
+      applyLibraryLaneDom(lane);
+    }
+  }
+
+  function openFromTrigger(trigger){
+    if (!trigger || !trigger.dataset) return;
+    const rawTarget = String(trigger.dataset.goScreen || trigger.dataset.screen || '').trim();
+    if (!rawTarget) return;
+    const targetScreen = normalizeScreen(rawTarget);
+    const requestedMode = String(trigger.dataset.goMode || '').trim();
+    const requestedLane = String(trigger.dataset.libraryLaneTarget || '').trim();
+    openScreenCore(targetScreen, {
+      mode: requestedMode,
+      libraryLane: requestedLane
+    });
+  }
+
+  function navHandler(event){
+    const trigger = event.target && event.target.closest
+      ? event.target.closest('.screen-tab[data-screen], [data-go-screen]')
+      : null;
+    if (!trigger) return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation();
+    openFromTrigger(trigger);
+    return false;
+  }
+
+  function restoreScreen(){
+    let saved = 'home';
+    try { saved = localStorage.getItem('tapcalcV3Screen') || 'home'; } catch {}
+    openScreenCore(saved);
+  }
+
+  window.tapCalcSetScreen = function(name){
+    return openScreenCore(name);
+  };
+  window.openScreen = window.tapCalcSetScreen;
+  window.showScreen = window.tapCalcSetScreen;
+  try { tapCalcSetScreen = window.tapCalcSetScreen; } catch {}
+  try { openScreen = window.tapCalcSetScreen; } catch {}
+  try { showScreen = window.tapCalcSetScreen; } catch {}
+
+  window.setLibraryLane = function(lane){
+    return setLibraryLaneCore(lane);
+  };
+  window.tapCalcRepairLibraryLane = function(){
+    let lane = $('jobsScreen')?.dataset.activeLane || 'local';
+    try { lane = localStorage.getItem('tapcalcLibraryLaneV1') || lane; } catch {}
+    return applyLibraryLaneDom(lane);
+  };
+  try { setLibraryLane = window.setLibraryLane; } catch {}
+  window.openSharedLibraryLane = function(){
+    return openScreenCore('jobs', { libraryLane: 'shared' });
+  };
+  try { openSharedLibraryLane = window.openSharedLibraryLane; } catch {}
+  window.tapCalcOpenLibrary = function(lane){
+    return openScreenCore('jobs', { libraryLane: normalizeLane(lane) });
+  };
+
+  document.addEventListener('pointerdown', navHandler, true);
+  document.addEventListener('touchstart', navHandler, true);
+  document.addEventListener('click', navHandler, true);
+
+  window.addEventListener('pageshow', () => setTimeout(restoreScreen, 20));
+  document.addEventListener('DOMContentLoaded', () => setTimeout(restoreScreen, 20));
+  window.addEventListener('load', () => setTimeout(restoreScreen, 40));
+  window.addEventListener('scroll', enforceActiveScreenOnly, { passive:true });
+  window.addEventListener('resize', () => {
+    if (normalizeScreen(document.body.dataset.activeScreen || 'home') === 'jobs') {
+      try { window.tapCalcRepairLibraryLane(); } catch {}
+    }
+  }, { passive:true });
+})();
+
+/* ===== 3.0.0-alpha200 preserve multi-operation bundles on load ===== */
+(function(){
+  if (window.__tapcalcalpha162BundleLoadReady) return;
+  window.__tapcalcalpha162BundleLoadReady = true;
+
+  function hasSavedOperationBundle(record) {
+    return Array.isArray(record?.jobBundle?.operations) && record.jobBundle.operations.length > 1;
+  }
+
+  function getRecordId(record = {}) {
+    return String(record?.id || record?.cloudId || record?.__cloudId || record?.meta?.cloudId || record?.meta?.id || '').trim();
+  }
+
+  function cloneBundle(bundle) {
+    try {
+      return typeof cloneJson === 'function' ? cloneJson(bundle) : JSON.parse(JSON.stringify(bundle));
+    } catch {
+      return bundle;
+    }
+  }
+
+  function readFirestoreValue(value) {
+    if (!value || typeof value !== 'object') return undefined;
+    if ('stringValue' in value) return value.stringValue;
+    if ('integerValue' in value) return Number(value.integerValue);
+    if ('doubleValue' in value) return Number(value.doubleValue);
+    if ('booleanValue' in value) return Boolean(value.booleanValue);
+    if ('timestampValue' in value) return value.timestampValue;
+    if ('nullValue' in value) return null;
+    if ('arrayValue' in value) return (value.arrayValue.values || []).map(readFirestoreValue);
+    if ('mapValue' in value) {
+      const output = {};
+      Object.entries(value.mapValue.fields || {}).forEach(([key, child]) => {
+        output[key] = readFirestoreValue(child);
+      });
+      return output;
+    }
+    return undefined;
+  }
+
+  function firestoreDocumentToRecord(documentRecord, id = '') {
+    const output = {};
+    Object.entries(documentRecord?.fields || {}).forEach(([key, value]) => {
+      output[key] = readFirestoreValue(value);
+    });
+    const documentId = id || String(documentRecord?.name || '').split('/').pop() || '';
+    if (documentId) {
+      output.id = documentId;
+      output.__cloudId = documentId;
+    }
+    return output;
+  }
+
+  async function fetchFullSharedRecordById(id) {
+    const docId = String(id || '').trim();
+    if (!docId || docId.startsWith('local-')) return null;
+    window.__tapcalcFullSharedRecordCache = window.__tapcalcFullSharedRecordCache || {};
+    if (window.__tapcalcFullSharedRecordCache[docId]) return window.__tapcalcFullSharedRecordCache[docId];
+
+    const config = window.TAPCALC_FIREBASE_CONFIG || {};
+    const projectId = String(config.projectId || '').trim();
+    const apiKey = String(config.apiKey || '').trim();
+    if (!projectId || typeof fetch !== 'function') return null;
+
+    const collectionName = typeof getJobsCollectionName === 'function'
+      ? getJobsCollectionName()
+      : (window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs');
+    const url =
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}` +
+      `/databases/(default)/documents/${encodeURIComponent(collectionName)}/${encodeURIComponent(docId)}` +
+      (apiKey ? `?key=${encodeURIComponent(apiKey)}` : '');
+
+    const response = await fetch(url, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Firestore document read failed (${response.status})`);
+    const fullRecord = firestoreDocumentToRecord(await response.json(), docId);
+    window.__tapcalcFullSharedRecordCache[docId] = fullRecord;
+    return fullRecord;
+  }
+
+  function mergeFullRecord(previewRecord, fullRecord, id = '') {
+    if (!fullRecord) return previewRecord || null;
+    const merged = {
+      ...(previewRecord || {}),
+      ...fullRecord,
+      meta: { ...(previewRecord?.meta || {}), ...(fullRecord.meta || {}) },
+      job: { ...(previewRecord?.job || {}), ...(fullRecord.job || {}) },
+      pipe: { ...(previewRecord?.pipe || {}), ...(fullRecord.pipe || {}) },
+      machine: { ...(previewRecord?.machine || {}), ...(fullRecord.machine || {}) },
+      calculations: { ...(previewRecord?.calculations || {}), ...(fullRecord.calculations || {}) }
+    };
+    const recordId = id || getRecordId(fullRecord) || getRecordId(previewRecord);
+    if (recordId) {
+      merged.id = recordId;
+      merged.__cloudId = recordId;
+    }
+    return merged;
+  }
+
+  async function resolveFullOperationRecord(selection = {}) {
+    const previewRecord = selection?.record || null;
+    if (hasSavedOperationBundle(previewRecord)) return previewRecord;
+
+    const id = String(selection?.id || getRecordId(previewRecord) || '').trim();
+    if (!id) return previewRecord;
+
+    try {
+      const fullRecord = await fetchFullSharedRecordById(id);
+      if (hasSavedOperationBundle(fullRecord)) {
+        const merged = mergeFullRecord(previewRecord, fullRecord, id);
+        window.__tapcalcLastFullBundledRecord = merged;
+        return merged;
+      }
+    } catch (error) {
+      console.warn('alpha162 full shared job fetch failed', error);
+    }
+
+    return previewRecord;
+  }
+
+  function getActiveJobBundle() {
+    try {
+      return typeof window.ensureJobBundleInitialized === 'function' ? window.ensureJobBundleInitialized() : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function hasEnteredValue(value) {
+    const text = String(value ?? '').trim();
+    if (!text || text === '-' || text === '-') return false;
+    return !/^[-+]?0(?:\.0+)?$/.test(text);
+  }
+
+  function stageFromWords(...values) {
+    const text = values.map((value) => String(value || '')).join(' ').toLowerCase();
+    if (text.includes('completion') || text.includes('plug')) return 'completionPlug';
+    if (text.includes('line stop') || text.includes('linestop') || text.includes('hi-stop') || text.includes('histop') || text.includes('htp')) return 'lineStop';
+    if (text.includes('hot tap') || text.includes('hottap')) return 'hotTap';
+    return '';
+  }
+
+  function stateHasCompletionPlugData(state = {}) {
+    return ['cpStart', 'cpJbf', 'cpLd', 'cpPt'].some((key) => hasEnteredValue(state?.[key]));
+  }
+
+  function stateHasLineStopData(state = {}) {
+    if (['htp', 'hiStop'].includes(String(state?.lineStopVariant || '').trim())) return true;
+    return [
+      'lsMd', 'lsLd', 'lsTravel', 'lsMachineTravel',
+      'hsMd', 'hsLd', 'hsRl', 'hsPod', 'hsCl', 'hsPtc', 'hsRcd', 'hsPb', 'hsPtp',
+      'htpPipeSize', 'htpMd', 'htpLd', 'htpPtc'
+    ].some((key) => hasEnteredValue(state?.[key]));
+  }
+
+  function stateHasHotTapData(state = {}) {
+    return ['md', 'ld', 'ptc', 'start', 'mt'].some((key) => hasEnteredValue(state?.[key]));
+  }
+
+  function operationWorkflowStage(operation = {}) {
+    const state = operation?.state || operation || {};
+    const explicit = stageFromWords(operation?.operationType, operation?.mode, state?.activeMode, state?.operationType);
+    if (explicit === 'completionPlug' || explicit === 'lineStop') return explicit;
+    if (stateHasCompletionPlugData(state)) return 'completionPlug';
+    if (stateHasLineStopData(state)) return 'lineStop';
+    if (explicit === 'hotTap' || stateHasHotTapData(state)) return 'hotTap';
+    return '';
+  }
+
+  function getRecordOperations(record = {}) {
+    if (Array.isArray(record?.jobBundle?.operations)) return record.jobBundle.operations;
+    const operations = [];
+    const state = record?.state || {};
+    const measurements = record?.measurements || {};
+    const lineStop = measurements.lineStop || {};
+    const hiStop = measurements.hiStop || {};
+    const htp = measurements.htp || {};
+    const completionPlug = measurements.completionPlug || {};
+
+    if (Object.keys(state).length) {
+      operations.push({
+        id: 'loaded-state',
+        operationType: record?.meta?.operationType || state.operationType || '',
+        mode: state.activeMode || '',
+        state
+      });
+    }
+    if (Object.keys(lineStop).length || Object.keys(hiStop).length || Object.keys(htp).length) {
+      operations.push({
+        id: 'loaded-line-stop',
+        operationType: 'Line Stop',
+        mode: 'lineStop',
+        state: {
+          lineStopVariant: lineStop.variant || state.lineStopVariant || '',
+          lsMd: lineStop.md || state.lsMd || '',
+          lsLd: lineStop.ld || state.lsLd || '',
+          lsTravel: lineStop.travel || state.lsTravel || '',
+          lsMachineTravel: lineStop.machineTravel || state.lsMachineTravel || '',
+          htpMd: htp.md || state.htpMd || '',
+          htpPtc: htp.ptc || state.htpPtc || '',
+          hsMd: hiStop.md || state.hsMd || '',
+          hsCl: hiStop.cl || state.hsCl || ''
+        }
+      });
+    }
+    if (Object.keys(completionPlug).length) {
+      operations.push({
+        id: 'loaded-completion-plug',
+        operationType: 'Completion Plug',
+        mode: 'completionPlug',
+        state: {
+          cpStart: completionPlug.start || state.cpStart || '',
+          cpJbf: completionPlug.jbf || state.cpJbf || '',
+          cpLd: completionPlug.ld || state.cpLd || '',
+          cpPt: completionPlug.pt || state.cpPt || ''
+        }
+      });
+    }
+    return operations;
+  }
+
+  function inferWorkflowStageFromLoadedJob(record = null) {
+    const liveOperation = (() => {
+      try { return typeof window.tapCalcGetSelectedOperation === 'function' ? window.tapCalcGetSelectedOperation() : null; } catch { return null; }
+    })();
+    const liveStage = operationWorkflowStage(liveOperation);
+    if (liveStage === 'completionPlug' || liveStage === 'lineStop') return liveStage;
+
+    const operations = getRecordOperations(record || {});
+    const selectedId = String(record?.jobBundle?.selectedOperationId || '').trim();
+    const selectedOperation = selectedId
+      ? operations.find((operation) => String(operation?.id || '') === selectedId)
+      : null;
+    const selectedStage = operationWorkflowStage(selectedOperation);
+    if (selectedStage === 'completionPlug' || selectedStage === 'lineStop') return selectedStage;
+
+    if (operations.some((operation) => operationWorkflowStage(operation) === 'completionPlug')) return 'completionPlug';
+    if (operations.some((operation) => operationWorkflowStage(operation) === 'lineStop')) return 'lineStop';
+
+    const recordStage = stageFromWords(record?.meta?.operationType, record?.state?.activeMode, record?.state?.operationType);
+    if (recordStage === 'completionPlug' || recordStage === 'lineStop') return recordStage;
+    return selectedStage || liveStage || recordStage || 'hotTap';
+  }
+
+  function applyLoadedJobWorkflow(record = null) {
+    const stage = inferWorkflowStageFromLoadedJob(record);
+    if (!stage) return false;
+    const select = document.getElementById('operationType');
+    if (select && (stage === 'lineStop' || stage === 'completionPlug')) {
+      select.value = 'Line Stop';
+      try { select.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+      try { select.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+    }
+    if (stage === 'hotTap' && select && !/line stop|completion/i.test(String(record?.meta?.operationType || ''))) {
+      select.value = 'Hot Tap';
+      try { select.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+      try { select.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+    }
+    try { if (typeof window.setMode === 'function') window.setMode(stage); } catch {}
+    try { if (typeof window.tapCalcSetWorkflowStage === 'function') window.tapCalcSetWorkflowStage(stage, { skipSetMode: false }); } catch {}
+    window.__tapcalcLastLoadedWorkflowStage = stage;
+    return true;
+  }
+
+  function scheduleLoadedJobWorkflow(record = null, options = {}) {
+    const delays = options.quick ? [0, 80, 220, 520] : [0, 80, 220, 520, 900, 1400];
+    delays.forEach((delay) => {
+      setTimeout(() => applyLoadedJobWorkflow(record || window.__tapcalcLastBundledLoadRecord || null), delay);
+    });
+  }
+
+  function restoreOperationBundleFromRecord(record, options = {}) {
+    if (!record?.jobBundle?.operations?.length && hasSavedOperationBundle(window.__tapcalcLastFullBundledRecord)) {
+      record = window.__tapcalcLastFullBundledRecord;
+    }
+    const applyBundle = window.tapCalcApplyJobBundle || (typeof applyJobBundle === 'function' ? applyJobBundle : null);
+    if (!record?.jobBundle?.operations?.length || typeof applyBundle !== 'function') return false;
+    try {
+      const incomingBundle = cloneBundle(record.jobBundle) || record.jobBundle;
+      const operationIds = new Set((incomingBundle.operations || []).map((operation) => String(operation?.id || '')).filter(Boolean));
+      const activeBundle = getActiveJobBundle();
+      const currentSelectedId = String(activeBundle?.selectedOperationId || '').trim();
+      const savedSelectedId = String(incomingBundle.selectedOperationId || '').trim();
+      if (currentSelectedId && operationIds.has(currentSelectedId)) {
+        incomingBundle.selectedOperationId = currentSelectedId;
+      } else if (savedSelectedId && operationIds.has(savedSelectedId)) {
+        incomingBundle.selectedOperationId = savedSelectedId;
+      } else if (incomingBundle.operations?.[0]?.id) {
+        incomingBundle.selectedOperationId = incomingBundle.operations[0].id;
+      }
+
+      applyBundle(incomingBundle, { record, expandJobInfo: true });
+      const restoredBundle = getActiveJobBundle();
+      try { window.tapCalcRenderOperationManager?.(); } catch {}
+      try { window.tapCalcUpdateJobInfoSummary?.(); } catch {}
+      try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
+      try {
+        const buildPayload = window.tapCalcBuildPersistedJobBundlePayload || (typeof buildPersistedJobBundlePayload === 'function' ? buildPersistedJobBundlePayload : null);
+        if (typeof buildPayload === 'function' && typeof JOB_STATE_KEY !== 'undefined') {
+          localStorage.setItem(JOB_STATE_KEY, JSON.stringify(buildPayload(restoredBundle)));
+        }
+      } catch {}
+      if (options.focus !== false) {
+        try { window.tapCalcExpandJobInfoForOperations?.(restoredBundle, { force: true }); } catch {}
+      }
+      scheduleLoadedJobWorkflow(record, { quick: true });
+      return true;
+    } catch (error) {
+      console.error('alpha162 bundle restore failed', error);
+      return false;
+    }
+  }
+
+  function scheduleBundleRestore(record, options = {}) {
+    if (!hasSavedOperationBundle(record)) return;
+    window.__tapcalcLastBundledLoadRecord = record;
+    [0, 40, 120, 260, 620, 1100].forEach((delay) => {
+      setTimeout(() => restoreOperationBundleFromRecord(record, options), delay);
+    });
+  }
+
+  const previousLoader = window.loadRecordIntoCalculator || (typeof loadRecordIntoCalculator === 'function' ? loadRecordIntoCalculator : null);
+  function alpha162LoadRecord(record, options = {}) {
+    if (!record) return false;
+    let result = false;
+    if (typeof previousLoader === 'function') {
+      result = previousLoader.call(this, record, options);
+    }
+    scheduleBundleRestore(record, { focus: true });
+    scheduleLoadedJobWorkflow(record);
+    try {
+      const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'saved job';
+      const statusEl = document.getElementById('jobsCloudStatus');
+      if (statusEl && options.message !== false) statusEl.textContent = `Loaded ${title} into TapCalc.`;
+    } catch {}
+    return result;
+  }
+
+  window.loadRecordIntoCalculator = alpha162LoadRecord;
+  try { loadRecordIntoCalculator = alpha162LoadRecord; } catch {}
+  window.tapCalcRestoreOperationBundle = restoreOperationBundleFromRecord;
+
+  function getJobs() {
+    try { return typeof getCombinedJobsForDisplay === 'function' ? (getCombinedJobsForDisplay() || []) : []; } catch { return []; }
+  }
+
+  function findRecordFromSelection(button = null) {
+    const jobs = getJobs();
+    const selectedIds = [
+      button?.dataset?.jobId,
+      document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id]')?.dataset?.jobId,
+      document.querySelector('#jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id]')?.dataset?.jobId,
+      window.__tapcalcLibrarySelectedId,
+      window.__tapcalcExactLibrarySelectedId,
+      window.__tapcalcDetailSelectedId,
+      typeof selectedJobId !== 'undefined' ? selectedJobId : ''
+    ].map((value) => String(value || '').trim()).filter(Boolean);
+
+    for (const id of selectedIds) {
+      const match = jobs.find((job) => String(job?.id || '') === id);
+      if (match?.record) return { id: match.id, source: match.source || '', record: match.record };
+    }
+
+    const cachedRecord =
+      window.__tapcalcVisibleDetailRecord ||
+      window.__tapcalcVisibleLibraryRecord ||
+      window.__tapCalcVisibleLibraryRecord ||
+      window.__tapCalcSelectedLibraryRecord ||
+      window.__tapcalcLibrarySelectedRecord ||
+      window.__tapcalcDetailSelectedRecord ||
+      null;
+    return cachedRecord ? { id: selectedIds[0] || getRecordId(cachedRecord) || 'cached', source: '', record: cachedRecord } : null;
+  }
+
+  function findLoadButtonFromEvent(event) {
+    const selector = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114, [data-load-job]';
+    const target = event?.target || null;
+    if (target?.closest) {
+      const button = target.closest(selector);
+      if (button) return button;
+    }
+    const path = typeof event?.composedPath === 'function' ? event.composedPath() : [];
+    for (const node of path) {
+      if (node?.matches?.(selector)) return node;
+      if (node?.closest) {
+        const button = node.closest(selector);
+        if (button) return button;
+      }
+    }
+    return null;
+  }
+
+  function alpha162LoadSelected(event) {
+    if (event) {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+      try { if (typeof event.stopImmediatePropagation === 'function') event.stopImmediatePropagation(); } catch {}
+    }
+    const button = findLoadButtonFromEvent(event);
+    const selected = findRecordFromSelection(button);
+    if (!selected?.record) {
+      try {
+        const statusEl = document.getElementById('jobsCloudStatus');
+        if (statusEl) statusEl.textContent = 'Select a job first.';
+      } catch {}
+      return false;
+    }
+    try { selectedJobId = String(selected.id || ''); } catch {}
+    try { window.__tapcalcLibrarySelectedId = String(selected.id || ''); } catch {}
+
+    const loadToken = `${String(selected.id || getRecordId(selected.record) || 'selected')}:${Date.now()}`;
+    window.__tapcalcalpha162ActiveLoadToken = loadToken;
+    (async () => {
+      try {
+        const statusEl = document.getElementById('jobsCloudStatus');
+        if (statusEl && !hasSavedOperationBundle(selected.record)) statusEl.textContent = 'Loading full shared job details...';
+      } catch {}
+
+      const fullRecord = await resolveFullOperationRecord(selected);
+      if (window.__tapcalcalpha162ActiveLoadToken !== loadToken) return;
+
+      alpha162LoadRecord(fullRecord || selected.record, { message: true, switchScreen: true, skipPersist: false });
+      scheduleBundleRestore(fullRecord || selected.record, { focus: true });
+      scheduleLoadedJobWorkflow(fullRecord || selected.record);
+      try { if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job'); } catch {}
+      try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+    })();
+    return false;
+  }
+
+  window.tapCalcForceLoadSelectedJob = alpha162LoadSelected;
+  window.tapCalcLibraryLoadSelected = alpha162LoadSelected;
+  window.loadSelectedLibraryJob = alpha162LoadSelected;
+  window.alpha47LoadSelectedLibraryJob = alpha162LoadSelected;
+
+  function bindLoadButtonCapture(event) {
+    const button = findLoadButtonFromEvent(event);
+    if (!button) return;
+    alpha162LoadSelected(event);
+  }
+
+  window.addEventListener('click', bindLoadButtonCapture, true);
+  window.addEventListener('pointerdown', bindLoadButtonCapture, true);
+  window.addEventListener('pointerup', bindLoadButtonCapture, true);
+  window.addEventListener('mousedown', bindLoadButtonCapture, true);
+  window.addEventListener('touchstart', bindLoadButtonCapture, { capture: true, passive: false });
+  window.addEventListener('touchend', bindLoadButtonCapture, { capture: true, passive: false });
+  document.addEventListener('click', bindLoadButtonCapture, true);
+  document.addEventListener('pointerdown', bindLoadButtonCapture, true);
+  document.addEventListener('pointerup', bindLoadButtonCapture, true);
+  document.addEventListener('mousedown', bindLoadButtonCapture, true);
+  document.addEventListener('touchstart', bindLoadButtonCapture, { capture: true, passive: false });
+  document.addEventListener('touchend', bindLoadButtonCapture, { capture: true, passive: false });
+  document.addEventListener('change', (event) => {
+    if (event.target?.id !== 'jobOperationSelect') return;
+    setTimeout(() => scheduleLoadedJobWorkflow(window.__tapcalcLastBundledLoadRecord || null, { quick: true }), 30);
+  });
+window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
+})();
+
+
+/* ===== 3.0.0-alpha200 gasket torque reference ===== */
+(function(){
+  const CE = 'Contact Engineering';
+  const GASKET_TORQUE_TYPES = [
+    { key: 'cmg', label: 'Graphonic *', standard: true }
+  ];
+  const RAW_GASKET_TORQUE_DATA = {
+    '150': [
+      ['1/2','4','0.50',[16,47],[9,52],[8,42],[7,37],[18,53]],
+      ['3/4','4','0.50',[22,60],[12,60],[11,54],[10,60],[25,60]],
+      ['1','4','0.50',[30,60],[15,60],[13,60],[13,60],[27,60]],
+      ['1-1/4','4','0.50',[33,60],[16,60],[24,60],[20,60],[42,60]],
+      ['1-1/2','4','0.50',[47,60],[23,60],[31,60],[26,60],[59,60]],
+      ['2','4','0.63',[74,120],[36,120],[55,120],[52,120],[94,120]],
+      ['2-1/2','4','0.63',[87,120],[43,120],[63,120],[61,120],[108,120]],
+      ['3','4','0.63',[120,120],[63,120],[102,120],[89,120],[120,120]],
+      ['4','8','0.63',[92,120],[47,120],[76,120],[63,120],[111,120]],
+      ['5','8','0.75',[124,200],[63,200],[106,200],[88,200],[189,200]],
+      ['6','8','0.75',[178,200],[89,200],[137,200],[111,200],[173,200]],
+      ['8','8','0.75',[200,200],[128,200],[190,200],[150,200],[200,200]],
+      ['10','12','0.88',[236,320],[120,320],[178,320],[141,320],[300,320]],
+      ['12','12','0.88',[320,320],[163,320],[178,320],[187,320],[320,320]],
+      ['14','12','1.00',[408,490],[209,490],[268,490],[238,490],[451,490]],
+      ['16','16','1.00',[412,490],[210,490],[267,490],[226,490],[449,490]],
+      ['18','16','1.13',[649,710],[328,710],[381,710],[336,710],[562,710]],
+      ['20','20','1.13',[572,710],[289,710],[335,710],[296,710],[562,710]],
+      ['24','20','1.25',[820,1000],[415,1000],[438,1000],[422,1000],[740,1000]]
+    ],
+    '300': [
+      ['1/2','4','0.50',[16,47],[9,52],[8,42],[9,37],[18,53]],
+      ['3/4','4','0.63',[28,84],[15,88],[14,68],[16,67],[31,92]],
+      ['1','4','0.63',[38,114],[19,115],[17,84],[21,89],[34,102]],
+      ['1-1/4','4','0.63',[41,120],[20,120],[30,120],[33,120],[53,120]],
+      ['1-1/2','4','0.75',[66,198],[32,191],[43,200],[48,200],[81,200]],
+      ['2','8','0.63',[37,112],[18,109],[27,120],[35,120],[47,120]],
+      ['2-1/2','8','0.75',[48,145],[24,144],[35,177],[45,188],[60,180]],
+      ['3','8','0.75',[71,200],[35,200],[57,200],[66,200],[75,200]],
+      ['4','8','0.75',[103,200],[52,200],[84,200],[94,200],[123,200]],
+      ['5','8','0.75',[124,200],[63,200],[106,200],[117,200],[189,200]],
+      ['6','12','0.75',[118,200],[60,200],[92,200],[99,200],[116,200]],
+      ['8','12','0.88',[194,320],[98,320],[146,320],[154,320],[207,320]],
+      ['10','16','1.00',[206,490],[105,490],[155,490],[164,490],[262,490]],
+      ['12','16','1.13',[309,710],[156,710],[171,710],[239,710],[341,710]],
+      ['14','20','1.13',[269,710],[138,710],[177,710],[209,710],[297,710]],
+      ['16','20','1.25',[399,1000],[203,1000],[259,1000],[292,1000],[435,1000]],
+      ['18','24','1.25',[478,1000],[241,1000],[280,1000],[330,1000],[414,1000]],
+      ['20','24','1.25',[526,1000],[266,1000],[308,1000],[364,1000],[517,1000]],
+      ['24','24','1.50',[723,1600],[366,1600],[386,1600],[497,1600],[652,1600]]
+    ],
+    '400': [
+      ['1/2','4','0.50',[16,47],[17,52],[8,42],CE,[18,53]],
+      ['3/4','4','0.63',[28,84],[29,88],[14,68],CE,[31,92]],
+      ['1','4','0.63',[38,114],[38,115],[17,84],CE,[34,102]],
+      ['1-1/4','4','0.63',[41,120],[40,120],[30,120],CE,[53,120]],
+      ['1-1/2','4','0.75',[66,198],[64,191],[43,200],CE,[81,200]],
+      ['2','8','0.63',[37,112],[36,109],[27,120],CE,[47,120]],
+      ['2-1/2','8','0.75',[48,145],[48,144],[35,177],CE,[60,180]],
+      ['3','8','0.75',[71,200],[71,200],[57,200],CE,[75,200]],
+      ['4','8','0.88',[149,320],[120,320],[97,320],CE,[142,320]],
+      ['5','8','0.88',[190,320],[146,320],[123,320],CE,[218,320]],
+      ['6','12','0.88',[173,320],[138,320],[106,320],CE,[133,320]],
+      ['8','12','1.00',[280,490],[229,490],[170,490],CE,[241,490]],
+      ['10','16','1.13',[314,710],[230,691],[170,710],CE,[287,710]],
+      ['12','16','1.25',[456,1000],[345,1000],[188,941],CE,[376,1000]],
+      ['14','20','1.25',[373,1000],[304,911],[195,975],CE,[328,983]],
+      ['16','20','1.38',[532,1360],[445,1335],[283,1360],CE,[475,1360]],
+      ['18','24','1.38',[567,1360],[527,1360],[306,1360],CE,[452,1357]],
+      ['20','24','1.50',[604,1600],[563,1600],[326,1600],CE,[547,1600]],
+      ['24','24','1.75',[962,2887],[975,2924],[513,2566],CE,[868,2603]]
+    ],
+    '600': [
+      ['1/2','4','0.50',[16,47],[17,52],[8,42],CE,[18,53]],
+      ['3/4','4','0.63',[28,84],[29,88],[14,68],CE,[31,92]],
+      ['1','4','0.63',[38,114],[38,115],[17,84],CE,[34,102]],
+      ['1-1/4','4','0.63',[41,120],[40,120],[30,120],CE,[53,120]],
+      ['1-1/2','4','0.75',[66,198],[64,191],[43,200],CE,[81,200]],
+      ['2','8','0.63',[37,112],[36,109],[27,120],CE,[47,120]],
+      ['2-1/2','8','0.75',[48,145],[48,144],[35,177],CE,[60,180]],
+      ['3','8','0.75',[71,200],[71,200],[57,200],CE,[75,200]],
+      ['4','8','0.88',[149,320],[120,320],[97,320],CE,[142,320]],
+      ['5','8','1.00',[221,490],[170,490],[143,490],CE,[254,490]],
+      ['6','12','1.00',[202,490],[160,480],[123,490],CE,[155,466]],
+      ['8','12','1.13',[307,710],[251,710],[187,710],CE,[264,710]],
+      ['10','16','1.25',[346,1000],[254,763],[188,938],CE,[317,951]],
+      ['12','20','1.25',[365,1000],[276,829],[151,753],CE,[301,904]],
+      ['14','20','1.38',[408,1224],[332,996],[213,1066],CE,[358,1075]],
+      ['16','20','1.50',[514,1543],[430,1291],[274,1370],CE,[460,1379]],
+      ['18','20','1.63',[757,2200],[704,2112],[409,2044],CE,[604,1811]],
+      ['20','24','1.63',[695,2085],[647,1941],[375,1875],CE,[629,1886]],
+      ['24','24','1.88',[1103,3308],[1117,3350],[588,2940],CE,[994,2983]]
+    ]
+  };
+  const GRAPHONIC_600_ENGINEERING = new Map([
+    ['1/2', { torque: ['11', '37'], bolts: '4', boltSize: '0.50' }],
+    ['3/4', { torque: ['20', '67'], bolts: '4', boltSize: '0.63' }],
+    ['1', { torque: ['27', '89'], bolts: '4', boltSize: '0.63' }],
+    ['1-1/4', { torque: ['41', '120'], bolts: '4', boltSize: '0.63' }],
+    ['1-1/2', { torque: ['60', '200'], bolts: '4', boltSize: '0.75' }],
+    ['2', { torque: ['43', '120'], bolts: '8', boltSize: '0.63' }],
+    ['2-1/2', { torque: ['56', '188'], bolts: '8', boltSize: '0.75' }],
+    ['3', { torque: ['83', '200'], bolts: '8', boltSize: '0.75' }],
+    ['4', { torque: ['135', '320'], bolts: '8', boltSize: '0.88' }],
+    ['5', { torque: ['197', '490'], bolts: '8', boltSize: '1.00' }],
+    ['6', { torque: ['165', '490'], bolts: '12', boltSize: '1.00' }],
+    ['8', { torque: ['246', '710'], bolts: '12', boltSize: '1.13' }],
+    ['10', { torque: ['248', '828'], bolts: '16', boltSize: '1.25' }],
+    ['12', { torque: ['264', '880'], bolts: '20', boltSize: '1.25' }],
+    ['14', { torque: ['315', '1049'], bolts: '20', boltSize: '1.38' }],
+    ['16', { torque: ['386', '1286'], bolts: '20', boltSize: '1.50' }],
+    ['18', { torque: ['602', '2006'], bolts: '20', boltSize: '1.63' }],
+    ['20', { torque: ['553', '1843'], bolts: '24', boltSize: '1.63' }],
+    ['24', { torque: ['946', '3154'], bolts: '24', boltSize: '1.88' }]
+  ]);
+  const GASKET_TORQUE_DATA = Object.fromEntries(Object.entries(RAW_GASKET_TORQUE_DATA).map(([flangeClass, rows]) => [
+    flangeClass,
+    rows.map((row) => {
+      const engineering600 = flangeClass === '600' ? GRAPHONIC_600_ENGINEERING.get(row[0]) : null;
+      return {
+        flangeClass,
+        size: row[0],
+        bolts: engineering600?.bolts || row[1],
+        boltSize: engineering600?.boltSize || row[2],
+        flexseal: row[3],
+        edge: row[4],
+        kammprofile: row[5],
+        cmg: engineering600?.torque || row[6],
+        jacketed: row[7],
+        source: engineering600 ? 'Engineering 600# Graphonic' : (flangeClass === '150' || flangeClass === '300' ? 'Scan p.2' : 'Scan p.3')
+      };
+    })
+  ]));
+
+  function gasketTorqueEl(id) {
+    return document.getElementById(id);
+  }
+
+  function gasketTorqueEscape(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function gasketTorqueType() {
+    const key = gasketTorqueEl('gasketTorqueTypeSelect')?.value || 'cmg';
+    return GASKET_TORQUE_TYPES.find((type) => type.key === key) || GASKET_TORQUE_TYPES[0];
+  }
+
+  function gasketTorqueClass() {
+    return gasketTorqueEl('gasketTorqueClassSelect')?.value || '150';
+  }
+
+  function gasketTorqueRows() {
+    return GASKET_TORQUE_DATA[gasketTorqueClass()] || GASKET_TORQUE_DATA['150'] || [];
+  }
+
+  function formatGasketTorque(value, mode) {
+    if (Array.isArray(value)) return `${mode === 'min' ? value[0] : value[1]} ft-lbs`;
+    return value || '-';
+  }
+
+  function getGasketTorqueNote(value, type, row) {
+    if (value === CE) return `${type.label} is marked Contact Engineering for this flange class.`;
+    if (row?.source === 'Engineering 600# Graphonic') return `${type.label} engineering 600# value; torque per bolt.`;
+    if (type.standard) return `${type.label} starred shop style; torque per bolt.`;
+    return `${type.label} torque per bolt.`;
+  }
+
+  function populateGasketTorqueSizeSelect() {
+    const select = gasketTorqueEl('gasketTorqueSizeSelect');
+    if (!select) return;
+    const rows = gasketTorqueRows();
+    const previous = select.value;
+    select.innerHTML = rows.map((row) => `<option value="${gasketTorqueEscape(row.size)}">${gasketTorqueEscape(row.size)}"</option>`).join('');
+    if (previous && rows.some((row) => row.size === previous)) select.value = previous;
+    if (!select.value && rows[0]?.size) select.value = rows[0].size;
+  }
+
+  function renderGasketTorqueTable() {
+    const body = gasketTorqueEl('gasketTorqueBody');
+    if (!body) return;
+    const type = gasketTorqueType();
+    const query = String(gasketTorqueEl('gasketTorqueSearchInput')?.value || '').trim().toLowerCase();
+    const rows = gasketTorqueRows().filter((row) => {
+      if (!query) return true;
+      const value = row[type.key];
+      const torqueText = Array.isArray(value) ? value.join(' ') : value;
+      return `${row.flangeClass} ${row.size} ${row.bolts} ${row.boltSize} ${torqueText} ${type.label} starred graphonic shop style ${row.source}`.toLowerCase().includes(query);
+    });
+    body.innerHTML = rows.map((row) => {
+      const torque = row[type.key];
+      const note = getGasketTorqueNote(torque, type, row);
+      const rowClass = torque === CE ? ' class="gasket-torque-contact-row"' : '';
+      return `<tr${rowClass}><td>${gasketTorqueEscape(row.size)}"</td><td>${gasketTorqueEscape(row.bolts)}</td><td>${gasketTorqueEscape(row.boltSize)}</td><td>${gasketTorqueEscape(formatGasketTorque(torque, 'min'))}</td><td>${gasketTorqueEscape(formatGasketTorque(torque, 'preferred'))}</td><td>${gasketTorqueEscape(note)}</td></tr>`;
+    }).join('');
+  }
+
+  function updateGasketTorqueSummary() {
+    const rows = gasketTorqueRows();
+    const size = gasketTorqueEl('gasketTorqueSizeSelect')?.value || rows[0]?.size || '';
+    const row = rows.find((item) => item.size === size) || rows[0];
+    const type = gasketTorqueType();
+    if (!row) return;
+    const torque = row[type.key];
+    const setText = (id, value) => { const el = gasketTorqueEl(id); if (el) el.textContent = value || '-'; };
+    setText('gasketTorqueBoltCount', row.bolts);
+    setText('gasketTorqueBoltSize', row.boltSize);
+    setText('gasketTorqueMinTorque', formatGasketTorque(torque, 'min'));
+    setText('gasketTorquePreferredTorque', formatGasketTorque(torque, 'preferred'));
+    setText('gasketTorqueSource', row.source);
+    const note = gasketTorqueEl('gasketTorqueNote');
+    if (note) {
+      note.textContent = torque === CE
+        ? `${type.label} is the starred shop style, but ${gasketTorqueClass()}# class says Contact Engineering. Confirm before using Graphonic torque here.`
+        : `${gasketTorqueClass()}# RF, ${row.size}" pipe, ${type.label}: minimum ${formatGasketTorque(torque, 'min')} and preferred ${formatGasketTorque(torque, 'preferred')} per bolt.`;
+      note.dataset.state = torque === CE ? 'warn' : 'ok';
+    }
+  }
+
+  function updateGasketTorqueReference() {
+    populateGasketTorqueSizeSelect();
+    updateGasketTorqueSummary();
+    renderGasketTorqueTable();
+  }
+
+  function initGasketTorqueReference() {
+    const classSelect = gasketTorqueEl('gasketTorqueClassSelect');
+    const sizeSelect = gasketTorqueEl('gasketTorqueSizeSelect');
+    const typeSelect = gasketTorqueEl('gasketTorqueTypeSelect');
+    const searchInput = gasketTorqueEl('gasketTorqueSearchInput');
+    if (!classSelect || !sizeSelect || !typeSelect) return;
+    if (!classSelect.dataset.alpha196Bound) {
+      classSelect.dataset.alpha196Bound = '1';
+      classSelect.addEventListener('change', updateGasketTorqueReference);
+    }
+    if (!sizeSelect.dataset.alpha196Bound) {
+      sizeSelect.dataset.alpha196Bound = '1';
+      sizeSelect.addEventListener('change', () => {
+        updateGasketTorqueSummary();
+        renderGasketTorqueTable();
+      });
+      sizeSelect.addEventListener('input', updateGasketTorqueSummary);
+    }
+    if (!typeSelect.dataset.alpha196Bound) {
+      typeSelect.dataset.alpha196Bound = '1';
+      typeSelect.addEventListener('change', () => {
+        updateGasketTorqueSummary();
+        renderGasketTorqueTable();
+      });
+    }
+    if (searchInput && !searchInput.dataset.alpha196Bound) {
+      searchInput.dataset.alpha196Bound = '1';
+      searchInput.addEventListener('input', renderGasketTorqueTable);
+    }
+    updateGasketTorqueReference();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('[data-reference-target="gaskettorque"]')) setTimeout(initGasketTorqueReference, 0);
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target?.id === 'referenceViewSelect' && event.target.value === 'gaskettorque') setTimeout(initGasketTorqueReference, 0);
+  }, true);
+  window.addEventListener('pageshow', () => setTimeout(initGasketTorqueReference, 60));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initGasketTorqueReference);
+  else setTimeout(initGasketTorqueReference, 0);
+  window.tapCalcInitGasketTorqueReference = initGasketTorqueReference;
+})();
+
+/* ===== 3.0.0-alpha200 paper gasket torque reference ===== */
+(function(){
+  const PAPER_GASKET_GEOMETRY = {
+    '0.5': ['0.84', '1.38', '0.94'],
+    '0.75': ['1.06', '1.69', '1.36'],
+    '1': ['1.31', '2.00', '1.79'],
+    '1.25': ['1.66', '2.50', '2.74'],
+    '1.5': ['1.91', '2.88', '3.65'],
+    '2': ['2.38', '3.62', '5.84'],
+    '2.5': ['2.88', '4.12', '6.81'],
+    '3': ['3.50', '5.00', '10.01'],
+    '3.5': ['4.00', '5.50', '11.19'],
+    '4': ['4.50', '6.19', '14.18'],
+    '5': ['5.56', '7.31', '17.68'],
+    '6': ['6.62', '8.50', '22.31'],
+    '8': ['8.62', '10.62', '30.21'],
+    '10': ['10.75', '12.75', '36.90'],
+    '12': ['12.75', '15.00', '49.01'],
+    '14': ['14.00', '16.25', '53.43'],
+    '16': ['16.00', '18.50', '67.71'],
+    '18': ['18.00', '21.00', '91.85'],
+    '20': ['20.00', '23.00', '101.27'],
+    '24': ['24.00', '27.25', '130.75']
+  };
+  const PAPER_GASKET_LABELS = {
+    '0.5': '1/2',
+    '0.75': '3/4',
+    '1.25': '1-1/4',
+    '1.5': '1-1/2',
+    '2.5': '2-1/2',
+    '3.5': '3-1/2'
+  };
+  const PAPER_GASKET_SOURCE_PAGE = {
+    '150': 'Scan p.14',
+    '300': 'Scan p.13',
+    '400': 'Scan p.12',
+    '600': 'Scan p.11',
+    '900': 'Scan p.10'
+  };
+  const PAPER_GASKET_RAW = {
+    '150': [
+      ['0.5','4','0.50','60','7560','32134','<300','4800','9','15000','28'],
+      ['0.75','4','0.50','60','7560','22235','<300','4800','13','15000','40'],
+      ['1','4','0.50','60','7560','16867','<300','4800','17','15000','53'],
+      ['1.25','4','0.50','60','7560','11024','<300','4800','26','11024','60'],
+      ['1.5','4','0.50','60','7560','8291','<300','4800','35','8291','60'],
+      ['2','4','0.63','120','12120','8301','<300','4800','69','8301','120'],
+      ['2.5','4','0.63','120','12120','7115','<300','4800','81','7115','120'],
+      ['3','4','0.63','120','12120','4844','<300','4800','119','4844','120'],
+      ['3.5','8','0.63','120','12120','8668','<300','4800','66','8668','120'],
+      ['4','8','0.63','120','12120','6837','<300','4800','84','6837','120'],
+      ['5','8','0.75','200','18120','8199','<300','4800','117','8199','200'],
+      ['6','8','0.75','200','18120','6496','<300','4800','148','6496','200'],
+      ['8','8','0.75','200','18120','4799','<300','4800','200','4799','200'],
+      ['10','12','0.88','320','25140','8177','<300','4800','186','8177','320'],
+      ['12','12','0.88','320','25140','6155','<300','4800','250','6155','320'],
+      ['14','12','1.00','490','33060','7425','<300','4800','317','7425','490'],
+      ['16','16','1.00','490','33060','7813','<300','4800','301','7813','490'],
+      ['18','16','1.13','710','43680','7609','<300','4800','448','7609','710'],
+      ['20','20','1.13','710','43680','8627','<300','4800','395','8627','710'],
+      ['24','20','1.25','1000','55740','8526','<300','4800','563','8526','1000']
+    ],
+    '300': [
+      ['0.5','4','0.50','60','7560','32134','<800','6200','12','15000','28'],
+      ['0.75','4','0.63','120','12120','35647','<800','6200','21','15000','51'],
+      ['1','4','0.63','120','12120','27041','<800','6400','28','15000','67'],
+      ['1.25','4','0.63','120','12120','17673','<800','6400','43','15000','102'],
+      ['1.5','4','0.75','200','18120','19872','<800','6400','64','15000','151'],
+      ['2','8','0.63','120','12120','16602','<800','6400','46','15000','108'],
+      ['2.5','8','0.75','200','18120','21274','<800','6400','60','15000','141'],
+      ['3','8','0.75','200','18120','14483','<800','6400','88','14483','200'],
+      ['3.5','8','0.75','200','18120','12959','<800','6400','99','12959','200'],
+      ['4','8','0.75','200','18120','10221','<800','6400','125','10221','200'],
+      ['5','8','0.75','200','18120','8199','<800','6400','156','8199','200'],
+      ['6','12','0.75','200','18120','9745','<800','6400','131','9745','200'],
+      ['8','12','0.88','320','25140','9987','<800','6400','205','9987','320'],
+      ['10','16','1.00','490','33060','14337','<800','6400','219','14337','490'],
+      ['12','16','1.13','710','43680','14259','<800','6400','319','14259','710'],
+      ['14','20','1.13','710','43680','16351','<800','6600','287','15000','652'],
+      ['16','20','1.25','1000','55740','16465','<800','6600','401','15000','912'],
+      ['18','24','1.25','1000','55740','14565','<800','6400','439','14565','1000'],
+      ['20','24','1.25','1000','55740','13210','<800','6400','484','13210','1000'],
+      ['24','24','1.50','1600','84300','15474','<800','6400','662','15000','1552']
+    ],
+    '400': [
+      ['0.5','4','0.50','60','7560','32134','<1000','7200','13','15000','28'],
+      ['0.75','4','0.63','120','12120','35647','<1000','7200','24','15000','51'],
+      ['1','4','0.63','120','12120','27041','<1000','7400','33','15000','67'],
+      ['1.25','4','0.63','120','12120','17673','<1000','7400','50','15000','102'],
+      ['1.5','4','0.75','200','18120','19872','<1000','7400','74','15000','151'],
+      ['2','8','0.63','120','12120','16602','<1000','7400','53','15000','108'],
+      ['2.5','8','0.75','200','18120','21274','<1000','7400','70','15000','141'],
+      ['3','8','0.75','200','18120','14483','<1000','7400','102','14483','200'],
+      ['3.5','8','0.88','320','25140','17979','<1000','7400','132','15000','267'],
+      ['4','8','0.88','320','25140','14181','<1000','7400','167','14181','320'],
+      ['5','8','0.88','320','25140','11375','<1000','7400','208','11375','320'],
+      ['6','12','0.88','320','25140','13520','<1000','7400','175','13520','320'],
+      ['8','12','1.00','490','33060','13133','<1000','7400','276','13133','490'],
+      ['10','16','1.13','710','43680','18942','<1000','7400','277','15000','562'],
+      ['12','16','1.25','1000','55740','18196','<1000','7400','407','15000','824'],
+      ['14','20','1.25','1000','55740','20865','<1000','7600','364','15000','719'],
+      ['16','20','1.38','1360','69300','20471','<1000','7600','505','15000','997'],
+      ['18','24','1.38','1360','69300','18109','<1000','7400','556','15000','1127'],
+      ['20','24','1.50','1600','84300','19979','<1000','7400','593','15000','1201'],
+      ['24','24','1.75','3000','118800','21806','<1000','7400','1018','15000','2064']
+    ],
+    '600': [
+      ['0.5','4','0.50','60','7560','32134','<1500','9400','18','15000','28'],
+      ['0.75','4','0.63','120','12120','35647','<1500','9400','32','15000','50'],
+      ['1','4','0.63','120','12120','27041','<1500','9400','42','15000','67'],
+      ['1.25','4','0.63','120','12120','17673','<1500','9400','64','15000','102'],
+      ['1.5','4','0.75','200','18120','19872','<1500','9400','95','15000','151'],
+      ['2','8','0.63','120','12120','16602','<1500','9400','68','15000','108'],
+      ['2.5','8','0.75','200','18120','21274','<1500','9400','88','15000','141'],
+      ['3','8','0.75','200','18120','14483','<1500','9400','130','14483','200'],
+      ['3.5','8','0.88','320','25140','17979','<1500','9400','167','15000','267'],
+      ['4','8','0.88','320','25140','14181','<1500','9400','212','14181','320'],
+      ['5','8','1.00','490','33060','14959','<1500','9400','308','14959','490'],
+      ['6','12','1.00','490','33060','17779','<1500','9400','259','15000','413'],
+      ['8','12','1.13','710','43680','17352','<1500','9400','385','15000','614'],
+      ['10','16','1.25','1000','55740','24172','<1500','9400','389','15000','621'],
+      ['12','20','1.25','1000','55740','22745','<1500','9400','413','15000','659'],
+      ['14','20','1.38','1360','69300','25941','<1500','9400','493','15000','786'],
+      ['16','20','1.50','1600','84300','24902','<1500','9400','604','15000','964'],
+      ['18','20','1.63','2200','100800','21950','<1500','9400','942','15000','1503'],
+      ['20','24','1.63','2200','100800','23890','<1500','9400','866','15000','1381'],
+      ['24','24','1.88','4000','138240','25375','<1500','9400','1482','15000','2365']
+    ],
+    '900': [
+      ['0.5','4','0.75','200','18120','77020','<2250','9200','24','15000','39'],
+      ['0.75','4','0.75','200','18120','53294','<2250','9200','35','15000','56'],
+      ['1','4','0.88','320','25140','56089','<2250','9400','54','15000','86'],
+      ['1.25','4','0.88','320','25140','36659','<2250','9400','82','15000','131'],
+      ['1.5','4','1.00','490','33060','36257','<2250','9400','127','15000','203'],
+      ['2','8','0.88','320','25140','34436','<2250','9400','87','15000','139'],
+      ['2.5','8','1.00','490','33060','36815','<2250','9400','119','15000','189'],
+      ['3','8','0.88','320','25140','20094','<2250','9400','150','15000','239'],
+      ['4','8','1.13','710','43680','24640','<2250','9400','271','15000','432'],
+      ['5','8','1.25','1000','55740','25221','<2250','9400','373','15000','595'],
+      ['6','12','1.13','710','43680','23490','<2250','9400','284','15000','453'],
+      ['8','12','1.38','1360','69300','27530','<2250','9400','464','15000','741'],
+      ['10','16','1.38','1360','69300','30053','<2250','9400','425','15000','679'],
+      ['12','20','1.38','1360','69300','28278','<2250','9400','452','15000','721'],
+      ['14','20','1.50','1600','84300','31556','<2250','9600','487','15000','761'],
+      ['16','20','1.63','2200','100800','29776','<2250','9600','709','15000','1108'],
+      ['18','20','1.88','4000','138240','30103','<2250','9400','1249','15000','1993'],
+      ['20','20','2.00','4400','159120','31426','<2250','9400','1316','15000','2100'],
+      ['24','20','2.50','8800','257520','39391','<2250','9400','2100','15000','3351']
+    ]
+  };
+
+  function paperGasketEl(id) {
+    return document.getElementById(id);
+  }
+
+  function paperGasketEscape(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
+  }
+
+  function paperGasketSizeLabel(size) {
+    return PAPER_GASKET_LABELS[size] || size;
+  }
+
+  const PAPER_GASKET_DATA = Object.fromEntries(Object.entries(PAPER_GASKET_RAW).map(([flangeClass, rows]) => [
+    flangeClass,
+    rows.map((row) => {
+      const geometry = PAPER_GASKET_GEOMETRY[row[0]] || ['', '', ''];
+      return {
+        flangeClass,
+        size: row[0],
+        displaySize: paperGasketSizeLabel(row[0]),
+        rfId: geometry[0],
+        rfOd: geometry[1],
+        area: geometry[2],
+        bolts: row[1],
+        boltSize: row[2],
+        torque60: row[3],
+        compForce: row[4],
+        maxStressAvail: row[5],
+        internalPressure: row[6],
+        minGasketStress: row[7],
+        minTorque: row[8],
+        maxRecAvailStress: row[9],
+        preferredTorque: row[10],
+        source: PAPER_GASKET_SOURCE_PAGE[flangeClass] || 'Scan.pdf'
+      };
+    })
+  ]));
+
+  function paperGasketClass() {
+    return paperGasketEl('paperGasketClassSelect')?.value || '150';
+  }
+
+  function paperGasketRows() {
+    return PAPER_GASKET_DATA[paperGasketClass()] || PAPER_GASKET_DATA['150'] || [];
+  }
+
+  function populatePaperGasketSizeSelect() {
+    const select = paperGasketEl('paperGasketSizeSelect');
+    if (!select) return;
+    const rows = paperGasketRows();
+    const previous = select.value;
+    select.innerHTML = rows.map((row) => `<option value="${paperGasketEscape(row.size)}">${paperGasketEscape(row.displaySize)}"</option>`).join('');
+    if (previous && rows.some((row) => row.size === previous)) select.value = previous;
+    if (!select.value && rows[0]?.size) select.value = rows[0].size;
+  }
+
+  function setPaperGasketText(id, value) {
+    const element = paperGasketEl(id);
+    if (element) element.textContent = value || '-';
+  }
+
+  function updatePaperGasketSummary() {
+    const rows = paperGasketRows();
+    const size = paperGasketEl('paperGasketSizeSelect')?.value || rows[0]?.size || '';
+    const row = rows.find((item) => item.size === size) || rows[0];
+    if (!row) return;
+    setPaperGasketText('paperGasketBoltCount', row.bolts);
+    setPaperGasketText('paperGasketBoltSize', row.boltSize);
+    setPaperGasketText('paperGasketMinTorque', `${row.minTorque} ft-lbs`);
+    setPaperGasketText('paperGasketPreferredTorque', `${row.preferredTorque} ft-lbs`);
+    setPaperGasketText('paperGasketPressure', `${row.internalPressure} psi`);
+    const note = paperGasketEl('paperGasketNote');
+    if (note) {
+      note.textContent = `${paperGasketClass()}# RF, ${row.displaySize}" pipe: minimum ${row.minTorque} ft-lbs and preferred ${row.preferredTorque} ft-lbs per bolt. Source ${row.source}.`;
+    }
+  }
+
+  function renderPaperGasketTable() {
+    const body = paperGasketEl('paperGasketBody');
+    if (!body) return;
+    const query = String(paperGasketEl('paperGasketSearchInput')?.value || '').trim().toLowerCase();
+    const selectedSize = paperGasketEl('paperGasketSizeSelect')?.value || '';
+    const rows = paperGasketRows().filter((row) => {
+      if (!query) return true;
+      return [
+        row.flangeClass,
+        row.size,
+        row.displaySize,
+        row.rfId,
+        row.rfOd,
+        row.area,
+        row.bolts,
+        row.boltSize,
+        row.torque60,
+        row.compForce,
+        row.maxStressAvail,
+        row.internalPressure,
+        row.minGasketStress,
+        row.minTorque,
+        row.maxRecAvailStress,
+        row.preferredTorque,
+        row.source,
+        'paper gasket',
+        'gylon',
+        'compressed sheet'
+      ].join(' ').toLowerCase().includes(query);
+    });
+    body.innerHTML = rows.map((row) => {
+      const selectedClass = row.size === selectedSize ? ' class="paper-gasket-selected-row"' : '';
+      return `<tr${selectedClass}><td>${paperGasketEscape(row.displaySize)}"</td><td>${paperGasketEscape(row.rfId)}</td><td>${paperGasketEscape(row.rfOd)}</td><td>${paperGasketEscape(row.area)}</td><td>${paperGasketEscape(row.bolts)}</td><td>${paperGasketEscape(row.boltSize)}</td><td>${paperGasketEscape(row.torque60)}</td><td>${paperGasketEscape(row.compForce)}</td><td>${paperGasketEscape(row.maxStressAvail)}</td><td>${paperGasketEscape(row.internalPressure)}</td><td>${paperGasketEscape(row.minGasketStress)}</td><td>${paperGasketEscape(row.minTorque)}</td><td>${paperGasketEscape(row.maxRecAvailStress)}</td><td>${paperGasketEscape(row.preferredTorque)}</td></tr>`;
+    }).join('');
+  }
+
+  function updatePaperGasketReference() {
+    populatePaperGasketSizeSelect();
+    updatePaperGasketSummary();
+    renderPaperGasketTable();
+  }
+
+  function initPaperGasketReference() {
+    const classSelect = paperGasketEl('paperGasketClassSelect');
+    const sizeSelect = paperGasketEl('paperGasketSizeSelect');
+    const searchInput = paperGasketEl('paperGasketSearchInput');
+    if (!classSelect || !sizeSelect) return;
+    if (!classSelect.dataset.alpha200Bound) {
+      classSelect.dataset.alpha200Bound = '1';
+      classSelect.addEventListener('change', updatePaperGasketReference);
+    }
+    if (!sizeSelect.dataset.alpha200Bound) {
+      sizeSelect.dataset.alpha200Bound = '1';
+      sizeSelect.addEventListener('change', () => {
+        updatePaperGasketSummary();
+        renderPaperGasketTable();
+      });
+      sizeSelect.addEventListener('input', updatePaperGasketSummary);
+    }
+    if (searchInput && !searchInput.dataset.alpha200Bound) {
+      searchInput.dataset.alpha200Bound = '1';
+      searchInput.addEventListener('input', renderPaperGasketTable);
+    }
+    updatePaperGasketReference();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('[data-reference-target="papergaskets"]')) setTimeout(initPaperGasketReference, 0);
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target?.id === 'referenceViewSelect' && event.target.value === 'papergaskets') setTimeout(initPaperGasketReference, 0);
+  }, true);
+  window.addEventListener('pageshow', () => setTimeout(initPaperGasketReference, 60));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initPaperGasketReference);
+  else setTimeout(initPaperGasketReference, 0);
+  window.tapCalcInitPaperGasketReference = initPaperGasketReference;
+})();
+
+/* ===== 3.0.0-alpha200 U-wire placement reference ===== */
+(function(){
+  const WIRE_ROWS = 12;
+  const WIRE_SIZES = [3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 30, 36, 42, 48, 54, 60, 72];
+  const VALVE_NEST_TABLE = {
+    Gate: {
+      '150#': [[3, 3.5], [4, 3.875], [5, null], [6, 4.125], [8, 4.5], [10, 5], [12, 5.625], [14, 5.375], [16, 6], [18, 6.5], [20, 6.75], [22, null], [24, 7.5], [26, null], [30, 9.5], [36, 10.5], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': [[3, 4], [4, 4.5], [5, null], [6, 5], [8, 6], [10, 7], [12, 9], [14, 11], [16, 13], [18, 15], [20, 16], [22, null], [24, 17], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '600#': [[3, 6.125], [4, 7.125], [5, null], [6, 9.25], [8, 11.875], [10, 13.25], [12, 14.625], [14, 15.25], [16, 16.5], [18, 19.25], [20, 20.375], [22, null], [24, 21.625], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    Ball: {
+      '150#': [[3, 3.5], [4, 3.875], [5, null], [6, 4.125], [8, 4.5], [10, 5], [12, 5.625], [14, 5.375], [16, 6], [18, 6.5], [20, 6.75], [22, null], [24, 7.5], [26, null], [30, 9.5], [36, 10.5], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': [[3, 4], [4, 4.5], [5, null], [6, 5], [8, 6], [10, 7], [12, 9], [14, 11], [16, 13], [18, 15], [20, 16], [22, null], [24, 17], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '600#': [[3, 6.125], [4, 7.125], [5, null], [6, 9.25], [8, 11.875], [10, 13.25], [12, 14.625], [14, 15.25], [16, 16.5], [18, 19.25], [20, 20.375], [22, null], [24, 21.625], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    Williamson: {
+      '150#': [[3, 1.688], [4, 1.625], [5, null], [6, 1.625], [8, 1.875], [10, 1.875], [12, 1.875], [14, 2.167], [16, 2], [18, 2.583], [20, 2.542], [22, null], [24, 3.458], [26, null], [30, 3.542], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': [[3, null], [4, 1.417], [5, null], [6, 1.833], [8, 1.958], [10, 2.333], [12, 2.542], [14, 2.583], [16, null], [18, 3.375], [20, 3.542], [22, 3.542], [24, 4.25], [26, null], [30, 5.479], [36, 6.521], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '600#': [[3, null], [4, 1.75], [5, null], [6, 2.25], [8, 2.25], [10, 2.667], [12, 3.375], [14, 3.542], [16, 3.917], [18, 4.438], [20, 4.583], [22, 4.583], [24, 4.625], [26, 5.417], [30, 5.917], [36, 8.5], [42, 7.5], [48, 7.521], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    'M&J/Burtech': {
+      '150#': [[3, 1.375], [4, 1.375], [5, null], [6, 1.625], [8, 1.625], [10, 2.188], [12, 2.188], [14, null], [16, null], [18, null], [20, null], [22, null], [24, null], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': WIRE_SIZES.map((size) => [size, null]),
+      '600#': [[3, null], [4, 2.75], [5, null], [6, 2.75], [8, 3.25], [10, 3.25], [12, 3.25], [14, null], [16, 4], [18, null], [20, 4.5], [22, null], [24, 4.5], [26, null], [30, 6], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    },
+    ENR: {
+      '150#': [[3, null], [4, null], [5, null], [6, null], [8, 1.5], [10, null], [12, null], [14, null], [16, null], [18, null], [20, null], [22, null], [24, null], [26, null], [30, null], [36, null], [42, null], [48, null], [54, null], [60, null], [72, null]],
+      '300#': WIRE_SIZES.map((size) => [size, null]),
+      '600#': WIRE_SIZES.map((size) => [size, null]),
+      '900#': WIRE_SIZES.map((size) => [size, null])
+    }
+  };
+
+  const byId = (id) => document.getElementById(id);
+
+  function parseUwireNumber(value) {
+    const raw = String(value ?? '').trim().replace(/"/g, '').replace(/\s+/g, ' ');
+    if (!raw) return NaN;
+    if (/^-?\d*\.?\d+$/.test(raw)) return Number(raw);
+    const mixed = raw.match(/^(-?\d+)(?:\s|-)+(\d+)\/(\d+)$/);
+    if (mixed) {
+      const sign = mixed[1].startsWith('-') ? -1 : 1;
+      const whole = Math.abs(Number(mixed[1]));
+      const numerator = Number(mixed[2]);
+      const denominator = Number(mixed[3]);
+      return denominator ? sign * (whole + numerator / denominator) : NaN;
+    }
+    const frac = raw.match(/^(-?\d+)\/(\d+)$/);
+    if (frac) {
+      const numerator = Number(frac[1]);
+      const denominator = Number(frac[2]);
+      return denominator ? numerator / denominator : NaN;
+    }
+    return NaN;
+  }
+
+  function value(id) {
+    return parseUwireNumber(byId(id)?.value);
+  }
+
+  function has(value) {
+    return Number.isFinite(value);
+  }
+
+  function calcIf(...values) {
+    return values.every(has);
+  }
+
+  function safeRoot(value) {
+    return Number.isFinite(value) && value >= 0 ? Math.sqrt(value) : NaN;
+  }
+
+  function formatUwire(value, digits = 3) {
+    if (!Number.isFinite(value)) return '-';
+    const fixed = value.toFixed(digits);
+    return fixed.replace(/\.?0+$/, '');
+  }
+
+  function formatUwireInches(value, digits = 3) {
+    return Number.isFinite(value) ? `${formatUwire(value, digits)}"` : '-';
+  }
+
+  function setText(id, text) {
+    const el = byId(id);
+    if (el) el.textContent = text || '-';
+  }
+
+  function setStatus(itemId, textId, text, state) {
+    setText(textId, text);
+    const item = byId(itemId);
+    if (item) item.dataset.state = state || 'waiting';
+  }
+
+  function statusState(text) {
+    const normalized = String(text || '').toLowerCase();
+    if (!normalized || normalized === '-' || normalized === '?') return 'waiting';
+    if (/not|no go|too|shallow|small|large|will not|unacceptable|approval/i.test(text)) return 'bad';
+    if (/contact reliability/i.test(text)) return 'warn';
+    return 'ok';
+  }
+
+  function lookupValveNest(valveType, flangeClass, size) {
+    const rows = VALVE_NEST_TABLE[valveType]?.[flangeClass] || [];
+    if (!rows.length || !Number.isFinite(size)) return NaN;
+    let match = null;
+    rows.forEach((row) => {
+      if (Number(row[0]) <= size) match = row;
+    });
+    const result = match ? match[1] : null;
+    return Number.isFinite(result) ? result : NaN;
+  }
+
+  function renderWireInputs() {
+    const grid = byId('uwireWireGrid');
+    if (!grid || grid.dataset.rendered === '1') return;
+    grid.dataset.rendered = '1';
+    grid.innerHTML = Array.from({ length: WIRE_ROWS }, (_, index) => {
+      const row = index + 1;
+      return `<label class="uwire-wire-row" for="uwireWireRow${row}">
+        <span>Row ${row}</span>
+        <input id="uwireWireRow${row}" type="text" inputmode="decimal" placeholder="U-wire">
+        <strong id="uwireWireStatus${row}" data-state="waiting">Waiting</strong>
+      </label>`;
+    }).join('');
+  }
+
+  function populateSizeSelect() {
+    const select = byId('uwireSize');
+    if (!select || select.dataset.rendered === '1') return;
+    select.dataset.rendered = '1';
+    select.innerHTML = '<option value="">Select size</option>' + WIRE_SIZES.map((size) => `<option value="${size}">${size}"</option>`).join('');
+  }
+
+  function setPill(text, state) {
+    const pill = byId('uwireEngagementPill');
+    if (!pill) return;
+    pill.textContent = text || 'Waiting';
+    pill.dataset.state = state || 'draft';
+  }
+
+  function updateWireRows(threshold) {
+    let goodCount = 0;
+    let enteredCount = 0;
+    for (let row = 1; row <= WIRE_ROWS; row += 1) {
+      const input = byId(`uwireWireRow${row}`);
+      const status = byId(`uwireWireStatus${row}`);
+      const measured = parseUwireNumber(input?.value);
+      let text = 'Waiting';
+      let state = 'waiting';
+      if (Number.isFinite(measured)) {
+        enteredCount += 1;
+        if (Number.isFinite(threshold)) {
+          const good = measured < threshold;
+          text = good ? 'Good' : 'No Go';
+          state = good ? 'ok' : 'bad';
+          if (good) goodCount += 1;
+        } else {
+          text = 'Need setup';
+          state = 'warn';
+        }
+      }
+      if (status) {
+        status.textContent = text;
+        status.dataset.state = state;
+      }
+    }
+    return { enteredCount, goodCount };
+  }
+
+  function updateUwireCalculator() {
+    renderWireInputs();
+    populateSizeSelect();
+
+    const pipeOd = value('uwirePipeOd');
+    const wall = value('uwirePipeWall');
+    const cutterOd = value('uwireCutterOd');
+    const toothWidth = value('uwireToothWidth');
+    const ptc = value('uwirePtc');
+    const cutterDepth = value('uwireCutterDepth');
+    const machineTravel = value('uwireMachineTravel');
+    const lostDistance = value('uwireLostDistance');
+    const fittingLength = value('uwireFittingLength');
+    const valveLength = value('uwireValveLength');
+    const pilotRelief = value('uwirePilotRelief');
+    const labattsBridge = value('uwireLabattsBridge');
+    const rpm = value('uwireRpm');
+    const feedRate = value('uwireFeedRate');
+    const valveType = byId('uwireValveType')?.value || 'Gate';
+    const flangeClass = byId('uwireFlangeClass')?.value || '150#';
+    const valveSize = value('uwireSize');
+
+    const pipeId = calcIf(pipeOd, wall) ? pipeOd - 2 * wall : NaN;
+    const cutterId = calcIf(cutterOd, toothWidth) ? cutterOd - 2 * toothWidth : NaN;
+    const couponFree = calcIf(pipeOd, pipeId, cutterId)
+      ? pipeOd / 2 - safeRoot((pipeId / 2) ** 2 - (cutterId / 2) ** 2)
+      : NaN;
+    const tapDistanceBase = calcIf(pipeOd, pipeId, cutterOd)
+      ? pipeOd / 2 - safeRoot((pipeId / 2) ** 2 - (cutterOd / 2) ** 2)
+      : NaN;
+    const tapDistance = calcIf(pipeOd, pipeId, cutterOd) && cutterOd > pipeId ? pipeOd / 2 : tapDistanceBase;
+    const maxCutout = calcIf(pipeOd, wall, ptc) ? pipeOd / 2 - wall + ptc : NaN;
+    const couponMinusWall = calcIf(couponFree, wall) ? couponFree - wall : NaN;
+    const totalTravel = calcIf(lostDistance, fittingLength, valveLength, tapDistance)
+      ? lostDistance + fittingLength + valveLength + tapDistance
+      : NaN;
+    const maxCutoutTravel = calcIf(lostDistance, fittingLength, valveLength, tapDistance, maxCutout)
+      ? lostDistance + fittingLength + valveLength + tapDistance + maxCutout
+      : NaN;
+    const valveNest = lookupValveNest(valveType, flangeClass, valveSize);
+    const estimatedTapTime = calcIf(tapDistance, feedRate, rpm) && feedRate > 0 && rpm > 0
+      ? tapDistance / (feedRate * rpm) / 60
+      : NaN;
+    const threshold = calcIf(ptc, couponMinusWall) ? ptc + couponMinusWall - 0.094 : NaN;
+    const optimalFinal = threshold;
+
+    setText('uwirePipeIdOut', formatUwireInches(pipeId));
+    setText('uwireCutterIdOut', formatUwireInches(cutterId));
+    setText('uwireCouponFreeOut', formatUwireInches(couponFree));
+    setText('uwireTapDistanceOut', formatUwireInches(tapDistance));
+    setText('uwireMaxCutoutOut', formatUwireInches(maxCutout));
+    setText('uwireCouponMinusWallOut', formatUwireInches(couponMinusWall));
+    setText('uwireTotalTravelOut', formatUwireInches(totalTravel));
+    setText('uwireMaxCutoutTravelOut', formatUwireInches(maxCutoutTravel));
+    setText('uwireValveNestOut', Number.isFinite(valveNest) ? formatUwireInches(valveNest) : 'N/A');
+    setText('uwireOptimalFinalOut', formatUwireInches(optimalFinal));
+    setText('uwireThresholdOut', formatUwireInches(threshold));
+    setText('uwireTapTimeOut', Number.isFinite(estimatedTapTime) ? `${formatUwire(estimatedTapTime, 3)} hr` : '-');
+
+    const wireStats = updateWireRows(threshold);
+    const row1Status = byId('uwireWireStatus1')?.textContent || '';
+    const row2Status = byId('uwireWireStatus2')?.textContent || '';
+    let engagementText = 'Waiting';
+    let engagementState = 'draft';
+    if (wireStats.enteredCount > 0 && !Number.isFinite(threshold)) {
+      engagementText = 'Need Setup';
+      engagementState = 'error';
+    } else if (Number.isFinite(cutterOd) && cutterOd < 3 && row1Status === 'Good') {
+      engagementText = 'Acceptable';
+      engagementState = 'synced';
+    } else if (Number.isFinite(cutterOd) && cutterOd >= 3 && !byId('uwireWireRow2')?.value.trim()) {
+      engagementText = 'Need 2 Rows';
+      engagementState = 'error';
+    } else if (Number.isFinite(cutterOd) && cutterOd >= 3 && row2Status === 'Good') {
+      engagementText = 'Acceptable';
+      engagementState = 'synced';
+    } else if (wireStats.enteredCount > 0) {
+      engagementText = 'Not Acceptable';
+      engagementState = 'error';
+    }
+    setPill(engagementText, engagementState);
+
+    const pilotStatus = calcIf(ptc, pipeId) ? (ptc < pipeId / 2 - 0.25 ? 'Pilot OK' : 'Pilot too long') : '-';
+    const cutterDepthStatus = calcIf(cutterDepth, couponFree, labattsBridge)
+      ? (cutterDepth > couponFree + 0.25 + labattsBridge ? 'Cutter depth good' : 'Cutter too shallow')
+      : '-';
+    const cutterSizeStatus = calcIf(cutterId, pipeId)
+      ? (cutterId > pipeId ? 'Cutter ID too large' : 'Cutter ID adequate')
+      : '-';
+    const valveSizeStatus = calcIf(valveSize, cutterOd)
+      ? (valveSize < cutterOd ? 'Valve bore too small' : 'Valve adequate')
+      : '-';
+    const valveNestStatus = calcIf(lostDistance, valveNest)
+      ? (lostDistance > (valveNest * -1 + 0.25) ? 'Valve nest acceptable' : 'Valve nest unacceptable')
+      : '-';
+    const pilotReliefStatus = calcIf(pilotRelief, wall)
+      ? (pilotRelief > wall + 0.375 ? 'Relief adequate' : 'Relief not adequate')
+      : '-';
+    const travelStatus = calcIf(machineTravel, totalTravel)
+      ? (machineTravel > totalTravel ? 'Machine has enough travel' : 'Machine will not work')
+      : '-';
+    const maxTravelStatus = calcIf(machineTravel, maxCutoutTravel)
+      ? (machineTravel > maxCutoutTravel ? 'Machine has enough travel' : 'Machine will not work')
+      : '-';
+
+    setStatus('uwirePilotStatusItem', 'uwirePilotStatusOut', pilotStatus, statusState(pilotStatus));
+    setStatus('uwireCutterDepthStatusItem', 'uwireCutterDepthStatusOut', cutterDepthStatus, statusState(cutterDepthStatus));
+    setStatus('uwireCutterSizeStatusItem', 'uwireCutterSizeStatusOut', cutterSizeStatus, statusState(cutterSizeStatus));
+    setStatus('uwireValveSizeStatusItem', 'uwireValveSizeStatusOut', valveSizeStatus, statusState(valveSizeStatus));
+    setStatus('uwireValveNestStatusItem', 'uwireValveNestStatusOut', valveNestStatus, statusState(valveNestStatus));
+    setStatus('uwirePilotReliefStatusItem', 'uwirePilotReliefStatusOut', pilotReliefStatus, statusState(pilotReliefStatus));
+    setStatus('uwireTravelStatusItem', 'uwireTravelStatusOut', travelStatus, statusState(travelStatus));
+    setStatus('uwireMaxTravelStatusItem', 'uwireMaxTravelStatusOut', maxTravelStatus, statusState(maxTravelStatus));
+
+    const reliabilityEl = byId('uwireReliabilityOut');
+    if (reliabilityEl) {
+      if (calcIf(machineTravel, totalTravel)) {
+        const reliability = machineTravel - totalTravel < 6 ? 'Contact Reliability For Approval' : '';
+        reliabilityEl.textContent = reliability || 'Reliability check clear.';
+        reliabilityEl.dataset.state = reliability ? 'warn' : 'ok';
+      } else {
+        reliabilityEl.textContent = 'Reliability check will appear after travel values are entered.';
+        reliabilityEl.dataset.state = 'waiting';
+      }
+    }
+
+    const missing = [];
+    if (!Number.isFinite(pipeOd)) missing.push('Pipe OD');
+    if (!Number.isFinite(wall)) missing.push('Pipe wall');
+    if (!Number.isFinite(cutterOd)) missing.push('Cutter OD');
+    if (!Number.isFinite(toothWidth)) missing.push('Tooth width');
+    if (!Number.isFinite(ptc)) missing.push('PTC');
+    const inputStatus = byId('uwireInputStatus');
+    if (inputStatus) {
+      inputStatus.textContent = missing.length
+        ? `Missing: ${missing.join(', ')}.`
+        : `Threshold is ${formatUwireInches(threshold)}. ${wireStats.goodCount} U-wire row${wireStats.goodCount === 1 ? '' : 's'} currently read Good.`;
+      inputStatus.dataset.state = missing.length ? 'warn' : 'ok';
+    }
+  }
+
+  function useCurrentPipe() {
+    const pipeOd = parseUwireNumber(byId('bcoTrueODDisplay')?.textContent)
+      || parseUwireNumber(String(byId('bcoPipeOD')?.selectedOptions?.[0]?.textContent || '').match(/\(([^)]+)\s+OD\)/i)?.[1]);
+    const pipeId = parseUwireNumber(byId('bcoPipeID')?.value);
+    const cutterOd = parseUwireNumber(byId('bcoCutterOD')?.value);
+    if (Number.isFinite(pipeOd)) byId('uwirePipeOd').value = formatUwire(pipeOd, 4);
+    if (Number.isFinite(pipeOd) && Number.isFinite(pipeId)) byId('uwirePipeWall').value = formatUwire((pipeOd - pipeId) / 2, 4);
+    if (Number.isFinite(cutterOd)) byId('uwireCutterOd').value = formatUwire(cutterOd, 4);
+    const ptc = parseUwireNumber(byId('ptc')?.value);
+    if (Number.isFinite(ptc)) byId('uwirePtc').value = formatUwire(ptc, 4);
+    updateUwireCalculator();
+  }
+
+  function clearUwireInputs() {
+    document.querySelectorAll('[id^="uwire"]').forEach((el) => {
+      if (el instanceof HTMLInputElement) el.value = '';
+    });
+    const sizeSelect = byId('uwireSize');
+    if (sizeSelect) sizeSelect.value = '';
+    updateUwireCalculator();
+  }
+
+  function initUwireCalculator() {
+    if (!byId('uwirePipeOd')) return;
+    renderWireInputs();
+    populateSizeSelect();
+    const fields = [
+      'uwirePipeOd','uwirePipeWall','uwireCutterOd','uwireToothWidth','uwirePtc','uwireCutterDepth',
+      'uwireValveType','uwireFlangeClass','uwireSize','uwireMachineTravel','uwireLostDistance',
+      'uwireFittingLength','uwireValveLength','uwirePilotRelief','uwireLabattsBridge','uwireRpm','uwireFeedRate',
+      ...Array.from({ length: WIRE_ROWS }, (_, index) => `uwireWireRow${index + 1}`)
+    ];
+    fields.forEach((id) => {
+      const el = byId(id);
+      if (!el || el.dataset.uwireBound === '1') return;
+      el.dataset.uwireBound = '1';
+      el.addEventListener('input', updateUwireCalculator);
+      el.addEventListener('change', updateUwireCalculator);
+    });
+    const useBtn = byId('uwireUseCurrentPipeBtn');
+    if (useBtn && useBtn.dataset.uwireBound !== '1') {
+      useBtn.dataset.uwireBound = '1';
+      useBtn.addEventListener('click', useCurrentPipe);
+    }
+    const clearBtn = byId('uwireClearBtn');
+    if (clearBtn && clearBtn.dataset.uwireBound !== '1') {
+      clearBtn.dataset.uwireBound = '1';
+      clearBtn.addEventListener('click', clearUwireInputs);
+    }
+    updateUwireCalculator();
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('[data-reference-target="uwire"]')) setTimeout(initUwireCalculator, 0);
+  }, true);
+  document.addEventListener('change', (event) => {
+    if (event.target?.id === 'referenceViewSelect' && event.target.value === 'uwire') setTimeout(initUwireCalculator, 0);
+  }, true);
+  window.addEventListener('pageshow', () => setTimeout(initUwireCalculator, 60));
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUwireCalculator);
+  else setTimeout(initUwireCalculator, 0);
+  window.tapCalcInitUwireCalculator = initUwireCalculator;
 })();

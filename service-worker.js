@@ -1,18 +1,25 @@
-const CACHE_NAME = 'tapcalc-cache-v2.28b9';
+const CACHE_NAME = 'tapcalc-cache-3.0.0';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css",
-  "./measurement.js",
+  "./styles.css?v=3.0.0",
+  "./tapcalc-alpha201.css?v=3.0.0",
+  "./tapcalc-alpha202.css?v=3.0.0",
+  "./measurement.js?v=3.0.0",
+  "./tapcalc-alpha201.js?v=3.0.0",
+  "./tapcalc-alpha202.js?v=3.0.0",
+  "./pdf.mjs?v=3.0.0",
+  "./pdf.worker.mjs?v=3.0.0",
+  "./stackup-data.js?v=3.0.0",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js",
+  "./firebase-config.js?v=3.0.0",
   "./team-logo.png"
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => Promise.resolve()));
   self.skipWaiting();
 });
 
@@ -25,14 +32,37 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((response) => {
+  const url = new URL(event.request.url);
+  const isSameOrigin = url.origin === self.location.origin;
+  const isShellAsset = isSameOrigin && (
+    url.pathname.endsWith('/measurement-card.html') ||
+    url.pathname.endsWith('/styles.css') ||
+    url.pathname.endsWith('/tapcalc-alpha201.css') ||
+    url.pathname.endsWith('/tapcalc-alpha202.css') ||
+    url.pathname.endsWith('/measurement.js') ||
+    url.pathname.endsWith('/tapcalc-alpha201.js') ||
+    url.pathname.endsWith('/tapcalc-alpha202.js') ||
+    url.pathname.endsWith('/pdf.mjs') ||
+    url.pathname.endsWith('/pdf.worker.mjs') ||
+    url.pathname.endsWith('/stackup-data.js') ||
+    url.pathname.endsWith('/firebase-config.js') ||
+    url.pathname.endsWith('/service-worker.js')
+  );
+  if (event.request.mode === 'navigate' || isShellAsset) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' }).then((response) => {
         const copy = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
         return response;
-      }).catch(() => caches.match("./measurement-card.html"));
-    })
+      }).catch(() => caches.match(event.request).then((cached) => cached || caches.match('./measurement-card.html')))
+    );
+    return;
+  }
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      return response;
+    }))
   );
 });

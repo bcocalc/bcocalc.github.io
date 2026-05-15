@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-  <link rel="stylesheet" href="styles.css?v=2.28b9">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha200">
 </head>
 <body class="measurement-page">
-<div class="card">
+<div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
-      <a href="measurement-card.html" class="tab active">TapCalc</a>
-      <span class="version-badge">TapCalc Dev v2.28b9 · 2026-05-06</span>
+      <a href="measurement-card.html" class="tab active">TapCalc v3</a>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha200 - 2026-05-14</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -24,69 +24,307 @@
 
   <p id="bcoStatus" class="note"></p>
 
-  <section class="section job-info-section" id="jobInfoSection">
-    <div class="job-info-header">
-      <div class="job-info-heading">
-        <h3>Job Information</h3>
-        <button type="button" id="jobInfoToggleBtn" class="secondary-btn job-info-toggle-btn" aria-expanded="true">Collapse</button>
-      </div>
-      <div class="job-info-summary" id="jobInfoSummary">No job info yet.</div>
-      <div class="job-tools">
-        <label class="check-inline geometry-lock-toggle"><input id="geometryLockToggle" type="checkbox"> Lock Geometry</label>
-        <button type="button" id="exportPdfBtn" class="secondary-btn">Export PDF</button>
-        <button type="button" id="exportImageBtn" class="secondary-btn">Export Image</button>
-      </div>
+  <header class="top-app-bar">
+    <div class="top-app-left">
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha200 - 2026-05-14</div>
+      <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
-    <div class="job-info-body" id="jobInfoBody">
-      <div class="job-info-grid job-info-grid-primary">
-        <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
-        <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
-        <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
-        <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
-        <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
-        <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
-      </div>
-      <div class="job-info-subtitle">More Details</div>
-      <div class="job-info-grid job-info-grid-secondary">
-        <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
-        <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
-        <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
-        <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="3" placeholder="Notes"></textarea></div>
-      </div>
+    <div class="top-app-right">
+      <span class="sync-pill">DEV</span>
+    </div>
+  </header>
 
-      <div class="job-info-subtitle">Job Operations</div>
-      <div class="job-operations-card">
-        <p class="job-operations-note">Keep one job together even when it has multiple hot taps and line stops. Job info stays shared while each operation keeps its own calculator values.</p>
-        <div class="job-operations-grid">
-          <div class="row"><label>Current Operation</label><select id="jobOperationSelect"></select></div>
-          <div class="row"><label>Operation Name</label><input id="jobOperationLabel" type="text" placeholder="Hot Tap 1"></div>
-        </div>
-        <div class="job-operations-actions">
-          <button type="button" id="addHotTapOpBtn" class="secondary-btn">Add Hot Tap</button>
-          <button type="button" id="addLineStopOpBtn" class="secondary-btn">Add Line Stop</button>
-          <button type="button" id="duplicateOperationBtn" class="secondary-btn">Duplicate Current</button>
-          <button type="button" id="deleteOperationBtn" class="secondary-btn danger-btn">Delete Current</button>
-        </div>
-        <p id="jobOperationStatus" class="note job-operations-status">1 operation in this job.</p>
+  <nav class="screen-nav" aria-label="Primary">
+    <button type="button" class="screen-tab active" data-screen="home">Home</button>
+    <button type="button" class="screen-tab" data-screen="calc">Tools</button>
+    <button type="button" class="screen-tab" data-screen="card">Workflow</button>
+    <button type="button" class="screen-tab" data-screen="jobs">Library</button>
+    <button type="button" class="screen-tab" data-screen="ref">Reference</button>
+  </nav>
+
+  <section id="homeScreen" class="screen-view active">
+    <div class="dashboard-hero dashboard-hero-rich">
+      <div>
+        <div class="hero-eyebrow">Field Operations Dashboard</div>
+        <h2>TapCalc v3</h2>
+        <p>Start from the current job, jump into quick tools, or head straight to references and shared jobs.</p>
+      </div>
+      <div class="hero-actions">
+        <button type="button" class="secondary-btn" data-go-screen="card">Start Workflow</button>
+        <button type="button" class="secondary-btn" id="homeResumeDraftHeroBtn" data-go-screen="card">Resume Draft</button>
       </div>
     </div>
+
+    <section class="home-current-job-card">
+      <div class="home-current-job-top">
+        <div>
+          <div class="hero-eyebrow">Current Job</div>
+          <h3 id="homeCurrentJobTitle">No active job yet</h3>
+          <p id="homeCurrentJobSubtitle">Set up a customer and location to get rolling.</p>
+        </div>
+        <div class="home-current-job-actions">
+          <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
+          <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
+          <button type="button" class="secondary-btn" id="homeResumeDraftBtn" data-go-screen="card">Resume Draft</button>
+        </div>
+      </div>
+      <div class="home-stat-grid">
+        <div class="home-stat"><span class="home-stat-label">Pipe</span><strong id="homePipeStat">?</strong></div>
+        <div class="home-stat"><span class="home-stat-label">Machine</span><strong id="homeMachineStat">?</strong></div>
+        <div class="home-stat"><span class="home-stat-label">BCO</span><strong id="homeBcoStat">?</strong></div>
+        <div class="home-stat"><span class="home-stat-label">Status</span><strong id="homeStatusStat">Draft</strong></div>
+      </div>
+    </section>
+
+    <section class="home-draft-resume-card" id="homeDraftResumeCard" data-state="empty" hidden>
+      <div>
+        <div class="hero-eyebrow">Resume Last Job</div>
+        <h3 id="homeDraftResumeTitle">No active draft</h3>
+        <p id="homeDraftResumeMeta">Start a workflow and TapCalc will keep the draft ready here.</p>
+      </div>
+      <div class="home-draft-resume-side">
+        <span class="workflow-save-state-pill" id="homeDraftResumeStatus" data-state="draft">Draft Only</span>
+        <span id="homeDraftResumeOperations">0 operations</span>
+        <button type="button" class="secondary-btn" id="homeResumeDraftQuickBtn" data-go-screen="card">Resume Last Job</button>
+      </div>
+    </section>
+
+    <div class="home-section-heading">
+      <h3>Quick Access</h3>
+      <span>Jump where you need to go</span>
+    </div>
+    <div class="dashboard-grid quick-grid">
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="calc" data-go-mode="bco"><strong>Quick BCO</strong><span>Pipe geometry and cutter setup</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="calc" data-go-mode="eta"><strong>Tap ETA</strong><span>Travel, RPM, feed rate, and time</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="card"><strong>Measurement Card</strong><span>Hot Tap first, then line stop and plug</span></button>
+      <button type="button" class="dash-card dash-card-feature" data-go-screen="jobs" data-library-lane-target="shared"><strong>Shared Jobs</strong><span>Search, open, and sync field work</span></button>
+    </div>
+
   </section>
 
-  <div class="operation-switcher" role="tablist" aria-label="Measurement card mode">
-    <button type="button" class="mode-btn active" data-mode="bco">BCO</button>
-    <button type="button" class="mode-btn" data-mode="hotTap">Hot Tap</button>
-    <button type="button" class="mode-btn" data-mode="lineStop">Line Stop</button>
-    <button type="button" class="mode-btn" data-mode="completionPlug">Completion Plug</button>
-    <button type="button" class="mode-btn" data-mode="eta">Tap ETA</button>
-    <button type="button" class="mode-btn" data-mode="glossary">Reference</button>
-    <button type="button" class="mode-btn" data-mode="jobs">Jobs</button>
-  </div>
+  <section id="jobScreen" class="screen-view">
 
-  <div class="utility-bar">
-    <button type="button" id="saveHistoryBtn" class="secondary-btn">Save Job to History</button>
-    <button type="button" id="resetJobBtn" class="secondary-btn danger-btn">Reset Current Job</button>
-  </div>
+    <section class="job-current-topbar">
+      <div>
+        <div class="hero-eyebrow">Job Setup</div>
+        <h3>Fill out the active job here</h3>
+        <p>Start with the type of job you are running. TapCalc will only show the workflow steps that matter for that job.</p>
+      </div>
+      <div class="job-current-top-actions">
+        <button type="button" class="secondary-btn" data-go-screen="calc">Open Tools</button>
+        <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
+      </div>
+    </section>
 
+    <section class="current-action-strip">
+      <div class="current-action-copy">
+        <span class="hero-eyebrow">Active Job Controls</span>
+        <strong>Everything you enter here drives Workflow, Tools, and Library.</strong>
+        <span>Lock in the basics first, then move into Workflow when the job shell looks right.</span>
+      </div>
+      <div class="current-action-buttons">
+        <button type="button" id="currentSaveLocalBtn" class="secondary-btn">Save Local</button>
+        <button type="button" id="currentSyncSharedBtn" class="secondary-btn">Sync Shared</button>
+        <button type="button" id="currentResetBtn" class="secondary-btn danger-btn">Reset Job</button>
+      </div>
+    </section>
+
+    <section class="workflow-shell workflow-shell-jobtype" id="workflowShell">
+      <div class="workflow-shell-head">
+        <div>
+          <div class="hero-eyebrow">Guided Workflow</div>
+          <h3 id="workflowShellTitle">Pick the kind of job first</h3>
+          <p id="workflowShellCopy">TapCalc will only show the workflow stages that apply to the job you picked.</p>
+        </div>
+        <div class="workflow-shell-actions">
+          <button type="button" class="secondary-btn workflow-start-btn" id="workflowStartBtn" data-go-screen="card">Start Workflow</button>
+          <button type="button" class="secondary-btn" data-go-screen="jobs">Load Saved Job</button>
+        </div>
+      </div>
+      <div class="workflow-choice-alert" id="workflowChoiceAlert" aria-live="polite">
+        <span class="workflow-choice-step">Step 0</span>
+        <div>
+          <strong id="workflowChoiceTitle">Confirm job path</strong>
+          <span id="workflowChoiceCopy">Pick the path that matches the job before starting the workflow.</span>
+        </div>
+      </div>
+      <div class="workflow-jobtype-cards" role="group" aria-label="Job type quick picks">
+        <button type="button" class="workflow-jobtype-card active" data-jobtype-choice="Hot Tap">
+          <span class="workflow-jobtype-state">Selected path</span>
+          <span class="workflow-jobtype-eyebrow">Simple path</span>
+          <strong>Hot Tap</strong>
+          <span>Only show Setup, Pipe / Cutter, Hot Tap, and review steps.</span>
+        </button>
+        <button type="button" class="workflow-jobtype-card" data-jobtype-choice="Line Stop">
+          <span class="workflow-jobtype-state">Tap to switch</span>
+          <span class="workflow-jobtype-eyebrow">Full path</span>
+          <strong>Line Stop</strong>
+          <span>Show Hot Tap, Line Stop, and Completion Plug in one guided sequence.</span>
+        </button>
+      </div>
+      <div id="workflowStageRoadmap" class="workflow-stage-roadmap" aria-live="polite"></div>
+    </section>
+
+    <section class="section job-info-section job-info-section-v3" id="jobInfoSection">
+      <div class="job-info-header">
+        <div class="job-info-heading">
+          <h3>Job Setup</h3>
+          <button type="button" id="jobInfoToggleBtn" class="secondary-btn job-info-toggle-btn" aria-expanded="true">Collapse</button>
+        </div>
+        <div class="job-info-summary" id="jobInfoSummary">No job info yet.</div>
+        <div class="job-tools">
+          <label class="check-inline geometry-lock-toggle"><input id="geometryLockToggle" type="checkbox"> Lock Geometry</label>
+          <button type="button" id="exportPdfBtn" class="secondary-btn">Export PDF</button>
+          <button type="button" id="exportImageBtn" class="secondary-btn">Export Image</button>
+        </div>
+      </div>
+      <div class="job-info-body" id="jobInfoBody">
+        <div class="job-form-shell">
+          <section class="job-form-card">
+            <div class="job-form-card-head">
+              <h4>Job Basics</h4>
+              <span>Who, where, and what job you are running</span>
+            </div>
+            <div class="job-info-grid job-info-grid-primary">
+              <div class="row"><label>Client</label><input id="jobClient" type="text" placeholder="Client name"></div>
+              <div class="row"><label>Job Description</label><input id="jobDescription" type="text" placeholder="Job description"></div>
+              <div class="row"><label>Job Number</label><input id="jobNumber" type="text" placeholder="Job number"></div>
+              <div class="row"><label>Date</label><input id="jobDate" type="date"></div>
+              <div class="row"><label>Location</label><input id="jobLocation" type="text" placeholder="Location"></div>
+              <div class="row"><label>Technician</label><input id="jobTechnician" type="text" placeholder="Technician"></div>
+            </div>
+          </section>
+          <section class="job-form-card job-form-card-secondary">
+            <div class="job-form-card-head">
+              <h4>Field Details</h4>
+              <span>Choose the job type, machine, and field notes</span>
+            </div>
+            <div class="job-info-grid job-info-grid-secondary">
+              <div class="row"><label>Machine</label>
+                <select id="machineType">
+                  <option value="">Select tap machine</option>
+                  <optgroup label="Tap Machines">
+                    <option value="412">412</option>
+                    <option value="360 / 152">360 / 152</option>
+                    <option value="660 / 760">660 / 760</option>
+                    <option value="1200-M120">1200-M120</option>
+                    <option value="IP-100">IP-100</option>
+                    <option value="IP-152">IP-152</option>
+                    <option value="T-101">T-101</option>
+                  </optgroup>
+                  <optgroup label="HTM Tap Machines">
+                    <option value="HTM 360">HTM 360</option>
+                    <option value="HTM 660">HTM 660</option>
+                    <option value="HTM 760">HTM 760</option>
+                    <option value="HTM 1200">HTM 1200</option>
+                    <option value="HTM M120">HTM M120</option>
+                    <option value="HTM 18 T101">HTM 18 T101</option>
+                    <option value="HTM 24 T101">HTM 24 T101</option>
+                    <option value="HTM 28 T101">HTM 28 T101</option>
+                    <option value="HTM C1-25">HTM C1-25</option>
+                    <option value="HTM C1-36">HTM C1-36</option>
+                  </optgroup>
+                  <optgroup label="IP Tap Machines">
+                    <option value="IP 304 / 406 / 508">IP 304 / 406 / 508</option>
+                    <option value="IP 914XL">IP 914XL</option>
+                    <option value="IPSCO IP100">IPSCO IP100</option>
+                  </optgroup>
+                </select>
+              </div>
+              <div class="row"><label>Job Type</label>
+                <select id="operationType">
+                  <option value="Hot Tap">Hot Tap</option>
+                  <option value="Line Stop">Line Stop</option>
+                </select>
+              </div>
+              <div class="row"><label>Pressure</label><input id="jobPressure" type="text" placeholder="Pressure"></div>
+              <div class="row"><label>Temperature</label><input id="jobTemperature" type="text" placeholder="Temperature"></div>
+              <div class="row"><label>Product</label><input id="jobProduct" type="text" placeholder="Product"></div>
+              <div class="row job-notes-row"><label>Notes</label><textarea id="jobNotes" rows="4" placeholder="Notes"></textarea></div>
+            </div>
+            <div class="job-operations-card">
+              <div class="job-operations-head">
+                <div>
+                  <h5>Job Operations</h5>
+                  <p>Keep one job together even when it includes multiple hot taps, line stops, or completion plug steps.</p>
+                </div>
+              </div>
+              <div class="job-operations-grid">
+                <div class="row"><label>Current Operation</label><select id="jobOperationSelect"></select></div>
+                <div class="row"><label>Operation Name</label><input id="jobOperationLabel" type="text" placeholder="Hot Tap 1"></div>
+                <div class="row operation-notes-row"><label>Operation Notes</label><textarea id="jobOperationNotes" rows="3" placeholder="Notes for this operation"></textarea></div>
+              </div>
+              <div class="job-operations-actions">
+                <button type="button" id="addHotTapOpBtn" class="secondary-btn">Add Hot Tap</button>
+                <button type="button" id="addLineStopOpBtn" class="secondary-btn">Add Line Stop</button>
+                <button type="button" id="addCompletionOpBtn" class="secondary-btn">Add Completion</button>
+                <button type="button" id="duplicateOperationBtn" class="secondary-btn">Duplicate Current</button>
+                <button type="button" id="deleteOperationBtn" class="secondary-btn danger-btn">Delete Current</button>
+              </div>
+              <p id="jobOperationStatus" class="note job-operations-status">1 operation in this job.</p>
+              <div id="jobOperationPreviewList" class="job-operation-preview" aria-live="polite"></div>
+            </div>
+            <div class="job-jump-actions">
+              <button type="button" class="secondary-btn" data-go-screen="calc">Pipe / Cutter in Tools</button>
+              <button type="button" class="secondary-btn" data-go-screen="card">Go to Workflow</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="current-live-shell current-live-shell-below">
+      <article class="current-live-card">
+        <div class="hero-eyebrow">Job Snapshot</div>
+        <h4 id="currentSnapshotTitle">No active job</h4>
+        <p id="currentSnapshotMeta">Start with customer and location, then add machine and pipe setup.</p>
+        <div class="current-live-grid">
+          <div class="current-live-stat"><span>Machine</span><strong id="currentMachineStat">?</strong></div>
+          <div class="current-live-stat"><span>Operation</span><strong id="currentOperationStat">Hot Tap</strong></div>
+          <div class="current-live-stat"><span>Pipe</span><strong id="currentPipeStat">?</strong></div>
+          <div class="current-live-stat"><span>BCO</span><strong id="currentBcoStat">?</strong></div>
+          <div class="current-live-stat"><span>Client</span><strong id="currentClientStat">?</strong></div>
+          <div class="current-live-stat"><span>Location</span><strong id="currentLocationStat">?</strong></div>
+          <div class="current-live-stat"><span>Job #</span><strong id="currentJobNumberStat">?</strong></div>
+          <div class="current-live-stat"><span>Tech</span><strong id="currentTechStat">?</strong></div>
+        </div>
+      </article>
+      <article class="current-live-card current-live-card-secondary">
+        <div class="hero-eyebrow">Geometry Status</div>
+        <p>Pipe and cutter are driven from <strong>Tools > BCO</strong> so the workflow stays synced everywhere.</p>
+        <div class="current-setup-grid">
+          <div class="current-live-stat"><span>Pipe Setup</span><strong id="currentPipeSetup">?</strong></div>
+          <div class="current-live-stat"><span>Cutter</span><strong id="currentCutterSetup">?</strong></div>
+        </div>
+        <div class="job-jump-actions">
+          <button type="button" class="secondary-btn" data-go-screen="calc">Open Pipe / Cutter Tools</button>
+        </div>
+      </article>
+    </section>
+
+    <div class="utility-bar">
+      <button type="button" id="saveHistoryBtn" class="secondary-btn">Save Job</button>
+      <button type="button" id="resetJobBtn" class="secondary-btn danger-btn">Reset Job</button>
+    </div>
+
+  </section>
+
+  <section id="calcScreen" class="screen-view">
+  <section class="screen-intro-card calc-screen-intro">
+    <div>
+      <div class="hero-eyebrow">Toolbox</div>
+      <h3>Pipe, cutter, BCO, and ETA tools</h3>
+      <p>Use these tools to set pipe geometry, calculate BCO, and check ETA without losing your place in the workflow.</p>
+    </div>
+    <div class="screen-intro-stats">
+      <div class="screen-intro-stat"><span>Current BCO</span><strong id="calcCurrentBco">?</strong></div>
+      <div class="screen-intro-stat"><span>Machine</span><strong id="calcCurrentMachine">?</strong></div>
+    </div>
+  </section>
+  <div class="card-subnav calc-subnav">
+    <button type="button" class="submode-btn calc-submode-btn active" data-mode="bco">BCO</button>
+    <button type="button" class="submode-btn calc-submode-btn" data-mode="eta">ETA</button>
+  </div>
   <section id="bcoPanel" class="mode-panel active">
     <div class="measurement-grid">
       <div class="section">
@@ -113,8 +351,8 @@
         <div class="row"><label>Pipe I.D.</label><input id="bcoPipeID" type="number" step="any"></div>
         <div class="row"><label>Cutter O.D.</label><input id="bcoCutterOD" type="number" step="any"></div>
 
-        <div class="row"><label>True O.D.</label><span id="bcoTrueODDisplay" class="calc">—</span></div>
-        <div class="row"><label>Wall Thickness</label><span id="bcoWallDisplay" class="calc">—</span></div>
+        <div class="row"><label>True O.D.</label><span id="bcoTrueODDisplay" class="calc">?</span></div>
+        <div class="row"><label>Wall Thickness</label><span id="bcoWallDisplay" class="calc">?</span></div>
 
         <div class="button-row">
           <button type="button" id="bcoCalcBtn">Refresh BCO</button>
@@ -125,12 +363,367 @@
 
       <div class="section">
         <h3>Result</h3>
-        <div class="result" id="bcoResult">BCO: —</div>
+        <div class="result" id="bcoResult">BCO: ?</div>
         <p id="bcoInlineStatus" class="note">BCO updates live here and carries into Hot Tap and Line Stop.</p>
+      </div>
+      <div id="mobileLoadDebugPanel" class="panel-card" style="margin-top:12px; display:none;">
+        <div class="hero-eyebrow">Mobile Load Debug</div>
+        <div id="mobileLoadDebugText" style="white-space:pre-wrap;font-size:12px;line-height:1.35;opacity:.9;">Waiting for mobile Load Job?</div>
       </div>
     </div>
   </section>
 
+
+  <section id="etaPanel" class="mode-panel">
+    <div class="measurement-grid">
+      <div class="section">
+        <h3>Tap ETA</h3>
+        <p class="note eta-note">Estimate from cutter touching pipe to reaching BCO. Feed rate stays fixed at 0.004 in/rev.</p>
+
+        <div class="row"><label>Machine</label>
+          <select id="etaMachine">
+            <option value="360">360 / 152</option>
+            <option value="660">660 / 760</option>
+            <option value="1200">1200-M120</option>
+          </select>
+        </div>
+
+        <div class="row"><label>Cutter Size</label>
+          <input id="etaCutterSize" type="number" step="any" list="etaCutterSizeList" placeholder="Type cutter size or pick suggested size">
+          <datalist id="etaCutterSizeList"></datalist>
+        </div>
+
+        <div class="row"><label>BCO</label><input id="etaBco" type="number" step="any" placeholder="Uses current BCO when available"></div>
+
+        <div class="row"><label>Feed Rate</label><span id="etaFeedRateDisplay" class="calc">0.0040</span></div>
+        <div class="row"><label>Recommended RPM</label><span id="etaRpmDisplay" class="calc">?</span></div>
+        <div class="row"><label>Manual RPM Override</label><input id="etaRpmOverride" type="number" step="any" min="0" placeholder="Leave blank to use recommended RPM"></div>
+
+        <div class="button-row">
+          <button type="button" id="etaUseCurrentBcoBtn" class="secondary-btn">Use Current BCO</button>
+          <button type="button" id="etaRefreshBtn">Refresh ETA</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Estimate</h3>
+        <div class="eta-results-grid">
+          <div class="eta-result-card">
+            <span class="summary-label">Feed Speed</span>
+            <span id="etaFeedSpeedDisplay" class="summary-value">?</span>
+          </div>
+          <div class="eta-result-card">
+            <span class="summary-label">ETA Range</span>
+            <span id="etaRangeDisplay" class="summary-value">?</span>
+          </div>
+        </div>
+        <p id="etaInlineStatus" class="note">Type a cutter size or pick a suggested size, then use your current tap values to estimate cut time.</p>
+      </div>
+    </div>
+  </section>
+
+  </section>
+
+  <section id="cardScreen" class="screen-view">
+  <section class="screen-intro-card card-screen-intro">
+    <div>
+      <div class="hero-eyebrow">Workflow</div>
+      <h3>Run the job one step at a time</h3>
+      <p>Only the stages that match the selected job type stay on screen. Hot Tap jobs stay simple; Line Stop jobs open the full sequence.</p>
+    </div>
+    <div class="screen-intro-stats">
+      <div class="screen-intro-stat"><span>Current Job</span><strong id="cardCurrentJob">No active job</strong></div>
+      <div class="screen-intro-stat"><span>Pipe</span><strong id="cardCurrentPipe">?</strong></div>
+      <div class="screen-intro-stat"><span>Stage</span><strong id="cardStageStat">Hot Tap</strong></div>
+    </div>
+    <p id="cardCurrentMeta" class="screen-intro-meta">Fill out Workflow Step 1, then lock in Pipe / Cutter on Step 2. The checklist below will call out what is still missing.</p>
+    <div class="workflow-draft-bar" id="workflowDraftBar">
+      <span id="workflowDraftStatus">Draft auto-saves as you type.</span>
+      <span class="workflow-save-state-pill" id="workflowSaveStatePill" data-state="draft">Draft Only</span>
+      <button type="button" class="secondary-btn" id="workflowResumeDraftBtn">Resume Draft</button>
+      <button type="button" class="secondary-btn danger-btn" id="workflowStartNewJobBtn">Start New Job</button>
+    </div>
+  </section>
+  <section class="workflow-phase-shell">
+    <div class="workflow-phase-head">
+      <div>
+        <div class="hero-eyebrow">Workflow Roadmap</div>
+        <h4 id="workflowPhaseTitle">Hot Tap job roadmap</h4>
+      </div>
+      <p id="workflowPhaseCopy">Start with Job Setup and Pipe / Cutter, then run only the stages that apply to this job.</p>
+    </div>
+    <div id="workflowPhaseSteps" class="workflow-phase-steps" aria-live="polite"></div>
+  </section>
+  <section class="workflow-guided-shell">
+    <div class="workflow-guided-head">
+      <div>
+        <div class="hero-eyebrow">Guided Step</div>
+        <h4 id="workflowStageTitle">Step 1  -  Job Setup</h4>
+        <p id="workflowStageLead">Confirm who, where, and what kind of job this is before you jump into measurements.</p>
+        <div class="workflow-guided-meta">
+          <span id="workflowStepProgress">Step 1 of 4</span>
+          <span id="workflowStepHint">Next up: Pipe / Cutter</span>
+        </div>
+      </div>
+      <div class="workflow-guided-actions">
+        <button type="button" class="secondary-btn" id="workflowPrevBtn">Back</button>
+        <button type="button" class="secondary-btn" id="workflowSaveJobBtn" data-workflow-save-job>Save Job</button>
+        <button type="button" class="secondary-btn danger-btn" id="workflowStartNewJobInlineBtn">Start New Job</button>
+        <button type="button" id="workflowNextBtn">Next Step</button>
+      </div>
+    </div>
+    <p id="workflowSaveStatus" class="workflow-save-status" aria-live="polite">Save stays available here while you work through the steps.</p>
+    <p id="workflowGateNotice" class="workflow-gate-notice" aria-live="assertive" hidden></p>
+    <div id="workflowStageNav" class="workflow-stage-nav" aria-live="polite"></div>
+    <div class="workflow-readiness-panel" id="workflowReadinessPanel" aria-live="polite">
+      <div class="workflow-readiness-status">
+        <span>Current Step</span>
+        <strong id="workflowCurrentStepStatus">Waiting</strong>
+      </div>
+      <div class="workflow-readiness-main">
+        <h5 id="workflowNextActionTitle">Start here</h5>
+        <p id="workflowNextActionCopy">Fill the required items for this step, then move to the next step.</p>
+      </div>
+      <div class="workflow-readiness-missing">
+        <span>Missing</span>
+        <ul id="workflowMissingList"></ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="workflow-next-banner" id="workflowNextBanner">
+    <div>
+      <div class="hero-eyebrow">Do This Next</div>
+      <h4 id="workflowNextBannerTitle">Start with Job Setup</h4>
+      <p id="workflowNextBannerCopy">Fill in the job basics first, then keep moving step by step.</p>
+    </div>
+    <div class="workflow-next-banner-actions">
+      <button type="button" class="secondary-btn" id="workflowNextPrimaryBtn">Go to Pipe / Cutter</button>
+    </div>
+  </section>
+
+  <section id="workflowSetupPanel" class="workflow-helper-panel active" data-workflow-stage-panel="setup">
+    <div class="workflow-helper-head">
+      <div>
+        <div class="hero-eyebrow">Step 1</div>
+        <h3>Job Setup</h3>
+        <p>Start simple. Set the customer, location, machine, and job type so the rest of the workflow only asks for what matters.</p>
+      </div>
+      <div class="workflow-helper-actions">
+        <button type="button" id="workflowSetupNextBtn">Continue to Pipe / Cutter</button>
+      </div>
+    </div>
+    <div id="workflowInlineJobSetup" class="workflow-setup-form">
+      <section class="workflow-setup-form-card">
+        <h4>Job Basics</h4>
+        <div class="workflow-setup-grid">
+          <label class="workflow-setup-field" for="workflowJobClient"><span>Customer</span><input id="workflowJobClient" type="text" placeholder="Customer" data-job-sync="jobClient"></label>
+          <label class="workflow-setup-field" for="workflowJobLocation"><span>Location</span><input id="workflowJobLocation" type="text" placeholder="Location" data-job-sync="jobLocation"></label>
+          <label class="workflow-setup-field" for="workflowMachineType"><span>Machine</span><select id="workflowMachineType" data-job-sync="machineType"></select></label>
+          <label class="workflow-setup-field" for="workflowOperationType"><span>Job Type</span><select id="workflowOperationType" data-job-sync="operationType"></select></label>
+          <p id="workflowOperationTypeHint" class="workflow-field-hint workflow-setup-field-wide">Hot Tap keeps the workflow shorter. Line Stop adds Hot Tap, Line Stop, and Completion Plug steps.</p>
+          <button type="button" class="workflow-setup-inline-next" data-workflow-setup-next>Continue to Pipe / Cutter</button>
+        </div>
+      </section>
+      <section class="workflow-setup-form-card">
+        <h4>Optional Details</h4>
+        <div class="workflow-setup-grid">
+          <label class="workflow-setup-field" for="workflowJobDescription"><span>Job Description</span><input id="workflowJobDescription" type="text" placeholder="Job description" data-job-sync="jobDescription"></label>
+          <label class="workflow-setup-field" for="workflowJobNumber"><span>Job Number</span><input id="workflowJobNumber" type="text" placeholder="Job number" data-job-sync="jobNumber"></label>
+          <label class="workflow-setup-field" for="workflowJobDate"><span>Date</span><input id="workflowJobDate" type="date" data-job-sync="jobDate"></label>
+          <label class="workflow-setup-field" for="workflowJobTechnician"><span>Technician</span><input id="workflowJobTechnician" type="text" placeholder="Technician" data-job-sync="jobTechnician"></label>
+          <label class="workflow-setup-field" for="workflowJobPressure"><span>Pressure</span><input id="workflowJobPressure" type="text" placeholder="Pressure" data-job-sync="jobPressure"></label>
+          <label class="workflow-setup-field" for="workflowJobTemperature"><span>Temperature</span><input id="workflowJobTemperature" type="text" placeholder="Temperature" data-job-sync="jobTemperature"></label>
+          <label class="workflow-setup-field" for="workflowJobProduct"><span>Product</span><input id="workflowJobProduct" type="text" placeholder="Product" data-job-sync="jobProduct"></label>
+          <label class="workflow-setup-field workflow-setup-field-wide" for="workflowJobNotes"><span>Notes</span><textarea id="workflowJobNotes" rows="3" placeholder="Notes" data-job-sync="jobNotes"></textarea></label>
+        </div>
+      </section>
+    </div>
+    <section class="workflow-operations-card" id="workflowOperationsCard">
+      <div class="workflow-operations-head">
+        <div>
+          <div class="hero-eyebrow">Operations In This Job</div>
+          <h4>Hot taps, line stops, and completion steps</h4>
+        </div>
+        <p id="workflowJobOperationStatus">1 operation in this job.</p>
+      </div>
+      <div class="workflow-operations-grid">
+        <label class="workflow-setup-field" for="workflowJobOperationSelect"><span>Current Operation</span><select id="workflowJobOperationSelect"></select></label>
+        <label class="workflow-setup-field" for="workflowJobOperationLabel"><span>Operation Name</span><input id="workflowJobOperationLabel" type="text" placeholder="Hot Tap 1"></label>
+        <label class="workflow-setup-field workflow-operation-notes-field" for="workflowJobOperationNotes"><span>Operation Notes</span><textarea id="workflowJobOperationNotes" rows="3" placeholder="Notes for this operation"></textarea></label>
+      </div>
+      <div class="workflow-operations-actions">
+        <button type="button" id="workflowAddHotTapOpBtn" class="secondary-btn">Add Hot Tap</button>
+        <button type="button" id="workflowAddLineStopOpBtn" class="secondary-btn">Add Line Stop</button>
+        <button type="button" id="workflowAddCompletionOpBtn" class="secondary-btn">Add Completion</button>
+        <button type="button" id="workflowDuplicateOperationBtn" class="secondary-btn">Duplicate</button>
+        <button type="button" id="workflowDeleteOperationBtn" class="secondary-btn danger-btn">Delete</button>
+      </div>
+      <div id="workflowJobOperationPreviewList" class="job-operation-preview workflow-operation-preview" aria-live="polite"></div>
+    </section>
+    <div class="workflow-helper-grid workflow-setup-summary-grid">
+      <div class="workflow-helper-card"><span>Customer</span><strong id="workflowSetupCustomer">?</strong></div>
+      <div class="workflow-helper-card"><span>Location</span><strong id="workflowSetupLocation">?</strong></div>
+      <div class="workflow-helper-card"><span>Machine</span><strong id="workflowSetupMachine">?</strong></div>
+      <div class="workflow-helper-card"><span>Job Type</span><strong id="workflowSetupType">Hot Tap</strong></div>
+    </div>
+    <div class="workflow-helper-note" id="workflowSetupNote">Fill the basics here, then continue to Pipe / Cutter.</div>
+  </section>
+
+  <section id="workflowPipePanel" class="workflow-helper-panel" data-workflow-stage-panel="pipe">
+    <div class="workflow-helper-head">
+      <div>
+        <div class="hero-eyebrow">Step 2</div>
+        <h3>Pipe / Cutter Setup</h3>
+        <p>Set the pipe, cutter, BCO, and ETA here. The standalone BCO and ETA tools are still available when you just need a quick check.</p>
+      </div>
+      <div class="workflow-helper-actions">
+        <button type="button" class="secondary-btn" data-go-screen="calc" data-go-mode="bco">Open Standalone BCO</button>
+        <button type="button" id="workflowPipeNextBtn">Continue to Active Stage</button>
+      </div>
+    </div>
+    <div id="workflowPipeGateBanner" class="workflow-gate-banner" data-state="waiting" aria-live="polite">
+      <strong>Waiting on Pipe / Cutter</strong>
+      <span>Enter pipe, cutter, and BCO before using job math.</span>
+    </div>
+    <div id="workflowInlinePipeSetup" class="workflow-pipe-tools-grid">
+      <section class="workflow-setup-form-card workflow-pipe-tool-card">
+        <div class="workflow-tool-card-head">
+          <h4>BCO Setup</h4>
+          <span id="workflowBcoInlineResult">BCO pending</span>
+        </div>
+        <div class="workflow-setup-grid">
+          <label class="workflow-setup-field" for="workflowBcoPipeMaterial"><span>Pipe Material</span><select id="workflowBcoPipeMaterial" data-workflow-tool-sync="bcoPipeMaterial"></select></label>
+          <label class="workflow-setup-field" for="workflowBcoPipeOD"><span>Pipe Size</span><select id="workflowBcoPipeOD" data-workflow-tool-sync="bcoPipeOD"></select></label>
+          <label class="workflow-setup-field" for="workflowBcoSchedule"><span>Schedule</span><select id="workflowBcoSchedule" data-workflow-tool-sync="bcoSchedule"></select></label>
+          <label class="workflow-setup-field" for="workflowBcoPipeID"><span>Pipe I.D.</span><input id="workflowBcoPipeID" type="number" step="any" placeholder="Pipe I.D." data-workflow-tool-sync="bcoPipeID"></label>
+          <label class="workflow-setup-field" for="workflowBcoCutterOD"><span>Cutter O.D.</span><input id="workflowBcoCutterOD" type="number" step="any" placeholder="Cutter O.D." data-workflow-tool-sync="bcoCutterOD"></label>
+        </div>
+      </section>
+      <section class="workflow-setup-form-card workflow-pipe-tool-card">
+        <div class="workflow-tool-card-head">
+          <h4>ETA Check</h4>
+          <span id="workflowEtaInlineResult">ETA: ?</span>
+        </div>
+        <div class="workflow-setup-grid">
+          <label class="workflow-setup-field" for="workflowEtaMachine"><span>Machine</span><select id="workflowEtaMachine" data-workflow-tool-sync="etaMachine"></select></label>
+          <label class="workflow-setup-field" for="workflowEtaCutterSize"><span>Cutter Size</span><input id="workflowEtaCutterSize" type="number" step="any" list="workflowEtaCutterSizeList" placeholder="Cutter size" data-workflow-tool-sync="etaCutterSize"></label>
+          <datalist id="workflowEtaCutterSizeList"></datalist>
+          <label class="workflow-setup-field" for="workflowEtaBco"><span>BCO</span><input id="workflowEtaBco" type="number" step="any" placeholder="Auto from BCO" data-workflow-tool-sync="etaBco"></label>
+          <label class="workflow-setup-field" for="workflowEtaRpmOverride"><span>RPM Override</span><input id="workflowEtaRpmOverride" type="number" step="any" min="0" placeholder="Optional" data-workflow-tool-sync="etaRpmOverride"></label>
+        </div>
+      </section>
+    </div>
+    <div class="workflow-helper-grid">
+      <div class="workflow-helper-card"><span>Pipe</span><strong id="workflowPipeSummary">?</strong></div>
+      <div class="workflow-helper-card"><span>Cutter</span><strong id="workflowCutterSummary">?</strong></div>
+      <div class="workflow-helper-card"><span>BCO</span><strong id="workflowBcoSummary">?</strong></div>
+      <div class="workflow-helper-card"><span>Status</span><strong id="workflowPipeStatus">Waiting on BCO</strong></div>
+    </div>
+    <div class="workflow-helper-note" id="workflowPipeNote">Once BCO is calculated, the workflow can carry that number into the stages that need it.</div>
+  </section>
+
+  <section id="workflowReviewPanel" class="workflow-helper-panel" data-workflow-stage-panel="review">
+    <div class="workflow-helper-head">
+      <div>
+        <div class="hero-eyebrow">Final Step</div>
+        <h3>Review &amp; Save</h3>
+        <p>Check the stage statuses, confirm the current BCO and ETA, then save locally or sync to the shared library.</p>
+      </div>
+      <div class="workflow-helper-actions">
+        <button type="button" id="workflowReviewSaveJobBtn" data-workflow-save-job>Save Job</button>
+        <button type="button" class="secondary-btn" id="workflowReviewSyncSharedBtn">Sync Shared</button>
+        <button type="button" class="secondary-btn" data-go-screen="calc" data-go-mode="eta">Open ETA</button>
+        <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
+      </div>
+    </div>
+    <div class="workflow-helper-grid workflow-review-grid">
+      <div class="workflow-helper-card"><span>Current BCO</span><strong id="workflowReviewBco">?</strong></div>
+      <div class="workflow-helper-card"><span>ETA</span><strong id="workflowReviewEta">?</strong></div>
+      <div class="workflow-helper-card"><span>Hot Tap</span><strong id="workflowReviewHotTap">Not Ready</strong></div>
+      <div class="workflow-helper-card" data-jobtype-only="lineStop"><span>Line Stop</span><strong id="workflowReviewLineStop">Not Ready</strong></div>
+      <div class="workflow-helper-card" data-jobtype-only="lineStop"><span>Completion Plug</span><strong id="workflowReviewCompletionPlug">Not Ready</strong></div>
+    </div>
+    <div class="workflow-review-status-card" id="workflowReviewStatusCard" data-state="review">
+      <div>
+        <div class="hero-eyebrow">Final Status</div>
+        <h4 id="workflowReviewStatusTitle">Review the job before saving</h4>
+        <p id="workflowReviewStatusCopy">Use this final check to see what will save with the job and what still needs attention.</p>
+      </div>
+      <div class="workflow-review-status-pill" id="workflowReviewStatusPill">Review</div>
+    </div>
+    <div class="workflow-review-detail-grid">
+      <section class="workflow-review-detail-card workflow-save-state-card">
+        <div class="workflow-review-detail-head">
+          <h4>Save State</h4>
+          <span id="workflowReviewSaveStatePill" data-state="draft">Draft Only</span>
+        </div>
+        <p id="workflowReviewSaveStateCopy">This job is auto-saved as a draft on this device.</p>
+      </section>
+      <section class="workflow-review-detail-card">
+        <div class="workflow-review-detail-head">
+          <h4>Ready Checklist</h4>
+          <span id="workflowReviewChecklistCount">0 ready</span>
+        </div>
+        <div id="workflowReviewChecklist" class="workflow-review-checklist" aria-live="polite"></div>
+      </section>
+      <section class="workflow-review-detail-card">
+        <div class="workflow-review-detail-head">
+          <h4>Operations Saved</h4>
+          <span id="workflowReviewOperationCount">1 operation</span>
+        </div>
+        <div id="workflowReviewOperationsList" class="workflow-review-operations-list" aria-live="polite"></div>
+      </section>
+    </div>
+    <div class="workflow-helper-note" id="workflowReviewNote">Save the job once the stages you need read Ready or In Progress with a confirmed output.</div>
+  </section>
+
+  <section class="workflow-strip card-workflow-strip">
+    <article class="workflow-card active" data-workflow-target="hotTap">
+      <span class="workflow-step">1</span>
+      <div><strong>Hot Tap</strong><span>Start the cut and rod math here.</span></div><span class="workflow-status" id="workflowStatusHotTap">Not Ready</span>
+    </article>
+    <article class="workflow-card" data-workflow-target="lineStop" data-jobtype-only="lineStop">
+      <span class="workflow-step">3</span>
+      <div><strong>Line Stop</strong><span>Lower-in, turns, and valve positioning.</span></div><span class="workflow-status" id="workflowStatusLineStop">Not Ready</span>
+    </article>
+    <article class="workflow-card" data-workflow-target="completionPlug" data-jobtype-only="lineStop">
+      <span class="workflow-step">4</span>
+      <div><strong>Completion Plug</strong><span>Finish-out dimensions and checks.</span></div><span class="workflow-status" id="workflowStatusCompletionPlug">Not Ready</span>
+    </article>
+  </section>
+  <div class="card-subnav workflow-mode-subnav">
+    <button type="button" class="submode-btn workflow-submode-btn active" data-mode="hotTap">Hot Tap</button>
+    <button type="button" class="submode-btn workflow-submode-btn" data-mode="lineStop" data-jobtype-only="lineStop">Line Stop</button>
+    <button type="button" class="submode-btn workflow-submode-btn" data-mode="completionPlug" data-jobtype-only="lineStop">Completion Plug</button>
+  </div>
+  <section class="card-focus-shell">
+    <div class="card-focus-head">
+      <div>
+        <div class="hero-eyebrow">Active Stage</div>
+        <h3 id="cardFocusTitle">Hot Tap workflow</h3>
+        <p id="cardFocusDesc">Set MD, LD, and PTC first, then verify LI, BCO, and on-rod values before moving forward.</p>
+      </div>
+      <div class="card-focus-actions">
+        <button type="button" class="secondary-btn" data-go-screen="calc">Open Tools</button>
+        <button type="button" class="secondary-btn" data-workflow-stage="setup">Job Setup</button>
+        <button type="button" class="secondary-btn" data-go-screen="jobs">Open Library</button>
+        <button type="button" class="secondary-btn" id="cardFocusJumpBtn">Jump to Inputs</button>
+      </div>
+    </div>
+    <div class="card-focus-stats">
+      <div class="card-focus-stat"><span>Stage</span><strong id="cardFocusStage">Hot Tap</strong></div>
+      <div class="card-focus-stat"><span>Machine</span><strong id="cardFocusMachine">?</strong></div>
+      <div class="card-focus-stat"><span>Current BCO</span><strong id="cardFocusBco">?</strong></div>
+      <div class="card-focus-stat"><span>Hot Tap Output</span><strong id="cardFocusOutput">?</strong></div>
+    </div>
+    <div class="card-checklist">
+      <div class="card-check-item"><span>Geometry</span><strong id="cardCheckGeometry">Waiting</strong></div>
+      <div class="card-check-item"><span>Inputs</span><strong id="cardCheckInputs">Waiting</strong></div>
+      <div class="card-check-item"><span>Output</span><strong id="cardCheckOutput">Waiting</strong></div>
+      <div class="card-check-item"><span>Stage Ready</span><strong id="cardCheckReady">Not Ready</strong></div>
+    </div>
+  </section>
   <section id="hotTapPanel" class="mode-panel active">
     <div class="measurement-grid">
       <div class="section">
@@ -141,7 +734,7 @@
         <div class="row row-split">
           <label>LD</label>
           <input id="ld" type="number" step="any">
-          <select id="ldSign"><option value="+">+</option><option value="-">−</option></select>
+          <select id="ldSign"><option value="+">+</option><option value="-">-</option></select>
         </div>
 
         <div class="row result-row primary-result-row"><label>LI</label><span id="li" class="calc"></span></div>
@@ -173,54 +766,159 @@
 
         <div class="row result-row support-result-row"><label>Rod MCO</label><span id="rmco" class="calc"></span></div>
 
-        <div class="row"><label>Valve Bore</label><input id="valveBore" type="number" step="any"></div>
+        <div class="row"><label>Valve Bore <span class="optional-label">Optional</span></label><input id="valveBore" type="number" step="any" placeholder="Optional"></div>
         <div class="row"><label>GTF</label><input id="gtf" type="number" step="any"></div>
-        <div class="row"><label>Lugs</label><select id="lugs"><option>Y</option><option>N</option></select></div>
       </div>
     </div>
   </section>
 
-  <section id="lineStopPanel" class="mode-panel">
-    <div class="measurement-grid">
-      <div class="section">
-        <h3>Line Stop</h3>
-
-        <div class="row"><label>Type</label><input value="Standard Line Stop" disabled></div>
-
-        <div class="row"><label>MD</label><input id="lsMd" type="number" step="any"></div>
-
-        <div class="row row-split">
-          <label>LD</label>
-          <input id="lsLd" type="number" step="any">
-          <select id="lsLdSign"><option value="+">+</option><option value="-">−</option></select>
+  <section id="lineStopPanel" class="mode-panel" data-jobtype-only="lineStop">
+    <input id="lineStopVariant" type="hidden" value="standard">
+    <div class="line-stop-variant-shell">
+      <div class="line-stop-variant-head">
+        <div>
+          <div class="hero-eyebrow">Stop Variant</div>
+          <h3>Pick the line stop math you need</h3>
+          <p>Standard, HTP, and Hi-Stop each keep their own fields and formulas so you do not have to force them into the same box.</p>
         </div>
-
-        <div class="row"><label>POD</label><input id="lsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
-        <div class="row"><label>Wall Thickness</label><span id="lsWallDisplay" class="display-geometry">—</span><span class="note">From BCO Calculator</span></div>
-
-        <div class="row row-manual-toggle">
-          <label>LI Override</label>
-          <label class="check-inline"><input id="lsLiManualToggle" type="checkbox"> Manual</label>
+        <div class="variant-chip-row">
+          <button type="button" class="variant-chip active" data-line-stop-variant="standard">Standard</button>
+          <button type="button" class="variant-chip" data-line-stop-variant="htp">HTP</button>
+          <button type="button" class="variant-chip" data-line-stop-variant="hiStop">Hi-Stop</button>
         </div>
-
-        <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
-
-        <p class="formula-note">Auto formula: LI = MD ± LD + POD − Wall</p>
       </div>
+      <div class="variant-inline-note" id="lineStopVariantNote">Standard line stop math uses LI = MD +/- LD + POD - Wall.</div>
+    </div>
 
-      <div class="section">
-        <h3>Checks</h3>
+    <div class="line-stop-variant-panel active" data-line-stop-variant-panel="standard">
+      <div class="measurement-grid">
+        <div class="section">
+          <h3>Standard Line Stop</h3>
 
-        <div class="row"><label>Line Stop Travel</label><input id="lsTravel" type="number" step="any"></div>
-        <div class="row"><label>Machine Travel</label><input id="lsMachineTravel" type="number" step="any"></div>
-        <div class="row result-row primary-result-row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
+          <div class="row"><label>Type</label><input value="Standard Line Stop" disabled></div>
 
-        <div id="lsWarnings" class="warning-box"></div>
+          <div class="row"><label>MD</label><input id="lsMd" type="number" step="any"></div>
+
+          <div class="row row-split">
+            <label>LD</label>
+            <input id="lsLd" type="number" step="any">
+            <select id="lsLdSign"><option value="+">+</option><option value="-">-</option></select>
+          </div>
+
+          <div class="row"><label>POD</label><input id="lsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+          <div class="row"><label>Wall Thickness</label><span id="lsWallDisplay" class="display-geometry">?</span><span class="note">From BCO Calculator</span></div>
+
+          <div class="row row-manual-toggle">
+            <label>LI Override</label>
+            <label class="check-inline"><input id="lsLiManualToggle" type="checkbox"> Manual</label>
+          </div>
+
+          <div class="row"><label>LI</label><input id="lsLiManual" type="number" step="any" disabled></div>
+
+          <p class="formula-note">Auto formula: LI = MD +/- LD + POD - Wall</p>
+        </div>
+
+        <div class="section">
+          <h3>Checks</h3>
+
+          <div class="row"><label>Line Stop Travel (optional)</label><input id="lsTravel" type="number" step="any" placeholder="Optional travel check"></div>
+          <div class="row"><label>Machine Travel</label><input id="lsMachineTravel" type="number" step="any"></div>
+          <div class="row result-row primary-result-row"><label>Travel Margin</label><span id="lsTravelMargin" class="calc"></span></div>
+
+          <div id="lsWarnings" class="warning-box"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="line-stop-variant-panel" data-line-stop-variant-panel="htp">
+      <div class="measurement-grid">
+        <div class="section">
+          <h3>HTP Stop</h3>
+          <p class="formula-note">Training formula: TCO = MD +/- LD + PTC + BCO. For HTP, BCO matches the host pipe size from the chart.</p>
+
+          <div class="row"><label>Pipe Size</label>
+            <select id="htpPipeSize">
+              <option value="">Select</option>
+              <option value="3">3"</option>
+              <option value="4">4"</option>
+              <option value="6">6"</option>
+              <option value="8">8"</option>
+              <option value="10">10"</option>
+              <option value="12">12"</option>
+              <option value="14">14"</option>
+              <option value="16">16"</option>
+            </select>
+          </div>
+          <div class="row"><label>Branch Size</label><span id="htpBranchSize" class="calc">?</span></div>
+          <div class="row"><label>HTP Head</label><span id="htpHead" class="calc">?</span></div>
+          <div class="row"><label>Cutter Size</label><span id="htpCutterSize" class="calc">?</span></div>
+          <div class="row"><label>HTP BCO</label><span id="htpBco" class="calc">?</span></div>
+
+          <div class="row"><label>MD</label><input id="htpMd" type="number" step="any"></div>
+          <div class="row row-split">
+            <label>LD</label>
+            <input id="htpLd" type="number" step="any">
+            <select id="htpLdSign"><option value="+">+</option><option value="-">-</option></select>
+          </div>
+          <div class="row"><label>PTC</label><input id="htpPtc" type="number" step="any"></div>
+          <div class="row result-row primary-result-row"><label>TCO</label><span id="htpTco" class="calc">?</span></div>
+        </div>
+
+        <div class="section">
+          <h3>HTP ETA</h3>
+          <div class="row"><label>Machine</label>
+            <select id="htpMachine">
+              <option value="360">360 / 152</option>
+              <option value="660">660 / 760</option>
+              <option value="1200">1200-M120</option>
+            </select>
+          </div>
+          <div class="row"><label>Feed Rate</label><span id="htpFeedRateDisplay" class="calc">0.0040</span></div>
+          <div class="row"><label>Recommended RPM</label><span id="htpEtaRpm" class="calc">?</span></div>
+          <div class="row"><label>Feed Speed</label><span id="htpEtaFeedSpeed" class="calc">?</span></div>
+          <div class="row result-row primary-result-row"><label>ETA Range</label><span id="htpEtaRange" class="calc">?</span></div>
+          <p id="htpStatus" class="warning-box status-box">Select an HTP size to load the chart.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="line-stop-variant-panel" data-line-stop-variant-panel="hiStop">
+      <div class="measurement-grid">
+        <div class="section">
+          <h3>Hi-Stop Cutout</h3>
+          <p class="formula-note">Training formulas: LI = MD +/- LD and TCO = (RL/2) + (POD/2) + CL + PTC.</p>
+
+          <div class="row"><label>MD</label><input id="hsMd" type="number" step="any"></div>
+          <div class="row row-split">
+            <label>LD</label>
+            <input id="hsLd" type="number" step="any">
+            <select id="hsLdSign"><option value="+">+</option><option value="-">-</option></select>
+          </div>
+          <div class="row result-row primary-result-row"><label>LI</label><span id="hsLi" class="calc">?</span></div>
+          <div class="row"><label>RL (Reamer Length)</label><input id="hsRl" type="number" step="any"></div>
+          <div class="row"><label>POD</label><input id="hsPod" type="number" step="any" disabled><span class="note">From BCO Calculator</span></div>
+          <div class="row"><label>CL (Cutter Length)</label><input id="hsCl" type="number" step="any"></div>
+          <div class="row"><label>PTC</label><input id="hsPtc" type="number" step="any" placeholder="2&quot; and smaller usually have no PTC"></div>
+          <div class="row result-row primary-result-row"><label>TCO</label><span id="hsTco" class="calc">?</span></div>
+          <div class="row"><label>Wall Thickness</label><span id="hsWallDisplay" class="display-geometry">?</span><span class="note">Training minimum is schedule 40</span></div>
+        </div>
+
+        <div class="section">
+          <h3>Hi-Stop Plug Set</h3>
+          <p class="formula-note">PSD = ((RCD - PB) / (2 x Plug Taper)) + 0.25 and Plug Set = PSD + MD +/- LD + 1/2 POD.</p>
+          <div class="row"><label>RCD</label><input id="hsRcd" type="number" step="any"></div>
+          <div class="row"><label>PB (Plug Bottom)</label><input id="hsPb" type="number" step="any"></div>
+          <div class="row"><label>Plug Taper</label><input id="hsPtp" type="number" step="any"></div>
+          <div class="row result-row support-result-row"><label>PSD</label><span id="hsPsd" class="calc">?</span></div>
+          <div class="row result-row primary-result-row"><label>Plug Set</label><span id="hsPlugSet" class="calc">?</span></div>
+          <div id="hsWarnings" class="warning-box"></div>
+        </div>
       </div>
     </div>
   </section>
 
-  <section id="completionPlugPanel" class="mode-panel">
+
+  <section id="completionPlugPanel" class="mode-panel" data-jobtype-only="lineStop">
     <div class="measurement-grid">
       <div class="section">
         <h3>Completion Plug</h3>
@@ -248,233 +946,873 @@
   </section>
 
 
-  <section id="etaPanel" class="mode-panel">
-    <div class="measurement-grid">
-      <div class="section">
-        <h3>Tap ETA</h3>
-        <p class="note eta-note">Estimate from cutter touching pipe to reaching BCO. Feed rate stays fixed at 0.004 in/rev.</p>
+  </section>
 
-        <div class="row"><label>Machine</label>
-          <select id="etaMachine">
-            <option value="360">360 / 152</option>
-            <option value="660">660 / 760</option>
-            <option value="1200">1200-M120</option>
-          </select>
-        </div>
-
-        <div class="row"><label>Cutter Size</label>
-          <input id="etaCutterSize" type="number" step="any" list="etaCutterSizeList" placeholder="Type cutter size or pick suggested size">
-          <datalist id="etaCutterSizeList"></datalist>
-        </div>
-
-        <div class="row"><label>BCO</label><input id="etaBco" type="number" step="any" placeholder="Uses current BCO when available"></div>
-
-        <div class="row"><label>Feed Rate</label><span id="etaFeedRateDisplay" class="calc">0.0040</span></div>
-        <div class="row"><label>RPM</label><span id="etaRpmDisplay" class="calc">—</span></div>
-
-        <div class="button-row">
-          <button type="button" id="etaUseCurrentBcoBtn" class="secondary-btn">Use Current BCO</button>
-          <button type="button" id="etaRefreshBtn">Refresh ETA</button>
-        </div>
-      </div>
-
-      <div class="section">
-        <h3>Estimate</h3>
-        <div class="eta-results-grid">
-          <div class="eta-result-card">
-            <span class="summary-label">Feed Speed</span>
-            <span id="etaFeedSpeedDisplay" class="summary-value">—</span>
-          </div>
-          <div class="eta-result-card">
-            <span class="summary-label">ETA Range</span>
-            <span id="etaRangeDisplay" class="summary-value">—</span>
-          </div>
-        </div>
-        <p id="etaInlineStatus" class="note">Type a cutter size or pick a suggested size, then use your BCO to estimate cut time.</p>
-      </div>
+  <section id="refScreen" class="screen-view">
+  <section class="ref-screen-topbar">
+    <div>
+      <div class="hero-eyebrow">Reference Toolbox</div>
+      <h3>Lookup charts and field helpers fast</h3>
+      <p>Pick a reference from the library and keep the right chart in front of you instead of hunting through a long page.</p>
     </div>
   </section>
 
-  <section id="glossaryPanel" class="mode-panel">
-    <div class="section glossary-section">
-      <h3>Reference Tools</h3>
-      <p class="note">Quick field reference for decimals, fractions, terminology, and bolting info. Measurement fields accept 12 1/2, 12-1/2, 3/8, 5/16, or 12.5. On mobile, use the extra Space and / buttons above the keyboard.</p>
+  <section class="reference-library-panel" aria-label="Reference library picker">
+    <div class="reference-library-summary">
+      <div>
+        <span id="referenceLibraryGroup" class="reference-library-group">Charts</span>
+        <strong id="referenceLibraryCurrent">Decimal / Fraction</strong>
+        <small id="referenceLibraryDescription">Quick conversion and full chart</small>
+      </div>
+      <span class="reference-library-count">13 refs</span>
+    </div>
+    <div class="reference-library-shell">
+      <button type="button" id="referenceLibraryToggle" class="reference-library-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="referenceLibraryMenu">
+        <span>Choose Reference</span>
+        <span class="reference-picker-chevron" aria-hidden="true"></span>
+      </button>
+      <div id="referenceLibraryMenu" class="reference-library-menu" hidden>
+        <label for="referenceLibrarySearch" class="visually-hidden">Search references</label>
+        <input id="referenceLibrarySearch" class="reference-library-search" type="search" placeholder="Search references">
+        <div id="referenceLibraryOptions" class="reference-library-options" role="listbox" aria-label="Reference choices"></div>
+        <div id="referenceLibraryEmpty" class="reference-library-empty" hidden>No references match that search.</div>
+      </div>
+      <select id="referenceViewSelect" class="reference-native-select" aria-label="Reference category" hidden>
+        <optgroup label="Charts">
+          <option value="converter">Decimal / Fraction</option>
+          <option value="bolting">Bolting Chart</option>
+          <option value="glossary">Glossary</option>
+          <option value="htp">HTP Chart</option>
+          <option value="stopmath">Stop Math</option>
+        </optgroup>
+        <optgroup label="Setup Guides">
+          <option value="pivothead">Pivot Head Setup</option>
+        </optgroup>
+        <optgroup label="Machine Reference">
+          <option value="machines">Machine Stack-Ups</option>
+        </optgroup>
+        <optgroup label="Field Reference">
+          <option value="uwire">U-Wire Calculator</option>
+          <option value="fieldcheck">Field Checklists</option>
+          <option value="plant150">150# Plant Series</option>
+          <option value="plant600">600# Plant Series</option>
+          <option value="gaskettorque">Graphonic</option>
+          <option value="papergaskets">Paper Gaskets</option>
+        </optgroup>
+      </select>
+    </div>
+  </section>
 
-      <div class="reference-grid">
-        <div class="reference-card">
-          <h4>Decimal / Fraction Converter</h4>
-          <div class="converter-grid">
-            <div class="converter-block">
-              <div class="converter-label">Fraction → Decimal</div>
-              <div class="fraction-input-row">
-                <input id="fractionNumerator" type="number" step="1" min="0" placeholder="Top">
-                <span class="fraction-slash">/</span>
-                <input id="fractionDenominator" type="number" step="1" min="1" placeholder="Bottom">
+  <section id="glossaryPanel" class="mode-panel active">
+    <div class="section glossary-section reference-workspace-card">
+        <div class="reference-screen-head">
+        <div class="collapsible-head-block">
+          <button type="button" id="referenceToolsToggleBtn" class="section-toggle-btn" aria-expanded="true" aria-controls="referenceWorkspaceContent">
+            <span>Reference Tools</span><span class="section-toggle-chevron" aria-hidden="true"></span>
+          </button>
+          <p class="note">Use the reference picker above to jump straight to the tool you need.</p>
+          <div class="reference-inline-actions">
+            <a class="secondary-btn" href="Bolting Chart.pdf" target="_blank" rel="noopener">Open Bolting PDF</a>
+            <button type="button" id="referenceBackToTopBtn" class="secondary-btn">Back to Ref Top</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="referenceWorkspaceContent" class="collapsible-content">
+      <div class="reference-view active" data-reference-view="converter">
+        <div class="reference-grid">
+          <div class="reference-card">
+            <h4>Decimal / Fraction Converter</h4>
+            <div class="converter-grid">
+              <div class="converter-block">
+                <div class="converter-label">Fraction to Decimal</div>
+                <div class="fraction-input-row">
+                  <input id="fractionNumerator" type="number" step="1" min="0" placeholder="Top">
+                  <span class="fraction-slash">/</span>
+                  <input id="fractionDenominator" type="number" step="1" min="1" placeholder="Bottom">
+                </div>
+                <div id="fractionToDecimalResult" class="converter-result">?</div>
               </div>
-              <div id="fractionToDecimalResult" class="converter-result">—</div>
+
+              <div class="converter-block">
+                <div class="converter-label">Decimal to Fraction</div>
+                <input id="decimalInput" class="decimal-input" type="number" step="any" min="0" placeholder="0.0000">
+                <div class="quick-decimal-buttons" aria-label="Quick decimal inserts">
+                  <button type="button" class="quick-decimal-btn" data-decimal="0.0625">1/16</button>
+                  <button type="button" class="quick-decimal-btn" data-decimal="0.1250">1/8</button>
+                  <button type="button" class="quick-decimal-btn" data-decimal="0.2500">1/4</button>
+                  <button type="button" class="quick-decimal-btn" data-decimal="0.3750">3/8</button>
+                  <button type="button" class="quick-decimal-btn" data-decimal="0.5000">1/2</button>
+                </div>
+                <div class="converter-inline">
+                  <label for="fractionPrecision">Nearest</label>
+                  <select id="fractionPrecision">
+                    <option value="16">1/16</option>
+                    <option value="32">1/32</option>
+                    <option value="64" selected>1/64</option>
+                  </select>
+                </div>
+                <div id="decimalToFractionResult" class="converter-result">?</div>
+              </div>
             </div>
 
-            <div class="converter-block">
-              <div class="converter-label">Decimal → Fraction</div>
-              <input id="decimalInput" class="decimal-input" type="number" step="any" min="0" placeholder="0.0000">
-              <div class="quick-decimal-buttons" aria-label="Quick decimal inserts">
-                <button type="button" class="quick-decimal-btn" data-decimal="0.0625">1/16</button>
-                <button type="button" class="quick-decimal-btn" data-decimal="0.1250">1/8</button>
-                <button type="button" class="quick-decimal-btn" data-decimal="0.2500">1/4</button>
-                <button type="button" class="quick-decimal-btn" data-decimal="0.3750">3/8</button>
-                <button type="button" class="quick-decimal-btn" data-decimal="0.5000">1/2</button>
-              </div>
-              <div class="converter-inline">
-                <label for="fractionPrecision">Nearest</label>
-                <select id="fractionPrecision">
-                  <option value="16">1/16</option>
-                  <option value="32">1/32</option>
-                  <option value="64" selected>1/64</option>
+            <div class="button-row reference-actions">
+              <button type="button" id="openDecimalModalBtn" class="secondary-btn">Open Full Decimal Chart</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="reference-view" data-reference-view="bolting">
+        <div class="reference-grid">
+          <div class="reference-card bolting-card">
+            <h4>Bolting Chart</h4>
+            <p class="reference-copy">Pick a flange class and pipe size to pull bolt count, stud diameter, stud length, and wrench size right inside the app.</p>
+
+            <div class="bolting-controls">
+              <div class="converter-inline bolting-selects">
+                <label for="boltingClassSelect">Flange Class</label>
+                <select id="boltingClassSelect">
+                  <option value="150">150</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                  <option value="600">600</option>
+                  <option value="900">900</option>
+                  <option value="1500">1500</option>
+                  <option value="2500">2500</option>
                 </select>
               </div>
-              <div id="decimalToFractionResult" class="converter-result">—</div>
+
+              <div class="converter-inline bolting-selects">
+                <label for="boltingSizeSelect">Pipe Size</label>
+                <select id="boltingSizeSelect">
+                  <option value="1/2">1/2</option><option value="3/4">3/4</option><option value="1">1</option><option value="1-1/4">1-1/4</option><option value="1-1/2">1-1/2</option><option value="2">2</option><option value="2-1/2">2-1/2</option><option value="3">3</option><option value="3-1/2">3-1/2</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="14">14</option><option value="16">16</option><option value="18">18</option><option value="20">20</option><option value="24">24</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="bolting-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Bolts / Studs</span><span id="boltingBoltCount" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Diameter</span><span id="boltingDiameter" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Stud Length (RF)</span><span id="boltingStudRf" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Wrench Size</span><span id="boltingWrench" class="summary-value">?</span></div>
+              <div class="bolting-summary-item" id="boltingRtjItem"><span class="summary-label">Stud Length (RTJ)</span><span id="boltingStudRtj" class="summary-value">?</span></div>
+            </div>
+
+            <div class="glossary-table-wrap bolting-table-wrap">
+              <table class="glossary-table bolting-table" id="boltingTable">
+                <thead id="boltingTableHead"></thead>
+                <tbody id="boltingTableBody"></tbody>
+              </table>
+            </div>
+
+            <p class="reference-footnote">Built from your uploaded ASME B16.5 bolt and stud dimension chart so it keeps working without opening a separate PDF.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="reference-view" data-reference-view="glossary">
+        <h3 class="reference-subheading">Glossary</h3>
+        <p class="reference-copy">Common measurement-card abbreviations, setup terms, and field meanings used throughout TapCalc.</p>
+        <div class="reference-chip-row" id="glossaryStatsRow">
+          <span class="reference-chip"><strong id="glossaryCountChip">0</strong> terms</span>
+          <span class="reference-chip"><strong id="glossaryVisibleChip">0</strong> visible</span>
+        </div>
+        <div class="reference-search-row">
+          <label for="glossarySearchInput">Filter glossary</label>
+          <input id="glossarySearchInput" type="text" placeholder="Search abbreviation or meaning">
+        </div>
+        <div class="glossary-table-wrap">
+          <table class="glossary-table">
+            <thead><tr><th>Abbrev. / Term</th><th>Meaning</th></tr></thead>
+            <tbody id="glossaryTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="reference-view" data-reference-view="htp">
+        <h3 class="reference-subheading">HTP Pipe / Head / Cutter Chart</h3>
+        <p class="reference-copy">Built from the Level III HTP training chart so you can confirm branch size, HTP head range, and cutter size without opening the PDF.</p>
+        <div class="reference-grid plant-reference-grid">
+          <div class="reference-card plant-summary-card">
+            <h4>HTP Quick Rules</h4>
+            <div class="reference-formula-grid">
+              <div class="formula-card"><strong>Hot Tap Cutout</strong><span>TCO = MD +/- LD + PTC + BCO</span><small>HTP training uses pipe size as the HTP BCO value.</small></div>
+              <div class="formula-card"><strong>Plug Set</strong><span>Plug Set = PSD +/- LD</span><small>Used when setting the HTP plug after the hot tap is complete.</small></div>
+              <div class="formula-card"><strong>Service Range</strong><span>3" through 16" pipe</span><small>The training deck lists up to 1480 PSI and 900 deg F capability for HTP service.</small></div>
             </div>
           </div>
-          <div class="button-row reference-actions">
-            <button type="button" id="openDecimalModalBtn" class="secondary-btn">Open Full Decimal Chart</button>
+        </div>
+        <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Pipe Size</th><th>Branch Size</th><th>HTP Head</th><th>Cutter Size</th></tr></thead><tbody id="htpReferenceBody"></tbody></table></div>
+      </div>
+      <div class="reference-view" data-reference-view="stopmath">
+        <h3 class="reference-subheading">Line Stop Math</h3>
+        <p class="reference-copy">Quick formulas and field notes for Standard Line Stop, HTP, and Hi-Stop. This is the fast field-reference version, not the full training deck.</p>
+        <div class="reference-formula-grid reference-formula-grid-wide">
+          <div class="formula-card">
+            <strong>Standard Line Stop</strong>
+            <span>Set Point = MD +/- LD + POD - Wall</span>
+            <small>Use for conventional line stop heads when you need lower-in from the training set-point method.</small>
+          </div>
+          <div class="formula-card">
+            <strong>HTP Stop</strong>
+            <span>TCO = MD +/- LD + PTC + BCO</span>
+            <small>HTP BCO follows the pipe size chart. Plug Set uses PSD +/- LD.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Hi-Stop Cutout</strong>
+            <span>TCO = (RL/2) + (POD/2) + CL + PTC</span>
+            <small>Verify reamer length, cutter length, and pilot-to-cutter before trusting the cutout mark.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Hi-Stop Plug Set</strong>
+            <span>Plug Set = PSD + MD +/- LD + 1/2 POD</span>
+            <small>PSD = ((RCD - PB) / (2 x Plug Taper)) + 0.25.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Hi-Stop Notes</strong>
+            <span>Minimum wall thickness is schedule 40</span>
+            <small>Training notes also call out 12 o'clock as the preferred location and no PTC on 2" and smaller Hi-Stops.</small>
+          </div>
+          <div class="formula-card">
+            <strong>Completion Plug</strong>
+            <span>Pipeline LI = JBF + LD</span>
+            <small>Pipeline side-outlet completion plug training also uses LI = FTD - TMU +/- LD.</small>
+          </div>
+        </div>
+      </div>
+      <div class="reference-view" data-reference-view="uwire">
+        <h3 class="reference-subheading">U-Wire Placement Calculator</h3>
+        <p class="reference-copy">Pre-job setup helper from Form HTS-5400.1.20. Enter the pipe, cutter, valve, travel, and measured U-wire rows to check engagement before the job starts.</p>
+        <div class="reference-grid uwire-reference-grid">
+          <div class="reference-card uwire-input-card">
+            <div class="stackup-detail-head">
+              <div>
+                <h4>Setup Inputs</h4>
+                <p class="reference-copy">Use current pipe to pull OD, wall, and cutter from the BCO setup, then finish the valve and U-wire checks here.</p>
+              </div>
+              <span class="stackup-source-pill">HTS-5400.1.20</span>
+            </div>
+            <div class="uwire-input-grid">
+              <label class="workflow-setup-field" for="uwirePipeOd"><span>Pipe OD</span><input id="uwirePipeOd" type="text" inputmode="decimal" placeholder="20"></label>
+              <label class="workflow-setup-field" for="uwirePipeWall"><span>Pipe Wall</span><input id="uwirePipeWall" type="text" inputmode="decimal" placeholder="0.375"></label>
+              <label class="workflow-setup-field" for="uwireCutterOd"><span>Cutter OD</span><input id="uwireCutterOd" type="text" inputmode="decimal" placeholder="19"></label>
+              <label class="workflow-setup-field" for="uwireToothWidth"><span>Tooth Width</span><input id="uwireToothWidth" type="text" inputmode="decimal" placeholder="0.250"></label>
+              <label class="workflow-setup-field" for="uwirePtc"><span>PTC</span><input id="uwirePtc" type="text" inputmode="decimal" placeholder="Pilot to cutter"></label>
+              <label class="workflow-setup-field" for="uwireCutterDepth"><span>Cutter Depth</span><input id="uwireCutterDepth" type="text" inputmode="decimal" placeholder="Depth"></label>
+              <label class="workflow-setup-field" for="uwireValveType"><span>Valve Type</span><select id="uwireValveType"><option value="Gate">Gate</option><option value="Ball">Ball</option><option value="M&J/Burtech">M&amp;J / Burtech</option><option value="Williamson">Williamson</option><option value="ENR">ENR</option></select></label>
+              <label class="workflow-setup-field" for="uwireFlangeClass"><span>Flange</span><select id="uwireFlangeClass"><option value="150#">150#</option><option value="300#">300#</option><option value="600#">600#</option><option value="900#">900#</option></select></label>
+              <label class="workflow-setup-field" for="uwireSize"><span>Valve / Flange Size</span><select id="uwireSize"></select></label>
+              <label class="workflow-setup-field" for="uwireMachineTravel"><span>Machine Travel</span><input id="uwireMachineTravel" type="text" inputmode="decimal" placeholder="Travel"></label>
+              <label class="workflow-setup-field" for="uwireLostDistance"><span>Lost Distance</span><input id="uwireLostDistance" type="text" inputmode="decimal" placeholder="LD"></label>
+              <label class="workflow-setup-field" for="uwireFittingLength"><span>Fitting Length</span><input id="uwireFittingLength" type="text" inputmode="decimal" placeholder="Length"></label>
+              <label class="workflow-setup-field" for="uwireValveLength"><span>Valve Length</span><input id="uwireValveLength" type="text" inputmode="decimal" placeholder="Length"></label>
+              <label class="workflow-setup-field" for="uwirePilotRelief"><span>Pilot Relief</span><input id="uwirePilotRelief" type="text" inputmode="decimal" placeholder="Relief"></label>
+              <label class="workflow-setup-field" for="uwireLabattsBridge"><span>Labatt's Bridge</span><input id="uwireLabattsBridge" type="text" inputmode="decimal" placeholder="Bridge"></label>
+              <label class="workflow-setup-field" for="uwireRpm"><span>RPM</span><input id="uwireRpm" type="text" inputmode="decimal" placeholder="RPM"></label>
+              <label class="workflow-setup-field" for="uwireFeedRate"><span>Feed Rate</span><input id="uwireFeedRate" type="text" inputmode="decimal" placeholder="Feed"></label>
+            </div>
+            <div class="button-row reference-actions uwire-actions">
+              <button type="button" id="uwireUseCurrentPipeBtn" class="secondary-btn">Use Current Pipe</button>
+              <button type="button" id="uwireClearBtn" class="secondary-btn">Clear U-Wire Inputs</button>
+            </div>
+            <p id="uwireInputStatus" class="reference-footnote">Enter the required setup values to calculate U-wire engagement.</p>
+          </div>
+
+          <div class="reference-card uwire-results-card">
+            <h4>Calculated Setup</h4>
+            <div class="bolting-summary-grid uwire-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Pipe ID</span><span id="uwirePipeIdOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Cutter ID</span><span id="uwireCutterIdOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Coupon Free</span><span id="uwireCouponFreeOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Tap Distance</span><span id="uwireTapDistanceOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Max Cutout + Pilot</span><span id="uwireMaxCutoutOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Coupon Free - 1 W.T.</span><span id="uwireCouponMinusWallOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Total Travel Required</span><span id="uwireTotalTravelOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Max Cutout Travel</span><span id="uwireMaxCutoutTravelOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Valve Nest</span><span id="uwireValveNestOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Optimal Final U-Wire</span><span id="uwireOptimalFinalOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Est. Tap Time</span><span id="uwireTapTimeOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Threshold</span><span id="uwireThresholdOut" class="summary-value">?</span></div>
+            </div>
           </div>
         </div>
 
-        <div class="reference-card bolting-card">
-          <h4>Bolting Chart</h4>
-          <p class="reference-copy">Rebuilt into TapCalc for offline use. Pick a flange class and pipe size to pull up bolt count, stud diameter, stud length, and wrench size right inside the app.</p>
-
-          <div class="bolting-controls">
-            <div class="converter-inline bolting-selects">
-              <label for="boltingClassSelect">Flange Class</label>
-              <select id="boltingClassSelect">
-                <option value="150">150</option>
-                <option value="300">300</option>
-                <option value="400">400</option>
-                <option value="600">600</option>
-                <option value="900">900</option>
-                <option value="1500">1500</option>
-                <option value="2500">2500</option>
-              </select>
+        <div class="reference-card uwire-wire-card">
+          <div class="stackup-detail-head">
+            <div>
+              <h4>U-Wire Rows</h4>
+              <p class="reference-copy">Measured U-wire rows must be less than the calculated threshold. The workbook requires two rows for engagement on larger cutters.</p>
             </div>
+            <span id="uwireEngagementPill" class="workflow-save-state-pill" data-state="draft">Waiting</span>
+          </div>
+          <div class="uwire-wire-grid" id="uwireWireGrid"></div>
+        </div>
 
-            <div class="converter-inline bolting-selects">
-              <label for="boltingSizeSelect">Pipe Size</label>
-              <select id="boltingSizeSelect">
-                <option value="1/2">1/2</option>
-                <option value="3/4">3/4</option>
-                <option value="1">1</option>
-                <option value="1-1/4">1-1/4</option>
-                <option value="1-1/2">1-1/2</option>
-                <option value="2">2</option>
-                <option value="2-1/2">2-1/2</option>
-                <option value="3">3</option>
-                <option value="3-1/2">3-1/2</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="8">8</option>
-                <option value="10">10</option>
-                <option value="12">12</option>
-                <option value="14">14</option>
-                <option value="16">16</option>
-                <option value="18">18</option>
-                <option value="20">20</option>
-                <option value="24">24</option>
-              </select>
+        <div class="reference-grid uwire-reference-grid">
+          <div class="reference-card uwire-status-card">
+            <h4>Setup Checks</h4>
+            <div class="uwire-status-grid">
+              <div class="uwire-status-item" id="uwirePilotStatusItem" data-state="waiting"><span>Pilot Status</span><strong id="uwirePilotStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireCutterDepthStatusItem" data-state="waiting"><span>Cutter Depth</span><strong id="uwireCutterDepthStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireCutterSizeStatusItem" data-state="waiting"><span>Cutter Size</span><strong id="uwireCutterSizeStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireValveSizeStatusItem" data-state="waiting"><span>Valve Size</span><strong id="uwireValveSizeStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireValveNestStatusItem" data-state="waiting"><span>Valve Nest</span><strong id="uwireValveNestStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwirePilotReliefStatusItem" data-state="waiting"><span>Pilot Relief</span><strong id="uwirePilotReliefStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireTravelStatusItem" data-state="waiting"><span>Total Travel</span><strong id="uwireTravelStatusOut">?</strong></div>
+              <div class="uwire-status-item" id="uwireMaxTravelStatusItem" data-state="waiting"><span>Max Cutout Travel</span><strong id="uwireMaxTravelStatusOut">?</strong></div>
             </div>
           </div>
-
-          <div class="bolting-summary-grid">
-            <div class="bolting-summary-item"><span class="summary-label">Bolts / Studs</span><span id="boltingBoltCount" class="summary-value">—</span></div>
-            <div class="bolting-summary-item"><span class="summary-label">Diameter</span><span id="boltingDiameter" class="summary-value">—</span></div>
-            <div class="bolting-summary-item"><span class="summary-label">Stud Length (RF)</span><span id="boltingStudRf" class="summary-value">—</span></div>
-            <div class="bolting-summary-item"><span class="summary-label">Wrench Size</span><span id="boltingWrench" class="summary-value">—</span></div>
-            <div class="bolting-summary-item" id="boltingRtjItem"><span class="summary-label">Stud Length (RTJ)</span><span id="boltingStudRtj" class="summary-value">—</span></div>
+          <div class="reference-card uwire-status-card">
+            <h4>Field Notes</h4>
+            <ul class="reference-note-list">
+              <li>Source formulas are from U-Wire Placement Calculator Form HTS-5400.1.20 Rev. 3.</li>
+              <li>Final U-wire threshold follows Coupon Free - 1 W.T. + PTC - 0.094.</li>
+              <li>If the contact reliability warning appears, stop and get approval before relying on the setup.</li>
+              <li>Confirm valve bore, flange class, and valve nest against the physical valve before the cut.</li>
+            </ul>
+            <p id="uwireReliabilityOut" class="reference-footnote">Reliability check will appear after travel values are entered.</p>
+          </div>
+        </div>
+      </div>
+      <div class="reference-view" data-reference-view="pivothead">
+        <h3 class="reference-subheading">Pivot Head Setup</h3>
+        <p class="reference-copy">Use pipe size and wall thickness to check the sealing element range, load pad measurement, nose/backing plate OD, and Clearance B for a conventional pivot head line stop.</p>
+        <div class="reference-grid pivot-reference-grid">
+          <div class="reference-card pivot-input-card">
+            <h4>Pipe Setup</h4>
+            <div class="pivot-input-grid">
+              <div class="row">
+                <label for="pivotPipeMaterial">Pipe Material</label>
+                <select id="pivotPipeMaterial">
+                  <option value="CarbonSteel">Carbon Steel</option>
+                  <option value="DuctileIron">Ductile Iron</option>
+                </select>
+              </div>
+              <div class="row">
+                <label for="pivotPipeSize">Pipe Size</label>
+                <select id="pivotPipeSize"></select>
+              </div>
+              <div class="row">
+                <label for="pivotWallThickness">Wall Thickness</label>
+                <input id="pivotWallThickness" type="text" inputmode="decimal" placeholder="0.375">
+              </div>
+              <div class="row">
+                <label for="pivotPipeIdOverride">Measured ID Override</label>
+                <input id="pivotPipeIdOverride" type="text" inputmode="decimal" placeholder="Optional">
+              </div>
+              <div class="row">
+                <label for="pivotPressureBand">Nose Check Pressure</label>
+                <select id="pivotPressureBand">
+                  <option value="under500">Below 500 psi</option>
+                  <option value="over500">Above 500 psi</option>
+                </select>
+              </div>
+            </div>
+            <div class="button-row reference-actions pivot-actions">
+              <button type="button" id="pivotUseCurrentPipeBtn" class="secondary-btn">Use Current Pipe</button>
+              <button type="button" id="pivotClearOverrideBtn" class="secondary-btn">Clear Override</button>
+            </div>
+            <p id="pivotInputStatus" class="reference-footnote">Enter wall thickness, or use the current BCO pipe setup if it is already filled out.</p>
           </div>
 
-          <div class="glossary-table-wrap bolting-table-wrap">
-            <table class="glossary-table bolting-table" id="boltingTable">
-              <thead id="boltingTableHead"></thead>
-              <tbody id="boltingTableBody"></tbody>
+          <div class="reference-card pivot-source-card">
+            <h4>Guide Checks</h4>
+            <ul class="reference-note-list">
+              <li>Nose plate OD check follows Section 7 Rev.1 and changes by pressure on 14" through 36" heads.</li>
+              <li>Load pad target is 1/2 Pipe ID with +0.00" / -1/16" tolerance. 3" and 4" do not require load pad.</li>
+              <li>Section 7 Rev.1 sealing element leading edge guide is Pipe ID - 1/16" to Pipe ID + 1/16".</li>
+              <li>The seal table also shows up to Pipe ID + 1/8" as a field-check-only window.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="bolting-summary-grid pivot-summary-grid">
+          <div class="bolting-summary-item"><span class="summary-label">Pipe OD</span><span id="pivotPipeOdOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Pipe ID</span><span id="pivotPipeIdOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Seal Range</span><span id="pivotSealRangeOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Load Pad Target</span><span id="pivotLoadPadTargetOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Load Pad Acceptable</span><span id="pivotLoadPadRangeOut" class="summary-value">?</span></div>
+          <div class="bolting-summary-item"><span class="summary-label">Clearance B</span><span id="pivotClearanceBOut" class="summary-value">?</span></div>
+        </div>
+
+        <div class="reference-card pivot-detail-card">
+          <div class="stackup-detail-head">
+            <div>
+              <h4>Suggested Sealing Elements</h4>
+              <p class="reference-copy">Check the leading edge diameter against the calculated Pipe ID. Green rows stay within Section 7 Rev.1 guide tolerance; amber rows are field-check-only.</p>
+            </div>
+            <span id="pivotSourcePill" class="stackup-source-pill">Section 7 Rev.1</span>
+          </div>
+          <div class="glossary-table-wrap pivot-table-wrap">
+            <table class="glossary-table pivot-seal-table">
+              <thead><tr><th>Offset From ID</th><th>Seal Diameter</th><th>Check</th></tr></thead>
+              <tbody id="pivotSealBody"></tbody>
             </table>
           </div>
+        </div>
 
-          <p class="reference-footnote">Built from your uploaded ASME B16.5 bolt and stud dimension chart so it keeps working without opening a separate PDF.</p>
+        <div class="reference-grid pivot-reference-grid">
+          <div class="reference-card">
+            <h4>Nose Plate OD Check</h4>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Tolerance</span><span id="pivotNoseToleranceOut" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">OD Target / Range</span><span id="pivotNoseRangeOut" class="summary-value">?</span></div>
+            </div>
+            <div class="pivot-backing-helper">
+              <div class="pivot-backing-input-row">
+                <label for="pivotMeasuredNoseOd">Measured Nose Plate OD</label>
+                <input id="pivotMeasuredNoseOd" type="text" inputmode="decimal" placeholder="Optional">
+              </div>
+              <div class="bolting-summary-grid plant-summary-grid pivot-backing-grid">
+                <div class="bolting-summary-item"><span class="summary-label">Measured Under ID</span><span id="pivotBackingUnderOut" class="summary-value">?</span></div>
+                <div class="bolting-summary-item"><span class="summary-label">Backing OD Target</span><span id="pivotBackingTargetOut" class="summary-value">?</span></div>
+                <div class="bolting-summary-item"><span class="summary-label">Diameter Add Needed</span><span id="pivotBackingAddOut" class="summary-value">?</span></div>
+                <div class="bolting-summary-item"><span class="summary-label">Per-Side Add</span><span id="pivotBackingPerSideOut" class="summary-value">?</span></div>
+              </div>
+              <p id="pivotBackingStatus" class="reference-footnote">Enter the actual nose plate OD to check whether a backing plate review is needed.</p>
+            </div>
+          </div>
+          <div class="reference-card">
+            <h4>Source Notes</h4>
+            <ul class="reference-note-list">
+              <li>Line Stop Equipment Set Up guide: sealing elements, load pad, head assembly, and Clearance B.</li>
+              <li>Section 7 Line Stop Dims: Rev.1 nose piece OD, seal leading edge, and load pad checks.</li>
+              <li>If the nose plate OD does not meet the listed target, stop and review backing plate / Technical Support before use.</li>
+              <li>Section 7 notes that a 3/16" to 1/4" thick aluminum backing plate may be needed.</li>
+              <li>Verify material compatibility, temperature, pressure class, and condition of the sealing element before use.</li>
+            </ul>
+          </div>
         </div>
       </div>
-
-      <h3 class="reference-subheading">Glossary</h3>
-      <div class="glossary-table-wrap">
-        <table class="glossary-table">
-          <thead>
-            <tr><th>Abbrev.</th><th>Meaning</th></tr>
-          </thead>
-          <tbody>
-            <tr><td>MD</td><td>Measured Distance</td></tr>
-            <tr><td>LD</td><td>Lost Distance</td></tr>
-            <tr><td>LI</td><td>Lower In</td></tr>
-            <tr><td>PTC</td><td>Pilot To Cutter</td></tr>
-            <tr><td>BCO</td><td>Book Cut Out</td></tr>
-            <tr><td>CCO</td><td>Coupon Cut Out</td></tr>
-            <tr><td>MCO</td><td>Maximum Cut Out</td></tr>
-            <tr><td>POP</td><td>Pilot On Pipe</td></tr>
-            <tr><td>COP</td><td>Cutter On Pipe</td></tr>
-            <tr><td>TTD</td><td>Total Travel Distance</td></tr>
-            <tr><td>MT</td><td>Machine Travel</td></tr>
-            <tr><td>POD</td><td>Pipe Outside Diameter</td></tr>
-            <tr><td>VB</td><td>Valve Bore</td></tr>
-            <tr><td>GTF</td><td>Gate To Flange</td></tr>
-            <tr><td>Valve T</td><td>Valve Turns</td></tr>
-            <tr><td>Seg T</td><td>Segment Turns</td></tr>
-            <tr><td>-1 Wall</td><td>Minus One Wall Thickness</td></tr>
-            <tr><td>JBF</td><td>Jack Bolt to Flange</td></tr>
-            <tr><td>PT</td><td>Plug Thickness</td></tr>
-          </tbody>
-        </table>
+      <div class="reference-view" data-reference-view="machines">
+        <h3 class="reference-subheading">Inline Stack-Up Reference</h3>
+        <p class="reference-copy">Search and select the stack-up you need, then read the key dimensions, weights, source page, and extracted stack-up text directly inside the app.</p>
+        <div class="reference-chip-row">
+          <span class="reference-chip"><strong id="machineReferenceTotalChip">0</strong> refs</span>
+          <span class="reference-chip"><strong id="machineReferenceVisibleChip">0</strong> visible</span>
+          <span class="reference-chip"><strong id="machineReferenceHotTapChip">0</strong> inline stack-ups</span>
+        </div>
+        <div class="reference-grid machine-reference-grid">
+          <div class="reference-card machine-summary-card">
+            <h4>Quick Stack-Up Lookup</h4>
+            <div class="reference-search-row plant-search-row machine-search-row">
+              <label for="machineReferenceSearchInput">Search Stack-Ups</label>
+              <div class="machine-search-actions">
+                <input id="machineReferenceSearchInput" type="search" placeholder="Hot tap, line stop, Hi-Stop, 24, IP-100, weight, source">
+                <button type="button" id="machineReferenceSearchClear" class="secondary-btn machine-search-clear">Clear</button>
+              </div>
+              <span id="machineReferenceSearchMeta" class="machine-search-meta">Showing all stack-ups</span>
+            </div>
+            <div class="converter-inline plant-select-row machine-select-row">
+              <label for="machineReferenceSelect">Stack-Up</label>
+              <select id="machineReferenceSelect"></select>
+            </div>
+            <div class="bolting-summary-grid machine-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Family</span><span id="machineReferenceType" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Range / Size</span><span id="machineReferenceRange" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Stack-Up</span><span id="machineReferenceUse" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Source</span><span id="machineReferenceSource" class="summary-value">?</span></div>
+            </div>
+          </div>
+          <div class="reference-card machine-summary-card">
+            <h4>Field Use Notes</h4>
+            <ul class="reference-note-list">
+              <li>The details below are extracted from the uploaded Tech stack-up PDFs so you can stay in TapCalc while checking a setup.</li>
+              <li>Search works across family, size, pressure class, source file, page, dimensions, and weight text.</li>
+              <li>Manuals remain indexed separately; this view focuses on stack-up pages that can be used inline.</li>
+            </ul>
+          </div>
+        </div>
+        <div class="reference-card machine-stackup-detail-card">
+          <div class="stackup-detail-head">
+            <div>
+              <h4 id="machineReferenceDetailTitle">Select a stack-up</h4>
+              <p id="machineReferenceDetailMeta" class="reference-copy">Choose a stack-up from the dropdown or table.</p>
+            </div>
+            <span id="machineReferenceSourcePage" class="stackup-source-pill">Source page</span>
+          </div>
+          <div id="machineReferenceSpecGrid" class="stackup-spec-grid"></div>
+          <div class="stackup-visual-panel">
+            <div class="stackup-visual-head">
+              <h5>Visual Stack-Up Page</h5>
+              <a id="machineReferenceVisualOpen" class="secondary-btn stackup-open-pdf" href="#" target="_blank" rel="noopener" aria-disabled="true">Open PDF</a>
+            </div>
+            <div class="stackup-visual-frame-wrap">
+              <canvas id="machineReferenceVisualCanvas" aria-label="Selected stack-up visual page"></canvas>
+              <iframe id="machineReferenceVisualFrame" title="Selected stack-up browser PDF preview" hidden></iframe>
+              <div id="machineReferenceVisualFallback" class="stackup-visual-fallback">Select a stack-up page to preview the drawing here.</div>
+            </div>
+          </div>
+          <div class="stackup-detail-columns">
+            <div>
+              <h5>Dimensions</h5>
+              <ul id="machineReferenceDimensions" class="stackup-detail-list"></ul>
+            </div>
+            <div>
+              <h5>Weights / Equipment</h5>
+              <ul id="machineReferenceWeights" class="stackup-detail-list"></ul>
+            </div>
+          </div>
+          <div class="stackup-text-panel">
+            <h5>Extracted Page Text</h5>
+            <p id="machineReferencePageText"></p>
+          </div>
+        </div>
+        <div class="glossary-table-wrap bolting-table-wrap machine-table-wrap">
+          <table class="glossary-table bolting-table machine-reference-table">
+            <thead><tr><th>Stack-Up</th><th>Family</th><th>Range / Size</th><th>Key Details</th><th>Source</th></tr></thead>
+            <tbody id="machineReferenceBody"></tbody>
+          </table>
+        </div>
       </div>
+      <div class="reference-view" data-reference-view="fieldcheck">
+        <h3 class="reference-subheading">Field Checklists</h3>
+        <p class="reference-copy">Short, mobile-first reminders for the parts that usually matter before a job is saved, shared, or handed to the next tech.</p>
+        <div class="reference-grid checklist-reference-grid">
+          <div class="reference-card field-check-card">
+            <span class="field-check-step">1</span>
+            <h4>Job Setup</h4>
+            <ul class="reference-note-list">
+              <li>Customer, location, date, technician, and job number are filled in.</li>
+              <li>Machine and job type match the operation being run.</li>
+              <li>Notes capture anything the next person cannot see from the calculator numbers.</li>
+            </ul>
+          </div>
+          <div class="reference-card field-check-card">
+            <span class="field-check-step">2</span>
+            <h4>BCO / Geometry</h4>
+            <ul class="reference-note-list">
+              <li>Pipe material, nominal size, schedule, pipe ID, and cutter OD are verified.</li>
+              <li>BCO warning is clear before using the number in ETA or workflow.</li>
+              <li>Geometry lock is only used after the pipe and cutter values are confirmed.</li>
+            </ul>
+          </div>
+          <div class="reference-card field-check-card">
+            <span class="field-check-step">3</span>
+            <h4>Hot Tap</h4>
+            <ul class="reference-note-list">
+              <li>MD, LD sign, PTC, and machine travel are checked against the physical setup.</li>
+              <li>ETA is using the current BCO and correct cutter size.</li>
+              <li>Coupon/cutter notes are captured before saving the job.</li>
+            </ul>
+          </div>
+          <div class="reference-card field-check-card">
+            <span class="field-check-step">4</span>
+            <h4>Line Stop</h4>
+            <ul class="reference-note-list">
+              <li>Variant is correct: Standard, HTP, or Hi-Stop.</li>
+              <li>Line Stop Travel is optional, but Machine Travel should be entered when you want the travel check.</li>
+              <li>Warnings are reviewed before marking the stage ready.</li>
+            </ul>
+          </div>
+          <div class="reference-card field-check-card">
+            <span class="field-check-step">5</span>
+            <h4>Completion Plug</h4>
+            <ul class="reference-note-list">
+              <li>Start, JBF, and plug travel fields are entered from the correct side of the job.</li>
+              <li>Completion plug stage is only needed when the loaded job has plug data or the operation requires it.</li>
+              <li>Save after plug numbers are entered so the shared job keeps the final operation state.</li>
+            </ul>
+          </div>
+          <div class="reference-card field-check-card">
+            <span class="field-check-step">6</span>
+            <h4>Before Save / Share</h4>
+            <ul class="reference-note-list">
+              <li>Operation dropdown shows every hot tap, line stop, or completion plug in the job.</li>
+              <li>Switch between operations once and confirm each card still shows its own values.</li>
+              <li>Save local first, then sync shared when the current job looks right.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="reference-view" data-reference-view="plant150">
+        <h3 class="reference-subheading">150# Plant Series Flange Information</h3>
+        <p class="reference-copy">Quick plant-series lookup for jack-bolt wrench size, packing nut wrench size, and jack-bolt count.</p>
+        <div class="reference-grid plant-reference-grid">
+          <div class="reference-card plant-summary-card">
+            <h4>150# Quick Lookup</h4>
+            <div class="converter-inline plant-select-row">
+              <label for="plant150SizeSelect">Plant Size</label>
+              <select id="plant150SizeSelect"></select>
+            </div>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolt Wrench</span><span id="plant150JackBolt" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Packing Nut Wrench</span><span id="plant150Packing" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolts</span><span id="plant150Count" class="summary-value">?</span></div>
+            </div>
+          </div>
+          <div class="reference-card plant-summary-card plant-jackbolt-card">
+            <h4>Sealtite 1 Jackbolt Measurements</h4>
+            <p class="reference-copy">Measurements tied to the selected 150# plant size.</p>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Fully Set Measurement</span><span id="plant150SealtiteSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Fully Retracted Measurement</span><span id="plant150SealtiteRetracted" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Set</span><span id="plant150SealtiteTurnsSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Retracted</span><span id="plant150SealtiteTurnsRetracted" class="summary-value">?</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row">
+          <label for="plant150SearchInput">Filter 150# tables</label>
+          <input id="plant150SearchInput" type="text" placeholder="Search size or wrench">
+        </div>
+        <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant150Body"></tbody></table></div>
+        <h4 class="reference-table-heading">Sealtite 1 Jackbolt Measurements</h4>
+        <div class="glossary-table-wrap plant-jackbolt-table-wrap"><table class="glossary-table"><thead><tr><th>Flange Size</th><th>Measurement Fully Set</th><th>Measurement Fully Retracted</th><th>Turns Fully Set</th><th>Turns Fully Retracted</th></tr></thead><tbody id="plant150SealtiteBody"></tbody></table></div>
+      </div>
+
+      <div class="reference-view" data-reference-view="plant600">
+        <h3 class="reference-subheading">600# Plant Series Flange Information</h3>
+        <p class="reference-copy">Higher-class plant-series lookup for jack-bolt wrench size, packing nut wrench size, and jack-bolt count.</p>
+        <div class="reference-grid plant-reference-grid">
+          <div class="reference-card plant-summary-card">
+            <h4>600# Quick Lookup</h4>
+            <div class="converter-inline plant-select-row">
+              <label for="plant600SizeSelect">Plant Size</label>
+              <select id="plant600SizeSelect"></select>
+            </div>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolt Wrench</span><span id="plant600JackBolt" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Packing Nut Wrench</span><span id="plant600Packing" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Jack-Bolts</span><span id="plant600Count" class="summary-value">?</span></div>
+            </div>
+          </div>
+          <div class="reference-card plant-summary-card plant-jackbolt-card">
+            <h4>Sealtite 1 Jackbolt Measurements</h4>
+            <p class="reference-copy">Measurements tied to the selected 600# plant size. Blank source rows show as a dash.</p>
+            <div class="bolting-summary-grid plant-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Fully Set Measurement</span><span id="plant600SealtiteSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Fully Retracted Measurement</span><span id="plant600SealtiteRetracted" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Set</span><span id="plant600SealtiteTurnsSet" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Turns Fully Retracted</span><span id="plant600SealtiteTurnsRetracted" class="summary-value">?</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row">
+          <label for="plant600SearchInput">Filter 600# tables</label>
+          <input id="plant600SearchInput" type="text" placeholder="Search size or wrench">
+        </div>
+        <div class="glossary-table-wrap"><table class="glossary-table"><thead><tr><th>Size</th><th>Jack-Bolt Wrench</th><th>Packing Nut Wrench</th><th>Number of Jack-Bolts</th></tr></thead><tbody id="plant600Body"></tbody></table></div>
+        <h4 class="reference-table-heading">Sealtite 1 Jackbolt Measurements</h4>
+        <div class="glossary-table-wrap plant-jackbolt-table-wrap"><table class="glossary-table"><thead><tr><th>Flange Size</th><th>Measurement Fully Set</th><th>Measurement Fully Retracted</th><th>Turns Fully Set</th><th>Turns Fully Retracted</th></tr></thead><tbody id="plant600SealtiteBody"></tbody></table></div>
+      </div>
+      <div class="reference-view" data-reference-view="gaskettorque">
+        <h3 class="reference-subheading">Graphonic</h3>
+        <p class="reference-copy">Garlock raised-face flange torque lookup from the uploaded scan and engineering 600# Graphonic table.</p>
+        <div class="reference-grid plant-reference-grid gasket-torque-reference-grid">
+          <div class="reference-card plant-summary-card gasket-torque-summary-card">
+            <h4>Raised Face Torque Lookup</h4>
+            <div class="gasket-torque-controls">
+              <div class="converter-inline plant-select-row gasket-torque-select-row">
+                <label for="gasketTorqueClassSelect">Flange Class</label>
+                <select id="gasketTorqueClassSelect">
+                  <option value="150">150</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                  <option value="600">600</option>
+                </select>
+              </div>
+              <div class="converter-inline plant-select-row gasket-torque-select-row">
+                <label for="gasketTorqueSizeSelect">Pipe Size</label>
+                <select id="gasketTorqueSizeSelect"></select>
+              </div>
+              <select id="gasketTorqueTypeSelect" hidden aria-label="Gasket style">
+                <option value="cmg" selected>Graphonic *</option>
+              </select>
+            </div>
+            <p class="gasket-torque-style-key"><strong>* Graphonic</strong> is the starred gasket style used by the team. 600# values use the engineering Graphonic table.</p>
+            <div class="bolting-summary-grid gasket-torque-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="gasketTorqueBoltCount" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="gasketTorqueBoltSize" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Minimum / Bolt</span><span id="gasketTorqueMinTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Preferred / Bolt</span><span id="gasketTorquePreferredTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Source</span><span id="gasketTorqueSource" class="summary-value">?</span></div>
+            </div>
+            <p id="gasketTorqueNote" class="gasket-torque-note">Values are ft-lbs per bolt for ASME B16.5 raised-face flanges.</p>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row gasket-torque-search-row">
+          <label for="gasketTorqueSearchInput">Filter table</label>
+          <input id="gasketTorqueSearchInput" type="text" placeholder="Search size, bolt count, bolt size, or torque">
+        </div>
+        <div class="glossary-table-wrap bolting-table-wrap gasket-torque-table-wrap">
+          <table class="glossary-table bolting-table gasket-torque-table">
+            <thead>
+              <tr><th>Pipe Size</th><th>Bolts</th><th>Bolt Size</th><th>Min Torque</th><th>Preferred Torque</th><th>Notes</th></tr>
+            </thead>
+            <tbody id="gasketTorqueBody"></tbody>
+          </table>
+        </div>
+        <p class="reference-footnote">Source: uploaded Scan.pdf Garlock Torque Tables pages 2 and 3, plus the engineering 600# Graphonic table. Use the job gasket manufacturer's latest instructions when they differ from this field reference.</p>
+      </div>
+
+      <div class="reference-view" data-reference-view="papergaskets">
+        <h3 class="reference-subheading">Paper Gaskets</h3>
+        <p class="reference-copy">Garlock .125&quot; compressed sheet and GYLON ring gasket torque tables recreated from Scan.pdf pages 10-14.</p>
+        <div class="reference-grid plant-reference-grid paper-gasket-reference-grid">
+          <div class="reference-card plant-summary-card paper-gasket-summary-card">
+            <h4>Paper Gasket Quick Lookup</h4>
+            <div class="paper-gasket-controls">
+              <div class="converter-inline plant-select-row paper-gasket-select-row">
+                <label for="paperGasketClassSelect">Flange Class</label>
+                <select id="paperGasketClassSelect">
+                  <option value="150">150</option>
+                  <option value="300">300</option>
+                  <option value="400">400</option>
+                  <option value="600">600</option>
+                  <option value="900">900</option>
+                </select>
+              </div>
+              <div class="converter-inline plant-select-row paper-gasket-select-row">
+                <label for="paperGasketSizeSelect">Pipe Size</label>
+                <select id="paperGasketSizeSelect"></select>
+              </div>
+            </div>
+            <div class="bolting-summary-grid paper-gasket-summary-grid">
+              <div class="bolting-summary-item"><span class="summary-label">Bolts</span><span id="paperGasketBoltCount" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Bolt Size</span><span id="paperGasketBoltSize" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Min Torque / Bolt</span><span id="paperGasketMinTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Preferred / Bolt</span><span id="paperGasketPreferredTorque" class="summary-value">?</span></div>
+              <div class="bolting-summary-item"><span class="summary-label">Internal Pressure</span><span id="paperGasketPressure" class="summary-value">?</span></div>
+            </div>
+            <p id="paperGasketNote" class="paper-gasket-note">Values are ft-lbs per bolt for Garlock paper gasket charts.</p>
+          </div>
+        </div>
+        <div class="reference-search-row plant-search-row paper-gasket-search-row">
+          <label for="paperGasketSearchInput">Filter paper gasket table</label>
+          <input id="paperGasketSearchInput" type="text" placeholder="Search size, pressure, bolt count, stress, or torque">
+        </div>
+        <div class="glossary-table-wrap bolting-table-wrap paper-gasket-table-wrap">
+          <table class="glossary-table bolting-table paper-gasket-table">
+            <thead>
+              <tr><th>Pipe Size</th><th>RF ID</th><th>RF OD</th><th>Area</th><th>Bolts</th><th>Bolt Size</th><th>60 ksi Torque</th><th>Comp Force</th><th>Max Stress Avail.</th><th>Pressure</th><th>Min Stress</th><th>Min Torque</th><th>Max Rec/Avail Stress</th><th>Preferred Torque</th></tr>
+            </thead>
+            <tbody id="paperGasketBody"></tbody>
+          </table>
+        </div>
+        <p class="reference-footnote">Source: uploaded Scan.pdf pages 10-14. Values are based on raised-face metallic flanges. For lined and/or non-metallic raised-face flanges, consult the flange manufacturer to confirm suitability. Multi-Swell 3760 maximum recommended gasket stress is 10,000 psi.</p>
+      </div>
+
     </div>
   </section>
 
-  <section id="jobsPanel" class="mode-panel">
-    <div class="measurement-grid jobs-grid">
-      <div class="section jobs-panel-card">
-        <h3>Shared Jobs</h3>
-        <p class="note jobs-note">Save jobs locally like before, then sync them to the shared database when Firebase is connected.</p>
-        <div class="jobs-actions">
-          <button type="button" id="syncJobsBtn">Sync Local Jobs</button>
-          <button type="button" id="refreshCloudJobsBtn" class="secondary-btn">Refresh Shared Jobs</button>
+  </section>
+
+<section id="jobsScreen" class="screen-view">
+  <section class="jobs-screen-topbar">
+    <div>
+      <div class="hero-eyebrow">Job Library</div>
+      <h3>Manage saved and shared work</h3>
+      <p>Keep the current job in view, then jump between local saves and shared results without a long scroll.</p>
+    </div>
+    <div class="jobs-top-actions">
+      <button type="button" id="saveHistoryBtnJobs" aria-label="Save local job"><span class="jobs-action-long">Save Local</span><span class="jobs-action-short">Save</span></button>
+      <button type="button" id="syncJobsBtn" aria-label="Sync shared jobs"><span class="jobs-action-long">Sync Shared</span><span class="jobs-action-short">Sync</span></button>
+      <button type="button" id="firebaseReconnectBtn" class="secondary-btn" aria-label="Connect to shared jobs"><span class="jobs-action-long">Connect</span><span class="jobs-action-short">Connect</span></button>
+      <button type="button" id="refreshCloudJobsBtn" class="secondary-btn" aria-label="Refresh shared jobs"><span class="jobs-action-long">Refresh</span><span class="jobs-action-short">Refresh</span></button>
+    </div>
+  </section>
+
+  <section class="jobs-status-strip">
+    <article class="jobs-status-card jobs-status-main">
+      <span class="jobs-mini-label">Current Job</span>
+      <strong id="jobsCurrentTitle">No active job yet</strong>
+      <span id="jobsCurrentMeta" class="jobs-mini-note">Start from Workflow, then save locally or sync to shared.</span>
+      <div class="jobs-current-actions">
+        <button type="button" class="secondary-btn" data-go-screen="card">Open Workflow</button>
+        <button type="button" id="syncJobsBtnClone">Sync Shared</button>
+      </div>
+    </article>
+    <article class="jobs-status-card">
+      <span class="jobs-mini-label">Firebase</span>
+      <strong id="firebaseStatusMirror">Connecting?</strong>
+      <span class="jobs-mini-note" id="jobsCloudStatusMirror">Connecting to shared job database...</span>
+    </article>
+    <article class="jobs-status-card">
+      <span class="jobs-mini-label">Job Totals</span>
+      <div class="jobs-inline-stats">
+        <div><span>Local</span><strong id="jobsLocalSavedCount">0</strong></div>
+        <div><span>Unsynced</span><strong id="jobsUnsyncedStat">0</strong></div>
+      </div>
+    </article>
+  </section>
+
+  <section class="library-lane-switch" aria-label="Library view switch">
+    <button type="button" class="library-lane-btn active" data-library-lane="local">Local</button>
+    <button type="button" class="library-lane-btn" data-library-lane="shared">Shared</button>
+  </section>
+
+  <section id="jobsPanel" class="mode-panel active jobs-workspace-panel">
+    <div class="jobs-workspace-grid">
+      <div class="section jobs-panel-card jobs-panel-manage jobs-panel-local library-lane active" data-library-lane-panel="local" aria-hidden="false">
+        <div class="jobs-section-head">
+          <div>
+            <h3>Local Jobs</h3>
+            <p class="note jobs-note">Quick saves on this device. Open, review, or clear them here.</p>
+          </div>
+          <button type="button" id="clearHistoryBtn" class="secondary-btn">Clear</button>
         </div>
+
+        <div class="jobs-actions jobs-actions-compact">
+          <button type="button" id="saveHistoryBtnClone" class="secondary-btn">Save Job</button>
+          <button type="button" class="secondary-btn" data-go-screen="job">Edit Job</button>
+          <button type="button" class="secondary-btn" data-go-screen="calc">Go to Tools</button>
+        </div>
+
+        <div class="jobs-status-grid jobs-status-grid-local">
+          <div class="summary-item"><span class="summary-label">Current Job</span><span id="jobsCurrentJobName" class="summary-value">No active job</span></div>
+          <div class="summary-item"><span class="summary-label">Saved Local Jobs</span><span id="historyCountBadge" class="summary-value">0</span></div>
+        </div>
+
+        <div class="jobs-local-history-shell">
+          <button type="button" id="historyDrawerToggle" class="history-drawer-toggle open" aria-expanded="true" aria-controls="historyDrawerContent">
+            <span class="history-toggle-text">Local Job History</span>
+            <span class="history-count-badge">Open</span>
+            <span class="history-toggle-chevron" aria-hidden="true"></span>
+          </button>
+          <div id="historyDrawerContent" class="history-drawer-content jobs-history-drawer">
+            <div id="historyList" class="history-list">No saved jobs yet.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section jobs-panel-card jobs-panel-library jobs-panel-shared library-lane" data-library-lane-panel="shared" hidden aria-hidden="true">
+        <div class="jobs-section-head">
+          <div class="collapsible-head-block">
+            <button type="button" id="sharedJobsToggleBtn" class="section-toggle-btn section-toggle-btn-jobs" aria-expanded="true" aria-controls="sharedJobsContent">
+              <span>Shared Jobs</span><span class="section-toggle-chevron" aria-hidden="true"></span>
+            </button>
+            <p class="note jobs-note">Search every shared job by title, client, date, job number, location, technician, or pipe details, then open the one you need. If you do not see anything, tap Shared above to switch lanes.</p>
+          </div>
+        </div>
+        <div id="sharedJobsContent" class="collapsible-content">
         <div class="jobs-status-grid">
-          <div class="summary-item"><span class="summary-label">Firebase</span><span id="firebaseStatus" class="summary-value">Not connected</span></div>
+          <div class="summary-item"><span class="summary-label">Firebase</span><span id="firebaseStatus" class="summary-value">Connecting?</span></div>
           <div class="summary-item"><span class="summary-label">Unsynced Local Jobs</span><span id="unsyncedJobsCount" class="summary-value">0</span></div>
         </div>
         <p id="jobsCloudStatus" class="note">Connecting to shared job database...</p>
-        <div class="jobs-view-toggle"><button type="button" class="jobs-view-chip active" data-jobs-view="all">🔎 Search Jobs</button><button type="button" class="jobs-view-chip" data-jobs-view="customer">📁 Customer</button><button type="button" class="jobs-view-chip" data-jobs-view="location">📁 Location</button><button type="button" class="jobs-view-chip" data-jobs-view="date">📁 Date</button></div>
+        <div class="jobs-view-toggle"><button type="button" class="jobs-view-chip active" data-jobs-view="all">Search Jobs</button><button type="button" class="jobs-view-chip" data-jobs-view="customer">Customer</button><button type="button" class="jobs-view-chip" data-jobs-view="location">Location</button><button type="button" class="jobs-view-chip" data-jobs-view="date">Date</button></div>
         <div class="row jobs-search-row">
           <label for="jobsSearchInput">Search Jobs</label>
           <input id="jobsSearchInput" type="text" placeholder="Search customer, location, job number, pipe size, or tech">
         </div>
-      </div>
-
-      <div class="section jobs-panel-card">
-        <h3>Shared Job Library</h3>
-        <p class="note jobs-note">Search every shared job by title, client, date, job number, location, technician, or pipe details, then open the one you need.</p>
+        <div id="sharedJobsAnchor" class="jobs-shared-anchor"><strong>Shared jobs</strong><span>Loaded jobs will appear right here. Tap one to view and open it.</span></div>
         <div class="jobs-library-meta" id="jobsResultsMeta">Loading jobs...</div>
-        <select id="jobsSelect" class="jobs-select" size="10" aria-label="Shared jobs results"></select>
+        <div id="jobsSelect" class="jobs-select jobs-listbox" role="listbox" aria-label="Shared jobs results" tabindex="0"></div>
         <div id="jobsList" class="jobs-library-details">Select a job from the list to view its details.</div>
+        </div>
       </div>
     </div>
-</section>
+  </section>
 
-  <div id="decimalModal" class="modal-overlay" hidden>
+<div id="decimalModal" class="modal-overlay" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="decimalModalTitle">
       <div class="modal-header">
         <div>
           <h3 id="decimalModalTitle">Decimal Equivalent Chart</h3>
           <p class="modal-subtitle">Fractions in 1/64 increments from 1/64 to 1.</p>
         </div>
-        <button type="button" id="closeDecimalModalBtn" class="modal-close-btn" aria-label="Close decimal chart">×</button>
+        <button type="button" id="closeDecimalModalBtn" class="modal-close-btn" aria-label="Close decimal chart">x</button>
       </div>
       <div class="modal-search-row">
         <input id="decimalChartSearch" type="text" placeholder="Search fraction or decimal (example: 3/16 or 0.1875)">
@@ -493,43 +1831,25 @@
   <section class="section summary-section">
     <h3>Job Summary</h3>
     <div class="summary-grid">
-      <div class="summary-item"><span class="summary-label">Pipe</span><span id="summaryPipe" class="summary-value">—</span></div>
-      <div class="summary-item"><span class="summary-label">Cutter</span><span id="summaryCutter" class="summary-value">—</span></div>
-      <div class="summary-item"><span class="summary-label">BCO</span><span id="summaryBco" class="summary-value">—</span></div>
-      <div class="summary-item"><span class="summary-label">Hot Tap</span><span id="summaryHotTap" class="summary-value">—</span></div>
-      <div class="summary-item"><span class="summary-label">Line Stop LI</span><span id="summaryLineStopLi" class="summary-value">—</span></div>
-      <div class="summary-item"><span class="summary-label">Completion Plug LI</span><span id="summaryCompletionLi" class="summary-value">—</span></div>
+      <div class="summary-item"><span class="summary-label">Pipe</span><span id="summaryPipe" class="summary-value">?</span></div>
+      <div class="summary-item"><span class="summary-label">Cutter</span><span id="summaryCutter" class="summary-value">?</span></div>
+      <div class="summary-item"><span class="summary-label">BCO</span><span id="summaryBco" class="summary-value">?</span></div>
+      <div class="summary-item"><span class="summary-label">Hot Tap</span><span id="summaryHotTap" class="summary-value">?</span></div>
+      <div class="summary-item"><span class="summary-label">Line Stop LI</span><span id="summaryLineStopLi" class="summary-value">?</span></div>
+      <div class="summary-item"><span class="summary-label">Completion Plug LI</span><span id="summaryCompletionLi" class="summary-value">?</span></div>
       <div class="summary-item summary-item-wide"><span class="summary-label">Warnings</span><span id="summaryWarnings" class="summary-value">None</span></div>
     </div>
   </section>
 
-  <section class="section history-section">
-    <div class="history-header">
-      <button type="button" id="historyDrawerToggle" class="history-drawer-toggle" aria-expanded="false" aria-controls="historyDrawerContent">
-        <span class="history-toggle-text">Calculation History</span>
-        <span id="historyCountBadge" class="history-count-badge">0</span>
-        <span class="history-toggle-chevron" aria-hidden="true">▾</span>
-      </button>
-      <button type="button" id="clearHistoryBtn" class="secondary-btn">Clear History</button>
-    </div>
-    <div id="historyDrawerContent" class="history-drawer-content" hidden>
-      <div id="historyList" class="history-list">No saved jobs yet.</div>
-    </div>
+  
+
+</div>
+
+<script src="firebase-config.js?v=3.0.0-alpha200"></script>
+<script src="stackup-data.js?v=3.0.0-alpha200"></script>
+<script src="measurement.js?v=3.0.0-alpha200"></script>
   </section>
-
-</div>
-
-<div id="measurementInputToolbar" class="measurement-input-toolbar" hidden>
-  <div class="measurement-input-toolbar-inner">
-    <button type="button" class="measurement-input-toolbar-btn" data-measurement-toolbar="space">Space</button>
-    <button type="button" class="measurement-input-toolbar-btn" data-measurement-toolbar="slash">/</button>
-    <button type="button" class="measurement-input-toolbar-btn" data-measurement-toolbar="dash">-</button>
-    <button type="button" class="measurement-input-toolbar-btn" data-measurement-toolbar="backspace">⌫</button>
-    <button type="button" class="measurement-input-toolbar-btn measurement-input-toolbar-btn-primary" data-measurement-toolbar="done">Done</button>
-  </div>
-</div>
-
-<script src="firebase-config.js?v=2.28b9"></script>
-<script src="measurement.js?v=2.28b9"></script>
 </body>
 </html>
+
+
