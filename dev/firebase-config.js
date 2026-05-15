@@ -10,31 +10,36 @@ window.TAPCALC_FIREBASE_CONFIG = {
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 
 (function(){
-  const VERSION = '3.0.0-alpha201';
+  const VERSION = '3.0.0-alpha202';
+  const OVERLAYS = [
+    { css: 'tapcalc-alpha201.css', js: 'tapcalc-alpha201.js' },
+    { css: 'tapcalc-alpha202.css', js: 'tapcalc-alpha202.js' }
+  ];
 
-  function addStylesheet(){
-    if (document.querySelector('link[href*="tapcalc-alpha201.css"]')) return;
+  function addStylesheet(file){
+    if (document.querySelector(`link[href*="${file}"]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
-    link.href = `tapcalc-alpha201.css?v=${VERSION}`;
+    link.href = `${file}?v=${VERSION}`;
     document.head.appendChild(link);
   }
 
-  function addScript(){
-    if (document.querySelector('script[src*="tapcalc-alpha201.js"]')) return;
+  function addScript(file){
+    if (document.querySelector(`script[src*="${file}"]`)) return;
     const script = document.createElement('script');
-    script.src = `tapcalc-alpha201.js?v=${VERSION}`;
+    script.async = false;
+    script.src = `${file}?v=${VERSION}`;
     document.body.appendChild(script);
   }
 
-  function loadAlpha201Overlay(){
-    addStylesheet();
-    addScript();
+  function loadDevOverlays(){
+    OVERLAYS.forEach((overlay) => addStylesheet(overlay.css));
+    OVERLAYS.forEach((overlay) => addScript(overlay.js));
   }
 
   if (document.readyState === 'complete') {
-    setTimeout(loadAlpha201Overlay, 0);
+    setTimeout(loadDevOverlays, 0);
   } else {
-    window.addEventListener('load', loadAlpha201Overlay, { once: true });
+    window.addEventListener('load', loadDevOverlays, { once: true });
   }
 })();
