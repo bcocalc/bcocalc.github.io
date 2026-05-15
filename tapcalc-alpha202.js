@@ -4,7 +4,7 @@
 
   function updateVersionText(){
     document.querySelectorAll('.version-badge, .top-app-title').forEach((el) => {
-      if (/TapCalc v/i.test(el.textContent || '')) el.textContent = LABEL;
+      if (/TapCalc/i.test(el.textContent || '')) el.textContent = LABEL;
     });
     document.querySelectorAll('.sync-pill').forEach((el) => {
       if (/DEV/i.test(el.textContent || '')) el.textContent = 'LIVE';
