@@ -8,9 +8,18 @@ window.TAPCALC_FIREBASE_CONFIG = {
 };
 
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
+window.TAPCALC_BUILD = Object.assign({
+  channel: 'live',
+  version: '3.0.0-livefix7',
+  label: 'TapCalc v3.0.0 - 2026-05-16',
+  overlayVersion: '3.0.0-livefix7',
+  serviceWorkerVersion: '3.0.0-livefix7',
+  syncPill: 'LIVE'
+}, window.TAPCALC_BUILD || {});
 
 (function(){
-  const VERSION = '3.0.0-livefix6';
+  const BUILD = window.TAPCALC_BUILD || {};
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix7';
   const OVERLAYS = [
     { css: 'tapcalc-alpha201.css', js: 'tapcalc-alpha201.js' },
     { css: 'tapcalc-alpha202.css', js: 'tapcalc-alpha202.js' }
@@ -32,14 +41,28 @@ window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapc
     document.body.appendChild(script);
   }
 
-  function loadDevOverlays(){
+  function loadTapCalcOverlays(){
     OVERLAYS.forEach((overlay) => addStylesheet(overlay.css));
     OVERLAYS.forEach((overlay) => addScript(overlay.js));
   }
 
+  function registerFreshServiceWorker(){
+    if (!('serviceWorker' in navigator)) return;
+    const swVersion = BUILD.serviceWorkerVersion || VERSION;
+    navigator.serviceWorker
+      .register(`service-worker.js?v=${swVersion}`, { updateViaCache: 'none' })
+      .then((registration) => registration.update())
+      .catch(() => {});
+  }
+
+  function bootTapCalcShell(){
+    loadTapCalcOverlays();
+    registerFreshServiceWorker();
+  }
+
   if (document.readyState === 'complete') {
-    setTimeout(loadDevOverlays, 0);
+    setTimeout(bootTapCalcShell, 0);
   } else {
-    window.addEventListener('load', loadDevOverlays, { once: true });
+    window.addEventListener('load', bootTapCalcShell, { once: true });
   }
 })();
