@@ -1,7 +1,7 @@
-/* TapCalc Dev 3.0.0-alpha209 reference tool polish + mobile nav */
+/* TapCalc Dev 3.0.0-alpha210 reference tool polish + mobile nav */
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const LABEL = BUILD.label || 'TapCalc Dev v3.0.0-alpha209 - 2026-05-16';
+  const LABEL = BUILD.label || 'TapCalc Dev v3.0.0-alpha210 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
 
   function updateVersionText(){
@@ -18,7 +18,7 @@
   }
 
   function tagReferenceTools(){
-    document.body.classList.add('tapcalc-alpha209');
+    document.body.classList.add('tapcalc-alpha210');
     if (BUILD.channel) document.body.dataset.tapcalcChannel = BUILD.channel;
     if (BUILD.version) document.body.dataset.tapcalcBuild = BUILD.version;
     const converterCard = document.querySelector('#refScreen .reference-view[data-reference-view="converter"] .reference-card');
@@ -159,6 +159,137 @@
     setTimeout(fromActiveTab, 250);
   }
 
+  function installLibrarySearchBridge(){
+    if (window.__tapcalcAlpha210LibraryBridgeReady) return;
+    window.__tapcalcAlpha210LibraryBridgeReady = true;
+    const $ = (id) => document.getElementById(id);
+    const laneKey = 'tapcalcLibraryLaneV1';
+    const lanes = ['local', 'shared'];
+    const getLane = () => {
+      const activeButton = document.querySelector('.library-lane-btn.active[data-library-lane]');
+      const activePanel = document.querySelector('.library-lane.active[data-library-lane-panel]');
+      return activeButton?.dataset?.libraryLane || activePanel?.dataset?.libraryLanePanel || localStorage.getItem(laneKey) || 'local';
+    };
+    const selectedId = () => String(
+      window.__tapcalcLibrarySelectedId ||
+      window.__tapcalcExactLibrarySelectedId ||
+      window.__tapcalcDetailSelectedId ||
+      (typeof selectedJobId !== 'undefined' ? selectedJobId : '') ||
+      document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id]')?.dataset?.jobId ||
+      ''
+    ).trim();
+    const rememberSelection = (id) => {
+      const value = String(id || '').trim();
+      if (!value) return;
+      try { window.__tapcalcLibrarySelectedId = value; } catch {}
+      try { window.__tapcalcExactLibrarySelectedId = value; } catch {}
+      try { window.__tapcalcDetailSelectedId = value; } catch {}
+      try { if (typeof selectedJobId !== 'undefined') selectedJobId = value; } catch {}
+    };
+    const applyLane = (lane = getLane(), options = {}) => {
+      const target = lanes.includes(lane) ? lane : 'local';
+      lanes.forEach((name) => {
+        document.querySelectorAll(`.library-lane-btn[data-library-lane="${name}"]`).forEach((button) => {
+          const active = name === target;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        document.querySelectorAll(`.library-lane[data-library-lane-panel="${name}"]`).forEach((panel) => {
+          const active = name === target;
+          panel.classList.toggle('active', active);
+          panel.hidden = !active;
+          panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+          panel.style.display = active ? 'block' : 'none';
+          panel.style.pointerEvents = active ? 'auto' : 'none';
+        });
+      });
+      if (target === 'shared') {
+        const sharedContent = $('sharedJobsContent');
+        const sharedToggle = $('sharedJobsToggleBtn');
+        if (sharedContent && sharedToggle?.getAttribute('aria-expanded') !== 'false') sharedContent.hidden = false;
+      }
+      try { localStorage.setItem(laneKey, target); } catch {}
+      window.__tapcalcAlpha210LibraryLane = target;
+      if (options.render && target === 'shared') scheduleRender(80);
+      return target;
+    };
+    const restoreSelection = (id = selectedId()) => {
+      const value = String(id || '').trim();
+      if (!value) return false;
+      const item = document.querySelector(`#jobsSelect .jobs-list-item[data-job-id="${CSS.escape(value)}"]`);
+      if (!item) return false;
+      document.querySelectorAll('#jobsSelect .jobs-list-item.active').forEach((el) => {
+        el.classList.remove('active');
+        el.setAttribute('aria-pressed', 'false');
+      });
+      item.classList.add('active');
+      item.setAttribute('aria-pressed', 'true');
+      rememberSelection(value);
+      return true;
+    };
+    const renderDetails = (delay = 0) => {
+      setTimeout(() => {
+        try { if (typeof window.renderSelectedJobDetails === 'function') window.renderSelectedJobDetails(); } catch {}
+      }, delay);
+    };
+    const scheduleRender = (delay = 140) => {
+      clearTimeout(window.__tapcalcAlpha210RenderTimer);
+      const id = selectedId();
+      const list = $('jobsSelect');
+      const scrollTop = list ? list.scrollTop : 0;
+      window.__tapcalcAlpha210RenderTimer = setTimeout(() => {
+        try { if (typeof window.renderJobsList === 'function') window.renderJobsList(); } catch {}
+        setTimeout(() => {
+          restoreSelection(id);
+          if (list) list.scrollTop = scrollTop;
+          renderDetails(0);
+          applyLane(getLane());
+        }, 40);
+      }, delay);
+    };
+    const handleLaneClick = (event) => {
+      const button = event.target?.closest?.('.library-lane-btn[data-library-lane]');
+      if (!button) return;
+      setTimeout(() => applyLane(button.dataset.libraryLane, { render: true }), 0);
+      setTimeout(() => applyLane(button.dataset.libraryLane, { render: true }), 120);
+    };
+    const handleSearchInput = (event) => {
+      if (event.target?.id !== 'jobsSearchInput') return;
+      applyLane('shared');
+      scheduleRender(180);
+    };
+    const handleResultSelect = (event) => {
+      const item = event.target?.closest?.('#jobsSelect .jobs-list-item[data-job-id]');
+      if (!item) return;
+      rememberSelection(item.dataset.jobId);
+      setTimeout(() => {
+        restoreSelection(item.dataset.jobId);
+        renderDetails(0);
+      }, 0);
+      setTimeout(() => {
+        restoreSelection(item.dataset.jobId);
+        renderDetails(0);
+      }, 100);
+    };
+    const handleResultKey = (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      handleResultSelect(event);
+    };
+    document.addEventListener('click', handleLaneClick, true);
+    document.addEventListener('input', handleSearchInput, true);
+    document.addEventListener('change', handleSearchInput, true);
+    document.addEventListener('click', handleResultSelect, true);
+    document.addEventListener('touchstart', handleResultSelect, { capture: true, passive: true });
+    document.addEventListener('keydown', handleResultKey, true);
+    window.addEventListener('pageshow', () => setTimeout(() => applyLane(getLane()), 120));
+    document.addEventListener('click', (event) => {
+      if (event.target?.closest?.('.screen-tab[data-screen="jobs"]')) setTimeout(() => applyLane(getLane(), { render: getLane() === 'shared' }), 180);
+    }, true);
+    window.tapCalcNormalizeLibrary = () => applyLane(getLane(), { render: false });
+    window.tapCalcRenderLibraryStable = () => scheduleRender(0);
+    setTimeout(() => applyLane(getLane()), 350);
+  }
+
   function installMobileLoadBridge(){
     if (window.__tapcalcAlpha208LoadBridgeReady) return;
     window.__tapcalcAlpha208LoadBridgeReady = true;
@@ -207,6 +338,7 @@
     tagReferenceTools();
     installMobileTopNav();
     installScreenOwnershipBridge();
+    installLibrarySearchBridge();
     installMobileLoadBridge();
     hideLegacyDebugPanels();
   }
