@@ -1,20 +1,20 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha205';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha206';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha205",
-  "./tapcalc-alpha201.css?v=3.0.0-alpha205",
-  "./tapcalc-alpha202.css?v=3.0.0-alpha205",
-  "./measurement.js?v=3.0.0-alpha205",
-  "./tapcalc-alpha201.js?v=3.0.0-alpha205",
-  "./tapcalc-alpha202.js?v=3.0.0-alpha205",
-  "./pdf.mjs?v=3.0.0-alpha205",
-  "./pdf.worker.mjs?v=3.0.0-alpha205",
-  "./stackup-data.js?v=3.0.0-alpha205",
+  "./styles.css?v=3.0.0-alpha206",
+  "./tapcalc-alpha201.css?v=3.0.0-alpha206",
+  "./tapcalc-alpha202.css?v=3.0.0-alpha206",
+  "./measurement.js?v=3.0.0-alpha206",
+  "./tapcalc-alpha201.js?v=3.0.0-alpha206",
+  "./tapcalc-alpha202.js?v=3.0.0-alpha206",
+  "./pdf.mjs?v=3.0.0-alpha206",
+  "./pdf.worker.mjs?v=3.0.0-alpha206",
+  "./stackup-data.js?v=3.0.0-alpha206",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha205",
+  "./firebase-config.js?v=3.0.0-alpha206",
   "./team-logo.png"
 ];
 
