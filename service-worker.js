@@ -1,20 +1,20 @@
-const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix7';
+const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix8';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-livefix7",
-  "./tapcalc-alpha201.css?v=3.0.0-livefix7",
-  "./tapcalc-alpha202.css?v=3.0.0-livefix7",
-  "./measurement.js?v=3.0.0-livefix7",
-  "./tapcalc-alpha201.js?v=3.0.0-livefix7",
-  "./tapcalc-alpha202.js?v=3.0.0-livefix7",
-  "./pdf.mjs?v=3.0.0-livefix7",
-  "./pdf.worker.mjs?v=3.0.0-livefix7",
-  "./stackup-data.js?v=3.0.0-livefix7",
+  "./styles.css?v=3.0.0-livefix8",
+  "./tapcalc-alpha201.css?v=3.0.0-livefix8",
+  "./tapcalc-alpha202.css?v=3.0.0-livefix8",
+  "./measurement.js?v=3.0.0-livefix8",
+  "./tapcalc-alpha201.js?v=3.0.0-livefix8",
+  "./tapcalc-alpha202.js?v=3.0.0-livefix8",
+  "./pdf.mjs?v=3.0.0-livefix8",
+  "./pdf.worker.mjs?v=3.0.0-livefix8",
+  "./stackup-data.js?v=3.0.0-livefix8",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-livefix7",
+  "./firebase-config.js?v=3.0.0-livefix8",
   "./team-logo.png"
 ];
 
