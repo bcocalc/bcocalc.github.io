@@ -43,6 +43,7 @@
           display: grid !important;
           grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
           gap: 6px !important;
+          box-sizing: border-box !important;
           width: 100% !important;
           margin: 0 0 14px !important;
           padding: 8px !important;
@@ -54,6 +55,7 @@
         }
         body.measurement-page .screen-nav .screen-tab {
           min-width: 0 !important;
+          box-sizing: border-box !important;
           padding: 10px 4px !important;
           font-size: clamp(11px, 2.9vw, 14px) !important;
           line-height: 1.08 !important;
