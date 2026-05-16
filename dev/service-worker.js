@@ -1,20 +1,20 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha202';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha203';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha202",
-  "./tapcalc-alpha201.css?v=3.0.0-alpha202",
-  "./tapcalc-alpha202.css?v=3.0.0-alpha202",
-  "./measurement.js?v=3.0.0-alpha202",
-  "./tapcalc-alpha201.js?v=3.0.0-alpha202",
-  "./tapcalc-alpha202.js?v=3.0.0-alpha202",
-  "./pdf.mjs?v=3.0.0-alpha202",
-  "./pdf.worker.mjs?v=3.0.0-alpha202",
-  "./stackup-data.js?v=3.0.0-alpha202",
+  "./styles.css?v=3.0.0-alpha203",
+  "./tapcalc-alpha201.css?v=3.0.0-alpha203",
+  "./tapcalc-alpha202.css?v=3.0.0-alpha203",
+  "./measurement.js?v=3.0.0-alpha203",
+  "./tapcalc-alpha201.js?v=3.0.0-alpha203",
+  "./tapcalc-alpha202.js?v=3.0.0-alpha203",
+  "./pdf.mjs?v=3.0.0-alpha203",
+  "./pdf.worker.mjs?v=3.0.0-alpha203",
+  "./stackup-data.js?v=3.0.0-alpha203",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha202",
+  "./firebase-config.js?v=3.0.0-alpha203",
   "./team-logo.png"
 ];
 
@@ -66,4 +66,3 @@ self.addEventListener("fetch", (event) => {
     }))
   );
 });
-
