@@ -1,7 +1,7 @@
-/* TapCalc Dev 3.0.0-alpha207 reference tool polish + mobile nav */
+/* TapCalc Dev 3.0.0-alpha208 reference tool polish + mobile nav */
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const LABEL = BUILD.label || 'TapCalc Dev v3.0.0-alpha207 - 2026-05-16';
+  const LABEL = BUILD.label || 'TapCalc Dev v3.0.0-alpha208 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
 
   function updateVersionText(){
@@ -18,7 +18,7 @@
   }
 
   function tagReferenceTools(){
-    document.body.classList.add('tapcalc-alpha207');
+    document.body.classList.add('tapcalc-alpha208');
     if (BUILD.channel) document.body.dataset.tapcalcChannel = BUILD.channel;
     if (BUILD.version) document.body.dataset.tapcalcBuild = BUILD.version;
     const converterCard = document.querySelector('#refScreen .reference-view[data-reference-view="converter"] .reference-card');
@@ -89,11 +89,55 @@
     `;
   }
 
+  function installMobileLoadBridge(){
+    if (window.__tapcalcAlpha208LoadBridgeReady) return;
+    window.__tapcalcAlpha208LoadBridgeReady = true;
+    const selector = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114, [data-load-job]';
+    const isCompact = () => {
+      try { return window.matchMedia ? window.matchMedia('(max-width: 860px)').matches : window.innerWidth <= 860; } catch { return false; }
+    };
+    const stop = (event) => {
+      try { event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+      try { event.stopImmediatePropagation(); } catch {}
+    };
+    const handle = (event) => {
+      if (!isCompact()) return;
+      const button = event.target?.closest?.(selector);
+      if (!button) return;
+      const jobsScreen = document.getElementById('jobsScreen');
+      if (jobsScreen && !jobsScreen.classList.contains('active')) return;
+      stop(event);
+      const now = Date.now();
+      if (now < Number(window.__tapcalcAlpha208LoadBridgeUntil || 0)) return false;
+      window.__tapcalcAlpha208LoadBridgeUntil = now + 900;
+      try {
+        const loader = window.tapCalcForceLoadSelectedJob || window.tapCalcLibraryLoadSelected || window.loadSelectedLibraryJob;
+        if (typeof loader === 'function') loader(event);
+      } catch (error) {
+        console.error('alpha208 mobile load bridge failed', error);
+      }
+      return false;
+    };
+    ['pointerdown', 'touchstart', 'click'].forEach((type) => {
+      window.addEventListener(type, handle, { capture: true, passive: false });
+    });
+  }
+
+  function hideLegacyDebugPanels(){
+    ['mobileLoadDebugTop', 'mobileLoadDebugPanel'].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.hidden = true;
+    });
+  }
+
   function run(){
     updateVersionText();
     removeLegacyBoltingPdfAction();
     tagReferenceTools();
     installMobileTopNav();
+    installMobileLoadBridge();
+    hideLegacyDebugPanels();
   }
 
   if (document.readyState === 'loading') {
