@@ -1,6 +1,6 @@
-/* TapCalc 3.0.0 reference tool polish + mobile nav livefix4 */
+/* TapCalc 3.0.0 reference tool polish + mobile nav livefix5 */
 (function(){
-  const LABEL = 'TapCalc v3.0.0 - 2026-05-15';
+  const LABEL = 'TapCalc v3.0.0 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
 
   function updateVersionText(){
@@ -55,11 +55,30 @@
           box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24) !important;
           backdrop-filter: blur(10px);
         }
+        body.measurement-page .screen-nav .screen-tab {
+          min-width: 0 !important;
+          padding: 10px 4px !important;
+          font-size: clamp(11px, 2.9vw, 14px) !important;
+          line-height: 1.08 !important;
+          letter-spacing: -0.01em !important;
+          white-space: nowrap !important;
+        }
         body.measurement-page .top-app-bar {
           top: 0 !important;
         }
         body.measurement-page .screen-view.active {
           padding-bottom: 16px !important;
+        }
+      }
+      @media (max-width: 380px) {
+        body.measurement-page .screen-nav {
+          gap: 4px !important;
+          padding-left: 6px !important;
+          padding-right: 6px !important;
+        }
+        body.measurement-page .screen-nav .screen-tab {
+          padding-left: 2px !important;
+          padding-right: 2px !important;
         }
       }
     `;
