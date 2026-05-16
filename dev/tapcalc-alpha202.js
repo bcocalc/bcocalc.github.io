@@ -1,7 +1,7 @@
-/* TapCalc Dev 3.0.0-alpha208 reference tool polish + mobile nav */
+/* TapCalc Dev 3.0.0-alpha209 reference tool polish + mobile nav */
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const LABEL = BUILD.label || 'TapCalc Dev v3.0.0-alpha208 - 2026-05-16';
+  const LABEL = BUILD.label || 'TapCalc Dev v3.0.0-alpha209 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
 
   function updateVersionText(){
@@ -18,7 +18,7 @@
   }
 
   function tagReferenceTools(){
-    document.body.classList.add('tapcalc-alpha208');
+    document.body.classList.add('tapcalc-alpha209');
     if (BUILD.channel) document.body.dataset.tapcalcChannel = BUILD.channel;
     if (BUILD.version) document.body.dataset.tapcalcBuild = BUILD.version;
     const converterCard = document.querySelector('#refScreen .reference-view[data-reference-view="converter"] .reference-card');
@@ -89,6 +89,76 @@
     `;
   }
 
+  function installScreenOwnershipBridge(){
+    if (window.__tapcalcAlpha209ScreenBridgeReady) return;
+    window.__tapcalcAlpha209ScreenBridgeReady = true;
+    const screens = {
+      home: 'homeScreen',
+      job: 'jobScreen',
+      calc: 'calcScreen',
+      card: 'cardScreen',
+      jobs: 'jobsScreen',
+      ref: 'refScreen'
+    };
+    const aliases = {
+      tools: 'calc',
+      workflow: 'card',
+      library: 'jobs',
+      reference: 'ref'
+    };
+    const resolve = (name) => aliases[String(name || '').trim()] || String(name || '').trim();
+    const normalize = (name, options = {}) => {
+      const target = resolve(name);
+      if (!screens[target]) return false;
+      Object.entries(screens).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        const active = key === target;
+        el.classList.toggle('active', active);
+        el.hidden = !active;
+        el.setAttribute('aria-hidden', active ? 'false' : 'true');
+        el.style.display = active ? 'block' : 'none';
+        el.style.pointerEvents = active ? 'auto' : 'none';
+        el.style.visibility = active ? 'visible' : 'hidden';
+        if (!active) el.style.zIndex = '0';
+      });
+      document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
+        const active = resolve(tab.dataset.screen) === target;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      document.body.classList.toggle('show-library-screen', target === 'jobs');
+      try { localStorage.setItem('tapcalcV3Screen', target); } catch {}
+      if (!options.silent) {
+        if (target === 'jobs') setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 0);
+        if (target === 'ref') setTimeout(() => { try { window.initReferenceWorkspaceHard?.(); } catch {} }, 0);
+      }
+      window.__tapcalcAlpha209ActiveScreen = target;
+      return true;
+    };
+    const schedule = (name) => {
+      const target = resolve(name);
+      if (!screens[target]) return;
+      [0, 40, 160].forEach((delay) => setTimeout(() => normalize(target), delay));
+    };
+    const fromActiveTab = () => {
+      const active = document.querySelector('.screen-tab.active[data-screen]') || document.querySelector('.screen-tab[aria-pressed="true"][data-screen]');
+      if (active?.dataset?.screen) schedule(active.dataset.screen);
+    };
+    window.tapCalcNormalizeScreen = normalize;
+    window.addEventListener('click', (event) => {
+      const tab = event.target?.closest?.('.screen-tab[data-screen]');
+      if (tab?.dataset?.screen) schedule(tab.dataset.screen);
+    }, true);
+    window.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      const tab = event.target?.closest?.('.screen-tab[data-screen]');
+      if (tab?.dataset?.screen) schedule(tab.dataset.screen);
+    }, true);
+    window.addEventListener('pageshow', () => setTimeout(fromActiveTab, 80));
+    setTimeout(fromActiveTab, 250);
+  }
+
   function installMobileLoadBridge(){
     if (window.__tapcalcAlpha208LoadBridgeReady) return;
     window.__tapcalcAlpha208LoadBridgeReady = true;
@@ -136,6 +206,7 @@
     removeLegacyBoltingPdfAction();
     tagReferenceTools();
     installMobileTopNav();
+    installScreenOwnershipBridge();
     installMobileLoadBridge();
     hideLegacyDebugPanels();
   }
