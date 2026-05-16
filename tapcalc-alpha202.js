@@ -1,6 +1,7 @@
-/* TapCalc 3.0.0 reference tool polish + mobile nav livefix6 */
+/* TapCalc 3.0.0 reference tool polish + mobile nav livefix7 */
 (function(){
-  const LABEL = 'TapCalc v3.0.0 - 2026-05-16';
+  const BUILD = window.TAPCALC_BUILD || {};
+  const LABEL = BUILD.label || 'TapCalc v3.0.0 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
 
   function updateVersionText(){
@@ -8,7 +9,7 @@
       if (/TapCalc/i.test(el.textContent || '')) el.textContent = LABEL;
     });
     document.querySelectorAll('.sync-pill').forEach((el) => {
-      if (/DEV/i.test(el.textContent || '')) el.textContent = 'LIVE';
+      el.textContent = BUILD.syncPill || 'LIVE';
     });
   }
 
@@ -18,6 +19,8 @@
 
   function tagReferenceTools(){
     document.body.classList.add('tapcalc-alpha202');
+    if (BUILD.channel) document.body.dataset.tapcalcChannel = BUILD.channel;
+    if (BUILD.version) document.body.dataset.tapcalcBuild = BUILD.version;
     const converterCard = document.querySelector('#refScreen .reference-view[data-reference-view="converter"] .reference-card');
     if (converterCard) converterCard.classList.add('reference-converter-card');
   }
