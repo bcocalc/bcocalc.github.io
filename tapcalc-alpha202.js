@@ -1,4 +1,4 @@
-/* TapCalc 3.0.0 reference tool polish + mobile nav livefix5 */
+/* TapCalc 3.0.0 reference tool polish + mobile nav livefix6 */
 (function(){
   const LABEL = 'TapCalc v3.0.0 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
@@ -44,7 +44,7 @@
           right: auto !important;
           z-index: 55 !important;
           display: grid !important;
-          grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+          grid-template-columns: minmax(0, .82fr) minmax(0, .82fr) minmax(0, 1.1fr) minmax(0, .94fr) minmax(0, 1.18fr) !important;
           gap: 6px !important;
           box-sizing: border-box !important;
           width: 100% !important;
