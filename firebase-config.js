@@ -10,7 +10,7 @@ window.TAPCALC_FIREBASE_CONFIG = {
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 
 (function(){
-  const VERSION = '3.0.0-livefix2';
+  const VERSION = '3.0.0-livefix5';
   const OVERLAYS = [
     { css: 'tapcalc-alpha201.css', js: 'tapcalc-alpha201.js' },
     { css: 'tapcalc-alpha202.css', js: 'tapcalc-alpha202.js' }
