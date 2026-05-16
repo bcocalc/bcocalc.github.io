@@ -1,11 +1,15 @@
-/* TapCalc Dev 3.0.0-alpha206 reference tool polish + mobile nav */
+/* TapCalc Dev 3.0.0-alpha207 reference tool polish + mobile nav */
 (function(){
-  const LABEL = 'TapCalc Dev v3.0.0-alpha206 - 2026-05-16';
+  const BUILD = window.TAPCALC_BUILD || {};
+  const LABEL = BUILD.label || 'TapCalc Dev v3.0.0-alpha207 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
 
   function updateVersionText(){
     document.querySelectorAll('.version-badge, .top-app-title').forEach((el) => {
       if (/TapCalc/i.test(el.textContent || '')) el.textContent = LABEL;
+    });
+    document.querySelectorAll('.sync-pill').forEach((el) => {
+      el.textContent = BUILD.syncPill || 'DEV';
     });
   }
 
@@ -14,7 +18,9 @@
   }
 
   function tagReferenceTools(){
-    document.body.classList.add('tapcalc-alpha206');
+    document.body.classList.add('tapcalc-alpha207');
+    if (BUILD.channel) document.body.dataset.tapcalcChannel = BUILD.channel;
+    if (BUILD.version) document.body.dataset.tapcalcBuild = BUILD.version;
     const converterCard = document.querySelector('#refScreen .reference-view[data-reference-view="converter"] .reference-card');
     if (converterCard) converterCard.classList.add('reference-converter-card');
   }
