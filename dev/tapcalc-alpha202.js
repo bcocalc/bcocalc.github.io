@@ -1,6 +1,6 @@
-/* TapCalc Dev 3.0.0-alpha205 reference tool polish + mobile nav */
+/* TapCalc Dev 3.0.0-alpha206 reference tool polish + mobile nav */
 (function(){
-  const LABEL = 'TapCalc Dev v3.0.0-alpha205 - 2026-05-16';
+  const LABEL = 'TapCalc Dev v3.0.0-alpha206 - 2026-05-16';
   const MOBILE_NAV_STYLE_ID = 'tapcalc-mobile-top-nav-style';
 
   function updateVersionText(){
@@ -14,7 +14,7 @@
   }
 
   function tagReferenceTools(){
-    document.body.classList.add('tapcalc-alpha205');
+    document.body.classList.add('tapcalc-alpha206');
     const converterCard = document.querySelector('#refScreen .reference-view[data-reference-view="converter"] .reference-card');
     if (converterCard) converterCard.classList.add('reference-converter-card');
   }
@@ -41,7 +41,7 @@
           right: auto !important;
           z-index: 55 !important;
           display: grid !important;
-          grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+          grid-template-columns: minmax(0, .82fr) minmax(0, .82fr) minmax(0, 1.1fr) minmax(0, .94fr) minmax(0, 1.18fr) !important;
           gap: 6px !important;
           box-sizing: border-box !important;
           width: 100% !important;
