@@ -1,20 +1,21 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha210';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha211';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha210",
-  "./tapcalc-alpha201.css?v=3.0.0-alpha210",
-  "./tapcalc-alpha202.css?v=3.0.0-alpha210",
-  "./measurement.js?v=3.0.0-alpha210",
-  "./tapcalc-alpha201.js?v=3.0.0-alpha210",
-  "./tapcalc-alpha202.js?v=3.0.0-alpha210",
-  "./pdf.mjs?v=3.0.0-alpha210",
-  "./pdf.worker.mjs?v=3.0.0-alpha210",
-  "./stackup-data.js?v=3.0.0-alpha210",
+  "./styles.css?v=3.0.0-alpha211",
+  "./tapcalc-alpha201.css?v=3.0.0-alpha211",
+  "./tapcalc-alpha202.css?v=3.0.0-alpha211",
+  "./measurement.js?v=3.0.0-alpha211",
+  "./tapcalc-alpha201.js?v=3.0.0-alpha211",
+  "./tapcalc-alpha202.js?v=3.0.0-alpha211",
+  "./tapcalc-alpha211-fieldmanual.js?v=3.0.0-alpha211",
+  "./pdf.mjs?v=3.0.0-alpha211",
+  "./pdf.worker.mjs?v=3.0.0-alpha211",
+  "./stackup-data.js?v=3.0.0-alpha211",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha210",
+  "./firebase-config.js?v=3.0.0-alpha211",
   "./team-logo.png"
 ];
 
@@ -42,6 +43,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith('/measurement.js') ||
     url.pathname.endsWith('/tapcalc-alpha201.js') ||
     url.pathname.endsWith('/tapcalc-alpha202.js') ||
+    url.pathname.endsWith('/tapcalc-alpha211-fieldmanual.js') ||
     url.pathname.endsWith('/pdf.mjs') ||
     url.pathname.endsWith('/pdf.worker.mjs') ||
     url.pathname.endsWith('/stackup-data.js') ||
