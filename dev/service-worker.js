@@ -1,22 +1,23 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha216';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha217';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha216",
-  "./tapcalc-alpha201.css?v=3.0.0-alpha216",
-  "./tapcalc-alpha202.css?v=3.0.0-alpha216",
-  "./measurement.js?v=3.0.0-alpha216",
-  "./tapcalc-alpha201.js?v=3.0.0-alpha216",
-  "./tapcalc-alpha202.js?v=3.0.0-alpha216",
-  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha216",
-  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha216",
-  "./pdf.mjs?v=3.0.0-alpha216",
-  "./pdf.worker.mjs?v=3.0.0-alpha216",
-  "./stackup-data.js?v=3.0.0-alpha216",
+  "./styles.css?v=3.0.0-alpha217",
+  "./tapcalc-alpha201.css?v=3.0.0-alpha217",
+  "./tapcalc-alpha202.css?v=3.0.0-alpha217",
+  "./measurement.js?v=3.0.0-alpha217",
+  "./tapcalc-alpha201.js?v=3.0.0-alpha217",
+  "./tapcalc-alpha202.js?v=3.0.0-alpha217",
+  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha217",
+  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha217",
+  "./tapcalc-alpha217-glossary-detach.js?v=3.0.0-alpha217",
+  "./pdf.mjs?v=3.0.0-alpha217",
+  "./pdf.worker.mjs?v=3.0.0-alpha217",
+  "./stackup-data.js?v=3.0.0-alpha217",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha216",
+  "./firebase-config.js?v=3.0.0-alpha217",
   "./team-logo.png"
 ];
 
@@ -46,6 +47,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith('/tapcalc-alpha202.js') ||
     url.pathname.endsWith('/tapcalc-alpha214-fieldmanual.js') ||
     url.pathname.endsWith('/tapcalc-alpha216-reference-fix.js') ||
+    url.pathname.endsWith('/tapcalc-alpha217-glossary-detach.js') ||
     url.pathname.endsWith('/pdf.mjs') ||
     url.pathname.endsWith('/pdf.worker.mjs') ||
     url.pathname.endsWith('/stackup-data.js') ||
