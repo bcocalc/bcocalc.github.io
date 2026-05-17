@@ -1,10 +1,13 @@
-/* TapCalc Dev 3.0.0-alpha216 reference picker and glossary isolation fix */
+/* TapCalc Dev 3.0.0-alpha216 reference picker and baked-in glossary detach fix */
 (function(){
-  const STYLE_ID = 'tapcalc-alpha216-reference-fix-style';
-  const READY_FLAG = '__tapcalcAlpha216ReferenceFixReady';
+  const READY_FLAG = '__tapcalcAlpha216GlossaryDetachReady';
+  const STYLE_ID = 'tapcalc-alpha216-glossary-detach-style';
   const FIELD_MANUAL_VIEW = 'fieldmanual';
-  const DEFAULT_VIEW = 'converter';
-  const REFERENCE_LABELS = {
+  let glossaryView = null;
+  let glossaryPlaceholder = null;
+  let glossaryExplicitlyOpen = false;
+
+  const labels = {
     converter: ['Charts', 'Decimal / Fraction', 'Quick conversion and full chart'],
     bolting: ['Charts', 'Bolting Chart', 'Flange class, stud, wrench, counts'],
     glossary: ['Charts', 'Glossary', 'Abbreviations and field meanings'],
@@ -25,63 +28,45 @@
     return document.getElementById(id);
   }
 
+  function workspace(){
+    return byId('referenceWorkspaceContent');
+  }
+
   function injectStyles(){
     if (byId(STYLE_ID)) return;
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view]:not(.active){display:none!important;visibility:hidden!important;height:0!important;max-height:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;}
-      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view].active{display:block!important;visibility:visible!important;height:auto!important;max-height:none!important;opacity:1!important;pointer-events:auto!important;}
-      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view][hidden]{display:none!important;}
-      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view="glossary"]:not(.active) .glossary-table-wrap{display:none!important;}
+      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view="glossary"]:not(.active){display:none!important;}
+      body.measurement-page #referenceWorkspaceContent[data-glossary-detached="1"] > .reference-view[data-reference-view="glossary"]{display:none!important;}
       body.measurement-page #refScreen .reference-library-option[data-reference-target="fieldmanual"]{background:linear-gradient(135deg,rgba(33,99,197,.94),rgba(15,64,121,.94));border-color:rgba(135,190,255,.42);}
     `;
     document.head.appendChild(style);
   }
 
-  function validView(view){
-    const requested = String(view || '').trim();
-    if (requested === 'garlock600') return 'gaskettorque';
-    if (requested === FIELD_MANUAL_VIEW) return FIELD_MANUAL_VIEW;
-    const escaped = window.CSS && typeof window.CSS.escape === 'function'
-      ? window.CSS.escape(requested)
-      : requested.replace(/["\\]/g, '\\$&');
-    return document.querySelector(`#referenceWorkspaceContent .reference-view[data-reference-view="${escaped}"]`)
-      ? requested
-      : DEFAULT_VIEW;
+  function captureGlossary(){
+    if (glossaryView) return glossaryView;
+    glossaryView = document.querySelector('#referenceWorkspaceContent > .reference-view[data-reference-view="glossary"]');
+    if (glossaryView && !glossaryPlaceholder) {
+      glossaryPlaceholder = document.createComment('tapcalc alpha216 glossary placeholder');
+      glossaryView.parentNode?.insertBefore(glossaryPlaceholder, glossaryView.nextSibling);
+    }
+    return glossaryView;
   }
 
-  function setReferenceSummary(view){
-    const labels = REFERENCE_LABELS[view] || REFERENCE_LABELS[DEFAULT_VIEW];
+  function setSummary(view){
+    const row = labels[view] || labels.converter;
     const group = byId('referenceLibraryGroup');
     const current = byId('referenceLibraryCurrent');
     const description = byId('referenceLibraryDescription');
-    if (group) group.textContent = labels[0];
-    if (current) current.textContent = labels[1];
-    if (description) description.textContent = labels[2];
+    if (group) group.textContent = row[0];
+    if (current) current.textContent = row[1];
+    if (description) description.textContent = row[2];
   }
 
-  function viewFromSummary(){
-    const current = String(byId('referenceLibraryCurrent')?.textContent || '').trim().toLowerCase();
-    if (!current) return '';
-    const found = Object.entries(REFERENCE_LABELS).find(([, labels]) => String(labels[1] || '').toLowerCase() === current);
-    return found ? found[0] : '';
-  }
-
-  function requestedReferenceView(){
-    const summaryView = viewFromSummary();
-    if (summaryView === FIELD_MANUAL_VIEW) return FIELD_MANUAL_VIEW;
-    const selectView = byId('referenceViewSelect')?.value || '';
-    if (selectView) return validView(selectView);
-    const activeView = document.querySelector('#referenceWorkspaceContent > .reference-view.active[data-reference-view]')?.getAttribute('data-reference-view') || '';
-    return validView(activeView || localStorage.getItem('tapcalcReferenceViewV1') || DEFAULT_VIEW);
-  }
-
-  function syncReferenceControls(view){
+  function syncControls(view){
     const select = byId('referenceViewSelect');
-    if (select && Array.from(select.options || []).some((option) => option.value === view)) {
-      select.value = view;
-    }
+    if (select && Array.from(select.options || []).some((option) => option.value === view)) select.value = view;
     document.querySelectorAll('#refScreen [data-reference-target]').forEach((button) => {
       const active = button.getAttribute('data-reference-target') === view;
       button.classList.toggle('active', active);
@@ -92,51 +77,14 @@
     });
   }
 
-  function setPanelVisibility(view){
-    const safeView = validView(view);
-    const workspace = byId('referenceWorkspaceContent');
-    if (workspace) workspace.dataset.activeReferenceView = safeView;
-    let activated = false;
-    document.querySelectorAll('#referenceWorkspaceContent > .reference-view[data-reference-view]').forEach((panel) => {
-      const isActive = panel.getAttribute('data-reference-view') === safeView;
-      panel.classList.toggle('active', isActive);
-      panel.hidden = !isActive;
-      panel.style.display = isActive ? 'block' : 'none';
-      panel.style.visibility = isActive ? 'visible' : 'hidden';
-      panel.style.pointerEvents = isActive ? 'auto' : 'none';
-      panel.style.opacity = isActive ? '1' : '0';
-      if (isActive) {
-        panel.removeAttribute('aria-hidden');
-        panel.style.removeProperty('height');
-        panel.style.removeProperty('max-height');
-        panel.style.removeProperty('overflow');
-      } else {
-        panel.setAttribute('aria-hidden', 'true');
-        panel.style.height = '0';
-        panel.style.maxHeight = '0';
-        panel.style.overflow = 'hidden';
-      }
-      if (isActive) activated = true;
-    });
-    if (!activated && safeView !== DEFAULT_VIEW) setPanelVisibility(DEFAULT_VIEW);
-    setReferenceSummary(safeView);
-    syncReferenceControls(safeView);
-    if (safeView !== FIELD_MANUAL_VIEW) {
-      try { localStorage.removeItem('tapcalcAlpha214FieldManualOpen'); } catch {}
-      try { localStorage.removeItem('tapcalcAlpha215FieldManualOpen'); } catch {}
-      try { localStorage.setItem('tapcalcReferenceViewV1', safeView); } catch {}
-    }
-  }
-
-  function ensureFieldManualPickerOption(){
-    const options = byId('referenceLibraryOptions');
+  function ensureFieldManualOption(){
     document.querySelectorAll('#refScreen .reference-library-count').forEach((count) => {
       count.textContent = '14 refs';
     });
+    const options = byId('referenceLibraryOptions');
     if (!options || options.querySelector('[data-reference-target="fieldmanual"]')) return;
     const label = document.createElement('div');
     label.className = 'reference-library-group-label';
-    label.dataset.alpha216FieldManualGroup = '1';
     label.textContent = 'Field Reference';
     const button = document.createElement('button');
     button.type = 'button';
@@ -148,80 +96,133 @@
     options.append(label, button);
   }
 
-  function showFieldManual(){
-    const quick = byId('fieldManualQuickButton') || byId('fieldManualInlineAction');
-    if (quick && !byId('fieldManualReferenceView')?.classList.contains('active')) {
-      quick.click();
-    }
-    setPanelVisibility(FIELD_MANUAL_VIEW);
-  }
-
-  function setFieldManualSection(sectionName, options = {}){
-    const view = byId('fieldManualReferenceView');
-    if (!view) return;
-    setPanelVisibility(FIELD_MANUAL_VIEW);
-    const section = String(sectionName || '').trim();
-    const search = byId('fieldManualSearch');
-    if (search && options.clearSearch !== false) search.value = '';
-    const select = byId('fieldManualSectionSelect');
-    if (select && section && select.value !== section) select.value = section;
-    view.classList.add('field-manual-compact-mode');
-    view.classList.remove('field-manual-searching');
-    document.querySelectorAll('#fieldManualReferenceView .field-manual-section').forEach((panel) => {
-      const active = panel.getAttribute('data-field-manual-section') === section;
-      panel.classList.toggle('field-manual-section-active', active);
-      panel.hidden = false;
-      panel.style.display = active ? 'block' : '';
+  function deactivateAllViews(){
+    document.querySelectorAll('#referenceWorkspaceContent > .reference-view[data-reference-view]').forEach((view) => {
+      view.classList.remove('active');
+      view.hidden = true;
+      view.style.display = 'none';
+      view.style.visibility = 'hidden';
+      view.style.pointerEvents = 'none';
+      view.setAttribute('aria-hidden', 'true');
     });
   }
 
-  function normalizeCurrentReference(){
-    ensureFieldManualPickerOption();
-    setPanelVisibility(requestedReferenceView());
+  function showFieldManual(){
+    detachGlossary();
+    const quick = byId('fieldManualQuickButton') || byId('fieldManualInlineAction');
+    if (quick) quick.click();
+    setSummary(FIELD_MANUAL_VIEW);
+    syncControls(FIELD_MANUAL_VIEW);
+  }
+
+  function activateView(viewName){
+    const safeView = labels[viewName] ? viewName : 'converter';
+    if (safeView === FIELD_MANUAL_VIEW) {
+      showFieldManual();
+      return;
+    }
+    if (safeView === 'glossary') {
+      attachGlossary();
+      return;
+    }
+    detachGlossary();
+    const panel = document.querySelector(`#referenceWorkspaceContent > .reference-view[data-reference-view="${safeView}"]`);
+    if (!panel) return;
+    deactivateAllViews();
+    panel.classList.add('active');
+    panel.hidden = false;
+    panel.style.display = 'block';
+    panel.style.visibility = 'visible';
+    panel.style.pointerEvents = 'auto';
+    panel.removeAttribute('aria-hidden');
+    setSummary(safeView);
+    syncControls(safeView);
+    try { localStorage.setItem('tapcalcReferenceViewV1', safeView); } catch {}
+  }
+
+  function detachGlossary(){
+    const view = captureGlossary();
+    const ws = workspace();
+    if (ws) ws.dataset.glossaryDetached = '1';
+    glossaryExplicitlyOpen = false;
+    if (!view) return;
+    view.classList.remove('active');
+    view.hidden = true;
+    view.style.display = 'none';
+    view.style.visibility = 'hidden';
+    view.style.pointerEvents = 'none';
+    view.setAttribute('aria-hidden', 'true');
+    if (view.isConnected) view.remove();
+    try {
+      if (localStorage.getItem('tapcalcReferenceViewV1') === 'glossary') localStorage.setItem('tapcalcReferenceViewV1', 'converter');
+    } catch {}
+  }
+
+  function attachGlossary(){
+    const view = captureGlossary();
+    const ws = workspace();
+    if (!view || !ws) return;
+    glossaryExplicitlyOpen = true;
+    ws.dataset.glossaryDetached = '0';
+    if (!view.isConnected) {
+      if (glossaryPlaceholder?.parentNode === ws) {
+        ws.insertBefore(view, glossaryPlaceholder.nextSibling);
+      } else {
+        ws.appendChild(view);
+      }
+    }
+    deactivateAllViews();
+    view.classList.add('active');
+    view.hidden = false;
+    view.style.display = 'block';
+    view.style.visibility = 'visible';
+    view.style.pointerEvents = 'auto';
+    view.removeAttribute('aria-hidden');
+    setSummary('glossary');
+    syncControls('glossary');
+    try { localStorage.setItem('tapcalcReferenceViewV1', 'glossary'); } catch {}
   }
 
   function install(){
     if (window[READY_FLAG]) return;
     window[READY_FLAG] = true;
     injectStyles();
-    try { localStorage.removeItem('tapcalcAlpha214FieldManualOpen'); } catch {}
+    ensureFieldManualOption();
+    setTimeout(detachGlossary, 0);
+    setTimeout(detachGlossary, 250);
+    setTimeout(detachGlossary, 900);
 
     document.addEventListener('click', (event) => {
-      const target = event.target?.closest?.('#refScreen [data-reference-target]');
-      if (!target) return;
-      const view = validView(target.getAttribute('data-reference-target'));
-      if (view === FIELD_MANUAL_VIEW) {
-        event.preventDefault();
-        event.stopPropagation();
-        event.stopImmediatePropagation();
-        showFieldManual();
-      } else {
-        setTimeout(() => setPanelVisibility(view), 0);
-        setTimeout(() => setPanelVisibility(view), 80);
+      const fieldManual = event.target?.closest?.('[data-field-manual-open]');
+      if (fieldManual) {
+        setTimeout(detachGlossary, 0);
+        setTimeout(detachGlossary, 100);
+        return;
       }
+      const trigger = event.target?.closest?.('#refScreen [data-reference-target]');
+      if (!trigger) return;
+      const view = trigger.getAttribute('data-reference-target') || 'converter';
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      activateView(view);
+      setTimeout(() => activateView(view), 100);
     }, true);
 
     document.addEventListener('change', (event) => {
-      if (event.target?.id === 'referenceViewSelect') {
-        const view = validView(event.target.value);
-        setTimeout(() => view === FIELD_MANUAL_VIEW ? showFieldManual() : setPanelVisibility(view), 0);
-      }
-      if (event.target?.id === 'fieldManualSectionSelect') {
-        setPanelVisibility(FIELD_MANUAL_VIEW);
-        setFieldManualSection(event.target.value, { clearSearch: true });
-      }
+      if (event.target?.id !== 'referenceViewSelect') return;
+      activateView(event.target.value || 'converter');
     }, true);
 
-    document.addEventListener('click', (event) => {
-      const jump = event.target?.closest?.('[data-field-manual-jump]');
-      if (jump) setFieldManualSection(jump.getAttribute('data-field-manual-jump'), { clearSearch: true });
+    document.addEventListener('click', () => {
+      setTimeout(() => {
+        ensureFieldManualOption();
+        if (!glossaryExplicitlyOpen) detachGlossary();
+      }, 180);
     }, true);
 
-    const observer = new MutationObserver(() => ensureFieldManualPickerOption());
     const options = byId('referenceLibraryOptions');
-    if (options) observer.observe(options, { childList: true });
-
-    [0, 200, 650, 1200, 2400].forEach((delay) => setTimeout(normalizeCurrentReference, delay));
+    if (options) new MutationObserver(ensureFieldManualOption).observe(options, { childList: true });
   }
 
   if (document.readyState === 'loading') {
