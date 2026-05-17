@@ -32,7 +32,7 @@
   }
 
   function getPanel(view){
-    return document.querySelector(`#referenceWorkspaceContent > .reference-view[data-reference-view="${CSS.escape(view)}"]`);
+    return referenceViews().find((panel) => panel.dataset.referenceView === view) || null;
   }
 
   function firstAvailableView(){
