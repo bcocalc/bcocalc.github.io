@@ -1,0 +1,12 @@
+/* TapCalc Dev 3.0.0-alpha219 Reference router cleanup */
+#refScreen #referenceWorkspaceContent > .reference-view[data-reference-view]:not(.active) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#refScreen #referenceWorkspaceContent > .reference-view[data-reference-view].active {
+  display: block !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
