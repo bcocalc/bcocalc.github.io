@@ -96,6 +96,9 @@
 
   function ensureFieldManualPickerOption(){
     const options = byId('referenceLibraryOptions');
+    document.querySelectorAll('#refScreen .reference-library-count').forEach((count) => {
+      count.textContent = '14 refs';
+    });
     if (!options || options.querySelector('[data-reference-target="fieldmanual"]')) return;
     const label = document.createElement('div');
     label.className = 'reference-library-group-label';
