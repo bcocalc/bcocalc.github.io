@@ -39,6 +39,26 @@
     return views().find((panel) => panel.dataset.referenceView === view) || null;
   }
 
+  function repairReferenceAccordionDamage(){
+    const card = document.querySelector('#refScreen .reference-workspace-card');
+    const glossary = document.querySelector('#referenceWorkspaceContent > .reference-view[data-reference-view="glossary"]');
+    if (card) {
+      card.dataset.accordionReady = 'true';
+      card.classList.remove('collapsed');
+    }
+    if (!card || !glossary) return;
+    const movedBody = card.querySelector(':scope > .accordion-body');
+    if (movedBody) {
+      while (movedBody.firstChild) glossary.appendChild(movedBody.firstChild);
+      movedBody.remove();
+    }
+    const heading = glossary.querySelector(':scope > h3.accordion-heading');
+    if (heading) {
+      heading.classList.remove('accordion-heading');
+      heading.querySelector('.accordion-caret')?.remove();
+    }
+  }
+
   function hasView(view){
     return !!panelFor(view);
   }
@@ -113,6 +133,7 @@
   }
 
   function ensureFieldManualOption(){
+    repairReferenceAccordionDamage();
     const select = byId('referenceViewSelect');
     if (select && !select.querySelector('option[value="fieldmanual"]')) {
       const option = document.createElement('option');
@@ -152,6 +173,7 @@
   }
 
   function selectReference(view, options = {}){
+    repairReferenceAccordionDamage();
     ensureFieldManualOption();
     const target = safeView(view);
     activeView = target;
@@ -193,6 +215,9 @@
     if (window[READY_FLAG]) return;
     window[READY_FLAG] = true;
     ensureFieldManualOption();
+    repairReferenceAccordionDamage();
+    setTimeout(repairReferenceAccordionDamage, 80);
+    setTimeout(repairReferenceAccordionDamage, 300);
 
     document.addEventListener('click', (event) => {
       const option = event.target?.closest?.('#refScreen [data-reference-target]');
