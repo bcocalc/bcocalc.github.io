@@ -1,4 +1,4 @@
-/* TapCalc Dev 3.0.0-alpha215 reference picker and field manual visibility fix */
+/* TapCalc Dev 3.0.0-alpha215 reference picker and glossary isolation fix */
 (function(){
   const STYLE_ID = 'tapcalc-alpha215-reference-fix-style';
   const READY_FLAG = '__tapcalcAlpha215ReferenceFixReady';
@@ -30,8 +30,10 @@
     const style = document.createElement('style');
     style.id = STYLE_ID;
     style.textContent = `
-      body.measurement-page #refScreen .reference-view[data-reference-view].active{display:block;}
-      body.measurement-page #refScreen .reference-view[data-reference-view][hidden]{display:none!important;}
+      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view]:not(.active){display:none!important;visibility:hidden!important;height:0!important;max-height:0!important;overflow:hidden!important;opacity:0!important;pointer-events:none!important;}
+      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view].active{display:block!important;visibility:visible!important;height:auto!important;max-height:none!important;opacity:1!important;pointer-events:auto!important;}
+      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view][hidden]{display:none!important;}
+      body.measurement-page #referenceWorkspaceContent > .reference-view[data-reference-view="glossary"]:not(.active) .glossary-table-wrap{display:none!important;}
       body.measurement-page #refScreen .reference-library-option[data-reference-target="fieldmanual"]{background:linear-gradient(135deg,rgba(33,99,197,.94),rgba(15,64,121,.94));border-color:rgba(135,190,255,.42);}
     `;
     document.head.appendChild(style);
@@ -59,6 +61,22 @@
     if (description) description.textContent = labels[2];
   }
 
+  function viewFromSummary(){
+    const current = String(byId('referenceLibraryCurrent')?.textContent || '').trim().toLowerCase();
+    if (!current) return '';
+    const found = Object.entries(REFERENCE_LABELS).find(([, labels]) => String(labels[1] || '').toLowerCase() === current);
+    return found ? found[0] : '';
+  }
+
+  function requestedReferenceView(){
+    const summaryView = viewFromSummary();
+    if (summaryView === FIELD_MANUAL_VIEW) return FIELD_MANUAL_VIEW;
+    const selectView = byId('referenceViewSelect')?.value || '';
+    if (selectView) return validView(selectView);
+    const activeView = document.querySelector('#referenceWorkspaceContent > .reference-view.active[data-reference-view]')?.getAttribute('data-reference-view') || '';
+    return validView(activeView || localStorage.getItem('tapcalcReferenceViewV1') || DEFAULT_VIEW);
+  }
+
   function syncReferenceControls(view){
     const select = byId('referenceViewSelect');
     if (select && Array.from(select.options || []).some((option) => option.value === view)) {
@@ -76,12 +94,28 @@
 
   function setPanelVisibility(view){
     const safeView = validView(view);
+    const workspace = byId('referenceWorkspaceContent');
+    if (workspace) workspace.dataset.activeReferenceView = safeView;
     let activated = false;
-    document.querySelectorAll('#referenceWorkspaceContent .reference-view[data-reference-view]').forEach((panel) => {
+    document.querySelectorAll('#referenceWorkspaceContent > .reference-view[data-reference-view]').forEach((panel) => {
       const isActive = panel.getAttribute('data-reference-view') === safeView;
       panel.classList.toggle('active', isActive);
       panel.hidden = !isActive;
       panel.style.display = isActive ? 'block' : 'none';
+      panel.style.visibility = isActive ? 'visible' : 'hidden';
+      panel.style.pointerEvents = isActive ? 'auto' : 'none';
+      panel.style.opacity = isActive ? '1' : '0';
+      if (isActive) {
+        panel.removeAttribute('aria-hidden');
+        panel.style.removeProperty('height');
+        panel.style.removeProperty('max-height');
+        panel.style.removeProperty('overflow');
+      } else {
+        panel.setAttribute('aria-hidden', 'true');
+        panel.style.height = '0';
+        panel.style.maxHeight = '0';
+        panel.style.overflow = 'hidden';
+      }
       if (isActive) activated = true;
     });
     if (!activated && safeView !== DEFAULT_VIEW) setPanelVisibility(DEFAULT_VIEW);
@@ -125,6 +159,7 @@
   function setFieldManualSection(sectionName, options = {}){
     const view = byId('fieldManualReferenceView');
     if (!view) return;
+    setPanelVisibility(FIELD_MANUAL_VIEW);
     const section = String(sectionName || '').trim();
     const search = byId('fieldManualSearch');
     if (search && options.clearSearch !== false) search.value = '';
@@ -142,10 +177,7 @@
 
   function normalizeCurrentReference(){
     ensureFieldManualPickerOption();
-    const selected = byId('referenceViewSelect')?.value || localStorage.getItem('tapcalcReferenceViewV1') || DEFAULT_VIEW;
-    const active = document.querySelector('#referenceWorkspaceContent .reference-view.active[data-reference-view]')?.getAttribute('data-reference-view');
-    const nextView = active === FIELD_MANUAL_VIEW ? selected : active || selected;
-    setPanelVisibility(nextView === FIELD_MANUAL_VIEW ? FIELD_MANUAL_VIEW : validView(nextView));
+    setPanelVisibility(requestedReferenceView());
   }
 
   function install(){
@@ -175,6 +207,7 @@
         setTimeout(() => view === FIELD_MANUAL_VIEW ? showFieldManual() : setPanelVisibility(view), 0);
       }
       if (event.target?.id === 'fieldManualSectionSelect') {
+        setPanelVisibility(FIELD_MANUAL_VIEW);
         setFieldManualSection(event.target.value, { clearSearch: true });
       }
     }, true);
