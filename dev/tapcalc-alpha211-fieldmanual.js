@@ -343,9 +343,8 @@
         section.hidden = false;
         return;
       }
-      const ownText = String(section.getAttribute('data-field-manual-text') || '').toLowerCase();
-      const visibleChild = section.querySelector('[data-field-manual-text]:not([hidden])');
-      section.hidden = !visibleChild && !tokens.every((token) => ownText.includes(token));
+      const haystack = `${section.getAttribute('data-field-manual-text') || ''} ${section.textContent || ''}`.toLowerCase();
+      section.hidden = !tokens.every((token) => haystack.includes(token));
     });
   }
 
