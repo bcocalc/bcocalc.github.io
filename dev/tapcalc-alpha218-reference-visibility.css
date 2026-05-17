@@ -1,0 +1,20 @@
+/* TapCalc Dev 3.0.0-alpha218 reference visibility guard */
+#referenceWorkspaceContent > .reference-view[data-reference-view] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  height: 0 !important;
+  max-height: 0 !important;
+  overflow: hidden !important;
+}
+
+#referenceWorkspaceContent > .reference-view[data-reference-view].active {
+  display: block !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
