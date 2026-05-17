@@ -1,25 +1,27 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha218';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha219';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha218",
-  "./tapcalc-alpha201.css?v=3.0.0-alpha218",
-  "./tapcalc-alpha202.css?v=3.0.0-alpha218",
-  "./measurement.js?v=3.0.0-alpha218",
-  "./tapcalc-alpha201.js?v=3.0.0-alpha218",
-  "./tapcalc-alpha202.js?v=3.0.0-alpha218",
-  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha218",
-  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha218",
-  "./tapcalc-alpha217-glossary-detach.js?v=3.0.0-alpha218",
-  "./tapcalc-alpha218-reference-visibility.css?v=3.0.0-alpha218",
-  "./tapcalc-alpha218-reference-visibility.js?v=3.0.0-alpha218",
-  "./pdf.mjs?v=3.0.0-alpha218",
-  "./pdf.worker.mjs?v=3.0.0-alpha218",
-  "./stackup-data.js?v=3.0.0-alpha218",
+  "./styles.css?v=3.0.0-alpha219",
+  "./tapcalc-alpha201.css?v=3.0.0-alpha219",
+  "./tapcalc-alpha202.css?v=3.0.0-alpha219",
+  "./measurement.js?v=3.0.0-alpha219",
+  "./tapcalc-alpha201.js?v=3.0.0-alpha219",
+  "./tapcalc-alpha202.js?v=3.0.0-alpha219",
+  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha219",
+  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha219",
+  "./tapcalc-alpha217-glossary-detach.js?v=3.0.0-alpha219",
+  "./tapcalc-alpha218-reference-visibility.css?v=3.0.0-alpha219",
+  "./tapcalc-alpha218-reference-visibility.js?v=3.0.0-alpha219",
+  "./tapcalc-alpha219-reference-router.css?v=3.0.0-alpha219",
+  "./tapcalc-alpha219-reference-router.js?v=3.0.0-alpha219",
+  "./pdf.mjs?v=3.0.0-alpha219",
+  "./pdf.worker.mjs?v=3.0.0-alpha219",
+  "./stackup-data.js?v=3.0.0-alpha219",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha218",
+  "./firebase-config.js?v=3.0.0-alpha219",
   "./team-logo.png"
 ];
 
@@ -52,6 +54,8 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith('/tapcalc-alpha217-glossary-detach.js') ||
     url.pathname.endsWith('/tapcalc-alpha218-reference-visibility.css') ||
     url.pathname.endsWith('/tapcalc-alpha218-reference-visibility.js') ||
+    url.pathname.endsWith('/tapcalc-alpha219-reference-router.css') ||
+    url.pathname.endsWith('/tapcalc-alpha219-reference-router.js') ||
     url.pathname.endsWith('/pdf.mjs') ||
     url.pathname.endsWith('/pdf.worker.mjs') ||
     url.pathname.endsWith('/stackup-data.js') ||
