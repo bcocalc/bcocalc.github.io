@@ -10,3 +10,7 @@
   visibility: visible !important;
   pointer-events: auto !important;
 }
+
+#refScreen .reference-workspace-card > .accordion-body {
+  display: none !important;
+}
