@@ -5,11 +5,11 @@
   window[READY_FLAG] = true;
 
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha225';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha226';
   const FILES = [
     'overlays/tapcalc-alpha201.js',
     'overlays/tapcalc-alpha202.js',
-    'overlays/tapcalc-alpha214-fieldmanual.js',
+    'overlays/tapcalc-field-manual.js',
     'overlays/tapcalc-reference-router.js'
   ];
 
