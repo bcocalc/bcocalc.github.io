@@ -10,22 +10,22 @@ window.TAPCALC_FIREBASE_CONFIG = {
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 window.TAPCALC_BUILD = Object.assign({
   channel: 'live',
-  version: '3.0.0-livefix8',
-  label: 'TapCalc v3.0.0 - 2026-05-16',
-  overlayVersion: '3.0.0-livefix8',
-  serviceWorkerVersion: '3.0.0-livefix8',
+  version: '3.0.0-livefix9',
+  label: 'TapCalc v3.0.0-livefix9 - 2026-05-18',
+  overlayVersion: '3.0.0-livefix9',
+  serviceWorkerVersion: '3.0.0-livefix9',
   syncPill: 'LIVE'
 }, window.TAPCALC_BUILD || {});
 
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix8';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix9';
   const OVERLAYS = [
-    { css: 'tapcalc-alpha201.css', js: 'tapcalc-alpha201.js' },
-    { css: 'tapcalc-alpha202.css', js: 'tapcalc-alpha202.js' }
+    { css: 'tapcalc-overlays.css', js: 'tapcalc-overlays.js' }
   ];
 
   function addStylesheet(file){
+    if (!file) return;
     if (document.querySelector(`link[href*="${file}"]`)) return;
     const link = document.createElement('link');
     link.rel = 'stylesheet';
@@ -34,6 +34,7 @@ window.TAPCALC_BUILD = Object.assign({
   }
 
   function addScript(file){
+    if (!file) return;
     if (document.querySelector(`script[src*="${file}"]`)) return;
     const script = document.createElement('script');
     script.async = false;

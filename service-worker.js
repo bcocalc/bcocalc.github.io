@@ -1,20 +1,26 @@
-const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix8';
+const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix9';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-livefix8",
-  "./tapcalc-alpha201.css?v=3.0.0-livefix8",
-  "./tapcalc-alpha202.css?v=3.0.0-livefix8",
-  "./measurement.js?v=3.0.0-livefix8",
-  "./tapcalc-alpha201.js?v=3.0.0-livefix8",
-  "./tapcalc-alpha202.js?v=3.0.0-livefix8",
-  "./pdf.mjs?v=3.0.0-livefix8",
-  "./pdf.worker.mjs?v=3.0.0-livefix8",
-  "./stackup-data.js?v=3.0.0-livefix8",
+  "./styles.css?v=3.0.0-livefix9",
+  "./measurement.js?v=3.0.0-livefix9",
+  "./tapcalc-overlays.css?v=3.0.0-livefix9",
+  "./tapcalc-overlays.js?v=3.0.0-livefix9",
+  "./overlays/tapcalc-workflow-library.css?v=3.0.0-livefix9",
+  "./overlays/tapcalc-workflow-library.js?v=3.0.0-livefix9",
+  "./overlays/tapcalc-shell-reference.css?v=3.0.0-livefix9",
+  "./overlays/tapcalc-shell-reference.js?v=3.0.0-livefix9",
+  "./overlays/tapcalc-field-manual.js?v=3.0.0-livefix9",
+  "./overlays/tapcalc-field-manual-mobile.css?v=3.0.0-livefix9",
+  "./overlays/tapcalc-reference-router.css?v=3.0.0-livefix9",
+  "./overlays/tapcalc-reference-router.js?v=3.0.0-livefix9",
+  "./pdf.mjs?v=3.0.0-livefix9",
+  "./pdf.worker.mjs?v=3.0.0-livefix9",
+  "./stackup-data.js?v=3.0.0-livefix9",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-livefix8",
+  "./firebase-config.js?v=3.0.0-livefix9",
   "./team-logo.png"
 ];
 
@@ -37,9 +43,12 @@ self.addEventListener("fetch", (event) => {
   const isShellAsset = isSameOrigin && (
     url.pathname.endsWith('/measurement-card.html') ||
     url.pathname.endsWith('/styles.css') ||
+    url.pathname.endsWith('/measurement.js') ||
+    url.pathname.endsWith('/tapcalc-overlays.css') ||
+    url.pathname.endsWith('/tapcalc-overlays.js') ||
+    url.pathname.includes('/overlays/tapcalc-') ||
     url.pathname.endsWith('/tapcalc-alpha201.css') ||
     url.pathname.endsWith('/tapcalc-alpha202.css') ||
-    url.pathname.endsWith('/measurement.js') ||
     url.pathname.endsWith('/tapcalc-alpha201.js') ||
     url.pathname.endsWith('/tapcalc-alpha202.js') ||
     url.pathname.endsWith('/pdf.mjs') ||

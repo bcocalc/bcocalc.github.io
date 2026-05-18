@@ -1,0 +1,23 @@
+/* TapCalc Dev reference router and Field Manual cleanup */
+#refScreen #referenceWorkspaceContent > .reference-view[data-reference-view]:not(.active) {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+#refScreen #referenceWorkspaceContent > .reference-view[data-reference-view].active {
+  display: block !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+}
+
+#refScreen .reference-workspace-card > .accordion-body {
+  display: none !important;
+}
+
+#refScreen .field-manual-entry-row,
+#refScreen .field-manual-quick-row,
+#refScreen #fieldManualQuickButton,
+#refScreen #fieldManualInlineAction {
+  display: none !important;
+}

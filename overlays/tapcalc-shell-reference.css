@@ -1,0 +1,305 @@
+/* TapCalc Dev 3.0.0-alpha202 reference tool polish */
+body.measurement-page #refScreen .reference-screen-head {
+  align-items: start;
+  border-bottom-color: rgba(126, 169, 236, 0.14);
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+}
+
+body.measurement-page #refScreen .collapsible-head-block {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 12px;
+  width: 100%;
+}
+
+body.measurement-page #refScreen #referenceToolsToggleBtn {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: #f7fbff;
+  justify-self: start;
+  min-height: 0 !important;
+  padding: 0 !important;
+  width: auto !important;
+}
+
+body.measurement-page #refScreen #referenceToolsToggleBtn span {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+body.measurement-page #refScreen #referenceToolsToggleBtn span:first-child {
+  font-size: clamp(1.2rem, 2vw, 1.55rem);
+  letter-spacing: 0;
+  line-height: 1.05;
+}
+
+body.measurement-page #refScreen .collapsible-head-block > .note {
+  color: #bed1ec;
+  font-size: 0.82rem;
+  font-weight: 700;
+  grid-column: 1;
+  line-height: 1.35;
+  margin: 0;
+}
+
+body.measurement-page #refScreen .reference-inline-actions {
+  align-self: start;
+  display: flex;
+  gap: 8px;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-self: end;
+  margin: 0;
+}
+
+body.measurement-page #refScreen .reference-inline-actions a[href*="Bolting Chart.pdf"] {
+  display: none !important;
+}
+
+body.measurement-page #refScreen .reference-inline-actions .secondary-btn {
+  border-radius: 10px;
+  min-height: 38px;
+  padding: 8px 12px;
+  width: auto;
+}
+
+body.measurement-page #refScreen .reference-view[data-reference-view="converter"] .reference-card {
+  background:
+    linear-gradient(180deg, rgba(30, 63, 108, 0.52), rgba(9, 25, 45, 0.84)),
+    rgba(11, 30, 52, 0.9) !important;
+  border-color: rgba(126, 169, 236, 0.22) !important;
+  border-radius: 16px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  overflow: hidden;
+  padding: 0;
+}
+
+body.measurement-page #refScreen .reference-view[data-reference-view="converter"] .reference-card h4 {
+  font-size: 1.15rem;
+  line-height: 1.15;
+  margin: 0;
+  padding: 16px 16px 0;
+}
+
+body.measurement-page #refScreen .converter-grid {
+  gap: 12px;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  padding: 14px 16px 16px;
+}
+
+body.measurement-page #refScreen .converter-block {
+  background: rgba(5, 17, 31, 0.44);
+  border: 1px solid rgba(142, 184, 255, 0.16);
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  gap: 11px;
+  padding: 14px;
+}
+
+body.measurement-page #refScreen .converter-label {
+  color: #a9c8f2;
+  font-size: 0.82rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+body.measurement-page #refScreen .fraction-input-row {
+  gap: 8px;
+}
+
+body.measurement-page #refScreen .fraction-slash {
+  color: #cfe2ff;
+  font-size: 1rem;
+  line-height: 1;
+}
+
+body.measurement-page #refScreen .converter-block .decimal-input,
+body.measurement-page #refScreen .converter-block #fractionPrecision,
+body.measurement-page #refScreen .fraction-input-row input {
+  background: rgba(4, 12, 22, 0.58) !important;
+  border: 1px solid rgba(157, 190, 236, 0.24) !important;
+  border-radius: 10px !important;
+  color: #ffffff !important;
+  font-weight: 800;
+  min-height: 42px;
+  padding: 9px 11px !important;
+}
+
+body.measurement-page #refScreen .converter-block .decimal-input::placeholder,
+body.measurement-page #refScreen .fraction-input-row input::placeholder {
+  color: rgba(221, 235, 252, 0.52);
+}
+
+body.measurement-page #refScreen .converter-result {
+  background:
+    linear-gradient(180deg, rgba(63, 120, 231, 0.18), rgba(28, 57, 98, 0.26)),
+    rgba(4, 14, 27, 0.66);
+  border: 1px solid rgba(142, 184, 255, 0.2);
+  border-radius: 12px;
+  color: #f8fbff;
+  min-height: 50px;
+  padding: 10px 12px;
+  word-break: break-word;
+}
+
+body.measurement-page #refScreen .quick-decimal-buttons {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+body.measurement-page #refScreen .quick-decimal-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(157, 190, 236, 0.22);
+  border-radius: 10px;
+  color: #ffffff;
+  min-height: 38px;
+  padding: 7px 8px;
+}
+
+body.measurement-page #refScreen .quick-decimal-btn:hover,
+body.measurement-page #refScreen .quick-decimal-btn:focus-visible {
+  background: rgba(77, 133, 238, 0.22);
+  border-color: rgba(167, 204, 255, 0.52);
+  outline: 0;
+}
+
+body.measurement-page #refScreen .converter-inline {
+  grid-template-columns: 74px minmax(0, 1fr);
+}
+
+body.measurement-page #refScreen .converter-inline label {
+  color: #dbe9fc;
+  font-weight: 800;
+}
+
+body.measurement-page #refScreen .button-row.reference-actions {
+  border-top: 1px solid rgba(126, 169, 236, 0.13);
+  justify-content: flex-start;
+  margin: 0;
+  padding: 12px 16px 16px;
+}
+
+body.measurement-page #refScreen #openDecimalModalBtn {
+  border-radius: 10px;
+  min-height: 40px;
+  min-width: 220px;
+  width: auto;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen #referenceToolsToggleBtn,
+:root[data-theme="light"] body.measurement-page #refScreen #referenceToolsToggleBtn span {
+  color: #173657 !important;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .collapsible-head-block > .note {
+  color: #51647d !important;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .reference-view[data-reference-view="converter"] .reference-card {
+  background: #f8fbff !important;
+  border-color: rgba(31, 63, 108, 0.14) !important;
+  box-shadow: 0 10px 24px rgba(15, 42, 79, 0.08);
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .converter-block {
+  background: #ffffff;
+  border-color: rgba(31, 63, 108, 0.14);
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .converter-label,
+:root[data-theme="light"] body.measurement-page #refScreen .converter-inline label {
+  color: #476b95;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .converter-block .decimal-input,
+:root[data-theme="light"] body.measurement-page #refScreen .converter-block #fractionPrecision,
+:root[data-theme="light"] body.measurement-page #refScreen .fraction-input-row input {
+  background: #ffffff !important;
+  border-color: rgba(31, 63, 108, 0.2) !important;
+  color: #173657 !important;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .converter-result {
+  background: #edf4ff;
+  border-color: rgba(47, 105, 225, 0.18);
+  color: #173657;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .quick-decimal-btn {
+  background: #edf4ff;
+  border-color: rgba(47, 105, 225, 0.18);
+  color: #173657;
+}
+
+@media (max-width: 980px) {
+  body.measurement-page #refScreen .converter-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  body.measurement-page #refScreen .reference-screen-head {
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+  }
+
+  body.measurement-page #refScreen .collapsible-head-block {
+    grid-template-columns: 1fr;
+  }
+
+  body.measurement-page #refScreen .reference-inline-actions {
+    grid-column: 1;
+    grid-row: auto;
+    justify-self: stretch;
+  }
+
+  body.measurement-page #refScreen .reference-inline-actions .secondary-btn {
+    width: 100%;
+  }
+
+  body.measurement-page #refScreen .collapsible-head-block > .note {
+    font-size: 0.78rem;
+  }
+
+  body.measurement-page #refScreen .reference-view[data-reference-view="converter"] .reference-card h4 {
+    font-size: 1.05rem;
+    padding: 14px 12px 0;
+  }
+
+  body.measurement-page #refScreen .converter-grid {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  body.measurement-page #refScreen .converter-block {
+    padding: 12px;
+  }
+
+  body.measurement-page #refScreen .quick-decimal-buttons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  body.measurement-page #refScreen .converter-inline {
+    grid-template-columns: 1fr;
+  }
+
+  body.measurement-page #refScreen .button-row.reference-actions {
+    padding: 0 12px 12px;
+  }
+
+  body.measurement-page #refScreen #openDecimalModalBtn {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 430px) {
+  body.measurement-page #refScreen .quick-decimal-buttons {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
