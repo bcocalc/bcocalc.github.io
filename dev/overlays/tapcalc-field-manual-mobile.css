@@ -1,0 +1,86 @@
+/* TapCalc Field Manual mobile layout guard */
+body.measurement-page #refScreen,
+body.measurement-page #refScreen #referenceWorkspaceContent,
+body.measurement-page #refScreen #fieldManualReferenceView,
+body.measurement-page #refScreen .tapcalc-fieldmanual-view,
+body.measurement-page #refScreen .field-manual-hero,
+body.measurement-page #refScreen .field-manual-section,
+body.measurement-page #refScreen .field-manual-card-grid,
+body.measurement-page #refScreen .field-manual-mini-card {
+  box-sizing: border-box !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+body.measurement-page #refScreen #fieldManualReferenceView,
+body.measurement-page #refScreen .tapcalc-fieldmanual-view {
+  overflow-x: hidden !important;
+  width: 100% !important;
+}
+
+body.measurement-page #refScreen .field-manual-section,
+body.measurement-page #refScreen .field-manual-mini-card {
+  overflow: hidden !important;
+}
+
+body.measurement-page #refScreen .field-manual-hero h3,
+body.measurement-page #refScreen .field-manual-section h4,
+body.measurement-page #refScreen .field-manual-mini-card strong {
+  line-height: 1.12 !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+body.measurement-page #refScreen .field-manual-table-wrap {
+  box-sizing: border-box !important;
+  display: block !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  overflow-x: auto !important;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 760px) {
+  body.measurement-page #refScreen .field-manual-card-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  body.measurement-page #refScreen .field-manual-hero {
+    padding: 14px !important;
+  }
+
+  body.measurement-page #refScreen .field-manual-section {
+    padding: 12px !important;
+  }
+
+  body.measurement-page #refScreen .field-manual-mini-card {
+    padding: 10px !important;
+  }
+
+  body.measurement-page #refScreen .field-manual-table {
+    min-width: 0 !important;
+    table-layout: auto !important;
+    width: 100% !important;
+  }
+
+  body.measurement-page #refScreen .field-manual-table th,
+  body.measurement-page #refScreen .field-manual-table td {
+    font-size: 0.9rem !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
+    word-break: normal !important;
+  }
+}
+
+@media (max-width: 430px) {
+  body.measurement-page #refScreen .field-manual-table th,
+  body.measurement-page #refScreen .field-manual-table td {
+    font-size: 0.84rem !important;
+    padding: 9px 8px !important;
+  }
+
+  body.measurement-page #refScreen .field-manual-mini-card strong {
+    font-size: 0.98rem !important;
+  }
+}
