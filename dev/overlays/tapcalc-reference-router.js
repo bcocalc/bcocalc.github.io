@@ -125,6 +125,15 @@
     return views()[0]?.dataset.referenceView || DEFAULT_VIEW;
   }
 
+  function currentDomView(){
+    const activePanel = document.querySelector('#referenceWorkspaceContent > .reference-view.active[data-reference-view]');
+    if (activePanel?.dataset?.referenceView && panelFor(activePanel.dataset.referenceView)) {
+      return activePanel.dataset.referenceView;
+    }
+    const selected = byId('referenceViewSelect')?.value || '';
+    return panelFor(selected) ? selected : '';
+  }
+
   function setPanelState(panel, isActive){
     panel.classList.toggle('active', isActive);
     panel.hidden = !isActive;
@@ -233,7 +242,7 @@
     scheduled = true;
     setTimeout(() => {
       scheduled = false;
-      selectReference(activeView, { closeMenu: false, persist: false });
+      selectReference(currentDomView() || activeView, { closeMenu: false, persist: false });
     }, 80);
   }
 
