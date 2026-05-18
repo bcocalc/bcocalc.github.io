@@ -1,17 +1,16 @@
-/* TapCalc Dev overlay script entrypoint. Legacy alpha patches live under dev/overlays while they are folded into the main app. */
+/* TapCalc Dev overlay script entrypoint. Legacy patches live under dev/overlays while they are folded into the main app. */
 (function(){
   const READY_FLAG = '__tapcalcDevOverlayLoaderReady';
   if (window[READY_FLAG]) return;
   window[READY_FLAG] = true;
 
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha223';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha224';
   const FILES = [
     'overlays/tapcalc-alpha201.js',
     'overlays/tapcalc-alpha202.js',
     'overlays/tapcalc-alpha214-fieldmanual.js',
-    'overlays/tapcalc-alpha219-reference-router.js',
-    'overlays/tapcalc-alpha221-reference-dedupe.js'
+    'overlays/tapcalc-reference-router.js'
   ];
 
   function loadScript(file){
