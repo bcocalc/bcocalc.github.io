@@ -10,22 +10,18 @@ window.TAPCALC_FIREBASE_CONFIG = {
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 window.TAPCALC_BUILD = Object.assign({
   channel: 'dev',
-  version: '3.0.0-alpha222',
-  label: 'TapCalc Dev v3.0.0-alpha222 - 2026-05-17',
-  overlayVersion: '3.0.0-alpha222',
-  serviceWorkerVersion: '3.0.0-alpha222',
+  version: '3.0.0-alpha223',
+  label: 'TapCalc Dev v3.0.0-alpha223 - 2026-05-17',
+  overlayVersion: '3.0.0-alpha223',
+  serviceWorkerVersion: '3.0.0-alpha223',
   syncPill: 'DEV'
 }, window.TAPCALC_BUILD || {});
 
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha222';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha223';
   const OVERLAYS = [
-    { css: 'tapcalc-alpha201.css', js: 'tapcalc-alpha201.js' },
-    { css: 'tapcalc-alpha202.css', js: 'tapcalc-alpha202.js' },
-    { js: 'tapcalc-alpha214-fieldmanual.js' },
-    { css: 'tapcalc-alpha219-reference-router.css', js: 'tapcalc-alpha219-reference-router.js' },
-    { css: 'tapcalc-alpha221-reference-dedupe.css', js: 'tapcalc-alpha221-reference-dedupe.js' }
+    { css: 'tapcalc-dev-overlays.css', js: 'tapcalc-dev-overlays.js' }
   ];
 
   function addStylesheet(file){
