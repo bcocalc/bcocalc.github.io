@@ -1,7 +1,0 @@
-/* TapCalc Dev 3.0.0-alpha221 Reference duplicate shortcut cleanup */
-#refScreen .field-manual-entry-row,
-#refScreen .field-manual-quick-row,
-#refScreen #fieldManualQuickButton,
-#refScreen #fieldManualInlineAction {
-  display: none !important;
-}
