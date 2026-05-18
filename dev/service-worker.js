@@ -1,27 +1,29 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha219';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha220';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha219",
-  "./tapcalc-alpha201.css?v=3.0.0-alpha219",
-  "./tapcalc-alpha202.css?v=3.0.0-alpha219",
-  "./measurement.js?v=3.0.0-alpha219",
-  "./tapcalc-alpha201.js?v=3.0.0-alpha219",
-  "./tapcalc-alpha202.js?v=3.0.0-alpha219",
-  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha219",
-  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha219",
-  "./tapcalc-alpha217-glossary-detach.js?v=3.0.0-alpha219",
-  "./tapcalc-alpha218-reference-visibility.css?v=3.0.0-alpha219",
-  "./tapcalc-alpha218-reference-visibility.js?v=3.0.0-alpha219",
-  "./tapcalc-alpha219-reference-router.css?v=3.0.0-alpha219",
-  "./tapcalc-alpha219-reference-router.js?v=3.0.0-alpha219",
-  "./pdf.mjs?v=3.0.0-alpha219",
-  "./pdf.worker.mjs?v=3.0.0-alpha219",
-  "./stackup-data.js?v=3.0.0-alpha219",
+  "./styles.css?v=3.0.0-alpha220",
+  "./tapcalc-alpha201.css?v=3.0.0-alpha220",
+  "./tapcalc-alpha202.css?v=3.0.0-alpha220",
+  "./measurement.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha201.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha202.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha217-glossary-detach.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha218-reference-visibility.css?v=3.0.0-alpha220",
+  "./tapcalc-alpha218-reference-visibility.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha219-reference-router.css?v=3.0.0-alpha220",
+  "./tapcalc-alpha219-reference-router.js?v=3.0.0-alpha220",
+  "./tapcalc-alpha220-reference-dedupe.css?v=3.0.0-alpha220",
+  "./tapcalc-alpha220-reference-dedupe.js?v=3.0.0-alpha220",
+  "./pdf.mjs?v=3.0.0-alpha220",
+  "./pdf.worker.mjs?v=3.0.0-alpha220",
+  "./stackup-data.js?v=3.0.0-alpha220",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha219",
+  "./firebase-config.js?v=3.0.0-alpha220",
   "./team-logo.png"
 ];
 
@@ -56,6 +58,8 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith('/tapcalc-alpha218-reference-visibility.js') ||
     url.pathname.endsWith('/tapcalc-alpha219-reference-router.css') ||
     url.pathname.endsWith('/tapcalc-alpha219-reference-router.js') ||
+    url.pathname.endsWith('/tapcalc-alpha220-reference-dedupe.css') ||
+    url.pathname.endsWith('/tapcalc-alpha220-reference-dedupe.js') ||
     url.pathname.endsWith('/pdf.mjs') ||
     url.pathname.endsWith('/pdf.worker.mjs') ||
     url.pathname.endsWith('/stackup-data.js') ||
