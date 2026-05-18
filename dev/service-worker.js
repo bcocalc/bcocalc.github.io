@@ -1,27 +1,25 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha223';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha224';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha223",
-  "./measurement.js?v=3.0.0-alpha223",
-  "./tapcalc-dev-overlays.css?v=3.0.0-alpha223",
-  "./tapcalc-dev-overlays.js?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha201.css?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha201.js?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha202.css?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha202.js?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha219-reference-router.css?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha219-reference-router.js?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha221-reference-dedupe.css?v=3.0.0-alpha223",
-  "./overlays/tapcalc-alpha221-reference-dedupe.js?v=3.0.0-alpha223",
-  "./pdf.mjs?v=3.0.0-alpha223",
-  "./pdf.worker.mjs?v=3.0.0-alpha223",
-  "./stackup-data.js?v=3.0.0-alpha223",
+  "./styles.css?v=3.0.0-alpha224",
+  "./measurement.js?v=3.0.0-alpha224",
+  "./tapcalc-dev-overlays.css?v=3.0.0-alpha224",
+  "./tapcalc-dev-overlays.js?v=3.0.0-alpha224",
+  "./overlays/tapcalc-alpha201.css?v=3.0.0-alpha224",
+  "./overlays/tapcalc-alpha201.js?v=3.0.0-alpha224",
+  "./overlays/tapcalc-alpha202.css?v=3.0.0-alpha224",
+  "./overlays/tapcalc-alpha202.js?v=3.0.0-alpha224",
+  "./overlays/tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha224",
+  "./overlays/tapcalc-reference-router.css?v=3.0.0-alpha224",
+  "./overlays/tapcalc-reference-router.js?v=3.0.0-alpha224",
+  "./pdf.mjs?v=3.0.0-alpha224",
+  "./pdf.worker.mjs?v=3.0.0-alpha224",
+  "./stackup-data.js?v=3.0.0-alpha224",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha223",
+  "./firebase-config.js?v=3.0.0-alpha224",
   "./team-logo.png"
 ];
 
@@ -48,6 +46,8 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith('/tapcalc-dev-overlays.css') ||
     url.pathname.endsWith('/tapcalc-dev-overlays.js') ||
     url.pathname.includes('/overlays/tapcalc-alpha') ||
+    url.pathname.endsWith('/overlays/tapcalc-reference-router.css') ||
+    url.pathname.endsWith('/overlays/tapcalc-reference-router.js') ||
     url.pathname.endsWith('/pdf.mjs') ||
     url.pathname.endsWith('/pdf.worker.mjs') ||
     url.pathname.endsWith('/stackup-data.js') ||
