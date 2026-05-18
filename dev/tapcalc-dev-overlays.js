@@ -5,7 +5,7 @@
   window[READY_FLAG] = true;
 
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha224';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha225';
   const FILES = [
     'overlays/tapcalc-alpha201.js',
     'overlays/tapcalc-alpha202.js',
