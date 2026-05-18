@@ -1,29 +1,29 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha220';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha221';
 const ASSETS = [
   "./",
   "./index.html",
   "./measurement-card.html",
-  "./styles.css?v=3.0.0-alpha220",
-  "./tapcalc-alpha201.css?v=3.0.0-alpha220",
-  "./tapcalc-alpha202.css?v=3.0.0-alpha220",
-  "./measurement.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha201.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha202.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha217-glossary-detach.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha218-reference-visibility.css?v=3.0.0-alpha220",
-  "./tapcalc-alpha218-reference-visibility.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha219-reference-router.css?v=3.0.0-alpha220",
-  "./tapcalc-alpha219-reference-router.js?v=3.0.0-alpha220",
-  "./tapcalc-alpha220-reference-dedupe.css?v=3.0.0-alpha220",
-  "./tapcalc-alpha220-reference-dedupe.js?v=3.0.0-alpha220",
-  "./pdf.mjs?v=3.0.0-alpha220",
-  "./pdf.worker.mjs?v=3.0.0-alpha220",
-  "./stackup-data.js?v=3.0.0-alpha220",
+  "./styles.css?v=3.0.0-alpha221",
+  "./tapcalc-alpha201.css?v=3.0.0-alpha221",
+  "./tapcalc-alpha202.css?v=3.0.0-alpha221",
+  "./measurement.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha201.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha202.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha214-fieldmanual.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha216-reference-fix.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha217-glossary-detach.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha218-reference-visibility.css?v=3.0.0-alpha221",
+  "./tapcalc-alpha218-reference-visibility.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha219-reference-router.css?v=3.0.0-alpha221",
+  "./tapcalc-alpha219-reference-router.js?v=3.0.0-alpha221",
+  "./tapcalc-alpha221-reference-dedupe.css?v=3.0.0-alpha221",
+  "./tapcalc-alpha221-reference-dedupe.js?v=3.0.0-alpha221",
+  "./pdf.mjs?v=3.0.0-alpha221",
+  "./pdf.worker.mjs?v=3.0.0-alpha221",
+  "./stackup-data.js?v=3.0.0-alpha221",
   "./script.js",
   "./manifest.json",
-  "./firebase-config.js?v=3.0.0-alpha220",
+  "./firebase-config.js?v=3.0.0-alpha221",
   "./team-logo.png"
 ];
 
@@ -60,6 +60,8 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith('/tapcalc-alpha219-reference-router.js') ||
     url.pathname.endsWith('/tapcalc-alpha220-reference-dedupe.css') ||
     url.pathname.endsWith('/tapcalc-alpha220-reference-dedupe.js') ||
+    url.pathname.endsWith('/tapcalc-alpha221-reference-dedupe.css') ||
+    url.pathname.endsWith('/tapcalc-alpha221-reference-dedupe.js') ||
     url.pathname.endsWith('/pdf.mjs') ||
     url.pathname.endsWith('/pdf.worker.mjs') ||
     url.pathname.endsWith('/stackup-data.js') ||
