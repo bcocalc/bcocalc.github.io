@@ -10,16 +10,16 @@ window.TAPCALC_FIREBASE_CONFIG = {
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 window.TAPCALC_BUILD = Object.assign({
   channel: 'dev',
-  version: '3.0.0-alpha221',
-  label: 'TapCalc Dev v3.0.0-alpha221 - 2026-05-17',
-  overlayVersion: '3.0.0-alpha221',
-  serviceWorkerVersion: '3.0.0-alpha221',
+  version: '3.0.0-alpha222',
+  label: 'TapCalc Dev v3.0.0-alpha222 - 2026-05-17',
+  overlayVersion: '3.0.0-alpha222',
+  serviceWorkerVersion: '3.0.0-alpha222',
   syncPill: 'DEV'
 }, window.TAPCALC_BUILD || {});
 
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha221';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha222';
   const OVERLAYS = [
     { css: 'tapcalc-alpha201.css', js: 'tapcalc-alpha201.js' },
     { css: 'tapcalc-alpha202.css', js: 'tapcalc-alpha202.js' },
