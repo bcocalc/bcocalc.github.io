@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha234';
+const BUILD_VERSION = '3.0.0-alpha236';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha234';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha234';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha236';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha236';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha234', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha236', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4311,7 +4311,7 @@ function loadRecordIntoCalculator(record, options = {}) {
       if (jobsPanelEl) jobsPanelEl.classList.remove('active');
     }, 40);
   } catch {}
-  if (record?.jobBundle?.operations?.length > 1) {
+  if (record?.jobBundle?.operations?.length > 1 && options.focusOperations === true) {
     focusJobInfoOperations(currentJobBundle, { behavior: 'auto', delay: 140 });
   }
 }
@@ -5306,6 +5306,42 @@ var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
 var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
 var selectedJobId = window.selectedJobId || '';
 
+/* ===== 3.0.0-alpha236 auto-scroll guard ===== */
+(function(){
+  let lastFieldEditAt = 0;
+  const editableSelector = 'input, textarea, select, [contenteditable="true"]';
+
+  function isEditableTarget(target){
+    return !!target?.closest?.(editableSelector);
+  }
+
+  function markFieldEdit(event){
+    if (isEditableTarget(event?.target)) lastFieldEditAt = Date.now();
+  }
+
+  function activeElementIsEditable(){
+    const active = document.activeElement;
+    if (!active?.matches?.(editableSelector)) return false;
+    if (active.matches('button, [type="button"], [type="submit"], [type="reset"]')) return false;
+    return true;
+  }
+
+  document.addEventListener('input', markFieldEdit, true);
+  document.addEventListener('keydown', markFieldEdit, true);
+  document.addEventListener('change', markFieldEdit, true);
+  window.tapCalcSuppressAutoScroll = function(duration = 1400){
+    window.__tapCalcSuppressAutoScrollUntil = Date.now() + (Number(duration) || 1400);
+  };
+  window.tapCalcShouldSuppressAutoScroll = function(){
+    if (Date.now() < Number(window.__tapCalcSuppressAutoScrollUntil || 0)) return true;
+    if (Date.now() - lastFieldEditAt < 900) return true;
+    return activeElementIsEditable();
+  };
+  window.tapCalcCanAutoScroll = function(options = {}){
+    if (options.force === true) return true;
+    return !window.tapCalcShouldSuppressAutoScroll();
+  };
+})();
 
 // alpha4 app shell navigation
 (function(){
@@ -5345,7 +5381,8 @@ var selectedJobId = window.selectedJobId || '';
     try{ localStorage.setItem('tapcalcV3Screen', name);}catch{}
   }
 
-  function focusActiveCardPanel(mode){
+  function focusActiveCardPanel(mode, options = {}){
+    if (window.tapCalcCanAutoScroll && !window.tapCalcCanAutoScroll(options)) return;
     const panelMap={hotTap:'hotTapPanel',htp:'htpPanel',lineStop:'lineStopPanel',completionPlug:'completionPlugPanel'};
     const panel=document.getElementById(panelMap[mode]);
     if(!panel) return;
@@ -5391,7 +5428,7 @@ var selectedJobId = window.selectedJobId || '';
     const workflowMode = WORKFLOW_SCREEN_MODES.has(nextMode) ? nextMode : getActiveWorkflowMode();
     document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card)=>card.classList.toggle('active', card.dataset.workflowTarget===workflowMode));
     updateCurrentJobLabel();
-    if (WORKFLOW_SCREEN_MODES.has(nextMode) && document.body.dataset.activeScreen === 'card') {
+    if (WORKFLOW_SCREEN_MODES.has(nextMode) && document.body.dataset.activeScreen === 'card' && (!window.tapCalcCanAutoScroll || window.tapCalcCanAutoScroll())) {
       focusActiveCardPanel(nextMode);
     }
   };
@@ -6756,7 +6793,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha234';
+const TC63_VERSION = '3.0.0-alpha236';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -7002,7 +7039,7 @@ const TC63_VERSION = '3.0.0-alpha234';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha234';
+const VERSION = '3.0.0-alpha236';
 
   function tc65GetJobs() {
     try {
@@ -10224,7 +10261,7 @@ const VERSION = '3.0.0-alpha234';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha234';
+const VERSION = '3.0.0-alpha236';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -11827,6 +11864,7 @@ const VERSION = '3.0.0-alpha234';
       try { window.setMode(nextStage); } catch {}
     }
 
+    if (opts.skipScroll === true || (window.tapCalcCanAutoScroll && !window.tapCalcCanAutoScroll(opts))) return;
     setTimeout(()=>{
       const focusTarget = isModeStage
         ? document.querySelector('.card-focus-shell')
@@ -13401,8 +13439,9 @@ const VERSION = '3.0.0-alpha234';
       try { select.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
       try { select.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
     }
+    try { window.tapCalcSuppressAutoScroll?.(1600); } catch {}
     try { if (typeof window.setMode === 'function') window.setMode(stage); } catch {}
-    try { if (typeof window.tapCalcSetWorkflowStage === 'function') window.tapCalcSetWorkflowStage(stage, { skipSetMode: false }); } catch {}
+    try { if (typeof window.tapCalcSetWorkflowStage === 'function') window.tapCalcSetWorkflowStage(stage, { skipSetMode: false, skipScroll: true }); } catch {}
     window.__tapcalcLastLoadedWorkflowStage = stage;
     return true;
   }
@@ -13468,6 +13507,7 @@ const VERSION = '3.0.0-alpha234';
   function alpha162LoadRecord(record, options = {}) {
     if (!record) return false;
     let result = false;
+    try { window.tapCalcSuppressAutoScroll?.(1800); } catch {}
     if (typeof previousLoader === 'function') {
       result = previousLoader.call(this, record, options);
     }
@@ -14552,4 +14592,90 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initUwireCalculator);
   else setTimeout(initUwireCalculator, 0);
   window.tapCalcInitUwireCalculator = initUwireCalculator;
+})();
+
+/* ===== 3.0.0-alpha236 shared library row consistency ===== */
+(function(){
+  const $ = (id) => document.getElementById(id);
+
+  function getJobs(){
+    try { return typeof getCombinedJobsForDisplay === 'function' ? (getCombinedJobsForDisplay() || []) : []; } catch { return []; }
+  }
+
+  function sourceLabel(source = ''){
+    return source === 'local' ? 'Local' : source === 'synced' ? 'Synced' : 'Shared';
+  }
+
+  function titleFor(record = {}){
+    return record?.meta?.title || record?.job?.jobDescription || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+  }
+
+  function metaFor(entry = {}){
+    const record = entry.record || {};
+    const client = record?.job?.client || 'No customer';
+    const date = record?.job?.date || record?.meta?.savedAtDisplay || entry.savedAt || 'No date';
+    const op = record?.meta?.operationType || 'Job';
+    const nominalSize = record?.pipe?.nominalSize || '-';
+    const groupPrefix = jobsBrowseMode === 'customer'
+      ? `Customer: ${client}`
+      : jobsBrowseMode === 'location'
+        ? `Location: ${record?.job?.location || 'No location'}`
+        : jobsBrowseMode === 'date'
+          ? `Date: ${date}`
+          : 'Search';
+    return `${groupPrefix}  |  ${client}  |  ${op}  |  ${nominalSize}  |  ${sourceLabel(entry.source)}`;
+  }
+
+  function ensureRowSpan(item, selector, className){
+    let el = item.querySelector(selector);
+    if (!el) el = document.createElement('span');
+    el.className = className;
+    return el;
+  }
+
+  function normalizeSharedJobRows(){
+    const listEl = $('jobsSelect');
+    if (!listEl) return;
+    const jobs = getJobs();
+    listEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+      const id = String(item.dataset.jobId || '').trim();
+      const entry = jobs.find((job) => String(job?.id || '') === id);
+      const oldTitle = item.querySelector('.jobs-list-title, .jobs-list-item-title')?.textContent?.trim() || item.textContent?.trim() || 'Saved Job';
+      const oldMeta = item.querySelector('.jobs-list-meta, .jobs-list-item-meta')?.textContent?.trim() || '';
+      const titleEl = ensureRowSpan(item, '.jobs-list-title, .jobs-list-item-title', 'jobs-list-title');
+      const metaEl = ensureRowSpan(item, '.jobs-list-meta, .jobs-list-item-meta', 'jobs-list-meta');
+      titleEl.textContent = entry?.record ? titleFor(entry.record) : oldTitle;
+      metaEl.textContent = entry?.record ? metaFor(entry) : oldMeta;
+      item.replaceChildren(titleEl, metaEl);
+    });
+  }
+
+  function scheduleNormalize(){
+    setTimeout(normalizeSharedJobRows, 0);
+    setTimeout(normalizeSharedJobRows, 120);
+    setTimeout(normalizeSharedJobRows, 420);
+  }
+
+  const previousRenderJobsList = window.renderJobsList || (typeof renderJobsList === 'function' ? renderJobsList : null);
+  if (typeof previousRenderJobsList === 'function') {
+    const wrappedRenderJobsList = function(...args){
+      const result = previousRenderJobsList.apply(this, args);
+      scheduleNormalize();
+      return result;
+    };
+    window.renderJobsList = wrappedRenderJobsList;
+    try { renderJobsList = wrappedRenderJobsList; } catch {}
+  }
+
+  document.addEventListener('click', (event) => {
+    if (event.target?.closest?.('#jobsSelect .jobs-list-item, #jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114')) {
+      scheduleNormalize();
+    }
+  }, true);
+  document.addEventListener('pointerup', (event) => {
+    if (event.target?.closest?.('#jobsSelect .jobs-list-item')) scheduleNormalize();
+  }, true);
+  window.addEventListener('pageshow', scheduleNormalize);
+  setTimeout(scheduleNormalize, 80);
+  window.tapCalcNormalizeSharedJobRows = normalizeSharedJobRows;
 })();

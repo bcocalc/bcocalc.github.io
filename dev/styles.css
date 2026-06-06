@@ -9717,3 +9717,36 @@ body.measurement-page #jobsScreen .jobs-action-short {
     font-size: 0.7rem !important;
   }
 }
+
+/* ===== 3.0.0-alpha236 shared library row consistency ===== */
+body.measurement-page #jobsScreen #jobsSelect .jobs-list-item {
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  min-height: unset !important;
+  text-align: left;
+}
+
+body.measurement-page #jobsScreen #jobsSelect .jobs-list-title,
+body.measurement-page #jobsScreen #jobsSelect .jobs-list-item-title {
+  display: block;
+  width: 100%;
+  color: inherit;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+body.measurement-page #jobsScreen #jobsSelect .jobs-list-meta,
+body.measurement-page #jobsScreen #jobsSelect .jobs-list-item-meta {
+  display: block;
+  width: 100%;
+  color: inherit;
+  font-size: 0.8rem;
+  line-height: 1.25;
+  opacity: 0.82;
+  overflow-wrap: anywhere;
+}
