@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha233';
+const BUILD_VERSION = '3.0.0-alpha234';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha233';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha233';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha234';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha234';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha233', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha234', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2983,17 +2983,43 @@ function operationSignedValue(state = {}, valueKey, signKey) {
   return (state[signKey] || '+') === '-' ? -raw : raw;
 }
 
-function operationSnapshotBco(state = {}) {
-  const manualBco = operationSnapshotNumber(state.etaBco);
-  if (Number.isFinite(manualBco)) return manualBco;
+function operationSnapshotMaterialKey(value = '') {
+  const raw = String(value || '').trim();
+  if (raw && trueOD?.[raw]) return raw;
+  const compact = raw.toLowerCase().replace(/[^a-z0-9]+/g, '');
+  if (compact.includes('ductile')) return 'DuctileIron';
+  if (compact.includes('carbon') || compact.includes('steel')) return 'CarbonSteel';
+  return 'CarbonSteel';
+}
+
+function operationSnapshotTruePipeOd(state = {}) {
+  const material = operationSnapshotMaterialKey(state.bcoPipeMaterial || state.pipeMaterial);
+  const nominal = String(state.bcoPipeOD ?? state.pipeOD ?? '').trim();
+  const mapped = Number(trueOD?.[material]?.[nominal]);
+  if (Number.isFinite(mapped)) return mapped;
+  return operationSnapshotNumber(state.bcoTrueOD ?? state.trueOD ?? state.pipeOD ?? state.bcoPipeOD);
+}
+
+function operationSnapshotCalculatedBco(state = {}) {
+  const pipeOd = operationSnapshotTruePipeOd(state);
   const pipeId = operationSnapshotNumber(state.bcoPipeID);
   const cutterOd = operationSnapshotNumber(state.bcoCutterOD);
-  if (Number.isFinite(pipeId) && Number.isFinite(cutterOd)) return (cutterOd - pipeId) / 2;
+  if (!Number.isFinite(pipeOd) || !Number.isFinite(pipeId) || !Number.isFinite(cutterOd)) return NaN;
+  const underRoot = Math.pow(pipeId / 2, 2) - Math.pow(cutterOd / 2, 2);
+  if (underRoot < 0) return NaN;
+  return (pipeOd / 2) - Math.sqrt(underRoot);
+}
+
+function operationSnapshotBco(state = {}) {
+  const calculatedBco = operationSnapshotCalculatedBco(state);
+  if (Number.isFinite(calculatedBco)) return calculatedBco;
+  const manualBco = operationSnapshotNumber(state.etaBco);
+  if (Number.isFinite(manualBco)) return manualBco;
   return NaN;
 }
 
 function operationSnapshotWall(state = {}) {
-  const pipeOd = operationSnapshotNumber(state.bcoPipeOD);
+  const pipeOd = operationSnapshotTruePipeOd(state);
   const pipeId = operationSnapshotNumber(state.bcoPipeID);
   if (Number.isFinite(pipeOd) && Number.isFinite(pipeId)) return (pipeOd - pipeId) / 2;
   return NaN;
@@ -3011,6 +3037,8 @@ function buildOperationSnapshotRows(item = {}) {
   pushOperationSnapshotRow(rows, 'Pipe', state.bcoPipeOD);
   pushOperationSnapshotRow(rows, 'Sched', state.bcoSchedule);
   pushOperationSnapshotRow(rows, 'Pipe ID', state.bcoPipeID);
+  const wall = operationSnapshotWall(state);
+  if (Number.isFinite(wall)) pushOperationSnapshotRow(rows, 'Wall', operationSnapshotDisplay(wall));
   pushOperationSnapshotRow(rows, 'Cutter', state.bcoCutterOD);
   const bco = operationSnapshotBco(state);
   if (Number.isFinite(bco)) pushOperationSnapshotRow(rows, 'BCO', operationSnapshotDisplay(bco));
@@ -3035,8 +3063,7 @@ function buildOperationSnapshotRows(item = {}) {
   } else if (operationType === 'Line Stop') {
     const md = operationSnapshotNumber(state.lsMd);
     const ld = operationSignedValue(state, 'lsLd', 'lsLdSign');
-    const pipeOd = operationSnapshotNumber(state.bcoPipeOD);
-    const wall = operationSnapshotWall(state);
+    const pipeOd = operationSnapshotTruePipeOd(state);
     const liAuto = Number.isFinite(md) && Number.isFinite(ld) && Number.isFinite(pipeOd) && Number.isFinite(wall) ? md + ld + pipeOd - wall : NaN;
     pushOperationSnapshotRow(rows, 'Variant', state.lineStopVariant);
     pushOperationSnapshotRow(rows, 'MD', state.lsMd);
@@ -3048,7 +3075,7 @@ function buildOperationSnapshotRows(item = {}) {
     const md = operationSnapshotNumber(state.hsMd);
     const ld = operationSignedValue(state, 'hsLd', 'hsLdSign');
     const rl = operationSnapshotNumber(state.hsRl);
-    const pod = operationSnapshotNumber(state.hsPod || state.bcoPipeOD);
+    const pod = Number.isFinite(operationSnapshotNumber(state.hsPod)) ? operationSnapshotNumber(state.hsPod) : operationSnapshotTruePipeOd(state);
     const cl = operationSnapshotNumber(state.hsCl);
     const ptc = operationSnapshotNumber(state.hsPtc) || 0;
     const li = Number.isFinite(md) && Number.isFinite(ld) ? md + ld : NaN;
@@ -3067,7 +3094,7 @@ function buildOperationSnapshotRows(item = {}) {
     pushOperationSnapshotRow(rows, 'LI', state.cpLiManual);
   }
 
-  return rows.slice(0, 10);
+  return rows.slice(0, 12);
 }
 
 function normalizeJobBundle(rawBundle, record = null) {
@@ -6729,7 +6756,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha233';
+const TC63_VERSION = '3.0.0-alpha234';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6975,7 +7002,7 @@ const TC63_VERSION = '3.0.0-alpha233';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha233';
+const VERSION = '3.0.0-alpha234';
 
   function tc65GetJobs() {
     try {
@@ -10197,7 +10224,7 @@ const VERSION = '3.0.0-alpha233';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha233';
+const VERSION = '3.0.0-alpha234';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
