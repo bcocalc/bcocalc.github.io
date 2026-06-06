@@ -3823,13 +3823,24 @@ body.measurement-page {
 .job-operations-actions{display:flex;flex-wrap:wrap;gap:10px;}
 .job-operations-actions .secondary-btn{flex:1 1 160px;min-width:0;}
 .job-operations-status{margin:0;color:#9fb8cb;}
-.job-operation-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;}
-.job-operation-card{appearance:none;border:1px solid rgba(146,181,224,.16);background:rgba(255,255,255,.05);border-radius:16px;padding:12px 13px;text-align:left;display:grid;gap:5px;color:#eef6ff;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease,box-shadow .18s ease;touch-action:manipulation;}
+.job-operation-preview{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;}
+.job-operation-card{appearance:none;border:1px solid rgba(146,181,224,.16);background:rgba(255,255,255,.05);border-radius:16px;padding:12px 13px;text-align:left;display:grid;gap:8px;color:#eef6ff;cursor:pointer;transition:border-color .18s ease,background .18s ease,transform .18s ease,box-shadow .18s ease;touch-action:manipulation;}
 .job-operation-card:hover{transform:translateY(-1px);border-color:rgba(146,181,224,.3);box-shadow:0 12px 24px rgba(4,12,24,.16);}
 .job-operation-card.active{background:linear-gradient(180deg,rgba(50,104,226,.26),rgba(34,77,168,.18));border-color:rgba(122,169,255,.58);box-shadow:0 14px 28px rgba(18,48,108,.24);}
+.job-operation-card-top{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .job-operation-card small{font-size:.74rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#9ec2f0;}
 .job-operation-card strong{font-size:1rem;line-height:1.25;color:#fff;}
 .job-operation-card span{font-size:.86rem;line-height:1.35;color:#d6e6f8;}
+.job-operation-card-state{padding:4px 7px;border-radius:999px;background:rgba(140,176,214,.12);color:#dcecff !important;font-size:.7rem !important;font-weight:850;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;}
+.job-operation-card.active .job-operation-card-state{background:rgba(122,169,255,.22);color:#ffffff !important;}
+.job-operation-card-summary{color:#adc7e7 !important;}
+.job-operation-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;}
+.job-operation-detail{display:grid;gap:1px;min-width:0;padding:7px 8px;border-radius:10px;background:rgba(7,18,32,.32);border:1px solid rgba(146,181,224,.1);}
+.job-operation-detail b{color:#9ec2f0;font-size:.68rem;line-height:1;text-transform:uppercase;letter-spacing:.05em;}
+.job-operation-detail em{color:#f7fbff;font-style:normal;font-size:.9rem;font-weight:850;line-height:1.2;overflow-wrap:anywhere;}
+.job-operation-card-note{display:grid;gap:2px;padding-top:7px;border-top:1px solid rgba(171,199,237,.12);color:#f3ddac !important;font-weight:750;}
+.job-operation-card-note b{color:#f7d88d;font-size:.68rem;text-transform:uppercase;letter-spacing:.06em;}
+.job-operation-empty{padding:8px 9px;border-radius:10px;background:rgba(7,18,32,.22);color:#adc7e7 !important;}
 .calc-submode-btn,.workflow-submode-btn,.workflow-card,.workflow-stage-chip{touch-action:manipulation;-webkit-tap-highlight-color:rgba(47,105,225,.18);}
 .current-live-shell-below{margin-top:14px;}
 .current-live-card-secondary p strong{color:#fff;}
@@ -5610,6 +5621,35 @@ body.dark-mode .workflow-helper-panel{
 }
 :root[data-theme="light"] #jobScreen .job-operation-card span{
   color:#46627f !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-card-state{
+  background:#e7effa !important;
+  color:#426285 !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-card.active .job-operation-card-state{
+  background:#cfdef5 !important;
+  color:#173b68 !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-card-summary,
+:root[data-theme="light"] #jobScreen .job-operation-empty{
+  color:#58718e !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-detail{
+  background:#f0f6fd !important;
+  border-color:#d9e6f5 !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-detail b{
+  color:#4b6f9d !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-detail em{
+  color:#102743 !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-card-note{
+  border-top-color:#d3e0f3 !important;
+  color:#704d00 !important;
+}
+:root[data-theme="light"] #jobScreen .job-operation-card-note b{
+  color:#76540d !important;
 }
 :root[data-theme="light"] #jobScreen input,
 :root[data-theme="light"] #jobScreen select,
@@ -7812,6 +7852,15 @@ body.measurement-page .workflow-operation-preview .job-operation-card.active {
   box-shadow: 0 0 0 2px rgba(132, 178, 255, 0.18);
 }
 
+body.measurement-page .workflow-operation-preview .job-operation-detail {
+  background: rgba(4, 14, 26, 0.32);
+  border-color: rgba(140, 176, 214, 0.12);
+}
+
+body.measurement-page .workflow-operation-preview .job-operation-card-state {
+  background: rgba(140, 176, 214, 0.13);
+}
+
 body.measurement-page .workflow-pipe-tools-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -7895,6 +7944,34 @@ body.light.measurement-page .workflow-operations-head p {
 body.light.measurement-page .workflow-operation-preview .job-operation-card {
   background: #eef4fb;
   border-color: #d3e0f3;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-operation-preview .job-operation-detail,
+body.light.measurement-page .workflow-operation-preview .job-operation-detail {
+  background: #f8fbff;
+  border-color: #d3e0f3;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-operation-preview .job-operation-detail b,
+body.light.measurement-page .workflow-operation-preview .job-operation-detail b {
+  color: #4b6f9d;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-operation-preview .job-operation-detail em,
+body.light.measurement-page .workflow-operation-preview .job-operation-detail em {
+  color: #102743;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-operation-preview .job-operation-card-state,
+body.light.measurement-page .workflow-operation-preview .job-operation-card-state {
+  background: #e7effa;
+  color: #426285 !important;
+}
+
+:root[data-theme="light"] body.measurement-page .workflow-operation-preview .job-operation-card-note,
+body.light.measurement-page .workflow-operation-preview .job-operation-card-note {
+  border-top-color: #d3e0f3;
+  color: #704d00 !important;
 }
 
 :root[data-theme="light"] body.measurement-page .workflow-tool-card-head span,

@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha200';
+const BUILD_VERSION = '3.0.0-alpha233';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha200';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha200';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha233';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha233';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha200', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha233', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2957,6 +2957,119 @@ function buildOperationSummaryFromItem(item = {}) {
   };
 }
 
+function hasOperationSnapshotValue(value) {
+  const text = String(value ?? '').trim();
+  return !!text && text !== '-' && text !== '?' && text.toLowerCase() !== 'nan';
+}
+
+function operationSnapshotNumber(value) {
+  if (!hasOperationSnapshotValue(value)) return NaN;
+  if (typeof parseMixedMeasurement === 'function') {
+    const parsed = parseMixedMeasurement(String(value));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : NaN;
+}
+
+function operationSnapshotDisplay(value) {
+  if (!Number.isFinite(value)) return '';
+  return value.toFixed(4).replace(/\.?0+$/, '');
+}
+
+function operationSignedValue(state = {}, valueKey, signKey) {
+  const raw = operationSnapshotNumber(state[valueKey]);
+  if (!Number.isFinite(raw)) return NaN;
+  return (state[signKey] || '+') === '-' ? -raw : raw;
+}
+
+function operationSnapshotBco(state = {}) {
+  const manualBco = operationSnapshotNumber(state.etaBco);
+  if (Number.isFinite(manualBco)) return manualBco;
+  const pipeId = operationSnapshotNumber(state.bcoPipeID);
+  const cutterOd = operationSnapshotNumber(state.bcoCutterOD);
+  if (Number.isFinite(pipeId) && Number.isFinite(cutterOd)) return (cutterOd - pipeId) / 2;
+  return NaN;
+}
+
+function operationSnapshotWall(state = {}) {
+  const pipeOd = operationSnapshotNumber(state.bcoPipeOD);
+  const pipeId = operationSnapshotNumber(state.bcoPipeID);
+  if (Number.isFinite(pipeOd) && Number.isFinite(pipeId)) return (pipeOd - pipeId) / 2;
+  return NaN;
+}
+
+function pushOperationSnapshotRow(rows, label, value) {
+  if (!hasOperationSnapshotValue(value)) return;
+  rows.push({ label, value: String(value).trim() });
+}
+
+function buildOperationSnapshotRows(item = {}) {
+  const state = item?.state || {};
+  const operationType = formatOperationType(item?.operationType || inferOperationType(state));
+  const rows = [];
+  pushOperationSnapshotRow(rows, 'Pipe', state.bcoPipeOD);
+  pushOperationSnapshotRow(rows, 'Sched', state.bcoSchedule);
+  pushOperationSnapshotRow(rows, 'Pipe ID', state.bcoPipeID);
+  pushOperationSnapshotRow(rows, 'Cutter', state.bcoCutterOD);
+  const bco = operationSnapshotBco(state);
+  if (Number.isFinite(bco)) pushOperationSnapshotRow(rows, 'BCO', operationSnapshotDisplay(bco));
+
+  if (operationType === 'Hot Tap') {
+    const md = operationSnapshotNumber(state.md);
+    const ld = operationSignedValue(state, 'ld', 'ldSign');
+    const ptc = operationSnapshotNumber(state.ptc);
+    const li = Number.isFinite(md) && Number.isFinite(ld) ? md + ld : NaN;
+    const ttd = Number.isFinite(li) && Number.isFinite(ptc) && Number.isFinite(bco) ? li + ptc + bco : NaN;
+    pushOperationSnapshotRow(rows, 'MD', state.md);
+    pushOperationSnapshotRow(rows, 'LD', Number.isFinite(ld) ? operationSnapshotDisplay(ld) : state.ld);
+    pushOperationSnapshotRow(rows, 'PTC', state.ptc);
+    pushOperationSnapshotRow(rows, 'LI', operationSnapshotDisplay(li));
+    pushOperationSnapshotRow(rows, 'TTD', operationSnapshotDisplay(ttd));
+    pushOperationSnapshotRow(rows, 'MT', state.mt);
+  } else if (operationType === 'HTP Hot Tap') {
+    pushOperationSnapshotRow(rows, 'HTP Size', state.htpPipeSize);
+    pushOperationSnapshotRow(rows, 'MD', state.htpMd);
+    pushOperationSnapshotRow(rows, 'LD', Number.isFinite(operationSignedValue(state, 'htpLd', 'htpLdSign')) ? operationSnapshotDisplay(operationSignedValue(state, 'htpLd', 'htpLdSign')) : state.htpLd);
+    pushOperationSnapshotRow(rows, 'PTC', state.htpPtc);
+  } else if (operationType === 'Line Stop') {
+    const md = operationSnapshotNumber(state.lsMd);
+    const ld = operationSignedValue(state, 'lsLd', 'lsLdSign');
+    const pipeOd = operationSnapshotNumber(state.bcoPipeOD);
+    const wall = operationSnapshotWall(state);
+    const liAuto = Number.isFinite(md) && Number.isFinite(ld) && Number.isFinite(pipeOd) && Number.isFinite(wall) ? md + ld + pipeOd - wall : NaN;
+    pushOperationSnapshotRow(rows, 'Variant', state.lineStopVariant);
+    pushOperationSnapshotRow(rows, 'MD', state.lsMd);
+    pushOperationSnapshotRow(rows, 'LD', Number.isFinite(ld) ? operationSnapshotDisplay(ld) : state.lsLd);
+    pushOperationSnapshotRow(rows, 'LI', state.lsLiManual || operationSnapshotDisplay(liAuto));
+    pushOperationSnapshotRow(rows, 'Travel', state.lsTravel);
+    pushOperationSnapshotRow(rows, 'Machine Travel', state.lsMachineTravel);
+  } else if (operationType === 'Hi-Stop') {
+    const md = operationSnapshotNumber(state.hsMd);
+    const ld = operationSignedValue(state, 'hsLd', 'hsLdSign');
+    const rl = operationSnapshotNumber(state.hsRl);
+    const pod = operationSnapshotNumber(state.hsPod || state.bcoPipeOD);
+    const cl = operationSnapshotNumber(state.hsCl);
+    const ptc = operationSnapshotNumber(state.hsPtc) || 0;
+    const li = Number.isFinite(md) && Number.isFinite(ld) ? md + ld : NaN;
+    const tco = Number.isFinite(rl) && Number.isFinite(pod) && Number.isFinite(cl) ? (rl / 2) + (pod / 2) + cl + ptc : NaN;
+    pushOperationSnapshotRow(rows, 'MD', state.hsMd);
+    pushOperationSnapshotRow(rows, 'LD', Number.isFinite(ld) ? operationSnapshotDisplay(ld) : state.hsLd);
+    pushOperationSnapshotRow(rows, 'LI', operationSnapshotDisplay(li));
+    pushOperationSnapshotRow(rows, 'RL', state.hsRl);
+    pushOperationSnapshotRow(rows, 'CL', state.hsCl);
+    pushOperationSnapshotRow(rows, 'TCO', operationSnapshotDisplay(tco));
+  } else if (operationType === 'Completion Plug') {
+    pushOperationSnapshotRow(rows, 'Start', state.cpStart);
+    pushOperationSnapshotRow(rows, 'JBF', state.cpJbf);
+    pushOperationSnapshotRow(rows, 'LD', state.cpLd);
+    pushOperationSnapshotRow(rows, 'PT', state.cpPt);
+    pushOperationSnapshotRow(rows, 'LI', state.cpLiManual);
+  }
+
+  return rows.slice(0, 10);
+}
+
 function normalizeJobBundle(rawBundle, record = null) {
   const legacyState = rawBundle && !Array.isArray(rawBundle?.operations) ? (rawBundle.state || rawBundle) : null;
   const sharedState = {
@@ -3045,8 +3158,14 @@ function renderOperationPreview(bundle = ensureJobBundleInitialized()) {
     const active = operation.id === bundle.selectedOperationId;
     const summary = buildOperationSummaryFromItem(operation);
     const notes = String(operation?.notes || '').trim();
-    const details = notes ? `${summary.details}  |  Note: ${notes}` : summary.details;
-    return `<button type="button" class="job-operation-card${active ? ' active' : ''}" data-operation-id="${escapeHtml(operation.id)}" aria-pressed="${active ? 'true' : 'false'}"><small>${escapeHtml(summary.operationType)}</small><strong>${escapeHtml(operation.label || summary.operationType)}</strong><span>${escapeHtml(details)}</span></button>`;
+    const snapshotRows = buildOperationSnapshotRows(operation);
+    const snapshotMarkup = snapshotRows.length
+      ? `<span class="job-operation-detail-grid">${snapshotRows.map((row) => `<span class="job-operation-detail"><b>${escapeHtml(row.label)}</b><em>${escapeHtml(row.value)}</em></span>`).join('')}</span>`
+      : '<span class="job-operation-empty">No saved measurements yet.</span>';
+    const noteMarkup = notes ? `<span class="job-operation-card-note"><b>Note</b>${escapeHtml(notes)}</span>` : '';
+    const actionText = active ? 'Currently open' : `Open ${summary.operationType}`;
+    const ariaDetails = snapshotRows.map((row) => `${row.label} ${row.value}`).join(', ') || summary.details;
+    return `<button type="button" class="job-operation-card${active ? ' active' : ''}" data-operation-id="${escapeHtml(operation.id)}" aria-pressed="${active ? 'true' : 'false'}" aria-label="${escapeHtml(`${actionText}: ${operation.label || summary.operationType}. ${ariaDetails}`)}"><span class="job-operation-card-top"><small>${escapeHtml(summary.operationType)}</small><span class="job-operation-card-state">${escapeHtml(actionText)}</span></span><strong>${escapeHtml(operation.label || summary.operationType)}</strong><span class="job-operation-card-summary">${escapeHtml(summary.details)}</span>${snapshotMarkup}${noteMarkup}</button>`;
   }).join('');
   jobOperationPreviewListEl.querySelectorAll('[data-operation-id]').forEach((button) => {
     button.addEventListener('click', () => selectOperationById(button.dataset.operationId || ''));
@@ -3216,6 +3335,14 @@ function selectOperationById(operationId, options = {}) {
   suppressJobBundleUiSync = false;
   renderOperationManager();
   if (options.persist !== false) persistCurrentJob({ render: false });
+  const nextStage = WORKFLOW_SCREEN_MODES.has(normalizeMode(selectedOperation?.state?.activeMode))
+    ? normalizeMode(selectedOperation.state.activeMode)
+    : (WORKFLOW_SCREEN_MODES.has(normalizeMode(selectedOperation?.mode)) ? normalizeMode(selectedOperation.mode) : modeForOperationType(selectedOperation?.operationType));
+  if (nextStage && options.updateStage !== false) {
+    setTimeout(() => {
+      try { window.tapCalcSetWorkflowStage?.(nextStage, { skipSetMode: false }); } catch {}
+    }, 0);
+  }
   if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell();
 }
 
@@ -6602,7 +6729,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha200';
+const TC63_VERSION = '3.0.0-alpha233';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6848,7 +6975,7 @@ const TC63_VERSION = '3.0.0-alpha200';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha200';
+const VERSION = '3.0.0-alpha233';
 
   function tc65GetJobs() {
     try {
@@ -10070,7 +10197,7 @@ const VERSION = '3.0.0-alpha200';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha200';
+const VERSION = '3.0.0-alpha233';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -12152,6 +12279,7 @@ const VERSION = '3.0.0-alpha200';
     ['workflowEtaBco', 'etaBco'],
     ['workflowEtaRpmOverride', 'etaRpmOverride']
   ];
+  const bcoToolSourceIds = new Set(['bcoPipeMaterial', 'bcoPipeOD', 'bcoSchedule', 'bcoPipeID', 'bcoCutterOD']);
   let syncingWorkflowTools = false;
   let lastWorkflowToolsSignature = '';
 
@@ -12207,6 +12335,14 @@ const VERSION = '3.0.0-alpha200';
     return value && value !== '-' && value !== '?' ? value : '';
   }
 
+  function liveBcoText(){
+    const summary = resultText('summaryBco');
+    if (summary) return summary;
+    let live = NaN;
+    try { live = getLiveBcoValue(); } catch {}
+    return Number.isFinite(live) ? live.toFixed(4) : '';
+  }
+
   function sourceSignature(){
     const fieldSignature = fieldPairs.map(([, sourceId]) => {
       const sourceEl = byId(sourceId);
@@ -12233,12 +12369,21 @@ const VERSION = '3.0.0-alpha200';
   }
 
   function syncWorkflowResults(){
-    const bco = resultText('summaryBco') || '?';
+    const bco = liveBcoText() || '?';
     const eta = resultText('etaRangeDisplay') || '?';
     const bcoResult = byId('workflowBcoInlineResult');
     const etaResult = byId('workflowEtaInlineResult');
     if (bcoResult) bcoResult.textContent = bco === '?' ? 'BCO pending' : `BCO ${bco}`;
     if (etaResult) etaResult.textContent = `ETA: ${eta}`;
+  }
+
+  function refreshWorkflowBcoCalculations(sourceId = ''){
+    if (sourceId && !bcoToolSourceIds.has(sourceId)) return;
+    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent: true }); } catch {}
+    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force: true }); } catch {}
+    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
+    try { if (typeof updateSummary === 'function') updateSummary(); } catch {}
+    try { if (typeof persistCurrentJob === 'function') persistCurrentJob({ render: true }); } catch {}
   }
 
   function syncAllToWorkflowTools(){
@@ -12287,6 +12432,7 @@ const VERSION = '3.0.0-alpha200';
         const updateSource = () => {
           if (syncingWorkflowTools) return;
           setSourceValue(sourceId, workflowEl.type === 'checkbox' ? workflowEl.checked : workflowEl.value);
+          refreshWorkflowBcoCalculations(sourceId);
           refreshWorkflowTools();
         };
         workflowEl.addEventListener('input', updateSource);
@@ -12294,8 +12440,12 @@ const VERSION = '3.0.0-alpha200';
       }
       if (sourceEl && !sourceEl.dataset.workflowToolSourceBound) {
         sourceEl.dataset.workflowToolSourceBound = '1';
-        sourceEl.addEventListener('input', () => setTimeout(syncAllToWorkflowTools, 0));
-        sourceEl.addEventListener('change', () => setTimeout(syncAllToWorkflowTools, 0));
+        const refreshFromSource = () => setTimeout(() => {
+          refreshWorkflowBcoCalculations(sourceId);
+          syncAllToWorkflowTools();
+        }, 0);
+        sourceEl.addEventListener('input', refreshFromSource);
+        sourceEl.addEventListener('change', refreshFromSource);
       }
     });
     syncAllToWorkflowTools();
