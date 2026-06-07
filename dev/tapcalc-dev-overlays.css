@@ -1,7 +1,7 @@
 /* TapCalc Dev overlay style entrypoint. Legacy patches live under dev/overlays while they are folded into the main app. */
-@import url("./overlays/tapcalc-workflow-library.css?v=3.0.0-alpha239");
-@import url("./overlays/tapcalc-shell-reference.css?v=3.0.0-alpha239");
-@import url("./overlays/tapcalc-reference-router.css?v=3.0.0-alpha239");
-@import url("./overlays/tapcalc-field-manual-mobile.css?v=3.0.0-alpha239");
-@import url("./overlays/tapcalc-smartstop-reference.css?v=3.0.0-alpha239");
-@import url("./overlays/tapcalc-light-mode.css?v=3.0.0-alpha239");
+@import url("./overlays/tapcalc-workflow-library.css?v=3.0.0-alpha240");
+@import url("./overlays/tapcalc-shell-reference.css?v=3.0.0-alpha240");
+@import url("./overlays/tapcalc-reference-router.css?v=3.0.0-alpha240");
+@import url("./overlays/tapcalc-field-manual-mobile.css?v=3.0.0-alpha240");
+@import url("./overlays/tapcalc-smartstop-reference.css?v=3.0.0-alpha240");
+@import url("./overlays/tapcalc-light-mode.css?v=3.0.0-alpha240");

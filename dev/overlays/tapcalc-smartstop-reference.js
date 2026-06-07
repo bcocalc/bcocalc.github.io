@@ -643,7 +643,7 @@
     }
   }
 
-  function syncReferenceShell(){
+  function syncReferenceShell(options = {}){
     const group = byId('referenceLibraryGroup');
     const current = byId('referenceLibraryCurrent');
     const description = byId('referenceLibraryDescription');
@@ -662,23 +662,25 @@
       }
     });
 
-    const menu = byId('referenceLibraryMenu');
-    const toggle = byId('referenceLibraryToggle');
-    if (menu) menu.hidden = true;
-    if (toggle) {
-      toggle.classList.remove('is-open');
-      toggle.setAttribute('aria-expanded', 'false');
+    if (options.closeMenu !== false) {
+      const menu = byId('referenceLibraryMenu');
+      const toggle = byId('referenceLibraryToggle');
+      if (menu) menu.hidden = true;
+      if (toggle) {
+        toggle.classList.remove('is-open');
+        toggle.setAttribute('aria-expanded', 'false');
+      }
     }
   }
 
-  function selectSmartStop(){
+  function selectSmartStop(options = {}){
     const view = ensureSmartStopView();
     if (!view) return;
 
     document.querySelectorAll('#referenceWorkspaceContent > .reference-view[data-reference-view]').forEach((panel) => {
       setPanelState(panel, panel.dataset.referenceView === VIEW_KEY);
     });
-    syncReferenceShell();
+    syncReferenceShell(options);
     updateReferenceCount();
     try {
       localStorage.setItem(SAVED_VIEW_KEY, VIEW_KEY);
@@ -689,7 +691,13 @@
   let scheduled = false;
   let restoreScheduled = false;
 
+  function isReferenceMenuOpen(){
+    const menu = byId('referenceLibraryMenu');
+    return Boolean(menu && !menu.hidden);
+  }
+
   function shouldRestoreSmartStop(){
+    if (isReferenceMenuOpen()) return false;
     if (byId('referenceViewSelect')?.value === VIEW_KEY) return true;
     try {
       return localStorage.getItem(SAVED_VIEW_KEY) === VIEW_KEY ||
@@ -703,7 +711,8 @@
     restoreScheduled = true;
     setTimeout(() => {
       restoreScheduled = false;
-      selectSmartStop();
+      if (!shouldRestoreSmartStop()) return;
+      selectSmartStop({ closeMenu: false });
     }, 30);
   }
 
