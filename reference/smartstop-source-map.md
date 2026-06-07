@@ -21,10 +21,17 @@ The packet is mapped here so TapCalc can stage SmartStop reference content witho
 
 | Candidate | Pages | Needed fields | Status |
 | --- | --- | --- | --- |
-| SmartStop suffix charts | 96-101 | Size, wall range, pipe I.D. range, shims, nose ring, seal, retaining ring, foot pad, nose pad | Pending extraction |
-| Seal-ring torque | 102 | Torque table values after crop/OCR and manual verification | Pending verification |
+| SmartStop suffix charts | 96-101 | Size, wall range, pipe I.D. range, shims, nose ring, seal, retaining ring, foot pad, nose pad | Staged in dev |
+| Seal-ring torque | 102 | Torque table values after crop/OCR and manual verification | Staged in dev |
 | Stack-up drawings | 95-103 | Drawing/page index before dimensional lookup | Index first |
 | Experience matrix | 93 | Kit/deployment summary if useful for field planning | Optional |
+
+## Extraction Pass - 2026-06-06
+
+- Pages 96-101 were visually transcribed into the dev SmartStop reference overlay as staged suffix-chart lookup data.
+- Page 102 was visually transcribed into the dev SmartStop reference overlay as a staged seal-ring torque table.
+- Source page 97 row `-03` and source page 100 row `-03` have wall ranges that appear to overlap adjacent rows. The dev data preserves the scanned values and flags the source notes.
+- The staged lookup should remain dev-only until a second verification pass compares every row against the scan crops.
 
 ## Extraction Rules
 

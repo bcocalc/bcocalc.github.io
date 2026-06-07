@@ -9718,7 +9718,7 @@ body.measurement-page #jobsScreen .jobs-action-short {
   }
 }
 
-/* ===== 3.0.0-alpha238 shared library row consistency ===== */
+/* ===== 3.0.0-alpha239 shared library row consistency ===== */
 body.measurement-page #jobsScreen #jobsSelect .jobs-list-item {
   display: flex !important;
   flex-direction: column;

@@ -72,14 +72,14 @@
     {
       title: 'SmartStop Suffix Charts',
       pages: '96-101',
-      status: 'Pending extraction',
+      status: 'Staged in dev',
       fields: 'Size, wall range, pipe I.D. range, shims, nose ring, seal, retaining ring, foot pad, nose pad'
     },
     {
       title: 'Seal-Ring Torque',
       pages: '102',
-      status: 'Pending verification',
-      fields: 'Seal-ring torque table after scan crop/OCR and manual double-check'
+      status: 'Staged in dev',
+      fields: 'Screw size with ft-lb torque and source in-lb where printed'
     },
     {
       title: 'Stack-Up Drawings',
@@ -93,6 +93,159 @@
       status: 'Optional',
       fields: 'Kit/deployment matrix only if it helps field planning'
     }
+  ];
+
+  function rangeLabel(min, max){
+    return `${Number(min).toFixed(3).replace(/^0/, '')} - ${Number(max).toFixed(3).replace(/^0/, '')}`;
+  }
+
+  function kit(suffix, wallMin, wallMax, pipeIdMin, pipeIdMax, footPadShims, nosePadShims, noseRing, seal, retainingRing, footPad, nosePad, options = {}){
+    return {
+      suffix,
+      sourceLabel: options.sourceLabel || suffix,
+      pressure: options.pressure || 'Standard',
+      wallMin,
+      wallMax,
+      wallLabel: options.wallLabel || rangeLabel(wallMin, wallMax),
+      pipeIdMin,
+      pipeIdMax,
+      pipeIdLabel: options.pipeIdLabel || rangeLabel(pipeIdMin, pipeIdMax),
+      footPadShims,
+      nosePadShims,
+      noseRing,
+      seal,
+      retainingRing,
+      footPad,
+      nosePad,
+      primaryNosePad: options.primaryNosePad || '',
+      secondaryNosePad: options.secondaryNosePad || '',
+      sourceNote: options.sourceNote || ''
+    };
+  }
+
+  const suffixCharts = [
+    {
+      size: '4',
+      label: '4" SmartStop',
+      pdfPage: 96,
+      printedPage: 29,
+      note: 'Source has separate primary and secondary nose pad columns. Row -07 is printed after -06 but covers the thinnest wall range.',
+      rows: [
+        kit('-01', .204, .218, 4.064, 4.093, 3, 1, '-01', '-X1', '-01', '-01', '', { primaryNosePad: '-01', secondaryNosePad: '-01' }),
+        kit('-02', .219, .248, 4.004, 4.063, 0, 0, '-01', '-X2', '-01', '-01', '', { primaryNosePad: '-01', secondaryNosePad: '-02' }),
+        kit('-03', .249, .279, 3.942, 4.003, 3, 1, '-02', '-X3', '-02', '-02', '', { primaryNosePad: '-02', secondaryNosePad: '-03' }),
+        kit('-04', .280, .309, 3.882, 3.941, 0, 0, '-02', '-X4', '-02', '-02', '', { primaryNosePad: '-02', secondaryNosePad: '-04' }),
+        kit('-05', .310, .340, 3.820, 3.881, 3, 1, '-03', '-X5', '-03', '-03', '', { primaryNosePad: '-03', secondaryNosePad: '-05' }),
+        kit('-06', .341, .370, 3.760, 3.819, 0, 0, '-03', '-X6', '-03', '-03', '', { primaryNosePad: '-03', secondaryNosePad: '-06' }),
+        kit('-07', .188, .203, 4.094, 4.124, 3, 2, '-01', '-X1', '-01', '-01', '', { primaryNosePad: '-01', secondaryNosePad: '-07', sourceNote: 'Printed out of wall-thickness order on the source chart.' })
+      ]
+    },
+    {
+      size: '6',
+      label: '6" SmartStop',
+      pdfPage: 97,
+      printedPage: 30,
+      note: 'Source row -03 wall range reads .230 - .266 and overlaps row -02. Preserved exactly as shown.',
+      rows: [
+        kit('-01', .166, .202, 6.221, 6.293, 3, 2, '-01', '-X1', '-01', '-01', '-01'),
+        kit('-02', .202, .238, 6.149, 6.221, 0, 0, '-01', '-X2', '-01', '-01', '-01'),
+        kit('-03', .230, .266, 6.093, 6.166, 3, 2, '-02', '-X3', '-02', '-02', '-02', { sourceNote: 'Wall range overlaps row -02 in the source scan.' }),
+        kit('-04', .266, .302, 6.021, 6.093, 0, 0, '-02', '-X4', '-02', '-02', '-02'),
+        kit('-05', .303, .339, 5.947, 6.020, 3, 2, '-03', '-X5', '-03', '-03', '-03'),
+        kit('-06', .339, .375, 5.875, 5.947, 0, 0, '-03', '-X6', '-03', '-03', '-03'),
+        kit('-07', .376, .412, 5.801, 5.874, 3, 2, '-04', '-X7', '-04', '-04', '-04'),
+        kit('-08', .412, .448, 5.729, 5.801, 0, 0, '-04', '-X8', '-04', '-04', '-04')
+      ]
+    },
+    {
+      size: '8',
+      label: '8" SmartStop',
+      pdfPage: 98,
+      printedPage: 31,
+      note: 'Rows -09 and -10 are marked 1480 psi on the source chart.',
+      rows: [
+        kit('-01', .250, .298, 8.029, 8.125, 3, 2, '-01', '-X1', '-01', '-01', '-01'),
+        kit('-02', .299, .346, 7.933, 8.028, 0, 0, '-01', '-X2', '-01', '-01', '-01'),
+        kit('-03', .347, .395, 7.835, 7.932, 3, 2, '-02', '-X3', '-02', '-02', '-02'),
+        kit('-04', .396, .443, 7.739, 7.834, 0, 0, '-02', '-X4', '-02', '-02', '-02'),
+        kit('-05', .444, .492, 7.641, 7.738, 3, 2, '-03', '-X5', '-03', '-03', '-03'),
+        kit('-06', .493, .540, 7.545, 7.640, 0, 0, '-03', '-X6', '-03', '-03', '-03'),
+        kit('-07', .541, .589, 7.447, 7.544, 3, 2, '-04', '-X7', '-04', '-04', '-04'),
+        kit('-08', .590, .637, 7.351, 7.446, 0, 0, '-04', '-X8', '-04', '-04', '-04'),
+        kit('-09', .225, .250, 8.125, 8.175, 6, 4, '-01', '-X1', '-01', '-01', '-01', { pressure: '1480 psi', sourceLabel: '-09 (1480 psi)' }),
+        kit('-10', .219, .225, 8.175, 8.187, 6, 6, '-01', '-X1', '-01', '-01', '-01', { pressure: '1480 psi', sourceLabel: '-10 (1480 psi)' })
+      ]
+    },
+    {
+      size: '10',
+      label: '10" SmartStop',
+      pdfPage: 99,
+      printedPage: 32,
+      note: 'Rows -10 and -11 are marked 1480 psi on the source chart.',
+      rows: [
+        kit('-01', .237, .287, 10.176, 10.276, 3, 2, '-01', '-X1', '-01', '-01', '-01'),
+        kit('-02', .288, .337, 10.076, 10.175, 0, 0, '-01', '-X2', '-01', '-01', '-01'),
+        kit('-03', .338, .388, 9.974, 10.075, 3, 2, '-02', '-X3', '-02', '-02', '-02'),
+        kit('-04', .389, .438, 9.874, 9.973, 0, 0, '-02', '-X4', '-02', '-02', '-02'),
+        kit('-05', .439, .489, 9.772, 9.873, 3, 2, '-03', '-X5', '-03', '-03', '-03'),
+        kit('-06', .490, .539, 9.672, 9.771, 0, 0, '-03', '-X6', '-03', '-03', '-03'),
+        kit('-07', .540, .590, 9.570, 9.671, 3, 2, '-04', '-X7', '-04', '-04', '-04'),
+        kit('-08', .591, .640, 9.470, 9.569, 0, 0, '-04', '-X8', '-04', '-04', '-04'),
+        kit('-09', .641, .691, 9.368, 9.469, 0, 0, '-05', '-X9', '-05', '-05', '-05'),
+        kit('-10', .212, .236, 10.277, 10.326, 6, 4, '-01', '-X1', '-01', '-01', '-01', { pressure: '1480 psi', sourceLabel: '-10 (1480 psi)' }),
+        kit('-11', .187, .211, 10.327, 10.376, 9, 6, '-01', '-X1', '-01', '-01', '-01', { pressure: '1480 psi', sourceLabel: '-11 (1480 psi)' })
+      ]
+    },
+    {
+      size: '12',
+      label: '12" SmartStop',
+      pdfPage: 100,
+      printedPage: 33,
+      note: 'Source row -03 wall range reads .343 - .406 and overlaps row -02. Preserved exactly as shown.',
+      rows: [
+        kit('-01', .250, .313, 12.125, 12.250, 3, 2, '-01', '-X1', '-01', '-01', '-01'),
+        kit('-02', .313, .376, 11.999, 12.125, 0, 0, '-01', '-X2', '-01', '-01', '-01'),
+        kit('-03', .343, .406, 11.938, 12.064, 3, 2, '-02', '-X3', '-02', '-02', '-02', { sourceNote: 'Wall range overlaps row -02 in the source scan.' }),
+        kit('-04', .406, .469, 11.812, 11.938, 0, 0, '-02', '-X4', '-02', '-02', '-02'),
+        kit('-05', .468, .531, 11.688, 11.814, 3, 2, '-03', '-X5', '-03', '-03', '-03'),
+        kit('-06', .531, .594, 11.562, 11.688, 0, 0, '-03', '-X6', '-03', '-03', '-03'),
+        kit('-07', .593, .656, 11.438, 11.564, 3, 2, '-04', '-X7', '-04', '-04', '-04'),
+        kit('-08', .656, .719, 11.312, 11.438, 0, 0, '-04', '-X8', '-04', '-04', '-04'),
+        kit('-09', .719, .782, 11.187, 11.313, 0, 0, '-05', '-X9', '-05', '-05', '-05'),
+        kit('-10', .219, .250, 12.250, 12.312, 6, 4, '-01', '-X1', '-01', '-01', '-01', { pressure: '1480 psi', sourceLabel: '-10 (1480 psi)' })
+      ]
+    },
+    {
+      size: '16',
+      label: '16" SmartStop',
+      pdfPage: 101,
+      printedPage: 34,
+      note: 'Row -09 is marked 1480 psi on the source chart.',
+      rows: [
+        kit('-01', .250, .324, 15.351, 15.500, 3, 2, '-01', '-X1', '-01', '-01', '-01'),
+        kit('-02', .325, .400, 15.200, 15.350, 0, 0, '-01', '-X2', '-01', '-01', '-01'),
+        kit('-03', .401, .476, 15.048, 15.199, 3, 2, '-02', '-X3', '-02', '-02', '-02'),
+        kit('-04', .477, .551, 14.898, 15.047, 0, 0, '-02', '-X4', '-02', '-02', '-02'),
+        kit('-05', .552, .627, 14.746, 14.897, 3, 2, '-03', '-X5', '-03', '-03', '-03'),
+        kit('-06', .628, .702, 14.596, 14.745, 0, 0, '-03', '-X6', '-03', '-03', '-03'),
+        kit('-07', .703, .778, 14.444, 14.595, 3, 2, '-04', '-X7', '-04', '-04', '-04'),
+        kit('-08', .779, .853, 14.294, 14.443, 0, 0, '-04', '-X8', '-04', '-04', '-04'),
+        kit('-09', .200, .249, 15.501, 15.600, 6, 4, '-01', '-X1', '-01', '-01', '-01', { pressure: '1480 psi', sourceLabel: '-09 (1480 psi)' })
+      ]
+    }
+  ];
+
+  const torqueRows = [
+    { screwSize: '#8', ftLb: '2.5', inLb: '30' },
+    { screwSize: '#10', ftLb: '3.75', inLb: '45' },
+    { screwSize: '1/4"', ftLb: '9', inLb: '108' },
+    { screwSize: '5/16"', ftLb: '18', inLb: '216' },
+    { screwSize: '3/8"', ftLb: '32', inLb: '384' },
+    { screwSize: '1/2"', ftLb: '80', inLb: '' },
+    { screwSize: '5/8"', ftLb: '150', inLb: '' },
+    { screwSize: '3/4"', ftLb: '270', inLb: '' },
+    { screwSize: '7/8"', ftLb: '440', inLb: '' },
+    { screwSize: '1"', ftLb: '650', inLb: '' }
   ];
 
   const extractionSteps = [
@@ -148,6 +301,142 @@
     `).join('');
   }
 
+  function renderSizeOptions(){
+    return suffixCharts.map((chart) => `<option value="${escapeHtml(chart.size)}">${escapeHtml(chart.label)}</option>`).join('');
+  }
+
+  function parseDecimal(value){
+    const normalized = String(value || '').trim().replace(/^0*(?=\.)/, '');
+    if (!normalized) return null;
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  function lookupValueLabel(value){
+    if (value === null) return '';
+    return Number(value).toFixed(3).replace(/^0/, '');
+  }
+
+  function matchesRange(value, min, max){
+    if (value === null) return true;
+    return value >= min && value <= max;
+  }
+
+  function visibleNosePad(row){
+    if (row.primaryNosePad || row.secondaryNosePad) {
+      return `Primary ${row.primaryNosePad || '-'} / Secondary ${row.secondaryNosePad || '-'}`;
+    }
+    return row.nosePad || '-';
+  }
+
+  function renderSuffixRow(row){
+    const pressure = row.pressure && row.pressure !== 'Standard'
+      ? `<span class="smartstop-pressure-chip">${escapeHtml(row.pressure)}</span>`
+      : '';
+    const sourceNote = row.sourceNote
+      ? `<p class="smartstop-row-note">${escapeHtml(row.sourceNote)}</p>`
+      : '';
+    return `
+      <article class="smartstop-result-row">
+        <div class="smartstop-result-main">
+          <div>
+            <span class="smartstop-card-kicker">Suffix</span>
+            <strong>${escapeHtml(row.sourceLabel)}</strong>
+            ${pressure}
+          </div>
+          <div class="smartstop-range-pair">
+            <span>Wall ${escapeHtml(row.wallLabel)}</span>
+            <span>Pipe I.D. ${escapeHtml(row.pipeIdLabel)}</span>
+          </div>
+          ${sourceNote}
+        </div>
+        <div class="smartstop-kit-grid">
+          <span><b>Foot shims</b>${escapeHtml(row.footPadShims)}</span>
+          <span><b>Nose shims</b>${escapeHtml(row.nosePadShims)}</span>
+          <span><b>Nose ring</b>${escapeHtml(row.noseRing)}</span>
+          <span><b>Seal</b>${escapeHtml(row.seal)}</span>
+          <span><b>Retaining</b>${escapeHtml(row.retainingRing)}</span>
+          <span><b>Foot pad</b>${escapeHtml(row.footPad)}</span>
+          <span class="smartstop-kit-wide"><b>Nose pad</b>${escapeHtml(visibleNosePad(row))}</span>
+        </div>
+      </article>
+    `;
+  }
+
+  function filterChartRows(chart, wallValue, pipeIdValue){
+    return chart.rows.filter((row) => (
+      matchesRange(wallValue, row.wallMin, row.wallMax) &&
+      matchesRange(pipeIdValue, row.pipeIdMin, row.pipeIdMax)
+    ));
+  }
+
+  function renderLookupResults(chart, rows, filters){
+    const filterSummary = [
+      filters.wallValue !== null ? `wall ${lookupValueLabel(filters.wallValue)}` : '',
+      filters.pipeIdValue !== null ? `pipe I.D. ${lookupValueLabel(filters.pipeIdValue)}` : ''
+    ].filter(Boolean).join(' and ');
+    const matchText = filterSummary
+      ? `${rows.length} match${rows.length === 1 ? '' : 'es'} for ${escapeHtml(filterSummary)}`
+      : `${chart.rows.length} staged rows shown`;
+    const rowsHtml = rows.length
+      ? rows.map(renderSuffixRow).join('')
+      : '<div class="smartstop-empty-result">No staged suffix row matches those filters. Clear one value or confirm the pipe size/source chart.</div>';
+    return `
+      <div class="smartstop-result-summary">
+        <strong>${escapeHtml(chart.label)}</strong>
+        <span>${matchText}</span>
+        <em>PDF page ${escapeHtml(chart.pdfPage)} / printed page ${escapeHtml(chart.printedPage)}</em>
+      </div>
+      ${chart.note ? `<p class="smartstop-source-note">${escapeHtml(chart.note)}</p>` : ''}
+      <div class="smartstop-results-list">${rowsHtml}</div>
+    `;
+  }
+
+  function renderTorqueRows(){
+    return torqueRows.map((row) => `
+      <tr>
+        <td>${escapeHtml(row.screwSize)}</td>
+        <td>${escapeHtml(row.ftLb)}</td>
+        <td>${row.inLb ? escapeHtml(row.inLb) : '<span class="smartstop-muted-cell">not printed</span>'}</td>
+      </tr>
+    `).join('');
+  }
+
+  function updateSmartStopLookup(view){
+    const size = view.querySelector('#smartStopSizeSelect')?.value || suffixCharts[0]?.size || '4';
+    const chart = suffixCharts.find((item) => item.size === size) || suffixCharts[0];
+    const wallValue = parseDecimal(view.querySelector('#smartStopWallFilter')?.value);
+    const pipeIdValue = parseDecimal(view.querySelector('#smartStopPipeIdFilter')?.value);
+    const rows = filterChartRows(chart, wallValue, pipeIdValue);
+    const target = view.querySelector('#smartStopLookupResults');
+    if (target) {
+      target.innerHTML = renderLookupResults(chart, rows, { wallValue, pipeIdValue });
+    }
+  }
+
+  function bindSmartStopControls(view){
+    if (!view || view.dataset.smartstopControlsReady === 'true') return;
+    view.dataset.smartstopControlsReady = 'true';
+    view.addEventListener('input', (event) => {
+      if (!event.target?.closest?.('.smartstop-lookup-controls')) return;
+      updateSmartStopLookup(view);
+    });
+    view.addEventListener('change', (event) => {
+      if (!event.target?.closest?.('.smartstop-lookup-controls')) return;
+      updateSmartStopLookup(view);
+    });
+    view.addEventListener('click', (event) => {
+      const clear = event.target?.closest?.('[data-smartstop-clear-filters]');
+      if (!clear) return;
+      const wall = view.querySelector('#smartStopWallFilter');
+      const pipeId = view.querySelector('#smartStopPipeIdFilter');
+      if (wall) wall.value = '';
+      if (pipeId) pipeId.value = '';
+      updateSmartStopLookup(view);
+    });
+    updateSmartStopLookup(view);
+  }
+
   function renderExtractionSteps(){
     return extractionSteps.map((step, index) => `
       <li>
@@ -175,7 +464,8 @@
 
       <div class="smartstop-chip-row" aria-label="SmartStop build status">
         <span>Source mapped</span>
-        <span>Lookup extraction pending</span>
+        <span>Suffix charts staged</span>
+        <span>Torque table staged</span>
         <span>No SmartStop calculator active</span>
       </div>
 
@@ -195,14 +485,60 @@
       <section class="reference-card smartstop-section">
         <div class="smartstop-section-heading">
           <div>
-            <p class="smartstop-eyebrow">Future Lookups</p>
-            <h4>Best Candidates To Extract</h4>
+            <p class="smartstop-eyebrow">Lookup Status</p>
+            <h4>Extraction Progress</h4>
           </div>
-          <span class="smartstop-muted">These stay locked until verified.</span>
+          <span class="smartstop-muted">Staged data stays dev-only until double-checked.</span>
         </div>
         <div class="smartstop-lookup-grid">
           ${renderLookupCards()}
         </div>
+      </section>
+
+      <section class="reference-card smartstop-section smartstop-lookup-section">
+        <div class="smartstop-section-heading">
+          <div>
+            <p class="smartstop-eyebrow">Staged Lookup</p>
+            <h4>SmartStop Suffix Chart</h4>
+          </div>
+          <span class="smartstop-muted">Pages 96-101. Filter by wall and/or pipe I.D.</span>
+        </div>
+        <div class="smartstop-lookup-controls">
+          <label>
+            <span>SmartStop size</span>
+            <select id="smartStopSizeSelect">${renderSizeOptions()}</select>
+          </label>
+          <label>
+            <span>Wall thickness</span>
+            <input id="smartStopWallFilter" type="number" inputmode="decimal" step="0.001" placeholder=".250">
+          </label>
+          <label>
+            <span>Pipe I.D.</span>
+            <input id="smartStopPipeIdFilter" type="number" inputmode="decimal" step="0.001" placeholder="8.125">
+          </label>
+          <button type="button" data-smartstop-clear-filters>Clear</button>
+        </div>
+        <p class="smartstop-source-note">Source cells with merged part suffixes are expanded per row here. This keeps the lookup usable while preserving the original page reference.</p>
+        <div id="smartStopLookupResults" class="smartstop-lookup-results" aria-live="polite"></div>
+      </section>
+
+      <section class="reference-card smartstop-section smartstop-torque-section">
+        <div class="smartstop-section-heading">
+          <div>
+            <p class="smartstop-eyebrow">Staged Lookup</p>
+            <h4>Seal Ring Torque Specification</h4>
+          </div>
+          <span class="smartstop-muted">PDF page 102 / printed page 35.</span>
+        </div>
+        <div class="smartstop-table-wrap">
+          <table class="smartstop-table">
+            <thead>
+              <tr><th>Screw size</th><th>Torque ft-lb</th><th>Torque in-lb</th></tr>
+            </thead>
+            <tbody>${renderTorqueRows()}</tbody>
+          </table>
+        </div>
+        <p class="smartstop-source-note">Source notes indicate ASTM A574/F835 screw material and nickel-based anti-seize assumptions. In-lb values are only shown where printed in the source table.</p>
       </section>
 
       <section class="reference-card smartstop-section smartstop-extraction-section">
@@ -240,6 +576,7 @@
       view.innerHTML = renderSmartStopReference();
       view.dataset.smartstopRendered = 'true';
     }
+    bindSmartStopControls(view);
     return view;
   }
 

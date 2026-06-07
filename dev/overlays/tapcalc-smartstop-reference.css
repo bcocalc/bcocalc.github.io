@@ -189,6 +189,212 @@ body.measurement-page #refScreen .smartstop-lookup-card .smartstop-status {
   justify-self: start;
 }
 
+body.measurement-page #refScreen .smartstop-lookup-controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.1fr) repeat(2, minmax(130px, .9fr)) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+body.measurement-page #refScreen .smartstop-lookup-controls label {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+body.measurement-page #refScreen .smartstop-lookup-controls span {
+  color: #9fcaff;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body.measurement-page #refScreen .smartstop-lookup-controls select,
+body.measurement-page #refScreen .smartstop-lookup-controls input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(139, 189, 246, .34);
+  border-radius: 13px;
+  background: rgba(4, 18, 35, .76);
+  color: #f8fbff;
+  padding: 9px 11px;
+  font-weight: 850;
+}
+
+body.measurement-page #refScreen .smartstop-lookup-controls button {
+  min-height: 42px;
+  border: 1px solid rgba(139, 189, 246, .34);
+  border-radius: 13px;
+  background: rgba(28, 72, 118, .62);
+  color: #f8fbff;
+  padding: 9px 13px;
+  font-weight: 900;
+}
+
+body.measurement-page #refScreen .smartstop-result-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: baseline;
+  margin: 10px 0;
+}
+
+body.measurement-page #refScreen .smartstop-result-summary strong {
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+body.measurement-page #refScreen .smartstop-result-summary span,
+body.measurement-page #refScreen .smartstop-result-summary em {
+  color: rgba(226, 239, 255, .78);
+  font-size: .84rem;
+  font-style: normal;
+  font-weight: 750;
+}
+
+body.measurement-page #refScreen .smartstop-source-note,
+body.measurement-page #refScreen .smartstop-row-note {
+  margin: 8px 0 0;
+  color: rgba(232, 242, 255, .76);
+  font-size: .86rem;
+  line-height: 1.42;
+}
+
+body.measurement-page #refScreen .smartstop-row-note {
+  color: #ffe0a3;
+  font-weight: 750;
+}
+
+body.measurement-page #refScreen .smartstop-results-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+body.measurement-page #refScreen .smartstop-result-row {
+  display: grid;
+  grid-template-columns: minmax(210px, .85fr) minmax(0, 1.4fr);
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(126, 178, 236, .24);
+  border-radius: 16px;
+  background: rgba(4, 18, 35, .58);
+}
+
+body.measurement-page #refScreen .smartstop-result-main {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+body.measurement-page #refScreen .smartstop-result-main strong {
+  display: inline-block;
+  margin-right: 6px;
+  color: #fff;
+  font-size: 1.22rem;
+}
+
+body.measurement-page #refScreen .smartstop-pressure-chip {
+  display: inline-block;
+  border: 1px solid rgba(255, 206, 102, .36);
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: rgba(108, 77, 14, .46);
+  color: #fff3cf;
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+body.measurement-page #refScreen .smartstop-range-pair {
+  display: grid;
+  gap: 5px;
+}
+
+body.measurement-page #refScreen .smartstop-range-pair span {
+  color: rgba(232, 242, 255, .84);
+  font-size: .9rem;
+  font-weight: 780;
+}
+
+body.measurement-page #refScreen .smartstop-kit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+body.measurement-page #refScreen .smartstop-kit-grid span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  border: 1px solid rgba(126, 178, 236, .18);
+  border-radius: 12px;
+  background: rgba(6, 24, 45, .64);
+  color: #fff;
+  padding: 8px;
+  font-weight: 900;
+}
+
+body.measurement-page #refScreen .smartstop-kit-grid b {
+  color: #9fcaff;
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body.measurement-page #refScreen .smartstop-kit-grid .smartstop-kit-wide {
+  grid-column: span 3;
+}
+
+body.measurement-page #refScreen .smartstop-empty-result {
+  border: 1px dashed rgba(255, 206, 102, .34);
+  border-radius: 16px;
+  padding: 13px;
+  background: rgba(108, 77, 14, .20);
+  color: #fff3cf;
+  font-weight: 800;
+}
+
+body.measurement-page #refScreen .smartstop-table-wrap {
+  overflow-x: auto;
+  border: 1px solid rgba(126, 178, 236, .24);
+  border-radius: 16px;
+}
+
+body.measurement-page #refScreen .smartstop-table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+}
+
+body.measurement-page #refScreen .smartstop-table th,
+body.measurement-page #refScreen .smartstop-table td {
+  border-bottom: 1px solid rgba(126, 178, 236, .16);
+  padding: 10px 12px;
+  text-align: left;
+}
+
+body.measurement-page #refScreen .smartstop-table th {
+  background: rgba(13, 48, 88, .78);
+  color: #dcebff;
+  font-size: .74rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body.measurement-page #refScreen .smartstop-table td {
+  color: #fff;
+  font-weight: 850;
+}
+
+body.measurement-page #refScreen .smartstop-muted-cell {
+  color: rgba(226, 239, 255, .56);
+  font-weight: 750;
+}
+
 body.measurement-page #refScreen .smartstop-extraction-list {
   display: grid;
   gap: 9px;
@@ -292,15 +498,78 @@ body.light.measurement-page #refScreen .smartstop-chip-row span {
   color: #193b61;
 }
 
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-lookup-controls span,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-kit-grid b,
+body.light.measurement-page #refScreen .smartstop-lookup-controls span,
+body.light.measurement-page #refScreen .smartstop-kit-grid b {
+  color: #245f9f;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-lookup-controls select,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-lookup-controls input,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-lookup-controls button,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-result-row,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-kit-grid span,
+body.light.measurement-page #refScreen .smartstop-lookup-controls select,
+body.light.measurement-page #refScreen .smartstop-lookup-controls input,
+body.light.measurement-page #refScreen .smartstop-lookup-controls button,
+body.light.measurement-page #refScreen .smartstop-result-row,
+body.light.measurement-page #refScreen .smartstop-kit-grid span {
+  background: rgba(255, 255, 255, .72);
+  border-color: rgba(75, 125, 177, .24);
+  color: #071d35;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-result-summary strong,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-result-main strong,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-table td,
+body.light.measurement-page #refScreen .smartstop-result-summary strong,
+body.light.measurement-page #refScreen .smartstop-result-main strong,
+body.light.measurement-page #refScreen .smartstop-table td {
+  color: #071d35;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-result-summary span,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-result-summary em,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-source-note,
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-range-pair span,
+body.light.measurement-page #refScreen .smartstop-result-summary span,
+body.light.measurement-page #refScreen .smartstop-result-summary em,
+body.light.measurement-page #refScreen .smartstop-source-note,
+body.light.measurement-page #refScreen .smartstop-range-pair span {
+  color: #315171;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-table th,
+body.light.measurement-page #refScreen .smartstop-table th {
+  background: #d8e9f8;
+  color: #17395f;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .smartstop-muted-cell,
+body.light.measurement-page #refScreen .smartstop-muted-cell {
+  color: #6b7e92;
+}
+
 @media (max-width: 760px) {
   body.measurement-page #refScreen .smartstop-hero,
   body.measurement-page #refScreen .smartstop-map-row,
-  body.measurement-page #refScreen .smartstop-lookup-grid {
+  body.measurement-page #refScreen .smartstop-lookup-grid,
+  body.measurement-page #refScreen .smartstop-lookup-controls,
+  body.measurement-page #refScreen .smartstop-result-row {
     grid-template-columns: 1fr;
   }
 
   body.measurement-page #refScreen .smartstop-status {
     justify-self: start;
+  }
+
+  body.measurement-page #refScreen .smartstop-kit-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.measurement-page #refScreen .smartstop-kit-grid .smartstop-kit-wide {
+    grid-column: span 2;
   }
 }
 
@@ -313,5 +582,13 @@ body.light.measurement-page #refScreen .smartstop-chip-row span {
 
   body.measurement-page #refScreen .smartstop-section-heading {
     display: grid;
+  }
+
+  body.measurement-page #refScreen .smartstop-kit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.measurement-page #refScreen .smartstop-kit-grid .smartstop-kit-wide {
+    grid-column: auto;
   }
 }
