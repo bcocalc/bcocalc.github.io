@@ -17,7 +17,8 @@
     plant600: ['Field Reference', '600# Plant Series', 'Higher class flange reference'],
     gaskettorque: ['Field Reference', 'Graphonic', 'Starred RF gasket torque lookup with engineering 600# data'],
     papergaskets: ['Field Reference', 'Paper Gaskets', 'Compressed sheet and GYLON ring gasket torque tables'],
-    fieldmanual: ['Field Reference', 'Field Manual', 'Inline RPM, Hi-Stop, machine specs, and checks']
+    fieldmanual: ['Field Reference', 'Field Manual', 'Inline RPM, Hi-Stop, machine specs, and checks'],
+    smartstop: ['Field Reference', 'SmartStop Field Guide', 'Source map and verified lookup staging']
   };
 
   if (window[READY_FLAG]) return;
@@ -91,30 +92,53 @@
     cleanFieldManualShortcuts();
 
     const select = byId('referenceViewSelect');
-    if (select && !select.querySelector('option[value="fieldmanual"]')) {
+    const addSelectOption = (value, label) => {
+      if (!select || select.querySelector(`option[value="${value}"]`)) return;
       const option = document.createElement('option');
-      option.value = 'fieldmanual';
-      option.textContent = 'Field Manual';
+      option.value = value;
+      option.textContent = label;
       (select.querySelector('optgroup[label="Field Reference"]') || select).appendChild(option);
-    }
+    };
+    addSelectOption('fieldmanual', 'Field Manual');
+    if (panelFor('smartstop')) addSelectOption('smartstop', 'SmartStop Field Guide');
 
+    const refCount = panelFor('smartstop') ? '15 refs' : '14 refs';
     document.querySelectorAll('#refScreen .reference-library-count').forEach((count) => {
-      if (count.textContent.trim() !== '14 refs') count.textContent = '14 refs';
+      if (count.textContent.trim() !== refCount) count.textContent = refCount;
     });
 
     const options = byId('referenceLibraryOptions');
-    if (!options || options.querySelector('[data-reference-target="fieldmanual"]')) return;
-    const group = document.createElement('div');
-    group.className = 'reference-library-group-label';
-    group.textContent = 'Field Reference';
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'reference-library-option';
-    button.setAttribute('data-reference-target', 'fieldmanual');
-    button.setAttribute('role', 'option');
-    button.setAttribute('aria-selected', 'false');
-    button.innerHTML = '<strong>Field Manual</strong><span>Inline RPM, Hi-Stop, machine specs, and checks</span>';
-    options.append(group, button);
+    if (!options) return;
+    const ensureFieldGroup = () => {
+      const exists = Array.from(options.querySelectorAll('.reference-library-group-label'))
+        .some((label) => label.textContent.trim() === 'Field Reference');
+      if (exists) return null;
+      const group = document.createElement('div');
+      group.className = 'reference-library-group-label';
+      group.textContent = 'Field Reference';
+      options.appendChild(group);
+      return group;
+    };
+    const appendReferenceButton = (value, title, description, afterTarget = '') => {
+      if (options.querySelector(`[data-reference-target="${value}"]`)) return;
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'reference-library-option';
+      button.setAttribute('data-reference-target', value);
+      button.setAttribute('role', 'option');
+      button.setAttribute('aria-selected', 'false');
+      button.innerHTML = `<strong>${title}</strong><span>${description}</span>`;
+      const after = afterTarget ? options.querySelector(`[data-reference-target="${afterTarget}"]`) : null;
+      if (after) after.after(button);
+      else {
+        ensureFieldGroup();
+        options.appendChild(button);
+      }
+    };
+    appendReferenceButton('fieldmanual', 'Field Manual', 'Inline RPM, Hi-Stop, machine specs, and checks');
+    if (panelFor('smartstop')) {
+      appendReferenceButton('smartstop', 'SmartStop Field Guide', 'Source map and verified lookup staging', 'fieldmanual');
+    }
   }
 
   function safeView(view){
@@ -178,6 +202,9 @@
     });
     document.querySelectorAll('#refScreen [data-field-manual-open]').forEach((control) => {
       control.classList.toggle('active', view === 'fieldmanual');
+    });
+    document.querySelectorAll('#refScreen [data-smartstop-open]').forEach((control) => {
+      control.classList.toggle('active', view === 'smartstop');
     });
   }
 
