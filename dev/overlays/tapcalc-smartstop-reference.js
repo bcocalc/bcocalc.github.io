@@ -72,13 +72,13 @@
     {
       title: 'SmartStop Suffix Charts',
       pages: '96-101',
-      status: 'Staged in dev',
+      status: 'Verified in dev',
       fields: 'Size, wall range, pipe I.D. range, shims, nose ring, seal, retaining ring, foot pad, nose pad'
     },
     {
       title: 'Seal-Ring Torque',
       pages: '102',
-      status: 'Staged in dev',
+      status: 'Verified in dev',
       fields: 'Screw size with ft-lb torque and source in-lb where printed'
     },
     {
@@ -464,8 +464,8 @@
 
       <div class="smartstop-chip-row" aria-label="SmartStop build status">
         <span>Source mapped</span>
-        <span>Suffix charts staged</span>
-        <span>Torque table staged</span>
+        <span>Suffix charts verified in dev</span>
+        <span>Torque table verified in dev</span>
         <span>No SmartStop calculator active</span>
       </div>
 
@@ -488,7 +488,7 @@
             <p class="smartstop-eyebrow">Lookup Status</p>
             <h4>Extraction Progress</h4>
           </div>
-          <span class="smartstop-muted">Staged data stays dev-only until double-checked.</span>
+          <span class="smartstop-muted">Second-pass checked against enlarged scan crops.</span>
         </div>
         <div class="smartstop-lookup-grid">
           ${renderLookupCards()}
@@ -498,7 +498,7 @@
       <section class="reference-card smartstop-section smartstop-lookup-section">
         <div class="smartstop-section-heading">
           <div>
-            <p class="smartstop-eyebrow">Staged Lookup</p>
+            <p class="smartstop-eyebrow">Verified Dev Lookup</p>
             <h4>SmartStop Suffix Chart</h4>
           </div>
           <span class="smartstop-muted">Pages 96-101. Filter by wall and/or pipe I.D.</span>
@@ -518,14 +518,14 @@
           </label>
           <button type="button" data-smartstop-clear-filters>Clear</button>
         </div>
-        <p class="smartstop-source-note">Source cells with merged part suffixes are expanded per row here. This keeps the lookup usable while preserving the original page reference.</p>
+        <p class="smartstop-source-note">Source cells with merged part suffixes are expanded per row here. Values were second-pass checked against enlarged scan crops on 2026-06-07.</p>
         <div id="smartStopLookupResults" class="smartstop-lookup-results" aria-live="polite"></div>
       </section>
 
       <section class="reference-card smartstop-section smartstop-torque-section">
         <div class="smartstop-section-heading">
           <div>
-            <p class="smartstop-eyebrow">Staged Lookup</p>
+            <p class="smartstop-eyebrow">Verified Dev Lookup</p>
             <h4>Seal Ring Torque Specification</h4>
           </div>
           <span class="smartstop-muted">PDF page 102 / printed page 35.</span>

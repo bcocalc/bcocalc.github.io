@@ -21,8 +21,8 @@ The packet is mapped here so TapCalc can stage SmartStop reference content witho
 
 | Candidate | Pages | Needed fields | Status |
 | --- | --- | --- | --- |
-| SmartStop suffix charts | 96-101 | Size, wall range, pipe I.D. range, shims, nose ring, seal, retaining ring, foot pad, nose pad | Staged in dev |
-| Seal-ring torque | 102 | Torque table values after crop/OCR and manual verification | Staged in dev |
+| SmartStop suffix charts | 96-101 | Size, wall range, pipe I.D. range, shims, nose ring, seal, retaining ring, foot pad, nose pad | Verified in dev |
+| Seal-ring torque | 102 | Torque table values after crop/OCR and manual verification | Verified in dev |
 | Stack-up drawings | 95-103 | Drawing/page index before dimensional lookup | Index first |
 | Experience matrix | 93 | Kit/deployment summary if useful for field planning | Optional |
 
@@ -32,6 +32,15 @@ The packet is mapped here so TapCalc can stage SmartStop reference content witho
 - Page 102 was visually transcribed into the dev SmartStop reference overlay as a staged seal-ring torque table.
 - Source page 97 row `-03` and source page 100 row `-03` have wall ranges that appear to overlap adjacent rows. The dev data preserves the scanned values and flags the source notes.
 - The staged lookup should remain dev-only until a second verification pass compares every row against the scan crops.
+
+## Verification Pass - 2026-06-07
+
+- Pages 96-101 were second-pass checked against enlarged rotated scan crops in `reference_audit/smartstop_extract_96_102/crops`.
+- Page 102 seal-ring torque values were second-pass checked against `p102_torque_crop_x3.png`.
+- The staged dev suffix rows matched the scan crops for SmartStop sizes 4, 6, 8, 10, 12, and 16.
+- The staged dev torque table matched the scan crop. In-lb values remain blank where the source table did not print them.
+- Source page 97 row `-03` and source page 100 row `-03` still appear to overlap neighboring wall ranges in the source. The app preserves the scanned values and keeps visible source notes.
+- After this pass, the dev Reference lookup can be treated as verified dev reference data. It is still not promoted as a workflow calculator or live operational helper.
 
 ## Extraction Rules
 
