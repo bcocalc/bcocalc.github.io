@@ -1,6 +1,6 @@
-/* TapCalc livefix13 mobile nav/select/offline reliability guard. */
+/* TapCalc livefix14 mobile nav/select/offline reliability guard. */
 (function(){
-  const READY_FLAG = '__tapcalcLivefix13ReliabilityReady';
+  const READY_FLAG = '__tapcalcLivefix14ReliabilityReady';
   if (window[READY_FLAG]) return;
   window[READY_FLAG] = true;
 
@@ -18,7 +18,7 @@
     library: 'jobs',
     reference: 'ref'
   };
-  const STYLE_ID = 'tapcalc-livefix13-reliability-style';
+  const STYLE_ID = 'tapcalc-livefix14-reliability-style';
 
   function byId(id) {
     return document.getElementById(id);
@@ -156,9 +156,9 @@
     const previous = target.value || source?.value || '';
     if (source?.tagName === 'SELECT' && source.options.length) {
       const signature = source.innerHTML;
-      if (target.dataset.livefix13OptionSignature !== signature) {
+      if (target.dataset.livefix14OptionSignature !== signature) {
         target.innerHTML = signature;
-        target.dataset.livefix13OptionSignature = signature;
+        target.dataset.livefix14OptionSignature = signature;
       }
     } else if (!hasOptions(target) && fallbackOptions.length) {
       target.innerHTML = fallbackOptions.map((value) => `<option value="${value}">${value}</option>`).join('');
@@ -177,8 +177,8 @@
     copyOptions('workflowEtaMachine', 'etaMachine', ['360', '660', '1200']);
 
     const operationType = byId('workflowOperationType');
-    if (operationType && !operationType.dataset.livefix13Bound) {
-      operationType.dataset.livefix13Bound = '1';
+    if (operationType && !operationType.dataset.livefix14Bound) {
+      operationType.dataset.livefix14Bound = '1';
       operationType.addEventListener('change', () => {
         const source = byId('operationType');
         if (source && source.value !== operationType.value) {
@@ -189,8 +189,56 @@
     }
   }
 
+  function applyLibraryLane(lane) {
+    const next = String(lane || '').trim() === 'shared' ? 'shared' : 'local';
+    document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((button) => {
+      const active = button.dataset.libraryLane === next;
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('[data-library-lane-panel]').forEach((panel) => {
+      const active = panel.dataset.libraryLanePanel === next;
+      panel.classList.toggle('active', active);
+      panel.classList.remove('collapsed');
+      panel.hidden = !active;
+      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+      panel.style.display = active ? 'block' : 'none';
+      panel.style.visibility = active ? 'visible' : 'hidden';
+      panel.style.opacity = active ? '1' : '0';
+      panel.style.pointerEvents = active ? 'auto' : 'none';
+      panel.querySelectorAll('.accordion-body').forEach((body) => {
+        body.style.display = active ? 'block' : '';
+      });
+    });
+    const jobsScreen = byId('jobsScreen');
+    if (jobsScreen) {
+      jobsScreen.dataset.activeLane = next;
+      jobsScreen.style.pointerEvents = 'auto';
+    }
+    try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
+    if (next === 'shared') {
+      setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
+      setTimeout(() => { try { window.loadCloudJobs?.(); } catch {} }, 40);
+      setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 180);
+    } else {
+      setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
+    }
+    return next;
+  }
+
+  function handleLibraryLane(event) {
+    const button = event.target?.closest?.('.library-lane-btn[data-library-lane]');
+    if (!button) return;
+    try { if (event.cancelable) event.preventDefault(); } catch {}
+    try { event.stopPropagation(); } catch {}
+    try { event.stopImmediatePropagation?.(); } catch {}
+    const lane = button.dataset.libraryLane === 'shared' ? 'shared' : 'local';
+    [0, 80, 240].forEach((delay) => setTimeout(() => applyLibraryLane(lane), delay));
+    return false;
+  }
+
   function markInteractiveControls() {
-    document.querySelectorAll('.screen-nav, .screen-tab, select, input, textarea, label').forEach((el) => {
+    document.querySelectorAll('.screen-nav, .screen-tab, .library-lane-switch, .library-lane-btn, select, input, textarea, label').forEach((el) => {
       el.style.pointerEvents = 'auto';
     });
   }
@@ -218,6 +266,7 @@
   }
 
   ['pointerdown', 'touchstart', 'click'].forEach((eventName) => {
+    window.addEventListener(eventName, handleLibraryLane, { capture: true, passive: false });
     window.addEventListener(eventName, handleNav, { capture: true, passive: false });
   });
   document.addEventListener('input', ensureWorkflowSelects, true);
@@ -237,4 +286,5 @@
   }
   [0, 120, 500, 1500, 3000].forEach((delay) => setTimeout(run, delay));
   window.tapCalcEnsureLiveControls = run;
+  window.tapCalcForceLibraryLane = applyLibraryLane;
 })();
