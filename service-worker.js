@@ -1,32 +1,32 @@
-const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix12';
+const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix13';
 const SHELL_FALLBACK = './measurement-card.html';
 const ASSETS = [
   './',
   './index.html',
   './measurement-card.html',
-  './styles.css?v=3.0.0-livefix12',
-  './measurement.js?v=3.0.0-livefix12',
-  './tapcalc-overlays.css?v=3.0.0-livefix12',
-  './tapcalc-overlays.js?v=3.0.0-livefix12',
-  './overlays/tapcalc-workflow-library.css?v=3.0.0-livefix12',
-  './overlays/tapcalc-workflow-library.js?v=3.0.0-livefix12',
-  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-livefix12',
-  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-livefix12',
-  './overlays/tapcalc-shell-reference.css?v=3.0.0-livefix12',
-  './overlays/tapcalc-shell-reference.js?v=3.0.0-livefix12',
-  './overlays/tapcalc-field-manual.js?v=3.0.0-livefix12',
-  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-livefix12',
-  './overlays/tapcalc-light-mode.css?v=3.0.0-livefix12',
-  './overlays/tapcalc-reference-router.css?v=3.0.0-livefix12',
-  './overlays/tapcalc-reference-router.js?v=3.0.0-livefix12',
-  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-livefix12',
-  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-livefix12',
-  './pdf.mjs?v=3.0.0-livefix12',
-  './pdf.worker.mjs?v=3.0.0-livefix12',
-  './stackup-data.js?v=3.0.0-livefix12',
+  './styles.css?v=3.0.0-livefix13',
+  './measurement.js?v=3.0.0-livefix13',
+  './tapcalc-overlays.css?v=3.0.0-livefix13',
+  './tapcalc-overlays.js?v=3.0.0-livefix13',
+  './overlays/tapcalc-workflow-library.css?v=3.0.0-livefix13',
+  './overlays/tapcalc-workflow-library.js?v=3.0.0-livefix13',
+  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-livefix13',
+  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-livefix13',
+  './overlays/tapcalc-shell-reference.css?v=3.0.0-livefix13',
+  './overlays/tapcalc-shell-reference.js?v=3.0.0-livefix13',
+  './overlays/tapcalc-field-manual.js?v=3.0.0-livefix13',
+  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-livefix13',
+  './overlays/tapcalc-light-mode.css?v=3.0.0-livefix13',
+  './overlays/tapcalc-reference-router.css?v=3.0.0-livefix13',
+  './overlays/tapcalc-reference-router.js?v=3.0.0-livefix13',
+  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-livefix13',
+  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-livefix13',
+  './pdf.mjs?v=3.0.0-livefix13',
+  './pdf.worker.mjs?v=3.0.0-livefix13',
+  './stackup-data.js?v=3.0.0-livefix13',
   './script.js',
   './manifest.json',
-  './firebase-config.js?v=3.0.0-livefix12',
+  './firebase-config.js?v=3.0.0-livefix13',
   './team-logo.png'
 ];
 
@@ -57,10 +57,6 @@ function isShellAsset(url) {
     url.pathname.endsWith('/tapcalc-overlays.css') ||
     url.pathname.endsWith('/tapcalc-overlays.js') ||
     url.pathname.includes('/overlays/tapcalc-') ||
-    url.pathname.endsWith('/tapcalc-alpha201.css') ||
-    url.pathname.endsWith('/tapcalc-alpha202.css') ||
-    url.pathname.endsWith('/tapcalc-alpha201.js') ||
-    url.pathname.endsWith('/tapcalc-alpha202.js') ||
     url.pathname.endsWith('/pdf.mjs') ||
     url.pathname.endsWith('/pdf.worker.mjs') ||
     url.pathname.endsWith('/stackup-data.js') ||

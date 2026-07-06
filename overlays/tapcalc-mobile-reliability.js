@@ -1,6 +1,6 @@
-/* TapCalc livefix11 mobile nav/select/offline reliability guard. */
+/* TapCalc livefix13 mobile nav/select/offline reliability guard. */
 (function(){
-  const READY_FLAG = '__tapcalcLivefix11ReliabilityReady';
+  const READY_FLAG = '__tapcalcLivefix13ReliabilityReady';
   if (window[READY_FLAG]) return;
   window[READY_FLAG] = true;
 
@@ -18,7 +18,7 @@
     library: 'jobs',
     reference: 'ref'
   };
-  const STYLE_ID = 'tapcalc-livefix11-reliability-style';
+  const STYLE_ID = 'tapcalc-livefix13-reliability-style';
 
   function byId(id) {
     return document.getElementById(id);
@@ -85,20 +85,23 @@
     style.textContent = `
       @media (max-width: 820px) {
         body.measurement-page .screen-nav {
-          position: fixed !important;
-          top: calc(env(safe-area-inset-top, 0px) + 56px) !important;
+          position: relative !important;
+          top: auto !important;
           bottom: auto !important;
-          left: 10px !important;
-          right: 10px !important;
-          z-index: 12000 !important;
+          left: auto !important;
+          right: auto !important;
+          z-index: 9000 !important;
           display: grid !important;
+          box-sizing: border-box !important;
+          width: 100% !important;
+          margin: 0 0 14px !important;
           pointer-events: auto !important;
           touch-action: manipulation !important;
           isolation: isolate !important;
         }
         body.measurement-page .screen-nav .screen-tab {
           position: relative !important;
-          z-index: 12001 !important;
+          z-index: 9001 !important;
           pointer-events: auto !important;
           touch-action: manipulation !important;
           cursor: pointer !important;
@@ -110,7 +113,7 @@
           appearance: auto !important;
         }
         body.measurement-page .screen-view.active {
-          margin-top: 76px !important;
+          margin-top: 0 !important;
         }
         body.measurement-page .workflow-setup-field,
         body.measurement-page .row,
@@ -153,9 +156,9 @@
     const previous = target.value || source?.value || '';
     if (source?.tagName === 'SELECT' && source.options.length) {
       const signature = source.innerHTML;
-      if (target.dataset.livefix11OptionSignature !== signature) {
+      if (target.dataset.livefix13OptionSignature !== signature) {
         target.innerHTML = signature;
-        target.dataset.livefix11OptionSignature = signature;
+        target.dataset.livefix13OptionSignature = signature;
       }
     } else if (!hasOptions(target) && fallbackOptions.length) {
       target.innerHTML = fallbackOptions.map((value) => `<option value="${value}">${value}</option>`).join('');
@@ -174,8 +177,8 @@
     copyOptions('workflowEtaMachine', 'etaMachine', ['360', '660', '1200']);
 
     const operationType = byId('workflowOperationType');
-    if (operationType && !operationType.dataset.livefix11Bound) {
-      operationType.dataset.livefix11Bound = '1';
+    if (operationType && !operationType.dataset.livefix13Bound) {
+      operationType.dataset.livefix13Bound = '1';
       operationType.addEventListener('change', () => {
         const source = byId('operationType');
         if (source && source.value !== operationType.value) {
