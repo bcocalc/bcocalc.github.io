@@ -1,0 +1,211 @@
+/* TapCalc light-mode consistency pass */
+body.light.measurement-page,
+:root[data-theme="light"] body.measurement-page {
+  background: #dbe6f2 !important;
+  color: #16233a !important;
+}
+
+body.light.measurement-page .app-shell,
+:root[data-theme="light"] body.measurement-page .app-shell {
+  background: linear-gradient(180deg, #edf4fb 0%, #dbe7f3 100%) !important;
+  color: #16233a !important;
+}
+
+body.light.measurement-page .top-app-bar,
+body.light.measurement-page .screen-nav,
+:root[data-theme="light"] body.measurement-page .top-app-bar,
+:root[data-theme="light"] body.measurement-page .screen-nav {
+  background: rgba(232, 241, 250, 0.96) !important;
+  border-color: rgba(95, 125, 160, 0.24) !important;
+  box-shadow: 0 10px 26px rgba(38, 74, 114, 0.14) !important;
+}
+
+body.light.measurement-page #jobsScreen,
+:root[data-theme="light"] body.measurement-page #jobsScreen {
+  background: transparent !important;
+  color: #16233a !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-screen-topbar,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-screen-topbar {
+  background: linear-gradient(180deg, #eef6ff 0%, #ddeaf6 100%) !important;
+  border: 1px solid rgba(88, 120, 156, 0.24) !important;
+  box-shadow: 0 12px 26px rgba(40, 72, 110, 0.14) !important;
+  color: #17243b !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-screen-topbar h3,
+body.light.measurement-page #jobsScreen .jobs-screen-topbar p,
+body.light.measurement-page #jobsScreen .jobs-screen-topbar .hero-eyebrow,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-screen-topbar h3,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-screen-topbar p,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-screen-topbar .hero-eyebrow {
+  color: #17243b !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-screen-topbar .hero-eyebrow,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-screen-topbar .hero-eyebrow {
+  color: #6b89a9 !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-status-card,
+body.light.measurement-page #jobsScreen .jobs-panel-card,
+body.light.measurement-page #jobsScreen .jobs-resume-card,
+body.light.measurement-page #jobsScreen .jobs-recent-card,
+body.light.measurement-page #jobsScreen .home-draft-resume-card,
+body.light.measurement-page #jobsScreen .jobs-local-history-shell,
+body.light.measurement-page #jobsScreen .history-card,
+body.light.measurement-page #jobsScreen .job-detail-header,
+body.light.measurement-page #jobsScreen .job-detail-grid,
+body.light.measurement-page #jobsScreen .summary-item,
+body.light.measurement-page #jobsScreen .jobs-inline-stats div,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-status-card,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-panel-card,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-resume-card,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-recent-card,
+:root[data-theme="light"] body.measurement-page #jobsScreen .home-draft-resume-card,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-local-history-shell,
+:root[data-theme="light"] body.measurement-page #jobsScreen .history-card,
+:root[data-theme="light"] body.measurement-page #jobsScreen .job-detail-header,
+:root[data-theme="light"] body.measurement-page #jobsScreen .job-detail-grid,
+:root[data-theme="light"] body.measurement-page #jobsScreen .summary-item,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-inline-stats div {
+  background: linear-gradient(180deg, #f8fbff 0%, #eaf2fa 100%) !important;
+  border-color: rgba(88, 120, 156, 0.22) !important;
+  box-shadow: 0 10px 22px rgba(38, 74, 114, 0.10) !important;
+  color: #16233a !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-status-card strong,
+body.light.measurement-page #jobsScreen .jobs-status-card .summary-value,
+body.light.measurement-page #jobsScreen .jobs-panel-card h3,
+body.light.measurement-page #jobsScreen .jobs-panel-card h4,
+body.light.measurement-page #jobsScreen .jobs-resume-card strong,
+body.light.measurement-page #jobsScreen .jobs-recent-card strong,
+body.light.measurement-page #jobsScreen .history-title,
+body.light.measurement-page #jobsScreen .job-detail-title,
+body.light.measurement-page #jobsScreen .summary-value,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-status-card strong,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-status-card .summary-value,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-panel-card h3,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-panel-card h4,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-resume-card strong,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-recent-card strong,
+:root[data-theme="light"] body.measurement-page #jobsScreen .history-title,
+:root[data-theme="light"] body.measurement-page #jobsScreen .job-detail-title,
+:root[data-theme="light"] body.measurement-page #jobsScreen .summary-value {
+  color: #16233a !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-mini-label,
+body.light.measurement-page #jobsScreen .summary-label,
+body.light.measurement-page #jobsScreen .jobs-mini-note,
+body.light.measurement-page #jobsScreen .jobs-note,
+body.light.measurement-page #jobsScreen .history-time,
+body.light.measurement-page #jobsScreen .history-meta,
+body.light.measurement-page #jobsScreen .job-detail-subtitle,
+body.light.measurement-page #jobsScreen .jobs-recent-item span,
+body.light.measurement-page #jobsScreen .jobs-resume-copy span,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-mini-label,
+:root[data-theme="light"] body.measurement-page #jobsScreen .summary-label,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-mini-note,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-note,
+:root[data-theme="light"] body.measurement-page #jobsScreen .history-time,
+:root[data-theme="light"] body.measurement-page #jobsScreen .history-meta,
+:root[data-theme="light"] body.measurement-page #jobsScreen .job-detail-subtitle,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-recent-item span,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-resume-copy span {
+  color: #526b8b !important;
+}
+
+body.light.measurement-page #jobsScreen .library-lane-switch,
+:root[data-theme="light"] body.measurement-page #jobsScreen .library-lane-switch {
+  background: rgba(219, 232, 245, 0.94) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 8px 20px rgba(38, 74, 114, 0.10) !important;
+}
+
+body.light.measurement-page #jobsScreen .library-lane-btn,
+body.light.measurement-page #jobsScreen .jobs-view-chip,
+body.light.measurement-page #jobsScreen .jobs-actions-compact button,
+body.light.measurement-page #jobsScreen #clearHistoryBtn,
+body.light.measurement-page #jobsScreen .history-btn,
+:root[data-theme="light"] body.measurement-page #jobsScreen .library-lane-btn,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-view-chip,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-actions-compact button,
+:root[data-theme="light"] body.measurement-page #jobsScreen #clearHistoryBtn,
+:root[data-theme="light"] body.measurement-page #jobsScreen .history-btn {
+  background: linear-gradient(180deg, #f8fbff 0%, #e2edf7 100%) !important;
+  border: 1px solid rgba(88, 120, 156, 0.28) !important;
+  box-shadow: none !important;
+  color: #173657 !important;
+}
+
+body.light.measurement-page #jobsScreen .library-lane-btn.active,
+body.light.measurement-page #jobsScreen .jobs-view-chip.active,
+:root[data-theme="light"] body.measurement-page #jobsScreen .library-lane-btn.active,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-view-chip.active {
+  background: linear-gradient(180deg, #4d85ee 0%, #2f69e1 100%) !important;
+  border-color: rgba(110, 158, 238, 0.92) !important;
+  box-shadow: 0 0 0 2px rgba(151, 190, 255, 0.24), 0 10px 24px rgba(18, 88, 210, 0.24) !important;
+  color: #ffffff !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-top-actions .secondary-btn,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-top-actions .secondary-btn {
+  background: linear-gradient(180deg, #f8fbff 0%, #e2edf7 100%) !important;
+  border: 1px solid rgba(88, 120, 156, 0.28) !important;
+  color: #173657 !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-top-actions button:not(.secondary-btn),
+body.light.measurement-page #jobsScreen .jobs-resume-side .secondary-btn,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-top-actions button:not(.secondary-btn),
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-resume-side .secondary-btn {
+  background: linear-gradient(180deg, #0b63b8 0%, #064f97 100%) !important;
+  border: 1px solid rgba(9, 74, 140, 0.28) !important;
+  color: #ffffff !important;
+}
+
+body.light.measurement-page #jobsScreen input,
+body.light.measurement-page #jobsScreen select,
+body.light.measurement-page #jobsScreen textarea,
+body.light.measurement-page #jobsScreen .jobs-select,
+body.light.measurement-page #jobsScreen .jobs-library-details,
+:root[data-theme="light"] body.measurement-page #jobsScreen input,
+:root[data-theme="light"] body.measurement-page #jobsScreen select,
+:root[data-theme="light"] body.measurement-page #jobsScreen textarea,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-select,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-library-details {
+  background: #f8fbff !important;
+  border-color: rgba(88, 120, 156, 0.24) !important;
+  color: #16233a !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-list-item,
+body.light.measurement-page #jobsScreen .jobs-recent-item,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-list-item,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-recent-item {
+  background: #ffffff !important;
+  border-color: rgba(88, 120, 156, 0.20) !important;
+  color: #16233a !important;
+}
+
+body.light.measurement-page #jobsScreen .jobs-list-item.active,
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-list-item.active {
+  background: #2f69e1 !important;
+  border-color: #2f69e1 !important;
+  color: #ffffff !important;
+}
+
+@media (max-width: 820px) {
+  body.light.measurement-page #jobsScreen .library-lane-switch,
+  :root[data-theme="light"] body.measurement-page #jobsScreen .library-lane-switch {
+    background: rgba(219, 232, 245, 0.96) !important;
+  }
+
+  body.light.measurement-page #jobsScreen .jobs-screen-topbar,
+  :root[data-theme="light"] body.measurement-page #jobsScreen .jobs-screen-topbar {
+    padding: 12px !important;
+  }
+}
