@@ -11,7 +11,7 @@ window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapc
 window.TAPCALC_BUILD = Object.assign({
   channel: 'live',
   version: '3.0.0-livefix11',
-  label: 'TapCalc v3.0.0-livefix11 - 2026-06-10',
+  label: 'TapCalc v3.0.0-livefix11 - 2026-07-06',
   overlayVersion: '3.0.0-livefix11',
   serviceWorkerVersion: '3.0.0-livefix11',
   syncPill: 'LIVE'

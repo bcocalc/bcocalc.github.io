@@ -11,7 +11,8 @@
     'overlays/tapcalc-livefix11-workflow.js',
     'overlays/tapcalc-shell-reference.js',
     'overlays/tapcalc-field-manual.js',
-    'overlays/tapcalc-reference-router.js'
+    'overlays/tapcalc-reference-router.js',
+    'overlays/tapcalc-mobile-reliability.js'
   ];
 
   function loadScript(file){
