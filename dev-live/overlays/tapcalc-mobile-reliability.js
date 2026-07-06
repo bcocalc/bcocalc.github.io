@@ -19,6 +19,8 @@
     reference: 'ref'
   };
   const STYLE_ID = 'tapcalc-livefix14-reliability-style';
+  const legacySetLibraryLane = typeof window.setLibraryLane === 'function' ? window.setLibraryLane.bind(window) : null;
+  const legacyOpenSharedLibraryLane = typeof window.openSharedLibraryLane === 'function' ? window.openSharedLibraryLane.bind(window) : null;
 
   function byId(id) {
     return document.getElementById(id);
@@ -101,8 +103,8 @@
     style.textContent = `
       @media (max-width: 820px) {
         body.measurement-page .screen-nav {
-          position: relative !important;
-          top: auto !important;
+          position: sticky !important;
+          top: max(0px, env(safe-area-inset-top)) !important;
           bottom: auto !important;
           left: auto !important;
           right: auto !important;
@@ -111,6 +113,11 @@
           box-sizing: border-box !important;
           width: 100% !important;
           margin: 0 0 14px !important;
+          padding-top: 8px !important;
+          padding-bottom: 10px !important;
+          background: #081a30 !important;
+          border-bottom: 1px solid rgba(142, 190, 244, 0.16) !important;
+          border-top: 0 !important;
           pointer-events: auto !important;
           touch-action: manipulation !important;
           isolation: isolate !important;
@@ -206,7 +213,7 @@
     }
   }
 
-  function applyLibraryLane(lane) {
+  function applyLibraryLane(lane, options = {}) {
     const next = String(lane || '').trim() === 'shared' ? 'shared' : 'local';
     document.querySelectorAll('.library-lane-btn[data-library-lane]').forEach((button) => {
       const active = button.dataset.libraryLane === next;
@@ -235,12 +242,34 @@
     try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
     if (next === 'shared') {
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
-      setTimeout(() => { try { window.loadCloudJobs?.(); } catch {} }, 40);
+      if (!options.skipCloudLoad) {
+        setTimeout(() => { try { window.loadCloudJobs?.(); } catch {} }, 40);
+      }
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 180);
     } else {
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
     }
     return next;
+  }
+
+  function openLibraryLane(lane) {
+    const next = applyLibraryLane(lane);
+    if (normalizeScreen(document.body.dataset.activeScreen) !== 'jobs') {
+      setScreen('jobs', { silent: true });
+    }
+    return next;
+  }
+
+  function installCanonicalLibraryApi() {
+    if (legacySetLibraryLane && !window.tapCalcLegacySetLibraryLane) {
+      window.tapCalcLegacySetLibraryLane = legacySetLibraryLane;
+    }
+    if (legacyOpenSharedLibraryLane && !window.tapCalcLegacyOpenSharedLibraryLane) {
+      window.tapCalcLegacyOpenSharedLibraryLane = legacyOpenSharedLibraryLane;
+    }
+    window.setLibraryLane = (lane) => applyLibraryLane(lane);
+    window.openSharedLibraryLane = () => openLibraryLane('shared');
+    window.tapCalcOpenLibrary = (lane = 'local') => openLibraryLane(lane);
   }
 
   function handleLibraryLane(event) {
@@ -277,6 +306,7 @@
   }
 
   function run() {
+    installCanonicalLibraryApi();
     installReliabilityStyle();
     markInteractiveControls();
     ensureWorkflowSelects();

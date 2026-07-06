@@ -5,8 +5,8 @@
   }
 
   body.measurement-page .screen-nav {
-    position: relative !important;
-    top: auto !important;
+    position: sticky !important;
+    top: max(0px, env(safe-area-inset-top)) !important;
     right: auto !important;
     left: auto !important;
     bottom: auto !important;
@@ -15,6 +15,11 @@
     box-sizing: border-box !important;
     width: 100% !important;
     margin: 0 0 14px !important;
+    padding-top: 8px !important;
+    padding-bottom: 10px !important;
+    background: #081a30 !important;
+    border-bottom: 1px solid rgba(142, 190, 244, 0.16) !important;
+    border-top: 0 !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
     isolation: isolate !important;
