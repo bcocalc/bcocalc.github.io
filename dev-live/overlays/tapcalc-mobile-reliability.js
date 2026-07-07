@@ -529,6 +529,7 @@
   function installSharedHistoryRenderer() {
     if (window.__tapcalcSharedHistoryRendererReady) return;
     window.__tapcalcSharedHistoryRendererReady = true;
+    window.__tapcalcLibraryRendererOwner = 'mobile-reliability-shared-history';
     const previousRenderJobsList = typeof window.renderJobsList === 'function' ? window.renderJobsList.bind(window) : null;
     if (previousRenderJobsList) {
       window.renderJobsList = function tapcalcSharedHistoryRenderJobsList(...args) {

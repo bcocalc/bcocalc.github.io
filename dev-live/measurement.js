@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-devlive14';
+const BUILD_VERSION = '3.0.0-devlive15';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = '../reference/stackups/';
-const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive14';
-const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive14';
+const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive15';
+const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive15';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive14', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive15', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6258,6 +6258,7 @@ var selectedJobId = window.selectedJobId || '';
     detailsEl.querySelector('#jobsLoadSelectedBtn')?.addEventListener('click', () => window.tapCalcLibraryLoadSelected());
   }
   function a59RenderLibrary(){
+    if (window.__tapcalcLibraryRendererOwner) return false;
     const listEl = document.getElementById('jobsSelect');
     const metaEl = document.getElementById('jobsResultsMeta');
     const detailsEl = document.getElementById('jobsList');
@@ -6325,9 +6326,7 @@ var selectedJobId = window.selectedJobId || '';
   };
   window.renderJobsList = a59RenderLibrary;
   window.renderSelectedJobDetails = function(){ a59RenderLibrary(); };
-  window.updateJobsListSelectionUI = function(){ a59RenderLibrary(); };
-  document.addEventListener('DOMContentLoaded', () => setTimeout(a59RenderLibrary, 50));
-  setTimeout(a59RenderLibrary, 200);
+  window.updateJobsListSelectionUI = function(){ if (!window.__tapcalcLibraryRendererOwner) a59RenderLibrary(); };
 })();
 
 
@@ -6581,7 +6580,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-devlive14';
+const TC63_VERSION = '3.0.0-devlive15';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6827,7 +6826,7 @@ const TC63_VERSION = '3.0.0-devlive14';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-devlive14';
+const VERSION = '3.0.0-devlive15';
 
   function tc65GetJobs() {
     try {
@@ -6909,6 +6908,7 @@ const VERSION = '3.0.0-devlive14';
   }
 
   function tc65RenderDetails() {
+    if (window.__tapcalcLibraryRendererOwner) return false;
     const detailsEl = document.getElementById('jobsList');
     if (!detailsEl) return;
     const entry = tc65FindSelectedEntry();
@@ -6968,6 +6968,7 @@ const VERSION = '3.0.0-devlive14';
   window.tapCalcForceLoadSelectedJob = tc65LoadSelected;
 
   document.addEventListener('click', (event) => {
+    if (window.__tapcalcLibraryRendererOwner) return;
     const row = event.target.closest('#jobsSelect .jobs-list-item[data-job-id]');
     if (!row) return;
     const list = tc65GetJobs();
@@ -6988,11 +6989,7 @@ const VERSION = '3.0.0-devlive14';
 
   setTimeout(() => {
     try {
-      const badge = document.querySelector('.version-badge');
-      if (badge) badge.textContent = `TapCalc Dev v${VERSION} - 2026-05-14`;
-      const title = document.querySelector('.top-app-title');
-      if (title) title.textContent = `TapCalc Dev v${VERSION} - 2026-05-14`;
-      tc65RenderDetails();
+      if (!window.__tapcalcLibraryRendererOwner) tc65RenderDetails();
     } catch {}
   }, 0);
 })();
@@ -9984,6 +9981,7 @@ const VERSION = '3.0.0-devlive14';
   window.tapCalcForceLoadSelectedJob = loadSelectedCanonical;
   window.renderSelectedJobDetails = renderSelectedCanonical;
   window.renderJobsList = renderJobsCanonical;
+  window.__tapcalcLibraryRendererOwner = 'alpha134-canonical';
   try { renderSelectedJobDetails = renderSelectedCanonical; } catch {}
   try { renderJobsList = renderJobsCanonical; } catch {}
   setTimeout(() => { try { renderJobsCanonical(); } catch (e) { console.error('alpha115 initial render failed', e); } }, 50);
@@ -9992,7 +9990,7 @@ const VERSION = '3.0.0-devlive14';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-devlive14';
+const VERSION = '3.0.0-devlive15';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }

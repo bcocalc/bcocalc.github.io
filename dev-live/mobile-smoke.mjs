@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive14';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive15';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -410,6 +410,7 @@ try {
       loadHasLegacyMarker: loadButton?.hasAttribute('data-load-job') || false,
       canonicalApiReady: typeof window.tapCalcLoadSelectedJobCanonical === 'function',
       forceUsesCanonical: window.tapCalcForceLoadSelectedJob === window.tapCalcLoadSelectedJobCanonical,
+      rendererOwner: window.__tapcalcLibraryRendererOwner || '',
       titleText: title?.textContent?.trim() || '',
       timeText: time?.textContent?.trim() || '',
       metaText: meta?.textContent?.trim() || '',
@@ -437,6 +438,7 @@ try {
       !sharedRowLayout.loadHasLegacyMarker &&
       sharedRowLayout.canonicalApiReady &&
       sharedRowLayout.forceUsesCanonical &&
+      sharedRowLayout.rendererOwner === 'mobile-reliability-shared-history' &&
       sharedRowLayout.detailDisplay === 'none' &&
       sharedRowLayout.statusDisplay === 'none' &&
       sharedRowLayout.itemScrollWidth <= sharedRowLayout.itemWidth + 1,
