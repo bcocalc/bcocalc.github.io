@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-devlive15';
+const BUILD_VERSION = '3.0.0-devlive16';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = '../reference/stackups/';
-const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive15';
-const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive15';
+const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive16';
+const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive16';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive15', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive16', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6580,7 +6580,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-devlive15';
+const TC63_VERSION = '3.0.0-devlive16';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6826,7 +6826,7 @@ const TC63_VERSION = '3.0.0-devlive15';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-devlive15';
+const VERSION = '3.0.0-devlive16';
 
   function tc65GetJobs() {
     try {
@@ -6981,6 +6981,10 @@ const VERSION = '3.0.0-devlive15';
   const detailsEl = document.getElementById('jobsList');
   if (detailsEl) {
     const observer = new MutationObserver(() => {
+      if (window.__tapcalcLibraryRendererOwner) {
+        observer.disconnect();
+        return;
+      }
       const btn = document.getElementById('jobsLoadSelectedBtn');
       if (btn && btn.dataset.tc65Bound !== 'true') tc65BindLoadButton();
     });
@@ -9990,7 +9994,7 @@ const VERSION = '3.0.0-devlive15';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-devlive15';
+const VERSION = '3.0.0-devlive16';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }

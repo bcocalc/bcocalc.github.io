@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive15';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive16';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -408,6 +408,7 @@ try {
       loadText: loadButton?.textContent?.trim() || '',
       loadCanonical: loadButton?.dataset?.tapcalcLoadSelected === 'true',
       loadHasLegacyMarker: loadButton?.hasAttribute('data-load-job') || false,
+      detailHasLegacyTc65Load: !!document.querySelector('#jobsLoadSelectedBtn[data-tc65-bound="true"]'),
       canonicalApiReady: typeof window.tapCalcLoadSelectedJobCanonical === 'function',
       forceUsesCanonical: window.tapCalcForceLoadSelectedJob === window.tapCalcLoadSelectedJobCanonical,
       rendererOwner: window.__tapcalcLibraryRendererOwner || '',
@@ -436,6 +437,7 @@ try {
       sharedRowLayout.loadDisplay.includes('flex') &&
       sharedRowLayout.loadCanonical &&
       !sharedRowLayout.loadHasLegacyMarker &&
+      !sharedRowLayout.detailHasLegacyTc65Load &&
       sharedRowLayout.canonicalApiReady &&
       sharedRowLayout.forceUsesCanonical &&
       sharedRowLayout.rendererOwner === 'mobile-reliability-shared-history' &&

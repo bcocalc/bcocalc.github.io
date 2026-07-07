@@ -4,7 +4,7 @@ This folder is a live-like staging lane for GitHub Pages.
 
 - Public path after deployment: `https://bcocalc.github.io/dev-live/`
 - Purpose: test live-baseline fixes without changing the root live app or the existing `/dev/` app.
-- Baseline: copied from root `3.0.0-livefix14` and relabeled as `3.0.0-devlive15`.
+- Baseline: copied from root `3.0.0-livefix14` and relabeled as `3.0.0-devlive16`.
 - Static reference PDFs are intentionally shared from the root `../reference/stackups/` folder to avoid another large duplicate tree.
 - This lane has its own `service-worker.js` and cache name scoped to `/dev-live/`.
 
