@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive6';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive7';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -350,6 +350,44 @@ try {
       sharedRowLayout.itemScrollWidth <= sharedRowLayout.itemWidth + 1,
     'Shared job rows wrap as readable cards',
     JSON.stringify(sharedRowLayout)
+  );
+
+  const sharedVisualMatch = await evaluate(cdp, `(() => {
+    const localTitle = document.querySelector('.jobs-panel-local .jobs-section-head h3');
+    const sharedToggle = document.getElementById('sharedJobsToggleBtn');
+    const sharedTitle = sharedToggle?.querySelector('span:first-child');
+    const sharedHead = document.querySelector('.jobs-panel-shared .jobs-section-head');
+    const sharedAnchor = document.getElementById('sharedJobsAnchor');
+    const viewToggle = document.querySelector('.jobs-panel-shared .jobs-view-toggle');
+    const localStyle = localTitle ? getComputedStyle(localTitle) : null;
+    const sharedStyle = sharedTitle ? getComputedStyle(sharedTitle) : null;
+    const buttonStyle = sharedToggle ? getComputedStyle(sharedToggle) : null;
+    const headStyle = sharedHead ? getComputedStyle(sharedHead) : null;
+    const anchorStyle = sharedAnchor ? getComputedStyle(sharedAnchor) : null;
+    const viewStyle = viewToggle ? getComputedStyle(viewToggle) : null;
+    const localFont = Number.parseFloat(localStyle?.fontSize || '0');
+    const sharedFont = Number.parseFloat(sharedStyle?.fontSize || '0');
+    return {
+      localFont,
+      sharedFont,
+      buttonBackground: buttonStyle?.backgroundColor || '',
+      buttonBorderTop: buttonStyle?.borderTopWidth || '',
+      headBorderBottom: headStyle?.borderBottomWidth || '',
+      anchorDisplay: anchorStyle?.display || '',
+      viewDisplay: viewStyle?.display || '',
+      viewColumns: viewStyle?.gridTemplateColumns || ''
+    };
+  })()`);
+  record(
+    sharedVisualMatch.sharedFont > 0 &&
+      sharedVisualMatch.localFont > 0 &&
+      sharedVisualMatch.sharedFont <= sharedVisualMatch.localFont + 2 &&
+      sharedVisualMatch.buttonBorderTop === '0px' &&
+      sharedVisualMatch.headBorderBottom !== '0px' &&
+      sharedVisualMatch.anchorDisplay === 'none' &&
+      sharedVisualMatch.viewDisplay === 'grid',
+    'Shared lane matches compact Local styling',
+    JSON.stringify(sharedVisualMatch)
   );
 
   await tap(cdp, '.library-lane-btn[data-library-lane="local"]');
