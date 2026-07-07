@@ -14,10 +14,58 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive3';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive4';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
+const seedLocalHistoryExpression = `(() => {
+  const now = new Date().toISOString();
+  const record = {
+    meta: {
+      title: 'Smoke Saved Job',
+      operationType: 'Hot Tap',
+      savedAtIso: now,
+      savedAtDisplay: 'Smoke test'
+    },
+    job: {
+      client: 'Smoke Client',
+      description: 'Smoke Saved Job',
+      jobNumber: 'SMK-001',
+      location: 'Test Stand'
+    },
+    pipe: {
+      nominalSize: '4.0',
+      wallThickness: '0.237',
+      material: 'Carbon Steel'
+    },
+    machine: {
+      machine: '360 / 152',
+      cutterOd: '3.875'
+    },
+    state: {
+      jobClient: 'Smoke Client',
+      jobDescription: 'Smoke Saved Job',
+      jobNumber: 'SMK-001',
+      jobLocation: 'Test Stand',
+      operationType: 'Hot Tap',
+      bcoPipeOD: '4.0',
+      wallThickness: '0.237'
+    }
+  };
+  localStorage.setItem('measurementCardHistoryV1', JSON.stringify([{
+    id: 'tapcalc-smoke-load',
+    savedAt: 'Smoke test',
+    summary: {
+      title: 'Smoke Saved Job',
+      pipe: '4.0',
+      bco: '1.234',
+      wall: '0.237',
+      operationType: 'Hot Tap'
+    },
+    record
+  }]));
+  return true;
+})()`;
 
 function record(ok, name, detail = '') {
   results.push({ ok, name, detail });
@@ -212,6 +260,10 @@ try {
   await cdp.send('Page.navigate', { url: target });
   await waitFor(cdp, `!!document.querySelector('.screen-nav .screen-tab[data-screen="home"]')`, 15000);
   await sleep(900);
+  await evaluate(cdp, seedLocalHistoryExpression);
+  await cdp.send('Page.reload', { ignoreCache: true });
+  await waitFor(cdp, `!!document.querySelector('.screen-nav .screen-tab[data-screen="home"]')`, 15000);
+  await sleep(900);
 
   const versionText = await evaluate(cdp, `document.querySelector('.top-app-title')?.textContent || ''`);
   record(versionText.includes(expectedVersion), 'version marker visible', versionText.trim());
@@ -283,6 +335,33 @@ try {
   record(localLayout.lane === 'local' && localLayout.panelActive && !localLayout.panelHidden && localLayout.buttonActive, 'Library Local lane reopens', JSON.stringify(localLayout));
   record(localLayout.statusColumns === 1, 'Library status cards stack on mobile', JSON.stringify(localLayout));
   record(localLayout.switchPosition === 'static' && localLayout.panelTop >= localLayout.switchBottom + 4, 'Library lane switch stays in flow', JSON.stringify(localLayout));
+
+  const seededLocalJob = await evaluate(cdp, `(() => {
+    return {
+      historyButton: !!document.querySelector('[data-load-history="tapcalc-smoke-load"]'),
+      count: JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]').length
+    };
+  })()`);
+  record(seededLocalJob.historyButton && seededLocalJob.count === 1, 'seeded local saved job for load test', JSON.stringify(seededLocalJob));
+
+  await tap(cdp, '[data-load-history="tapcalc-smoke-load"]');
+  await sleep(900);
+  const loadedLocalJob = await evaluate(cdp, `(() => ({
+    activeScreen: document.body.dataset.activeScreen || '',
+    jobClient: document.getElementById('jobClient')?.value || '',
+    workflowClient: document.getElementById('workflowJobClient')?.value || '',
+    jobDescription: document.getElementById('jobDescription')?.value || '',
+    jobNumber: document.getElementById('jobNumber')?.value || '',
+    status: document.getElementById('jobsCloudStatus')?.textContent || ''
+  }))()`);
+  record(
+    loadedLocalJob.activeScreen === 'job' &&
+      loadedLocalJob.jobClient === 'Smoke Client' &&
+      loadedLocalJob.jobDescription === 'Smoke Saved Job' &&
+      loadedLocalJob.jobNumber === 'SMK-001',
+    'Local history Load hydrates saved job once',
+    JSON.stringify(loadedLocalJob)
+  );
 
   await evaluate(cdp, `window.scrollTo(0, document.body.scrollHeight); true`);
   await sleep(150);

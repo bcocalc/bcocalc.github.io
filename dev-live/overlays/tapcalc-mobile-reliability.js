@@ -19,8 +19,11 @@
     reference: 'ref'
   };
   const STYLE_ID = 'tapcalc-livefix14-reliability-style';
+  const LEGACY_LOAD_BUTTON_SELECTOR = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114, [data-load-job]';
+  const CANONICAL_LOAD_BUTTON_SELECTOR = '.tapcalc-load-selected-job-btn[data-tapcalc-load-selected="true"]';
   const legacySetLibraryLane = typeof window.setLibraryLane === 'function' ? window.setLibraryLane.bind(window) : null;
   const legacyOpenSharedLibraryLane = typeof window.openSharedLibraryLane === 'function' ? window.openSharedLibraryLane.bind(window) : null;
+  let loadGuardUntil = 0;
 
   function byId(id) {
     return document.getElementById(id);
@@ -283,6 +286,167 @@
     return false;
   }
 
+  function setLoadStatus(message) {
+    const status = byId('jobsCloudStatus') || byId('jobsCloudStatusMirror') || byId('bcoStatus');
+    if (status && message) status.textContent = message;
+  }
+
+  function hideLegacyLoadDebug() {
+    ['mobileLoadDebugTop', 'mobileLoadDebugPanel'].forEach((id) => {
+      const el = byId(id);
+      if (!el) return;
+      el.hidden = true;
+      el.style.display = 'none';
+    });
+  }
+
+  function getHistoryItems() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]');
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function getDisplayJobs() {
+    try {
+      return typeof window.getCombinedJobsForDisplay === 'function' ? (window.getCombinedJobsForDisplay() || []) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function syncSelectedJobId(id) {
+    const value = String(id || '').trim();
+    if (!value) return;
+    try { selectedJobId = value; } catch {}
+    window.selectedJobId = value;
+    window.__tapcalcLibrarySelectedId = value;
+    window.__tapcalcSelectedJobId = value;
+    document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]').forEach((item) => {
+      const active = String(item.dataset.jobId || '') === value;
+      item.classList.toggle('active', active);
+      item.setAttribute('aria-pressed', active ? 'true' : 'false');
+      item.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+  }
+
+  function resolveHistoryRecord(button) {
+    const id = String(button?.dataset?.loadHistory || '').trim();
+    if (!id) return null;
+    const item = getHistoryItems().find((entry) => String(entry?.id || '') === id);
+    if (!item) return null;
+    return {
+      id,
+      source: 'local-history',
+      record: item.record || { state: item.state || {} }
+    };
+  }
+
+  function resolveSelectedRecord(button = null) {
+    const historyRecord = resolveHistoryRecord(button);
+    if (historyRecord?.record) return historyRecord;
+
+    const jobs = getDisplayJobs();
+    const ids = [
+      button?.dataset?.jobId,
+      document.querySelector('#jobsSelect .jobs-list-item.active[data-job-id]')?.dataset?.jobId,
+      document.querySelector('#jobsSelect .jobs-list-item[aria-pressed="true"][data-job-id]')?.dataset?.jobId,
+      document.querySelector('#jobsSelect .jobs-list-item[aria-selected="true"][data-job-id]')?.dataset?.jobId,
+      window.__tapcalcLibrarySelectedId,
+      window.__tapcalcSelectedJobId,
+      window.selectedJobId,
+      (() => { try { return selectedJobId; } catch { return ''; } })()
+    ].map((value) => String(value || '').trim()).filter(Boolean);
+
+    for (const id of ids) {
+      const match = jobs.find((job) => String(job?.id || '') === id);
+      if (match?.record) return { id: match.id, source: match.source || 'library', record: match.record };
+    }
+
+    const selected = window.__tapcalcVisibleDetailRecord || window.__tapcalcVisibleLibraryRecord || window.__tapcalcLibrarySelectedRecord || null;
+    return selected ? { id: ids[0] || 'visible', source: 'visible-detail', record: selected } : null;
+  }
+
+  function openLoadedJobScreen() {
+    try { setScreen('job', { silent: true }); } catch {}
+    try { window.tapCalcSetScreen?.('job'); } catch {}
+    try { document.querySelector('.screen-tab[data-screen="job"]')?.click(); } catch {}
+  }
+
+  function loadSelectedJob(event) {
+    if (event) {
+      try { if (event.cancelable) event.preventDefault(); } catch {}
+      try { event.stopPropagation(); } catch {}
+      try { event.stopImmediatePropagation?.(); } catch {}
+    }
+    const now = Date.now();
+    if (now < loadGuardUntil) return false;
+    loadGuardUntil = now + 950;
+
+    const button = event?.target?.closest?.(`${CANONICAL_LOAD_BUTTON_SELECTOR}, [data-load-history]`) || null;
+    const selected = resolveSelectedRecord(button);
+    if (!selected?.record) {
+      setLoadStatus('Select a job first.');
+      loadGuardUntil = 0;
+      return false;
+    }
+
+    syncSelectedJobId(selected.id);
+    try {
+      if (typeof window.loadRecordIntoCalculator === 'function') {
+        window.loadRecordIntoCalculator(selected.record, { switchScreen: true, skipPersist: false, message: true });
+      } else if (typeof loadRecordIntoCalculator === 'function') {
+        loadRecordIntoCalculator(selected.record, { switchScreen: true, skipPersist: false, message: true });
+      }
+      try { window.tapCalcApplyLoadedJobWorkflow?.(selected.record); } catch {}
+      try { window.tapCalcRestoreOperationBundle?.(selected.record, { focus: true }); } catch {}
+      openLoadedJobScreen();
+      const title = selected.record?.meta?.title || selected.record?.job?.description || selected.record?.job?.jobNumber || 'selected job';
+      setLoadStatus(`Loaded ${title}.`);
+    } catch (error) {
+      console.error('TapCalc canonical load failed', error);
+      setLoadStatus('Load Job failed. See console.');
+      loadGuardUntil = 0;
+    }
+    setTimeout(() => { loadGuardUntil = 0; }, 1000);
+    return false;
+  }
+
+  function normalizeLoadButtons() {
+    hideLegacyLoadDebug();
+    document.querySelectorAll(LEGACY_LOAD_BUTTON_SELECTOR).forEach((button) => {
+      if (button.dataset.tapcalcCanonicalizedLoad === 'true') return;
+      const replacement = document.createElement('button');
+      replacement.type = 'button';
+      replacement.className = `${button.className || 'secondary-btn'} tapcalc-load-selected-job-btn`.trim();
+      replacement.dataset.tapcalcLoadSelected = 'true';
+      if (button.dataset.jobId) replacement.dataset.jobId = button.dataset.jobId;
+      replacement.textContent = (button.textContent || 'Load Job').trim() || 'Load Job';
+      replacement.setAttribute('aria-label', button.getAttribute('aria-label') || replacement.textContent);
+      button.replaceWith(replacement);
+    });
+  }
+
+  function handleLoadJob(event) {
+    const target = event.target?.closest?.(`${CANONICAL_LOAD_BUTTON_SELECTOR}, [data-load-history]`);
+    if (!target) return;
+    return loadSelectedJob(event);
+  }
+
+  function installCanonicalLoadApi() {
+    normalizeLoadButtons();
+    window.tapCalcLoadSelectedJobCanonical = loadSelectedJob;
+    window.tapCalcForceLoadSelectedJob = loadSelectedJob;
+    window.tapCalcLibraryLoadSelected = loadSelectedJob;
+    window.loadSelectedLibraryJob = loadSelectedJob;
+    if (!window.__tapcalcCanonicalLoadObserver) {
+      window.__tapcalcCanonicalLoadObserver = new MutationObserver(() => normalizeLoadButtons());
+      window.__tapcalcCanonicalLoadObserver.observe(document.body || document.documentElement, { childList: true, subtree: true });
+    }
+  }
+
   function markInteractiveControls() {
     document.querySelectorAll('.screen-nav, .screen-tab, .library-lane-switch, .library-lane-btn, select, input, textarea, label').forEach((el) => {
       el.style.pointerEvents = 'auto';
@@ -307,6 +471,7 @@
 
   function run() {
     installCanonicalLibraryApi();
+    installCanonicalLoadApi();
     installReliabilityStyle();
     markInteractiveControls();
     ensureWorkflowSelects();
@@ -315,6 +480,7 @@
   ['pointerdown', 'touchstart', 'click'].forEach((eventName) => {
     window.addEventListener(eventName, handleLibraryLane, { capture: true, passive: false });
     window.addEventListener(eventName, handleNav, { capture: true, passive: false });
+    window.addEventListener(eventName, handleLoadJob, { capture: true, passive: false });
   });
   document.addEventListener('input', ensureWorkflowSelects, true);
   document.addEventListener('change', ensureWorkflowSelects, true);

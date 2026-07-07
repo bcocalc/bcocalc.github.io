@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-devlive3';
+const BUILD_VERSION = '3.0.0-devlive4';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = '../reference/stackups/';
-const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive3';
-const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive3';
+const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive4';
+const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive4';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive3', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive4', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6611,7 +6611,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-devlive3';
+const TC63_VERSION = '3.0.0-devlive4';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6857,7 +6857,7 @@ const TC63_VERSION = '3.0.0-devlive3';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-devlive3';
+const VERSION = '3.0.0-devlive4';
 
   function tc65GetJobs() {
     try {
@@ -10079,7 +10079,7 @@ const VERSION = '3.0.0-devlive3';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-devlive3';
+const VERSION = '3.0.0-devlive4';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
