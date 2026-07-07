@@ -28,6 +28,7 @@
   let sharedLoadTimer = 0;
   let sharedFallbackTimer = 0;
   let sharedHistoryRenderBusy = false;
+  let referenceScrollResetTimer = 0;
 
   function byId(id) {
     return document.getElementById(id);
@@ -50,12 +51,14 @@
       if (normalizeScreen(document.body.dataset.activeScreen) !== 'ref') return;
       const root = document.scrollingElement || document.documentElement;
       const refScreen = byId('refScreen');
-      try { if (refScreen) refScreen.scrollTop = 0; } catch {}
-      try { if (root) root.scrollTop = 0; } catch {}
-      try { document.body.scrollTop = 0; } catch {}
-      try { window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch {}
+      try { if (refScreen && Math.abs(refScreen.scrollTop) > 2) refScreen.scrollTop = 0; } catch {}
+      try { if (root && Math.abs(root.scrollTop) > 2) root.scrollTop = 0; } catch {}
+      try { if (Math.abs(document.body.scrollTop || 0) > 2) document.body.scrollTop = 0; } catch {}
+      try { if (Math.abs(window.scrollY || 0) > 2) window.scrollTo({ top: 0, left: 0, behavior: 'auto' }); } catch {}
     };
-    [0, 60, 180, 420].forEach((delay) => setTimeout(reset, delay));
+    reset();
+    clearTimeout(referenceScrollResetTimer);
+    referenceScrollResetTimer = setTimeout(reset, 80);
   }
 
   function setScreen(name, options = {}) {
@@ -182,7 +185,6 @@
     if (trigger.dataset.libraryLaneTarget) {
       setTimeout(() => { try { window.setLibraryLane?.(trigger.dataset.libraryLaneTarget); } catch {} }, 40);
     }
-    if (normalizeScreen(target) === 'ref') keepReferenceEntryVisible();
     return false;
   }
 
