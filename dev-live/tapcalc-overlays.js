@@ -5,7 +5,7 @@
   window[READY_FLAG] = true;
 
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-devlive13';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-devlive14';
   const FILES = [
     'overlays/tapcalc-workflow-library.js',
     'overlays/tapcalc-livefix11-workflow.js',
