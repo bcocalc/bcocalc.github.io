@@ -293,7 +293,7 @@
   function installMobileLoadBridge(){
     if (window.__tapcalcAlpha208LoadBridgeReady) return;
     window.__tapcalcAlpha208LoadBridgeReady = true;
-    const selector = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114, [data-load-job]';
+    const selector = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114';
     const isCompact = () => {
       try { return window.matchMedia ? window.matchMedia('(max-width: 860px)').matches : window.innerWidth <= 860; } catch { return false; }
     };

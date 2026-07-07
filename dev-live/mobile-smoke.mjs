@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive12';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive13';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -406,6 +406,9 @@ try {
       metaDisplay: metaStyle?.display || '',
       loadDisplay: loadStyle?.display || '',
       loadText: loadButton?.textContent?.trim() || '',
+      loadCanonical: loadButton?.dataset?.tapcalcLoadSelected === 'true',
+      loadHasLegacyMarker: loadButton?.hasAttribute('data-load-job') || false,
+      canonicalApiReady: typeof window.tapCalcLoadSelectedJobCanonical === 'function',
       titleText: title?.textContent?.trim() || '',
       timeText: time?.textContent?.trim() || '',
       metaText: meta?.textContent?.trim() || '',
@@ -429,6 +432,9 @@ try {
       sharedRowLayout.metaDisplay !== 'inline' &&
       sharedRowLayout.loadText === 'Load' &&
       sharedRowLayout.loadDisplay.includes('flex') &&
+      sharedRowLayout.loadCanonical &&
+      !sharedRowLayout.loadHasLegacyMarker &&
+      sharedRowLayout.canonicalApiReady &&
       sharedRowLayout.detailDisplay === 'none' &&
       sharedRowLayout.statusDisplay === 'none' &&
       sharedRowLayout.itemScrollWidth <= sharedRowLayout.itemWidth + 1,
@@ -557,6 +563,20 @@ try {
   })()`);
   record(seededLocalJob.historyButton && seededLocalJob.count === 1, 'seeded local saved job for load test', JSON.stringify(seededLocalJob));
 
+  await evaluate(cdp, `(() => {
+    const original = window.loadRecordIntoCalculator || (typeof loadRecordIntoCalculator === 'function' ? loadRecordIntoCalculator : null);
+    window.__tapcalcSmokeLoadRecordCount = 0;
+    window.__tapcalcSmokeOriginalLoadRecordIntoCalculator = original;
+    if (typeof original === 'function') {
+      const wrapped = function(...args) {
+        window.__tapcalcSmokeLoadRecordCount += 1;
+        return original.apply(this, args);
+      };
+      window.loadRecordIntoCalculator = wrapped;
+      try { loadRecordIntoCalculator = wrapped; } catch {}
+    }
+    return true;
+  })()`);
   await tap(cdp, '[data-load-history="tapcalc-smoke-load"]');
   await sleep(900);
   const loadedLocalJob = await evaluate(cdp, `(() => ({
@@ -565,13 +585,15 @@ try {
     workflowClient: document.getElementById('workflowJobClient')?.value || '',
     jobDescription: document.getElementById('jobDescription')?.value || '',
     jobNumber: document.getElementById('jobNumber')?.value || '',
-    status: document.getElementById('jobsCloudStatus')?.textContent || ''
+    status: document.getElementById('jobsCloudStatus')?.textContent || '',
+    loadRecordCount: window.__tapcalcSmokeLoadRecordCount || 0
   }))()`);
   record(
     loadedLocalJob.activeScreen === 'job' &&
       loadedLocalJob.jobClient === 'Smoke Client' &&
       loadedLocalJob.jobDescription === 'Smoke Saved Job' &&
-      loadedLocalJob.jobNumber === 'SMK-001',
+      loadedLocalJob.jobNumber === 'SMK-001' &&
+      loadedLocalJob.loadRecordCount === 1,
     'Local history Load hydrates saved job once',
     JSON.stringify(loadedLocalJob)
   );

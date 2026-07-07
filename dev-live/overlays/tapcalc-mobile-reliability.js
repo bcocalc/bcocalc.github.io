@@ -19,7 +19,7 @@
     reference: 'ref'
   };
   const STYLE_ID = 'tapcalc-livefix14-reliability-style';
-  const LEGACY_LOAD_BUTTON_SELECTOR = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114, [data-load-job]';
+  const LEGACY_LOAD_BUTTON_SELECTOR = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114';
   const CANONICAL_LOAD_BUTTON_SELECTOR = '.tapcalc-load-selected-job-btn[data-tapcalc-load-selected="true"]';
   const RAW_SHARED_SYNC_ERROR_PATTERN = /INTERNAL ASSERTION FAILED|Unexpected state|FIRESTORE\s*\(/i;
   const legacySetLibraryLane = typeof window.setLibraryLane === 'function' ? window.setLibraryLane.bind(window) : null;
@@ -487,7 +487,7 @@
               <div class="history-time jobs-list-time">${escapeHtml(subtitle || jobTime(record) || 'Shared job')}</div>
             </div>
             <div class="history-actions">
-              <button type="button" class="history-btn tapcalc-load-selected-job-btn tapcalc-shared-load-btn" data-tapcalc-load-selected="true" data-load-job="true" data-job-id="${escapeHtml(id)}">Load</button>
+              <button type="button" class="history-btn tapcalc-load-selected-job-btn tapcalc-shared-load-btn" data-tapcalc-load-selected="true" data-job-id="${escapeHtml(id)}">Load</button>
             </div>
           </div>
           <div class="history-meta jobs-list-meta">

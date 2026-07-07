@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 const DEFAULT_BASE = 'http://127.0.0.1:8765/dev-live/';
-const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive12';
+const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive13';
 const DEFAULT_EXPECTED_LABEL = 'TapCalc Dev-Live';
-const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive12';
+const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive13';
 
 function readArg(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
