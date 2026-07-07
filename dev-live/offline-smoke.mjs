@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive16';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive17';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 

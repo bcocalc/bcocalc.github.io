@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 const DEFAULT_BASE = 'http://127.0.0.1:8765/dev-live/';
-const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive16';
+const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive17';
 const DEFAULT_EXPECTED_LABEL = 'TapCalc Dev-Live';
-const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive16';
+const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive17';
 
 function readArg(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
@@ -55,6 +55,14 @@ function expectContains(name, text, needle) {
   });
 }
 
+function expectNotContains(name, text, needle) {
+  checks.push({
+    ok: !text.includes(needle),
+    name,
+    detail: needle
+  });
+}
+
 function extractQuotedAssets(serviceWorkerText) {
   return Array.from(serviceWorkerText.matchAll(/['"](\.{1,2}\/[^'"]+)['"]/g))
     .map((match) => match[1])
@@ -82,6 +90,8 @@ async function main() {
   const measurement = await fetchText(`measurement.js?v=${expectedVersion}`, baseUrl);
   expectContains('Measurement version marker', measurement.text, `BUILD_VERSION = '${expectedVersion}'`);
   expectContains('Shared stackup path marker', measurement.text, "STACKUP_VISUAL_BASE_PATH = '../reference/stackups/'");
+  expectNotContains('Legacy alpha65 library renderer removed', measurement.text, '3.0.0-alpha65 jobs/library cleanup base');
+  expectNotContains('Legacy tc65 load binding removed', measurement.text, 'dataset.tc65Bound');
 
   const overlay = await fetchText(`overlays/tapcalc-mobile-reliability.js?v=${expectedVersion}`, baseUrl);
   expectContains('Reference scroll helper marker', overlay.text, 'tapCalcKeepReferenceEntryVisible');
@@ -117,4 +127,3 @@ main().catch((error) => {
   console.error(error?.stack || error);
   process.exit(1);
 });
-
