@@ -65,11 +65,57 @@
     pointer-events: auto !important;
   }
 
-  body.measurement-page #jobsScreen .library-lane-switch,
+  body.measurement-page #jobsScreen .jobs-status-strip {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-status-card {
+    min-height: auto !important;
+    padding: 12px 14px !important;
+    gap: 7px !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-status-card strong,
+  body.measurement-page #jobsScreen .jobs-status-card .summary-value {
+    font-size: 1rem !important;
+    line-height: 1.15 !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-status-card .jobs-mini-label,
+  body.measurement-page #jobsScreen .jobs-status-card .summary-label,
+  body.measurement-page #jobsScreen .jobs-inline-stats span {
+    font-size: 0.68rem !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-inline-stats {
+    gap: 8px !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-inline-stats div {
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+  }
+
+  body.measurement-page #jobsScreen .library-lane-switch {
+    position: static !important;
+    z-index: auto !important;
+    margin: 8px 0 16px !important;
+    padding: 0 !important;
+    gap: 10px !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+  }
+
   body.measurement-page #jobsScreen .library-lane-btn {
     position: relative !important;
     z-index: 9100 !important;
     pointer-events: auto !important;
     touch-action: manipulation !important;
+    min-height: 46px !important;
+    padding: 10px 12px !important;
+    border-radius: 14px !important;
   }
 }

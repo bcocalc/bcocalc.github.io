@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive2';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive3';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -257,6 +257,32 @@ try {
     };
   })()`);
   record(sharedState.lane === 'shared' && sharedState.panelActive && !sharedState.panelHidden && sharedState.buttonActive, 'Library Shared lane opens', JSON.stringify(sharedState));
+
+  await tap(cdp, '.library-lane-btn[data-library-lane="local"]');
+  await sleep(350);
+  const localLayout = await evaluate(cdp, `(() => {
+    const screen = document.getElementById('jobsScreen');
+    const panel = document.querySelector('[data-library-lane-panel="local"]');
+    const button = document.querySelector('.library-lane-btn[data-library-lane="local"]');
+    const switcher = document.querySelector('#jobsScreen .library-lane-switch');
+    const status = document.querySelector('#jobsScreen .jobs-status-strip');
+    const switchRect = switcher?.getBoundingClientRect();
+    const panelRect = panel?.getBoundingClientRect();
+    const columns = (getComputedStyle(status).gridTemplateColumns || '').trim().split(/\\s+/).filter(Boolean).length;
+    return {
+      lane: screen?.dataset.activeLane || '',
+      panelActive: !!panel?.classList.contains('active'),
+      panelHidden: !!panel?.hidden,
+      buttonActive: !!button?.classList.contains('active'),
+      switchPosition: switcher ? getComputedStyle(switcher).position : '',
+      switchBottom: switchRect ? Math.round(switchRect.bottom) : null,
+      panelTop: panelRect ? Math.round(panelRect.top) : null,
+      statusColumns: columns
+    };
+  })()`);
+  record(localLayout.lane === 'local' && localLayout.panelActive && !localLayout.panelHidden && localLayout.buttonActive, 'Library Local lane reopens', JSON.stringify(localLayout));
+  record(localLayout.statusColumns === 1, 'Library status cards stack on mobile', JSON.stringify(localLayout));
+  record(localLayout.switchPosition === 'static' && localLayout.panelTop >= localLayout.switchBottom + 4, 'Library lane switch stays in flow', JSON.stringify(localLayout));
 
   await evaluate(cdp, `window.scrollTo(0, document.body.scrollHeight); true`);
   await sleep(150);
