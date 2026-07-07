@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-devlive17';
+const BUILD_VERSION = '3.0.0-devlive18';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = '../reference/stackups/';
-const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive17';
-const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive17';
+const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive18';
+const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive18';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive17', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive18', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -6119,217 +6119,6 @@ var selectedJobId = window.selectedJobId || '';
 })();
 
 
-/* ===== 3.0.0-alpha59 audited library/load rewrite ===== */
-(function(){
-  const JOB_STATE_KEY_A59 = 'measurementCardStateV1';
-  const stateFieldIdsA59 = [
-    'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
-    'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
-    'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf',
-    'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
-    'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
-    'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
-    'cpStart','cpJbf','cpLd','cpPt','cpLiManualToggle','cpLiManual',
-    'etaMachine','etaCutterSize','etaBco','etaRpmOverride'
-  ];
-
-  function a59Esc(v){
-    return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  }
-  function a59NormalizeDate(raw){
-    raw = String(raw || '').trim();
-    if (!raw) return '';
-    const m = raw.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
-    return raw;
-  }
-  function a59SetField(id, value){
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (id === 'machineType') {
-      setMachineTypeValue(value);
-      return;
-    }
-    const v = value == null ? '' : value;
-    if (el.type === 'checkbox') el.checked = !!v;
-    else el.value = String(v);
-    try { el.dispatchEvent(new Event('input', { bubbles:true })); } catch {}
-    try { el.dispatchEvent(new Event('change', { bubbles:true })); } catch {}
-  }
-  function a59CollectSelected(list){
-    if (window.__tapcalcLibrarySelectedId) {
-      const found = list.find(job => String(job.id) === String(window.__tapcalcLibrarySelectedId));
-      if (found) return found;
-    }
-    try {
-      const compact = window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820;
-      const sharedVisible = document.querySelector('[data-library-lane-panel="shared"]')?.classList.contains('active');
-      if (compact && sharedVisible) return null;
-    } catch {}
-    return list[0] || null;
-  }
-  function a59DeriveEtaMachine(machine){
-    return deriveEtaMachineFromMachine(machine);
-  }
-  function a59ApplyVisibleFields(record){
-    const job = record?.job || {};
-    const pipe = record?.pipe || {};
-    const machine = record?.machine || {};
-    const calc = record?.calculations || {};
-    const h = record?.measurements?.hotTap || {};
-    const htp = record?.measurements?.htp || {};
-    const ls = record?.measurements?.lineStop || {};
-    const cp = record?.measurements?.completionPlug || {};
-    const rawOp = String(record?.meta?.operationType || '').toLowerCase();
-    const op = rawOp.includes('completion') ? 'Completion Plug' : rawOp.includes('line stop') ? 'Line Stop' : rawOp.includes('htp') ? 'HTP' : 'Hot Tap';
-
-    a59SetField('jobClient', job.client || '');
-    a59SetField('jobDescription', job.description || record?.meta?.title || '');
-    a59SetField('jobNumber', job.jobNumber || '');
-    a59SetField('jobDate', a59NormalizeDate(job.date || ''));
-    a59SetField('jobLocation', job.location || '');
-    a59SetField('jobTechnician', job.technician || '');
-    a59SetField('jobPressure', job.pressure || '');
-    a59SetField('jobTemperature', job.temperature || '');
-    a59SetField('jobProduct', job.product || '');
-    a59SetField('jobNotes', job.notes || '');
-    a59SetField('machineType', machine.machine || '');
-    a59SetField('operationType', op);
-    a59SetField('bcoPipeMaterial', pipe.material || '');
-    a59SetField('bcoPipeOD', pipe.nominalSize || '');
-    a59SetField('bcoSchedule', pipe.schedule || '');
-    a59SetField('bcoPipeID', pipe.pipeId || '');
-    a59SetField('bcoCutterOD', machine.cutterOd || '');
-    a59SetField('etaMachine', a59DeriveEtaMachine(machine.machine || ''));
-    a59SetField('etaCutterSize', machine.cutterOd || '');
-    a59SetField('etaBco', calc.bco || '');
-    a59SetField('md', h.md || ''); a59SetField('ld', h.ld || ''); a59SetField('ldSign', h.ldSign || '+'); a59SetField('ptc', h.ptc || ''); a59SetField('pod', h.pod || pipe.trueOd || ''); a59SetField('mt', h.mt || ''); a59SetField('start', h.rodStart || '');
-    a59SetField('htpPipeSize', htp.pipeSize || ''); a59SetField('htpMd', htp.md || ''); a59SetField('htpLd', htp.ld || ''); a59SetField('htpLdSign', htp.ldSign || '+'); a59SetField('htpPtc', htp.ptc || '');
-    a59SetField('lsMd', ls.md || ''); a59SetField('lsLd', ls.ld || ''); a59SetField('lsLdSign', ls.ldSign || '+'); a59SetField('lsPod', ls.pod || pipe.trueOd || ''); a59SetField('lsTravel', ls.travel || ''); a59SetField('lsMachineTravel', ls.machineTravel || '');
-    a59SetField('cpStart', cp.start || ''); a59SetField('cpJbf', cp.jbf || ''); a59SetField('cpLd', cp.ld || ''); a59SetField('cpPt', cp.pt || '');
-  }
-  function a59ApplyState(state){
-    if (!state || typeof state !== 'object') return;
-    stateFieldIdsA59.forEach(id => {
-      if (!(id in state)) return;
-      a59SetField(id, state[id]);
-    });
-    if (state.activeMode && typeof window.setMode === 'function') {
-      try { window.setMode(state.activeMode); } catch {}
-    }
-  }
-  function a59Recalc(){
-    try { if (typeof refreshBcoState === 'function') refreshBcoState(); } catch {}
-    try { if (typeof updateBcoDisplays === 'function') updateBcoDisplays(); } catch {}
-    try { if (typeof calculateIntegratedBco === 'function') calculateIntegratedBco({ silent:true }); } catch {}
-    try { if (typeof calcHotTap === 'function') calcHotTap(); } catch {}
-    try { if (typeof calcHtp === 'function') calcHtp(); } catch {}
-    try { if (typeof calcLineStop === 'function') calcLineStop(); } catch {}
-    try { if (typeof calcHiStop === 'function') calcHiStop(); } catch {}
-    try { if (typeof calcCompletionPlug === 'function') calcCompletionPlug(); } catch {}
-    try { if (typeof initEtaCalculator === 'function') initEtaCalculator(); } catch {}
-    try { if (typeof syncBcoToEta === 'function') syncBcoToEta({ force:true }); } catch {}
-    try { if (typeof updateEtaEstimate === 'function') updateEtaEstimate(); } catch {}
-    try { if (typeof updateJobInfoSummary === 'function') updateJobInfoSummary(); } catch {}
-    try { if (typeof window.updateTapCalcShell === 'function') window.updateTapCalcShell(); } catch {}
-  }
-  function a59RenderDetails(entry){
-    const detailsEl = document.getElementById('jobsList');
-    if (!detailsEl) return;
-    if (!entry || !entry.record) {
-      detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
-      return;
-    }
-    const record = entry.record;
-    const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
-    const sourceLabel = entry.source === 'local' ? 'Local only' : entry.source === 'synced' ? 'Synced' : 'Shared DB';
-    const savedAtDisplay = record?.meta?.savedAtDisplay || entry.savedAt || '-';
-    detailsEl.innerHTML = `
-      <div class="job-detail-header">
-        <div>
-          <div class="job-detail-title">${a59Esc(title)}</div>
-          <div class="job-detail-subtitle">${a59Esc(savedAtDisplay)}  |  ${a59Esc(record?.meta?.operationType || 'Job')}  |  ${a59Esc(sourceLabel)}</div>
-        </div>
-        <div class="job-record-badges"><span class="job-source-badge ${a59Esc(entry.source)}">${a59Esc(sourceLabel)}</span></div>
-      </div>
-      <div class="job-detail-actions"><button type="button" id="jobsLoadSelectedBtn" class="secondary-btn" onclick="return window.tapCalcForceLoadSelectedJob && window.tapCalcForceLoadSelectedJob();">Load Job</button></div>
-      ${typeof renderJobRecordDetails === 'function' ? renderJobRecordDetails(record) : ''}
-    `;
-    detailsEl.querySelector('#jobsLoadSelectedBtn')?.addEventListener('click', () => window.tapCalcLibraryLoadSelected());
-  }
-  function a59RenderLibrary(){
-    if (window.__tapcalcLibraryRendererOwner) return false;
-    const listEl = document.getElementById('jobsSelect');
-    const metaEl = document.getElementById('jobsResultsMeta');
-    const detailsEl = document.getElementById('jobsList');
-    const jobs = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []) || [];
-    if (metaEl) metaEl.textContent = jobs.length ? `${jobs.length} job${jobs.length===1?'':'s'} found` : 'No jobs found';
-    if (!listEl) return;
-    if (!jobs.length) {
-      listEl.innerHTML = '<div class="jobs-library-empty">No jobs match this search yet.</div>';
-      if (detailsEl) detailsEl.innerHTML = '<div class="jobs-library-empty">Select a job from the list to view its details.</div>';
-      window.__tapcalcLibrarySelectedId = '';
-      window.__tapcalcLibrarySelectedRecord = null;
-      return;
-    }
-    const selected = a59CollectSelected(jobs);
-    window.__tapcalcLibrarySelectedId = selected ? String(selected.id) : '';
-    window.__tapcalcLibrarySelectedRecord = selected?.record || null;
-    listEl.innerHTML = jobs.map((job) => {
-      const active = String(job.id) === String(window.__tapcalcLibrarySelectedId || '');
-      const record = job.record || {};
-      const title = record?.meta?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
-      const sub = [record?.job?.client || '-', record?.job?.location || '-', record?.meta?.savedAtDisplay || job.savedAt || '-'].join('  |  ');
-      return `<button type="button" class="jobs-list-item${active ? ' active' : ''}" data-job-id="${a59Esc(job.id)}" aria-selected="${active ? 'true' : 'false'}"><span class="jobs-list-item-title">${a59Esc(title)}</span><span class="jobs-list-item-meta">${a59Esc(sub)}</span></button>`;
-    }).join('');
-    listEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        window.__tapcalcLibrarySelectedId = String(btn.dataset.jobId || '');
-        const entry = jobs.find(job => String(job.id) === String(window.__tapcalcLibrarySelectedId));
-        window.__tapcalcLibrarySelectedRecord = entry?.record || null;
-        a59RenderLibrary();
-      });
-    });
-    a59RenderDetails(selected);
-  }
-
-  window.tapCalcLibraryLoadSelected = function alpha59LoadSelected(){
-    try {
-      const jobs = (window.getCombinedJobsForDisplay ? window.getCombinedJobsForDisplay() : []) || [];
-      const entry = jobs.find(job => String(job.id) === String(window.__tapcalcLibrarySelectedId || '')) || null;
-      const record = entry?.record || window.__tapcalcLibrarySelectedRecord || null;
-      if (!record) return false;
-      const state = (record.state && typeof record.state === 'object' && Object.keys(record.state).length)
-        ? { ...record.state }
-        : (typeof buildStateFromRecord === 'function' ? buildStateFromRecord(record) : {});
-      a59ApplyState(state || {});
-      a59ApplyVisibleFields(record);
-      try { localStorage.setItem(JOB_STATE_KEY_A59, JSON.stringify(state || {})); } catch {}
-      a59Recalc();
-      setTimeout(() => { a59ApplyVisibleFields(record); a59Recalc(); }, 80);
-      setTimeout(() => { a59ApplyVisibleFields(record); a59Recalc(); }, 220);
-      try {
-        if (typeof window.tapCalcSetScreen === 'function') window.tapCalcSetScreen('job');
-        else document.querySelector('.screen-tab[data-screen="job"]')?.click();
-      } catch {}
-      return true;
-    } catch (error) {
-      console.error('alpha59 Load Job failed', error);
-      return false;
-    }
-  };
-
-  window.tapCalcLibrarySelect = function(id){
-    window.__tapcalcLibrarySelectedId = String(id || '');
-    a59RenderLibrary();
-    return true;
-  };
-  window.renderJobsList = a59RenderLibrary;
-  window.renderSelectedJobDetails = function(){ a59RenderLibrary(); };
-  window.updateJobsListSelectionUI = function(){ if (!window.__tapcalcLibraryRendererOwner) a59RenderLibrary(); };
-})();
-
-
 // alpha60 force-reload Load Job path
 (function(){
   function alpha60GetSelectedRecord() {
@@ -6580,7 +6369,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-devlive17';
+const TC63_VERSION = '3.0.0-devlive18';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -9819,7 +9608,7 @@ const TC63_VERSION = '3.0.0-devlive17';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-devlive17';
+const VERSION = '3.0.0-devlive18';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }

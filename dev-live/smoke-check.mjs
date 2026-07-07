@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 const DEFAULT_BASE = 'http://127.0.0.1:8765/dev-live/';
-const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive17';
+const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive18';
 const DEFAULT_EXPECTED_LABEL = 'TapCalc Dev-Live';
-const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive17';
+const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive18';
 
 function readArg(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
@@ -90,6 +90,8 @@ async function main() {
   const measurement = await fetchText(`measurement.js?v=${expectedVersion}`, baseUrl);
   expectContains('Measurement version marker', measurement.text, `BUILD_VERSION = '${expectedVersion}'`);
   expectContains('Shared stackup path marker', measurement.text, "STACKUP_VISUAL_BASE_PATH = '../reference/stackups/'");
+  expectNotContains('Legacy alpha59 library renderer removed', measurement.text, '3.0.0-alpha59 audited library/load rewrite');
+  expectNotContains('Legacy a59 render helper removed', measurement.text, 'a59RenderLibrary');
   expectNotContains('Legacy alpha65 library renderer removed', measurement.text, '3.0.0-alpha65 jobs/library cleanup base');
   expectNotContains('Legacy tc65 load binding removed', measurement.text, 'dataset.tc65Bound');
 
