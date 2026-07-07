@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
 const DEFAULT_BASE = 'http://127.0.0.1:8765/dev-live/';
-const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive19';
+const DEFAULT_EXPECTED_VERSION = '3.0.0-devlive20';
 const DEFAULT_EXPECTED_LABEL = 'TapCalc Dev-Live';
-const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive19';
+const DEFAULT_EXPECTED_CACHE = 'tapcalc-dev-live-cache-3.0.0-devlive20';
 
 function readArg(name, fallback) {
   const index = process.argv.indexOf(`--${name}`);
@@ -97,6 +97,9 @@ async function main() {
   expectNotContains('Legacy alpha57 direct load fallback removed', measurement.text, '3.0.0-alpha57 direct load-job hydration override');
   expectNotContains('Legacy alpha60 reload fallback removed', measurement.text, 'alpha60 force-reload Load Job path');
   expectNotContains('Legacy alpha64 load tap handler removed', measurement.text, 'tc64HandleLoadTap');
+  expectNotContains('Legacy alpha48 library picker removed', measurement.text, '3.0.0-alpha48 library picker rebuild');
+  expectNotContains('Legacy alpha57 library picker removed', measurement.text, '3.0.0-alpha57 library picker direct rebuild');
+  expectNotContains('Legacy alpha56 picker binding removed', measurement.text, 'dataset.alpha56Bound');
 
   const overlay = await fetchText(`overlays/tapcalc-mobile-reliability.js?v=${expectedVersion}`, baseUrl);
   expectContains('Reference scroll helper marker', overlay.text, 'tapCalcKeepReferenceEntryVisible');
