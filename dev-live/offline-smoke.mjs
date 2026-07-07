@@ -17,21 +17,21 @@ const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
 const expectedVersion = args.get('--expect-version') || '3.0.0-devlive5';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
-const warnings = [];
+
 const seedLocalHistoryExpression = `(() => {
   const now = new Date().toISOString();
   const record = {
     meta: {
-      title: 'Smoke Saved Job',
+      title: 'Offline Smoke Saved Job',
       operationType: 'Hot Tap',
       savedAtIso: now,
-      savedAtDisplay: 'Smoke test'
+      savedAtDisplay: 'Offline smoke test'
     },
     job: {
-      client: 'Smoke Client',
-      description: 'Smoke Saved Job',
-      jobNumber: 'SMK-001',
-      location: 'Test Stand'
+      client: 'Offline Smoke Client',
+      description: 'Offline Smoke Saved Job',
+      jobNumber: 'OFF-001',
+      location: 'Offline Stand'
     },
     pipe: {
       nominalSize: '4.0',
@@ -43,20 +43,20 @@ const seedLocalHistoryExpression = `(() => {
       cutterOd: '3.875'
     },
     state: {
-      jobClient: 'Smoke Client',
-      jobDescription: 'Smoke Saved Job',
-      jobNumber: 'SMK-001',
-      jobLocation: 'Test Stand',
+      jobClient: 'Offline Smoke Client',
+      jobDescription: 'Offline Smoke Saved Job',
+      jobNumber: 'OFF-001',
+      jobLocation: 'Offline Stand',
       operationType: 'Hot Tap',
       bcoPipeOD: '4.0',
       wallThickness: '0.237'
     }
   };
   localStorage.setItem('measurementCardHistoryV1', JSON.stringify([{
-    id: 'tapcalc-smoke-load',
-    savedAt: 'Smoke test',
+    id: 'tapcalc-offline-smoke-load',
+    savedAt: 'Offline smoke test',
     summary: {
-      title: 'Smoke Saved Job',
+      title: 'Offline Smoke Saved Job',
       pipe: '4.0',
       bco: '1.234',
       wall: '0.237',
@@ -64,17 +64,13 @@ const seedLocalHistoryExpression = `(() => {
     },
     record
   }]));
+  localStorage.setItem('tapcalcLibraryLaneV1', 'local');
   return true;
 })()`;
 
 function record(ok, name, detail = '') {
   results.push({ ok, name, detail });
   console.log(`${ok ? 'PASS' : 'FAIL'} ${name}${detail ? ` - ${detail}` : ''}`);
-}
-
-function warn(name, detail = '') {
-  warnings.push({ name, detail });
-  console.log(`WARN ${name}${detail ? ` - ${detail}` : ''}`);
 }
 
 function findBrowser() {
@@ -212,8 +208,8 @@ if (!browserPath) {
   process.exit(1);
 }
 
-const userDataDir = mkdtempSync(join(tmpdir(), 'tapcalc-mobile-smoke-'));
-const port = 43000 + Math.floor(Math.random() * 1000);
+const userDataDir = mkdtempSync(join(tmpdir(), 'tapcalc-offline-smoke-'));
+const port = 44000 + Math.floor(Math.random() * 1000);
 const browser = spawn(browserPath, [
   '--headless=new',
   `--remote-debugging-port=${port}`,
@@ -259,142 +255,110 @@ try {
 
   await cdp.send('Page.navigate', { url: target });
   await waitFor(cdp, `!!document.querySelector('.screen-nav .screen-tab[data-screen="home"]')`, 15000);
-  await sleep(900);
+  await waitFor(cdp, `navigator.serviceWorker?.ready?.then(() => true).catch(() => false)`, 15000);
+  await evaluate(cdp, `navigator.serviceWorker.ready.then(() => true)`);
+  await sleep(1200);
   await evaluate(cdp, seedLocalHistoryExpression);
   await cdp.send('Page.reload', { ignoreCache: true });
   await waitFor(cdp, `!!document.querySelector('.screen-nav .screen-tab[data-screen="home"]')`, 15000);
-  await sleep(900);
+  await sleep(1200);
+
+  await cdp.send('Network.overrideNetworkState', {
+    offline: true,
+    latency: 0,
+    downloadThroughput: 0,
+    uploadThroughput: 0,
+    connectionType: 'none'
+  }).catch(() => {});
+  await cdp.send('Network.emulateNetworkConditions', {
+    offline: true,
+    latency: 0,
+    downloadThroughput: 0,
+    uploadThroughput: 0
+  });
+  await cdp.send('Network.setBlockedURLs', {
+    urls: [
+      'https://www.gstatic.com/*',
+      'https://*.googleapis.com/*',
+      'https://identitytoolkit.googleapis.com/*',
+      'https://firestore.googleapis.com/*'
+    ]
+  }).catch(() => {});
+  await cdp.send('Page.reload', { ignoreCache: true });
+  await waitFor(cdp, `!!document.querySelector('.screen-nav .screen-tab[data-screen="home"]')`, 15000);
+  await sleep(1000);
 
   const versionText = await evaluate(cdp, `document.querySelector('.top-app-title')?.textContent || ''`);
-  record(versionText.includes(expectedVersion), 'version marker visible', versionText.trim());
+  record(versionText.includes(expectedVersion), 'offline app shell loads cached dev-live build', versionText.trim());
 
-  const navPosition = await evaluate(cdp, `getComputedStyle(document.querySelector('.screen-nav')).position`);
-  record(navPosition === 'sticky', 'mobile top nav is sticky', navPosition);
-
-  const overflow = await evaluate(cdp, `document.documentElement.scrollWidth > document.documentElement.clientWidth + 1`);
-  record(!overflow, 'no horizontal overflow');
-
-  const tabOrder = [
-    ['home', '#homeScreen'],
-    ['calc', '#calcScreen'],
-    ['card', '#cardScreen'],
-    ['jobs', '#jobsScreen'],
-    ['ref', '#refScreen']
-  ];
-
-  for (const [screen, selector] of tabOrder) {
-    await tap(cdp, `.screen-tab[data-screen="${screen}"]`);
-    await sleep(250);
-    const state = await evaluate(cdp, `document.body.dataset.activeScreen || ''`);
-    const isActive = await evaluate(cdp, `(() => {
-      const el = document.querySelector(${JSON.stringify(selector)});
-      return !!el && el.classList.contains('active') && !el.hidden;
-    })()`);
-    record(state === screen && isActive, `tab activates ${screen}`, `body=${state}`);
-  }
+  const offlineState = await evaluate(cdp, `(() => {
+    const probeUrl = 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js?tapcalcOfflineProbe=' + Date.now();
+    return fetch(probeUrl, { cache: 'no-store' })
+      .then(() => ({
+        online: navigator.onLine,
+        probeBlocked: false,
+        status: document.getElementById('jobsCloudStatus')?.textContent || '',
+        firebase: document.getElementById('firebaseStatus')?.textContent || ''
+      }))
+      .catch(() => ({
+        online: navigator.onLine,
+        probeBlocked: true,
+        status: document.getElementById('jobsCloudStatus')?.textContent || '',
+        firebase: document.getElementById('firebaseStatus')?.textContent || ''
+      }));
+  })()`);
+  record(offlineState.probeBlocked === true, 'browser network requests are blocked offline', JSON.stringify(offlineState));
+  record(/offline|local history is ready/i.test(`${offlineState.status} ${offlineState.firebase}`), 'startup status stays usable offline', JSON.stringify(offlineState));
 
   await tap(cdp, '.screen-tab[data-screen="jobs"]');
-  await sleep(250);
-  await tap(cdp, '.library-lane-btn[data-library-lane="shared"]');
-  await sleep(700);
-  const sharedState = await evaluate(cdp, `(() => {
-    const screen = document.getElementById('jobsScreen');
-    const panel = document.querySelector('[data-library-lane-panel="shared"]');
-    const button = document.querySelector('.library-lane-btn[data-library-lane="shared"]');
-    return {
-      lane: screen?.dataset.activeLane || '',
-      panelActive: !!panel?.classList.contains('active'),
-      panelHidden: !!panel?.hidden,
-      buttonActive: !!button?.classList.contains('active')
-    };
-  })()`);
-  record(sharedState.lane === 'shared' && sharedState.panelActive && !sharedState.panelHidden && sharedState.buttonActive, 'Library Shared lane opens', JSON.stringify(sharedState));
-
+  await sleep(400);
   await tap(cdp, '.library-lane-btn[data-library-lane="local"]');
-  await sleep(350);
-  const localLayout = await evaluate(cdp, `(() => {
-    const screen = document.getElementById('jobsScreen');
-    const panel = document.querySelector('[data-library-lane-panel="local"]');
-    const button = document.querySelector('.library-lane-btn[data-library-lane="local"]');
-    const switcher = document.querySelector('#jobsScreen .library-lane-switch');
-    const status = document.querySelector('#jobsScreen .jobs-status-strip');
-    const switchRect = switcher?.getBoundingClientRect();
-    const panelRect = panel?.getBoundingClientRect();
-    const columns = (getComputedStyle(status).gridTemplateColumns || '').trim().split(/\\s+/).filter(Boolean).length;
-    return {
-      lane: screen?.dataset.activeLane || '',
-      panelActive: !!panel?.classList.contains('active'),
-      panelHidden: !!panel?.hidden,
-      buttonActive: !!button?.classList.contains('active'),
-      switchPosition: switcher ? getComputedStyle(switcher).position : '',
-      switchBottom: switchRect ? Math.round(switchRect.bottom) : null,
-      panelTop: panelRect ? Math.round(panelRect.top) : null,
-      statusColumns: columns
-    };
-  })()`);
-  record(localLayout.lane === 'local' && localLayout.panelActive && !localLayout.panelHidden && localLayout.buttonActive, 'Library Local lane reopens', JSON.stringify(localLayout));
-  record(localLayout.statusColumns === 1, 'Library status cards stack on mobile', JSON.stringify(localLayout));
-  record(localLayout.switchPosition === 'static' && localLayout.panelTop >= localLayout.switchBottom + 4, 'Library lane switch stays in flow', JSON.stringify(localLayout));
+  await sleep(500);
+  const localJob = await evaluate(cdp, `(() => ({
+    activeScreen: document.body.dataset.activeScreen || '',
+    lane: document.getElementById('jobsScreen')?.dataset.activeLane || '',
+    historyButton: !!document.querySelector('[data-load-history="tapcalc-offline-smoke-load"]'),
+    count: JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]').length
+  }))()`);
+  record(localJob.activeScreen === 'jobs' && localJob.lane === 'local' && localJob.historyButton && localJob.count === 1, 'local saved jobs are available offline', JSON.stringify(localJob));
 
-  const seededLocalJob = await evaluate(cdp, `(() => {
-    return {
-      historyButton: !!document.querySelector('[data-load-history="tapcalc-smoke-load"]'),
-      count: JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]').length
-    };
-  })()`);
-  record(seededLocalJob.historyButton && seededLocalJob.count === 1, 'seeded local saved job for load test', JSON.stringify(seededLocalJob));
-
-  await tap(cdp, '[data-load-history="tapcalc-smoke-load"]');
+  await tap(cdp, '[data-load-history="tapcalc-offline-smoke-load"]');
   await sleep(900);
   const loadedLocalJob = await evaluate(cdp, `(() => ({
     activeScreen: document.body.dataset.activeScreen || '',
     jobClient: document.getElementById('jobClient')?.value || '',
-    workflowClient: document.getElementById('workflowJobClient')?.value || '',
     jobDescription: document.getElementById('jobDescription')?.value || '',
-    jobNumber: document.getElementById('jobNumber')?.value || '',
-    status: document.getElementById('jobsCloudStatus')?.textContent || ''
+    jobNumber: document.getElementById('jobNumber')?.value || ''
   }))()`);
   record(
-    loadedLocalJob.activeScreen === 'job' &&
-      loadedLocalJob.jobClient === 'Smoke Client' &&
-      loadedLocalJob.jobDescription === 'Smoke Saved Job' &&
-      loadedLocalJob.jobNumber === 'SMK-001',
-    'Local history Load hydrates saved job once',
+    loadedLocalJob.activeScreen === 'job'
+      && loadedLocalJob.jobClient === 'Offline Smoke Client'
+      && loadedLocalJob.jobDescription === 'Offline Smoke Saved Job'
+      && loadedLocalJob.jobNumber === 'OFF-001',
+    'local history Load works offline',
     JSON.stringify(loadedLocalJob)
   );
 
-  await evaluate(cdp, `window.scrollTo(0, document.body.scrollHeight); true`);
-  await sleep(150);
-  await tap(cdp, '.screen-tab[data-screen="ref"]');
-  await sleep(700);
-  const refState = await evaluate(cdp, `(() => {
-    const toggle = document.getElementById('referenceLibraryToggle');
-    const rect = toggle?.getBoundingClientRect();
-    return {
-      scrollY: Math.round(window.scrollY),
-      toggleY: rect ? Math.round(rect.y) : null,
-      toggleVisible: !!rect && rect.bottom > 0 && rect.top < window.innerHeight
-    };
-  })()`);
-  record(refState.scrollY <= 80 && refState.toggleVisible, 'Reference tab resets near top', JSON.stringify(refState));
+  await tap(cdp, '.screen-tab[data-screen="jobs"]');
+  await sleep(300);
+  await tap(cdp, '.library-lane-btn[data-library-lane="shared"]');
+  await sleep(3200);
+  const sharedOffline = await evaluate(cdp, `(() => ({
+    lane: document.getElementById('jobsScreen')?.dataset.activeLane || '',
+    status: document.getElementById('jobsCloudStatus')?.textContent || '',
+    firebase: document.getElementById('firebaseStatus')?.textContent || ''
+  }))()`);
+  record(
+    sharedOffline.lane === 'shared'
+      && /offline|local saved jobs|could not connect|connection failed|unavailable|longer/i.test(`${sharedOffline.status} ${sharedOffline.firebase}`),
+    'Shared lane falls back cleanly offline',
+    JSON.stringify(sharedOffline)
+  );
 
-  await tap(cdp, '.screen-tab[data-screen="card"]');
-  await sleep(350);
-  const workflowSelects = await evaluate(cdp, `(() => {
-    const operation = document.getElementById('workflowOperationType');
-    const machine = document.getElementById('workflowMachineType');
-    return {
-      operationOptions: operation?.options?.length || 0,
-      machineOptions: machine?.options?.length || 0
-    };
-  })()`);
-  record(workflowSelects.operationOptions > 0 && workflowSelects.machineOptions > 0, 'Workflow selects are populated', JSON.stringify(workflowSelects));
-
-  const firestoreErrors = consoleErrors.filter((line) => /Firestore .*INTERNAL ASSERTION FAILED|Unexpected state/i.test(line));
-  if (firestoreErrors.length) warn('Firestore internal assertion console errors observed', `${firestoreErrors.length}`);
-  else record(true, 'no Firestore internal assertion console errors', '0');
+  const fatalErrors = consoleErrors.filter((line) => !/Failed to load resource|ERR_INTERNET_DISCONNECTED|ERR_FAILED/i.test(line));
+  record(fatalErrors.length === 0, 'no unexpected offline console errors', fatalErrors.slice(0, 3).join(' | '));
 } catch (error) {
-  record(false, 'mobile smoke script error', error.stack || error.message);
+  record(false, 'offline smoke script error', error.stack || error.message);
 } finally {
   try { cdp?.close(); } catch {}
   try { browser.kill(); } catch {}
@@ -403,5 +367,4 @@ try {
 
 const passed = results.filter((result) => result.ok).length;
 console.log(`\n${passed}/${results.length} checks passed for ${base}`);
-if (warnings.length) console.log(`${warnings.length} warnings`);
 if (passed !== results.length) process.exit(1);

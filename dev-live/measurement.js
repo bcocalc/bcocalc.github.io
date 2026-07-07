@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-devlive4';
+const BUILD_VERSION = '3.0.0-devlive5';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = '../reference/stackups/';
-const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive4';
-const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive4';
+const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive5';
+const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive5';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive4', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive5', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3410,7 +3410,7 @@ document.addEventListener('click', (event) => {
     try { loadCloudJobs(); } catch {}
   }
 });
-try { setLibraryLane(localStorage.getItem('tapcalcLibraryLaneV1') || 'local'); } catch { setLibraryLane('local'); }
+try { setLibraryLane('local'); } catch { setLibraryLane('local'); }
 
 function openSharedLibraryLane() {
   setLibraryLane('shared');
@@ -4392,11 +4392,16 @@ async function ensureFirebaseReady(options = {}) {
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Connected to shared job database (${config.projectId}).`;
       return { enabled: true, db: firebaseDb, modules: firestoreModule };
     } catch (error) {
-      console.error('Firebase init failed', error);
+      const formattedError = formatFirebaseError(error);
+      if (/network|timeout|failed to fetch|internet|offline/i.test(formattedError)) {
+        console.warn('Firebase init unavailable', error);
+      } else {
+        console.error('Firebase init failed', error);
+      }
       firebaseDb = null;
       firebaseModuleCache = null;
       if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
-      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Shared sync unavailable. Local history still works. ${formattedError}`;
       return { enabled: false, error };
     } finally {
       firebaseInitPromise = null;
@@ -4738,7 +4743,9 @@ async function loadCloudJobs() {
     cloudJobsCache = [];
     renderJobsList();
     updateUnsyncedCount();
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase is not connected yet. Local history still works offline.';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = ready.offline
+      ? 'Offline mode. Local history still works; shared jobs reconnect when service returns.'
+      : 'Shared sync unavailable. Local history still works; retry when service returns.';
     return;
   }
 
@@ -5152,7 +5159,14 @@ window.addEventListener('load', async () => {
   renderJobsList();
   updateJobInfoSummary();
   initAccordionSections();
-  ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
+  if (jobsCloudStatusEl) {
+    jobsCloudStatusEl.textContent = navigator.onLine === false
+      ? 'Offline mode. Local history is ready; shared jobs reconnect when service returns.'
+      : 'Local history is ready. Open Shared to connect to the shared job database.';
+  }
+  if (firebaseStatusEl) {
+    firebaseStatusEl.textContent = navigator.onLine === false ? 'Offline mode' : 'Not connected';
+  }
 });
 
 })();
@@ -6611,7 +6625,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-devlive4';
+const TC63_VERSION = '3.0.0-devlive5';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6857,7 +6871,7 @@ const TC63_VERSION = '3.0.0-devlive4';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-devlive4';
+const VERSION = '3.0.0-devlive5';
 
   function tc65GetJobs() {
     try {
@@ -10079,7 +10093,7 @@ const VERSION = '3.0.0-devlive4';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-devlive4';
+const VERSION = '3.0.0-devlive5';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }

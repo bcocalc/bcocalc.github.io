@@ -24,6 +24,8 @@
   const legacySetLibraryLane = typeof window.setLibraryLane === 'function' ? window.setLibraryLane.bind(window) : null;
   const legacyOpenSharedLibraryLane = typeof window.openSharedLibraryLane === 'function' ? window.openSharedLibraryLane.bind(window) : null;
   let loadGuardUntil = 0;
+  let sharedLoadTimer = 0;
+  let sharedFallbackTimer = 0;
 
   function byId(id) {
     return document.getElementById(id);
@@ -246,10 +248,11 @@
     if (next === 'shared') {
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
       if (!options.skipCloudLoad) {
-        setTimeout(() => { try { window.loadCloudJobs?.(); } catch {} }, 40);
+        requestSharedJobsLoad('library-lane');
       }
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 180);
     } else {
+      updateOfflineStatus();
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
     }
     return next;
@@ -289,6 +292,62 @@
   function setLoadStatus(message) {
     const status = byId('jobsCloudStatus') || byId('jobsCloudStatusMirror') || byId('bcoStatus');
     if (status && message) status.textContent = message;
+  }
+
+  function isOffline() {
+    return typeof navigator !== 'undefined' && navigator.onLine === false;
+  }
+
+  function setCloudStatus(message, firebaseLabel = '') {
+    ['jobsCloudStatus', 'jobsCloudStatusMirror'].forEach((id) => {
+      const el = byId(id);
+      if (el && message) el.textContent = message;
+    });
+    ['firebaseStatus', 'firebaseStatusMirror'].forEach((id) => {
+      const el = byId(id);
+      if (el && firebaseLabel) el.textContent = firebaseLabel;
+    });
+  }
+
+  function updateOfflineStatus() {
+    if (isOffline()) {
+      setCloudStatus('Offline mode. Local saved jobs still work; Shared reconnects when service returns.', 'Offline mode');
+      return true;
+    }
+    const jobsScreen = byId('jobsScreen');
+    const sharedActive = jobsScreen?.dataset?.activeLane === 'shared'
+      || !!document.querySelector('[data-library-lane-panel="shared"].active');
+    if (!sharedActive) {
+      setCloudStatus('Local history is ready. Open Shared to connect to the shared job database.', 'Not connected');
+    }
+    return false;
+  }
+
+  function requestSharedJobsLoad(reason = 'shared') {
+    if (isOffline()) {
+      updateOfflineStatus();
+      try { window.renderJobsList?.(); } catch {}
+      return false;
+    }
+    setCloudStatus('Connecting to shared job database...', 'Connecting...');
+    clearTimeout(sharedLoadTimer);
+    clearTimeout(sharedFallbackTimer);
+    sharedFallbackTimer = setTimeout(() => {
+      const status = byId('jobsCloudStatus');
+      if (status && /connecting/i.test(status.textContent || '')) {
+        setCloudStatus('Shared sync is taking longer than expected. Local saved jobs still work.', 'Connection slow');
+      }
+    }, 2500);
+    sharedLoadTimer = setTimeout(() => {
+      try {
+        const result = window.loadCloudJobs?.({ reason });
+        Promise.resolve(result).finally(() => clearTimeout(sharedFallbackTimer));
+      } catch {
+        clearTimeout(sharedFallbackTimer);
+        setCloudStatus('Shared sync could not start. Local saved jobs still work.', 'Connection failed');
+      }
+    }, 40);
+    return true;
   }
 
   function hideLegacyLoadDebug() {
@@ -447,6 +506,39 @@
     }
   }
 
+  function installOfflineCloudGuard() {
+    const previousLoadCloudJobs = window.tapCalcLegacyLoadCloudJobs
+      || (typeof window.loadCloudJobs === 'function' ? window.loadCloudJobs.bind(window) : null);
+    if (previousLoadCloudJobs && !window.tapCalcLegacyLoadCloudJobs) {
+      window.tapCalcLegacyLoadCloudJobs = previousLoadCloudJobs;
+    }
+    window.loadCloudJobs = async function guardedLoadCloudJobs(...args) {
+      if (isOffline()) {
+        updateOfflineStatus();
+        try { window.renderJobsList?.(); } catch {}
+        return [];
+      }
+      if (!previousLoadCloudJobs) return [];
+      return previousLoadCloudJobs(...args);
+    };
+    try { loadCloudJobs = window.loadCloudJobs; } catch {}
+
+    const previousEnsureFirebaseReady = window.tapCalcLegacyEnsureFirebaseReady
+      || (typeof window.ensureFirebaseReady === 'function' ? window.ensureFirebaseReady.bind(window) : null);
+    if (previousEnsureFirebaseReady && !window.tapCalcLegacyEnsureFirebaseReady) {
+      window.tapCalcLegacyEnsureFirebaseReady = previousEnsureFirebaseReady;
+    }
+    window.ensureFirebaseReady = function guardedEnsureFirebaseReady(options = {}) {
+      if (!options.forceRetry && isOffline()) {
+        updateOfflineStatus();
+        return Promise.resolve({ enabled: false, offline: true });
+      }
+      if (!previousEnsureFirebaseReady) return Promise.resolve({ enabled: false });
+      return previousEnsureFirebaseReady(options);
+    };
+    try { ensureFirebaseReady = window.ensureFirebaseReady; } catch {}
+  }
+
   function markInteractiveControls() {
     document.querySelectorAll('.screen-nav, .screen-tab, .library-lane-switch, .library-lane-btn, select, input, textarea, label').forEach((el) => {
       el.style.pointerEvents = 'auto';
@@ -472,6 +564,8 @@
   function run() {
     installCanonicalLibraryApi();
     installCanonicalLoadApi();
+    installOfflineCloudGuard();
+    updateOfflineStatus();
     installReliabilityStyle();
     markInteractiveControls();
     ensureWorkflowSelects();
@@ -489,7 +583,11 @@
   window.addEventListener('pageshow', () => { restoreSavedScreen(); run(); });
   window.addEventListener('online', () => {
     try { navigator.serviceWorker?.ready?.then((registration) => registration.update()).catch(() => {}); } catch {}
+    const jobsScreen = byId('jobsScreen');
+    if (jobsScreen?.dataset?.activeLane === 'shared') requestSharedJobsLoad('online');
+    else updateOfflineStatus();
   });
+  window.addEventListener('offline', updateOfflineStatus);
 
   if (document.readyState === 'loading') {
     setTimeout(run, 0);
