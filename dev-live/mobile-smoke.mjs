@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive8';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive9';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -317,38 +317,63 @@ try {
         const rect = candidate.getBoundingClientRect();
         return rect.width > 50 && rect.height > 10;
       });
-    const title = item?.querySelector('.jobs-list-title, .jobs-list-item-title');
-    const meta = item?.querySelector('.jobs-list-meta, .jobs-list-item-meta');
+    const title = item?.querySelector('.history-title');
+    const time = item?.querySelector('.history-time');
+    const meta = item?.querySelector('.history-meta');
+    const top = item?.querySelector('.history-card-top');
+    const loadButton = item?.querySelector('.history-btn.tapcalc-shared-load-btn');
     const titleStyle = title ? getComputedStyle(title) : null;
+    const timeStyle = time ? getComputedStyle(time) : null;
     const metaStyle = meta ? getComputedStyle(meta) : null;
+    const topStyle = top ? getComputedStyle(top) : null;
+    const loadStyle = loadButton ? getComputedStyle(loadButton) : null;
     const rect = item?.getBoundingClientRect();
     const select = document.getElementById('jobsSelect');
     const selectRect = select?.getBoundingClientRect();
     const jobsPanel = document.getElementById('jobsPanel');
     const jobsPanelStyle = jobsPanel ? getComputedStyle(jobsPanel) : null;
+    const detail = document.getElementById('jobsList');
+    const status = document.getElementById('jobsCloudStatus');
     return {
       hasItem: !!item,
+      hasHistoryCard: !!item?.classList.contains('history-card'),
+      hasSharedHistoryCard: !!item?.classList.contains('tapcalc-shared-history-card'),
       itemWidth: rect ? Math.round(rect.width) : 0,
       itemHeight: rect ? Math.round(rect.height) : 0,
       itemScrollWidth: item ? Math.round(item.scrollWidth) : 0,
       titleDisplay: titleStyle?.display || '',
+      topDisplay: topStyle?.display || '',
+      timeDisplay: timeStyle?.display || '',
       metaDisplay: metaStyle?.display || '',
+      loadDisplay: loadStyle?.display || '',
+      loadText: loadButton?.textContent?.trim() || '',
       titleText: title?.textContent?.trim() || '',
+      timeText: time?.textContent?.trim() || '',
       metaText: meta?.textContent?.trim() || '',
       rowCount: rows.length,
       selectWidth: selectRect ? Math.round(selectRect.width) : 0,
       jobsPanelDisplay: jobsPanelStyle?.display || '',
-      status: document.getElementById('jobsCloudStatus')?.textContent || ''
+      detailDisplay: detail ? getComputedStyle(detail).display : '',
+      statusDisplay: status ? getComputedStyle(status).display : '',
+      status: status?.textContent || ''
     };
   })()`);
   record(
     sharedRowLayout.hasItem &&
+      sharedRowLayout.hasHistoryCard &&
+      sharedRowLayout.hasSharedHistoryCard &&
       sharedRowLayout.itemWidth > 50 &&
       sharedRowLayout.itemHeight >= 50 &&
+      sharedRowLayout.topDisplay === 'flex' &&
       sharedRowLayout.titleDisplay !== 'inline' &&
+      sharedRowLayout.timeDisplay !== 'inline' &&
       sharedRowLayout.metaDisplay !== 'inline' &&
+      sharedRowLayout.loadText === 'Load' &&
+      sharedRowLayout.loadDisplay.includes('flex') &&
+      sharedRowLayout.detailDisplay === 'none' &&
+      sharedRowLayout.statusDisplay === 'none' &&
       sharedRowLayout.itemScrollWidth <= sharedRowLayout.itemWidth + 1,
-    'Shared job rows wrap as readable cards',
+    'Shared job picker rows match Local history cards',
     JSON.stringify(sharedRowLayout)
   );
 
@@ -360,6 +385,8 @@ try {
     const sharedAnchor = document.getElementById('sharedJobsAnchor');
     const sharedNote = document.querySelector('.jobs-panel-shared .jobs-note');
     const sharedStatusGrid = document.querySelector('.jobs-panel-shared .jobs-status-grid');
+    const sharedStatus = document.getElementById('jobsCloudStatus');
+    const sharedDetail = document.getElementById('jobsList');
     const sharedMeta = document.getElementById('jobsResultsMeta');
     const viewToggle = document.querySelector('.jobs-panel-shared .jobs-view-toggle');
     const localStyle = localTitle ? getComputedStyle(localTitle) : null;
@@ -371,6 +398,8 @@ try {
       ? getComputedStyle(sharedToggle.querySelector('.section-toggle-chevron'))
       : null;
     const statusGridStyle = sharedStatusGrid ? getComputedStyle(sharedStatusGrid) : null;
+    const statusStyle = sharedStatus ? getComputedStyle(sharedStatus) : null;
+    const detailStyle = sharedDetail ? getComputedStyle(sharedDetail) : null;
     const metaBeforeStyle = sharedMeta ? getComputedStyle(sharedMeta, '::before') : null;
     const viewStyle = viewToggle ? getComputedStyle(viewToggle) : null;
     const localFont = Number.parseFloat(localStyle?.fontSize || '0');
@@ -384,6 +413,8 @@ try {
       anchorDisplay: anchorStyle?.display || '',
       chevronDisplay: chevronStyle?.display || '',
       statusGridDisplay: statusGridStyle?.display || '',
+      statusDisplay: statusStyle?.display || '',
+      detailDisplay: detailStyle?.display || '',
       metaBefore: metaBeforeStyle?.content || '',
       noteText: sharedNote?.textContent?.trim() || '',
       viewDisplay: viewStyle?.display || '',
@@ -399,6 +430,8 @@ try {
       sharedVisualMatch.anchorDisplay === 'none' &&
       sharedVisualMatch.chevronDisplay === 'none' &&
       sharedVisualMatch.statusGridDisplay === 'none' &&
+      sharedVisualMatch.statusDisplay === 'none' &&
+      sharedVisualMatch.detailDisplay === 'none' &&
       /Shared Job History/i.test(sharedVisualMatch.metaBefore) &&
       /^Search shared jobs/i.test(sharedVisualMatch.noteText) &&
       sharedVisualMatch.viewDisplay === 'grid',
@@ -414,13 +447,15 @@ try {
   })()`);
   await sleep(180);
   const sanitizedSharedError = await evaluate(cdp, `(() => {
-    const text = document.getElementById('jobsCloudStatus')?.textContent || '';
-    return { text };
+    const status = document.getElementById('jobsCloudStatus');
+    const text = status?.textContent || '';
+    return { text, display: status ? getComputedStyle(status).display : '' };
   })()`);
   record(
     !/INTERNAL ASSERTION FAILED|Unexpected state|FIRESTORE\s*\(/i.test(sanitizedSharedError.text) &&
-      /Firebase connection hiccup|Local saved jobs/i.test(sanitizedSharedError.text),
-    'Shared sync hides raw Firestore internal assertion',
+      /Firebase connection hiccup|Local saved jobs/i.test(sanitizedSharedError.text) &&
+      sanitizedSharedError.display === 'none',
+    'Shared sync hides raw Firestore internal assertion from UI',
     JSON.stringify(sanitizedSharedError)
   );
 

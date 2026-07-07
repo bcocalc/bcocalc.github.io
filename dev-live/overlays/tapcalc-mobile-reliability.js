@@ -27,6 +27,7 @@
   let loadGuardUntil = 0;
   let sharedLoadTimer = 0;
   let sharedFallbackTimer = 0;
+  let sharedHistoryRenderBusy = false;
 
   function byId(id) {
     return document.getElementById(id);
@@ -258,10 +259,12 @@
     try { localStorage.setItem('tapcalcLibraryLaneV1', next); } catch {}
     if (next === 'shared') {
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
+      scheduleSharedHistoryRender([45]);
       if (!options.skipCloudLoad) {
         requestSharedJobsLoad('library-lane');
       }
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 180);
+      scheduleSharedHistoryRender([220, 520]);
     } else {
       updateOfflineStatus();
       setTimeout(() => { try { window.renderJobsList?.(); } catch {} }, 20);
@@ -379,6 +382,171 @@
     scrubSharedStatus();
   }
 
+  function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[char]));
+  }
+
+  function activeSharedLane() {
+    const screen = byId('jobsScreen');
+    const panel = document.querySelector('[data-library-lane-panel="shared"]');
+    return screen?.dataset?.activeLane === 'shared' || !!panel?.classList.contains('active');
+  }
+
+  function jobTitle(record = {}) {
+    return record?.meta?.title || record?.job?.description || record?.job?.jobDescription || record?.job?.jobNumber || 'Saved Job';
+  }
+
+  function jobTime(record = {}) {
+    return record?.meta?.savedAtDisplay || record?.job?.date || record?.savedAt || '';
+  }
+
+  function jobSourceLabel(source = '') {
+    if (source === 'local') return 'Local only';
+    if (source === 'synced') return 'Synced';
+    return 'Shared DB';
+  }
+
+  function jobMetaParts(entry = {}) {
+    const record = entry.record || {};
+    const operation = record?.meta?.operationType || record?.state?.operationType || 'Job';
+    const bco = record?.calculations?.bco || record?.summary?.bco || '';
+    const wall = record?.pipe?.wallThickness || record?.state?.wallThickness || '';
+    const parts = [operation];
+    if (bco) parts.push(`BCO ${bco}`);
+    if (wall) parts.push(`Wall ${wall}`);
+    parts.push(jobSourceLabel(entry.source));
+    return parts;
+  }
+
+  function renderSharedHistoryPicker() {
+    if (!activeSharedLane()) return false;
+    const list = byId('jobsSelect');
+    if (!list) return false;
+    if (sharedHistoryRenderBusy) return false;
+    sharedHistoryRenderBusy = true;
+    const jobs = getDisplayJobs();
+    const previousScrollTop = list.scrollTop;
+    const selectedId = String(
+      window.__tapcalcLibrarySelectedId ||
+      window.__tapcalcSelectedJobId ||
+      window.selectedJobId ||
+      (() => { try { return selectedJobId; } catch { return ''; } })() ||
+      ''
+    );
+
+    list.classList.add('tapcalc-shared-history-list');
+    list.setAttribute('aria-label', 'Shared job history');
+
+    const meta = byId('jobsResultsMeta');
+    if (meta) {
+      meta.classList.add('tapcalc-shared-history-head');
+      meta.textContent = `${jobs.length} job${jobs.length === 1 ? '' : 's'} found`;
+    }
+
+    const details = byId('jobsList');
+    if (details) {
+      details.classList.add('tapcalc-shared-detail-hidden');
+      details.setAttribute('aria-hidden', 'true');
+    }
+
+    if (!jobs.length) {
+      list.innerHTML = '<div class="jobs-library-empty">No shared jobs match this search yet.</div>';
+      sharedHistoryRenderBusy = false;
+      return true;
+    }
+
+    list.innerHTML = jobs.map((entry, index) => {
+      const id = String(entry.id || `shared-${index}`);
+      const record = entry.record || {};
+      const active = id === selectedId;
+      const client = record?.job?.client || '';
+      const location = record?.job?.location || '';
+      const subtitle = [client, location, jobTime(record)].filter(Boolean).join(' | ');
+      return `
+        <div class="jobs-list-item tapcalc-shared-history-card history-card${active ? ' active' : ''}" role="listitem" tabindex="0" data-job-id="${escapeHtml(id)}" aria-selected="${active ? 'true' : 'false'}" aria-pressed="${active ? 'true' : 'false'}">
+          <div class="history-card-top">
+            <div class="tapcalc-shared-history-copy">
+              <div class="history-title jobs-list-title">${escapeHtml(jobTitle(record))}</div>
+              <div class="history-time jobs-list-time">${escapeHtml(subtitle || jobTime(record) || 'Shared job')}</div>
+            </div>
+            <div class="history-actions">
+              <button type="button" class="history-btn tapcalc-load-selected-job-btn tapcalc-shared-load-btn" data-tapcalc-load-selected="true" data-load-job="true" data-job-id="${escapeHtml(id)}">Load</button>
+            </div>
+          </div>
+          <div class="history-meta jobs-list-meta">
+            ${jobMetaParts(entry).map((part) => `<span>${escapeHtml(part)}</span>`).join('')}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    list.querySelectorAll('.tapcalc-shared-history-card[data-job-id]').forEach((row) => {
+      const select = (event) => {
+        if (event?.target?.closest?.('button')) return;
+        try { event?.preventDefault?.(); } catch {}
+        const id = String(row.dataset.jobId || '');
+        if (!id) return;
+        syncSelectedJobId(id);
+        list.querySelectorAll('.tapcalc-shared-history-card[data-job-id]').forEach((candidate) => {
+          const active = String(candidate.dataset.jobId || '') === id;
+          candidate.classList.toggle('active', active);
+          candidate.setAttribute('aria-pressed', active ? 'true' : 'false');
+          candidate.setAttribute('aria-selected', active ? 'true' : 'false');
+        });
+      };
+      row.addEventListener('click', select);
+      row.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') select(event);
+      });
+    });
+
+    list.scrollTop = previousScrollTop;
+    sharedHistoryRenderBusy = false;
+    return true;
+  }
+
+  function scheduleSharedHistoryRender(delays = [0, 120, 360]) {
+    delays.forEach((delay) => setTimeout(renderSharedHistoryPicker, delay));
+  }
+
+  function installSharedHistoryRenderer() {
+    if (window.__tapcalcSharedHistoryRendererReady) return;
+    window.__tapcalcSharedHistoryRendererReady = true;
+    const previousRenderJobsList = typeof window.renderJobsList === 'function' ? window.renderJobsList.bind(window) : null;
+    if (previousRenderJobsList) {
+      window.renderJobsList = function tapcalcSharedHistoryRenderJobsList(...args) {
+        const result = previousRenderJobsList(...args);
+        setTimeout(renderSharedHistoryPicker, 0);
+        return result;
+      };
+      try { renderJobsList = window.renderJobsList; } catch {}
+    }
+    document.addEventListener('input', (event) => {
+      if (event.target?.id === 'jobsSearchInput') setTimeout(renderSharedHistoryPicker, 0);
+    }, true);
+    document.addEventListener('click', (event) => {
+      if (event.target?.closest?.('.jobs-view-chip')) setTimeout(renderSharedHistoryPicker, 40);
+    }, true);
+    const list = byId('jobsSelect');
+    if (list) {
+      const observer = new MutationObserver(() => {
+        if (sharedHistoryRenderBusy || !activeSharedLane()) return;
+        if (list.querySelector('.tapcalc-shared-history-card')) return;
+        if (!list.querySelector('.jobs-list-item[data-job-id]')) return;
+        scheduleSharedHistoryRender([0, 80]);
+      });
+      observer.observe(list, { childList: true, subtree: true });
+      window.__tapcalcSharedHistoryListObserver = observer;
+    }
+    scheduleSharedHistoryRender([0, 120, 500]);
+  }
+
   function updateOfflineStatus() {
     if (isOffline()) {
       setCloudStatus('Offline mode. Local saved jobs still work; Shared reconnects when service returns.', 'Offline mode');
@@ -419,10 +587,12 @@
           .finally(() => {
             clearTimeout(sharedFallbackTimer);
             scrubSharedStatus();
+            scheduleSharedHistoryRender([0, 120, 360]);
           });
       } catch (error) {
         clearTimeout(sharedFallbackTimer);
         setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
+        scheduleSharedHistoryRender([0, 120, 360]);
       }
     }, 40);
     return true;
@@ -600,11 +770,13 @@
       try {
         const result = await previousLoadCloudJobs(...args);
         scrubSharedStatus();
+        scheduleSharedHistoryRender([0, 120, 360]);
         return result;
       } catch (error) {
         console.warn('Shared jobs load unavailable', error);
         setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
         try { window.renderJobsList?.(); } catch {}
+        scheduleSharedHistoryRender([0, 120, 360]);
         return [];
       }
     };
@@ -662,6 +834,7 @@
     installCanonicalLoadApi();
     installOfflineCloudGuard();
     installSharedStatusSanitizer();
+    installSharedHistoryRenderer();
     normalizeSharedPanelCopy();
     updateOfflineStatus();
     installReliabilityStyle();
