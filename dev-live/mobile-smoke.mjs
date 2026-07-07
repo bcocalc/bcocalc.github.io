@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive11';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive12';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -292,6 +292,49 @@ try {
     })()`);
     record(state === screen && isActive, `tab activates ${screen}`, `body=${state}`);
   }
+
+  await tap(cdp, '.screen-tab[data-screen="calc"]');
+  await sleep(300);
+  const bcoAutofill = await evaluate(cdp, `(() => {
+    const material = document.getElementById('bcoPipeMaterial');
+    const size = document.getElementById('bcoPipeOD');
+    const schedule = document.getElementById('bcoSchedule');
+    const pipeId = document.getElementById('bcoPipeID');
+    const fire = (el, type = 'change') => el?.dispatchEvent(new Event(type, { bubbles: true }));
+    if (!material || !size || !schedule || !pipeId) return { ready: false };
+    material.value = 'CarbonSteel';
+    fire(material);
+    size.value = '4.0';
+    schedule.value = 'STD';
+    fire(size);
+    fire(schedule);
+    const initial = pipeId.value;
+    pipeId.value = '4.111';
+    fire(pipeId, 'input');
+    const manual = pipeId.value;
+    size.value = '6.0';
+    fire(size);
+    const afterSize = pipeId.value;
+    schedule.value = 'XS';
+    fire(schedule);
+    const afterSchedule = pipeId.value;
+    pipeId.value = '5.700';
+    fire(pipeId, 'input');
+    schedule.value = 'STD';
+    fire(schedule);
+    const afterSecondSchedule = pipeId.value;
+    return { ready: true, initial, manual, afterSize, afterSchedule, afterSecondSchedule };
+  })()`);
+  record(
+    bcoAutofill.ready &&
+      Math.abs(Number(bcoAutofill.initial) - 4.026) < 0.0001 &&
+      bcoAutofill.manual === '4.111' &&
+      Math.abs(Number(bcoAutofill.afterSize) - 6.065) < 0.0001 &&
+      Math.abs(Number(bcoAutofill.afterSchedule) - 5.761) < 0.0001 &&
+      Math.abs(Number(bcoAutofill.afterSecondSchedule) - 6.065) < 0.0001,
+    'BCO Pipe I.D. autofills on pipe size and schedule changes after manual override',
+    JSON.stringify(bcoAutofill)
+  );
 
   await tap(cdp, '.screen-tab[data-screen="jobs"]');
   await sleep(250);
