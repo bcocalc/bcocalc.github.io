@@ -76,6 +76,16 @@
       el.style.position = 'relative';
     });
 
+    const jobsPanel = byId('jobsPanel');
+    if (jobsPanel && activeScreen === 'jobs') {
+      jobsPanel.classList.add('active');
+      jobsPanel.hidden = false;
+      jobsPanel.style.display = 'block';
+      jobsPanel.style.visibility = 'visible';
+      jobsPanel.style.pointerEvents = 'auto';
+      jobsPanel.style.opacity = '1';
+    }
+
     document.querySelectorAll('.screen-tab[data-screen]').forEach((tab) => {
       const active = normalizeScreen(tab.dataset.screen) === activeScreen;
       tab.classList.toggle('active', active);

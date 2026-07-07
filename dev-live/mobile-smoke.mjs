@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive5';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive6';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -296,7 +296,7 @@ try {
   await tap(cdp, '.screen-tab[data-screen="jobs"]');
   await sleep(250);
   await tap(cdp, '.library-lane-btn[data-library-lane="shared"]');
-  await sleep(700);
+  await sleep(1800);
   const sharedState = await evaluate(cdp, `(() => {
     const screen = document.getElementById('jobsScreen');
     const panel = document.querySelector('[data-library-lane-panel="shared"]');
@@ -309,6 +309,48 @@ try {
     };
   })()`);
   record(sharedState.lane === 'shared' && sharedState.panelActive && !sharedState.panelHidden && sharedState.buttonActive, 'Library Shared lane opens', JSON.stringify(sharedState));
+
+  const sharedRowLayout = await evaluate(cdp, `(() => {
+    const rows = Array.from(document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]'));
+    const item = rows
+      .find((candidate) => {
+        const rect = candidate.getBoundingClientRect();
+        return rect.width > 50 && rect.height > 10;
+      });
+    const title = item?.querySelector('.jobs-list-title, .jobs-list-item-title');
+    const meta = item?.querySelector('.jobs-list-meta, .jobs-list-item-meta');
+    const titleStyle = title ? getComputedStyle(title) : null;
+    const metaStyle = meta ? getComputedStyle(meta) : null;
+    const rect = item?.getBoundingClientRect();
+    const select = document.getElementById('jobsSelect');
+    const selectRect = select?.getBoundingClientRect();
+    const jobsPanel = document.getElementById('jobsPanel');
+    const jobsPanelStyle = jobsPanel ? getComputedStyle(jobsPanel) : null;
+    return {
+      hasItem: !!item,
+      itemWidth: rect ? Math.round(rect.width) : 0,
+      itemHeight: rect ? Math.round(rect.height) : 0,
+      itemScrollWidth: item ? Math.round(item.scrollWidth) : 0,
+      titleDisplay: titleStyle?.display || '',
+      metaDisplay: metaStyle?.display || '',
+      titleText: title?.textContent?.trim() || '',
+      metaText: meta?.textContent?.trim() || '',
+      rowCount: rows.length,
+      selectWidth: selectRect ? Math.round(selectRect.width) : 0,
+      jobsPanelDisplay: jobsPanelStyle?.display || '',
+      status: document.getElementById('jobsCloudStatus')?.textContent || ''
+    };
+  })()`);
+  record(
+    sharedRowLayout.hasItem &&
+      sharedRowLayout.itemWidth > 50 &&
+      sharedRowLayout.itemHeight >= 50 &&
+      sharedRowLayout.titleDisplay !== 'inline' &&
+      sharedRowLayout.metaDisplay !== 'inline' &&
+      sharedRowLayout.itemScrollWidth <= sharedRowLayout.itemWidth + 1,
+    'Shared job rows wrap as readable cards',
+    JSON.stringify(sharedRowLayout)
+  );
 
   await tap(cdp, '.library-lane-btn[data-library-lane="local"]');
   await sleep(350);
