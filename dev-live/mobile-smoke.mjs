@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive7';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive8';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -358,12 +358,20 @@ try {
     const sharedTitle = sharedToggle?.querySelector('span:first-child');
     const sharedHead = document.querySelector('.jobs-panel-shared .jobs-section-head');
     const sharedAnchor = document.getElementById('sharedJobsAnchor');
+    const sharedNote = document.querySelector('.jobs-panel-shared .jobs-note');
+    const sharedStatusGrid = document.querySelector('.jobs-panel-shared .jobs-status-grid');
+    const sharedMeta = document.getElementById('jobsResultsMeta');
     const viewToggle = document.querySelector('.jobs-panel-shared .jobs-view-toggle');
     const localStyle = localTitle ? getComputedStyle(localTitle) : null;
     const sharedStyle = sharedTitle ? getComputedStyle(sharedTitle) : null;
     const buttonStyle = sharedToggle ? getComputedStyle(sharedToggle) : null;
     const headStyle = sharedHead ? getComputedStyle(sharedHead) : null;
     const anchorStyle = sharedAnchor ? getComputedStyle(sharedAnchor) : null;
+    const chevronStyle = sharedToggle?.querySelector('.section-toggle-chevron')
+      ? getComputedStyle(sharedToggle.querySelector('.section-toggle-chevron'))
+      : null;
+    const statusGridStyle = sharedStatusGrid ? getComputedStyle(sharedStatusGrid) : null;
+    const metaBeforeStyle = sharedMeta ? getComputedStyle(sharedMeta, '::before') : null;
     const viewStyle = viewToggle ? getComputedStyle(viewToggle) : null;
     const localFont = Number.parseFloat(localStyle?.fontSize || '0');
     const sharedFont = Number.parseFloat(sharedStyle?.fontSize || '0');
@@ -374,6 +382,10 @@ try {
       buttonBorderTop: buttonStyle?.borderTopWidth || '',
       headBorderBottom: headStyle?.borderBottomWidth || '',
       anchorDisplay: anchorStyle?.display || '',
+      chevronDisplay: chevronStyle?.display || '',
+      statusGridDisplay: statusGridStyle?.display || '',
+      metaBefore: metaBeforeStyle?.content || '',
+      noteText: sharedNote?.textContent?.trim() || '',
       viewDisplay: viewStyle?.display || '',
       viewColumns: viewStyle?.gridTemplateColumns || ''
     };
@@ -385,9 +397,31 @@ try {
       sharedVisualMatch.buttonBorderTop === '0px' &&
       sharedVisualMatch.headBorderBottom !== '0px' &&
       sharedVisualMatch.anchorDisplay === 'none' &&
+      sharedVisualMatch.chevronDisplay === 'none' &&
+      sharedVisualMatch.statusGridDisplay === 'none' &&
+      /Shared Job History/i.test(sharedVisualMatch.metaBefore) &&
+      /^Search shared jobs/i.test(sharedVisualMatch.noteText) &&
       sharedVisualMatch.viewDisplay === 'grid',
     'Shared lane matches compact Local styling',
     JSON.stringify(sharedVisualMatch)
+  );
+
+  await evaluate(cdp, `(() => {
+    const status = document.getElementById('jobsCloudStatus');
+    if (!status) return false;
+    status.textContent = 'Could not load shared jobs. FIRESTORE (10.12.5) INTERNAL ASSERTION FAILED: Unexpected state';
+    return true;
+  })()`);
+  await sleep(180);
+  const sanitizedSharedError = await evaluate(cdp, `(() => {
+    const text = document.getElementById('jobsCloudStatus')?.textContent || '';
+    return { text };
+  })()`);
+  record(
+    !/INTERNAL ASSERTION FAILED|Unexpected state|FIRESTORE\s*\(/i.test(sanitizedSharedError.text) &&
+      /Firebase connection hiccup|Local saved jobs/i.test(sanitizedSharedError.text),
+    'Shared sync hides raw Firestore internal assertion',
+    JSON.stringify(sanitizedSharedError)
   );
 
   await tap(cdp, '.library-lane-btn[data-library-lane="local"]');

@@ -21,6 +21,7 @@
   const STYLE_ID = 'tapcalc-livefix14-reliability-style';
   const LEGACY_LOAD_BUTTON_SELECTOR = '#jobsLoadSelectedBtn, #jobsLoadSelectedBtnFinal, #jobsLoadSelectedBtnMobileCanonical, #jobsLoadSelectedBtnMobile114, [data-load-job]';
   const CANONICAL_LOAD_BUTTON_SELECTOR = '.tapcalc-load-selected-job-btn[data-tapcalc-load-selected="true"]';
+  const RAW_SHARED_SYNC_ERROR_PATTERN = /INTERNAL ASSERTION FAILED|Unexpected state|FIRESTORE\s*\(/i;
   const legacySetLibraryLane = typeof window.setLibraryLane === 'function' ? window.setLibraryLane.bind(window) : null;
   const legacyOpenSharedLibraryLane = typeof window.openSharedLibraryLane === 'function' ? window.openSharedLibraryLane.bind(window) : null;
   let loadGuardUntil = 0;
@@ -301,7 +302,7 @@
 
   function setLoadStatus(message) {
     const status = byId('jobsCloudStatus') || byId('jobsCloudStatusMirror') || byId('bcoStatus');
-    if (status && message) status.textContent = message;
+    if (status && message) status.textContent = sanitizeSharedStatusText(message);
   }
 
   function isOffline() {
@@ -309,14 +310,73 @@
   }
 
   function setCloudStatus(message, firebaseLabel = '') {
+    const safeMessage = sanitizeSharedStatusText(message);
     ['jobsCloudStatus', 'jobsCloudStatusMirror'].forEach((id) => {
       const el = byId(id);
-      if (el && message) el.textContent = message;
+      if (el && safeMessage) el.textContent = safeMessage;
     });
     ['firebaseStatus', 'firebaseStatusMirror'].forEach((id) => {
       const el = byId(id);
       if (el && firebaseLabel) el.textContent = firebaseLabel;
     });
+  }
+
+  function isRawSharedSyncError(value) {
+    return RAW_SHARED_SYNC_ERROR_PATTERN.test(String(value || ''));
+  }
+
+  function friendlySharedSyncMessage(value = '') {
+    const text = String(value?.message || value || '');
+    if (isRawSharedSyncError(text)) {
+      return 'Shared sync hit a Firebase connection hiccup. Local saved jobs still work; retry Shared when service is stable.';
+    }
+    if (/offline|internet|network|failed to fetch|unavailable|timeout/i.test(text)) {
+      return 'Shared sync unavailable. Local saved jobs still work; retry when service returns.';
+    }
+    return 'Shared sync unavailable. Local saved jobs still work; retry when service returns.';
+  }
+
+  function sanitizeSharedStatusText(message) {
+    const text = String(message || '');
+    if (!text) return text;
+    return isRawSharedSyncError(text) ? friendlySharedSyncMessage(text) : text;
+  }
+
+  function scrubSharedStatus() {
+    ['jobsCloudStatus', 'jobsCloudStatusMirror'].forEach((id) => {
+      const el = byId(id);
+      if (!el) return;
+      const safe = sanitizeSharedStatusText(el.textContent || '');
+      if (safe && safe !== el.textContent) el.textContent = safe;
+    });
+    ['firebaseStatus', 'firebaseStatusMirror'].forEach((id) => {
+      const el = byId(id);
+      if (el && isRawSharedSyncError(el.textContent || '')) el.textContent = 'Connection hiccup';
+    });
+  }
+
+  function normalizeSharedPanelCopy() {
+    const note = document.querySelector('#jobsScreen .jobs-panel-shared .jobs-note');
+    if (note) note.textContent = 'Search shared jobs, then tap a card to view and open it.';
+    const toggle = byId('sharedJobsToggleBtn');
+    if (toggle) {
+      toggle.setAttribute('aria-label', 'Shared Jobs');
+      toggle.setAttribute('aria-expanded', 'true');
+    }
+    const content = byId('sharedJobsContent');
+    if (content) content.hidden = false;
+  }
+
+  function installSharedStatusSanitizer() {
+    if (window.__tapcalcSharedStatusSanitizerReady) return;
+    window.__tapcalcSharedStatusSanitizerReady = true;
+    const observer = new MutationObserver(() => scrubSharedStatus());
+    ['jobsCloudStatus', 'jobsCloudStatusMirror', 'firebaseStatus', 'firebaseStatusMirror'].forEach((id) => {
+      const el = byId(id);
+      if (el) observer.observe(el, { childList: true, characterData: true, subtree: true });
+    });
+    window.__tapcalcSharedStatusSanitizerObserver = observer;
+    scrubSharedStatus();
   }
 
   function updateOfflineStatus() {
@@ -351,10 +411,18 @@
     sharedLoadTimer = setTimeout(() => {
       try {
         const result = window.loadCloudJobs?.({ reason });
-        Promise.resolve(result).finally(() => clearTimeout(sharedFallbackTimer));
-      } catch {
+        Promise.resolve(result)
+          .catch((error) => {
+            setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
+            return [];
+          })
+          .finally(() => {
+            clearTimeout(sharedFallbackTimer);
+            scrubSharedStatus();
+          });
+      } catch (error) {
         clearTimeout(sharedFallbackTimer);
-        setCloudStatus('Shared sync could not start. Local saved jobs still work.', 'Connection failed');
+        setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
       }
     }, 40);
     return true;
@@ -529,7 +597,16 @@
         return [];
       }
       if (!previousLoadCloudJobs) return [];
-      return previousLoadCloudJobs(...args);
+      try {
+        const result = await previousLoadCloudJobs(...args);
+        scrubSharedStatus();
+        return result;
+      } catch (error) {
+        console.warn('Shared jobs load unavailable', error);
+        setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
+        try { window.renderJobsList?.(); } catch {}
+        return [];
+      }
     };
     try { loadCloudJobs = window.loadCloudJobs; } catch {}
 
@@ -544,7 +621,16 @@
         return Promise.resolve({ enabled: false, offline: true });
       }
       if (!previousEnsureFirebaseReady) return Promise.resolve({ enabled: false });
-      return previousEnsureFirebaseReady(options);
+      return Promise.resolve(previousEnsureFirebaseReady(options))
+        .then((result) => {
+          scrubSharedStatus();
+          return result;
+        })
+        .catch((error) => {
+          console.warn('Firebase ready guard recovered', error);
+          setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
+          return { enabled: false, error };
+        });
     };
     try { ensureFirebaseReady = window.ensureFirebaseReady; } catch {}
   }
@@ -575,6 +661,8 @@
     installCanonicalLibraryApi();
     installCanonicalLoadApi();
     installOfflineCloudGuard();
+    installSharedStatusSanitizer();
+    normalizeSharedPanelCopy();
     updateOfflineStatus();
     installReliabilityStyle();
     markInteractiveControls();

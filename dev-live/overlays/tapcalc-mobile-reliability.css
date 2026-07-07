@@ -99,10 +99,7 @@ body.measurement-page #jobsScreen #sharedJobsToggleBtn span:first-child {
 }
 
 body.measurement-page #jobsScreen #sharedJobsToggleBtn .section-toggle-chevron {
-  flex: 0 0 auto !important;
-  height: 10px !important;
-  width: 10px !important;
-  opacity: 0.9 !important;
+  display: none !important;
 }
 
 body.measurement-page #jobsScreen .jobs-panel-shared .jobs-note {
@@ -115,9 +112,7 @@ body.measurement-page #jobsScreen .jobs-panel-shared .jobs-note {
 }
 
 body.measurement-page #jobsScreen .jobs-panel-shared .jobs-status-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-  gap: 12px !important;
-  margin-bottom: 10px !important;
+  display: none !important;
 }
 
 body.measurement-page #jobsScreen .jobs-panel-shared .summary-item {
@@ -126,7 +121,10 @@ body.measurement-page #jobsScreen .jobs-panel-shared .summary-item {
 }
 
 body.measurement-page #jobsScreen #jobsCloudStatus {
-  margin: 0 0 10px !important;
+  margin: 0 0 12px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
   color: #d6e4f6 !important;
   font-size: 0.78rem !important;
   font-weight: 650 !important;
@@ -175,15 +173,34 @@ body.measurement-page #jobsScreen .jobs-shared-anchor {
 }
 
 body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta {
-  margin: 6px 0 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  margin: 12px 0 0 !important;
+  padding: 12px 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-bottom: 0 !important;
+  border-radius: 14px 14px 0 0 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
   color: #ffffff !important;
-  font-size: 0.86rem !important;
+  font-size: 0.84rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta::before {
+  content: "Shared Job History" !important;
+  color: #ffffff !important;
+  font-size: 1rem !important;
+  font-weight: 800 !important;
 }
 
 body.measurement-page #jobsScreen .jobs-panel-shared .jobs-select {
   background: rgba(0, 0, 0, 0.16) !important;
   border-color: rgba(255, 255, 255, 0.08) !important;
-  border-radius: 14px !important;
+  border-radius: 0 0 14px 14px !important;
+  border-top: 0 !important;
 }
 
 body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-details {
@@ -207,6 +224,19 @@ body.light.measurement-page #jobsScreen .jobs-search-row label,
 :root[data-theme="light"] body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta,
 body.measurement-page.light #jobsScreen .jobs-panel-shared .jobs-library-meta,
 body.light.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta {
+  color: #173657 !important;
+}
+
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta,
+body.measurement-page.light #jobsScreen .jobs-panel-shared .jobs-library-meta,
+body.light.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta {
+  background: #f6f8fb !important;
+  border-color: rgba(31, 63, 108, 0.14) !important;
+}
+
+:root[data-theme="light"] body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta::before,
+body.measurement-page.light #jobsScreen .jobs-panel-shared .jobs-library-meta::before,
+body.light.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta::before {
   color: #173657 !important;
 }
 
@@ -376,9 +406,7 @@ body.light.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-details
   }
 
   body.measurement-page #jobsScreen .jobs-panel-shared .jobs-status-grid {
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    gap: 8px !important;
+    display: none !important;
   }
 
   body.measurement-page #jobsScreen .jobs-panel-shared .summary-item {
@@ -396,6 +424,15 @@ body.light.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-details
     min-height: 38px !important;
     padding: 7px 9px !important;
     font-size: 0.78rem !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta {
+    padding: 10px 12px !important;
+    font-size: 0.78rem !important;
+  }
+
+  body.measurement-page #jobsScreen .jobs-panel-shared .jobs-library-meta::before {
+    font-size: 0.9rem !important;
   }
 
   body.measurement-page #jobsScreen .jobs-search-row {
