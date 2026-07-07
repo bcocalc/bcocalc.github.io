@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive20';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive21';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -606,18 +606,39 @@ try {
 
   await evaluate(cdp, `window.scrollTo(0, document.body.scrollHeight); true`);
   await sleep(150);
+  await evaluate(cdp, `(() => {
+    window.__tapcalcReferenceScrollEvents = [];
+    window.__tapcalcReferenceScrollStart = performance.now();
+    if (!window.__tapcalcReferenceScrollProbeInstalled) {
+      window.__tapcalcReferenceScrollProbeInstalled = true;
+      window.addEventListener('scroll', () => {
+        if (!window.__tapcalcReferenceScrollStart) return;
+        window.__tapcalcReferenceScrollEvents.push({
+          t: Math.round(performance.now() - window.__tapcalcReferenceScrollStart),
+          y: Math.round(window.scrollY || 0)
+        });
+      }, { passive: true });
+    }
+    return true;
+  })()`);
   await tap(cdp, '.screen-tab[data-screen="ref"]');
   await sleep(700);
   const refState = await evaluate(cdp, `(() => {
     const toggle = document.getElementById('referenceLibraryToggle');
     const rect = toggle?.getBoundingClientRect();
+    const events = window.__tapcalcReferenceScrollEvents || [];
+    const lateEvents = events.filter((event) => event.t >= 140);
+    const maxLateScrollY = Math.max(0, ...lateEvents.map((event) => event.y || 0), Math.round(window.scrollY || 0));
     return {
       scrollY: Math.round(window.scrollY),
       toggleY: rect ? Math.round(rect.y) : null,
-      toggleVisible: !!rect && rect.bottom > 0 && rect.top < window.innerHeight
+      toggleVisible: !!rect && rect.bottom > 0 && rect.top < window.innerHeight,
+      maxLateScrollY,
+      scrollEvents: events.slice(0, 12)
     };
   })()`);
   record(refState.scrollY <= 80 && refState.toggleVisible, 'Reference tab resets near top', JSON.stringify(refState));
+  record(refState.maxLateScrollY <= 80, 'Reference tab stays stable after activation', JSON.stringify(refState));
 
   await tap(cdp, '.screen-tab[data-screen="card"]');
   await sleep(350);
