@@ -322,6 +322,7 @@
       const el = byId(id);
       if (el && firebaseLabel) el.textContent = firebaseLabel;
     });
+    hideCloudStatusMirror();
   }
 
   function isRawSharedSyncError(value) {
@@ -356,6 +357,16 @@
       const el = byId(id);
       if (el && isRawSharedSyncError(el.textContent || '')) el.textContent = 'Connection hiccup';
     });
+    hideCloudStatusMirror();
+  }
+
+  function hideCloudStatusMirror() {
+    const mirror = byId('jobsCloudStatusMirror');
+    if (!mirror) return;
+    mirror.hidden = true;
+    mirror.setAttribute('aria-hidden', 'true');
+    mirror.style.display = 'none';
+    mirror.style.visibility = 'hidden';
   }
 
   function normalizeSharedPanelCopy() {
@@ -624,6 +635,151 @@
     }
   }
 
+  function getSharedCloudCount() {
+    return getDisplayJobs().filter((entry) => ['cloud', 'shared'].includes(String(entry?.source || '').toLowerCase())).length;
+  }
+
+  function getJobsCollectionNameSafe() {
+    try {
+      if (typeof getJobsCollectionName === 'function') return getJobsCollectionName();
+    } catch {}
+    return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
+  }
+
+  function encodeFirestorePath(path = '') {
+    return String(path || '').split('/').filter(Boolean).map((part) => encodeURIComponent(part)).join('/');
+  }
+
+  function readFirestoreValue(value) {
+    if (!value || typeof value !== 'object') return undefined;
+    if ('stringValue' in value) return value.stringValue;
+    if ('integerValue' in value) return Number(value.integerValue);
+    if ('doubleValue' in value) return Number(value.doubleValue);
+    if ('booleanValue' in value) return Boolean(value.booleanValue);
+    if ('timestampValue' in value) return value.timestampValue;
+    if ('nullValue' in value) return null;
+    if ('arrayValue' in value) return (value.arrayValue.values || []).map(readFirestoreValue);
+    if ('mapValue' in value) {
+      const output = {};
+      Object.entries(value.mapValue.fields || {}).forEach(([key, child]) => {
+        output[key] = readFirestoreValue(child);
+      });
+      return output;
+    }
+    return undefined;
+  }
+
+  function firestoreDocumentToRecord(documentRecord, id = '') {
+    const output = {};
+    Object.entries(documentRecord?.fields || {}).forEach(([key, value]) => {
+      output[key] = readFirestoreValue(value);
+    });
+    const documentId = id || String(documentRecord?.name || '').split('/').pop() || '';
+    if (documentId) {
+      output.id = documentId;
+      output.__cloudId = documentId;
+    }
+    return output;
+  }
+
+  async function fetchSharedJobsViaRest(options = {}) {
+    const config = window.TAPCALC_FIREBASE_CONFIG || {};
+    const projectId = String(config.projectId || '').trim();
+    const apiKey = String(config.apiKey || '').trim();
+    const collectionName = getJobsCollectionNameSafe();
+    if (!projectId || typeof fetch !== 'function') return [];
+
+    const pageSize = Math.max(1, Math.min(Number(options.pageSize || 100) || 100, 300));
+    const baseUrl =
+      `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}` +
+      `/databases/(default)/documents/${encodeFirestorePath(collectionName)}`;
+    const entries = [];
+    let pageToken = '';
+    let page = 0;
+
+    do {
+      const params = new URLSearchParams({ pageSize: String(pageSize) });
+      if (apiKey) params.set('key', apiKey);
+      if (pageToken) params.set('pageToken', pageToken);
+      const response = await fetch(`${baseUrl}?${params.toString()}`, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Firestore REST shared jobs read failed (${response.status})`);
+      const payload = await response.json();
+      (payload.documents || []).forEach((documentRecord) => {
+        const id = String(documentRecord?.name || '').split('/').pop() || '';
+        entries.push({
+          source: 'cloud',
+          id,
+          record: firestoreDocumentToRecord(documentRecord, id)
+        });
+      });
+      pageToken = payload.nextPageToken || '';
+      page += 1;
+    } while (pageToken && page < 10);
+
+    return entries;
+  }
+
+  function installRestCloudJobsMerger() {
+    if (window.__tapcalcRestCloudJobsMergerReady) return;
+    const previousGetCombinedJobs = typeof window.getCombinedJobsForDisplay === 'function'
+      ? window.getCombinedJobsForDisplay.bind(window)
+      : null;
+    if (!previousGetCombinedJobs) return;
+    window.__tapcalcRestCloudJobsMergerReady = true;
+    window.getCombinedJobsForDisplay = function tapcalcRestMergedCombinedJobsForDisplay(...args) {
+      const baseList = previousGetCombinedJobs(...args) || [];
+      const restList = Array.isArray(window.__tapcalcRestCloudJobsCache) ? window.__tapcalcRestCloudJobsCache : [];
+      if (!restList.length) return baseList;
+      const map = new Map();
+      [...restList, ...baseList].forEach((entry) => {
+        const key = String(entry?.id || entry?.record?.__cloudId || entry?.record?.id || '');
+        if (key && !map.has(key)) map.set(key, entry);
+      });
+      return Array.from(map.values());
+    };
+  }
+
+  function applyRestSharedJobs(jobs = []) {
+    window.__tapcalcRestCloudJobsCache = jobs;
+    let assigned = false;
+    try {
+      cloudJobsCache = jobs;
+      assigned = true;
+    } catch {}
+    if (!assigned) installRestCloudJobsMerger();
+    try { window.renderJobsList?.(); } catch {}
+    try { if (typeof updateUnsyncedCount === 'function') updateUnsyncedCount(); } catch {}
+    scheduleSharedHistoryRender([0, 120, 360]);
+  }
+
+  async function loadSharedJobsViaRestFallback(reason = 'fallback') {
+    try {
+      const jobs = await fetchSharedJobsViaRest();
+      applyRestSharedJobs(jobs);
+      const projectId = window.TAPCALC_FIREBASE_CONFIG?.projectId || 'unknown project';
+      setCloudStatus(`Loaded ${jobs.length} shared job${jobs.length === 1 ? '' : 's'} from ${getJobsCollectionNameSafe()} (${projectId}).`, `Connected to ${projectId}`);
+      return jobs;
+    } catch (error) {
+      console.warn(`Shared jobs REST fallback failed (${reason})`, error);
+      setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
+      scheduleSharedHistoryRender([0, 120, 360]);
+      return [];
+    }
+  }
+
+  async function maybeLoadSharedJobsViaRest(reason = 'fallback') {
+    const statusText = [
+      byId('jobsCloudStatus')?.textContent || '',
+      byId('jobsCloudStatusMirror')?.textContent || ''
+    ].join(' ');
+    const shouldFallback = getSharedCloudCount() === 0 || /could not load|unavailable|connection hiccup|failed|timeout|unexpected state/i.test(statusText);
+    if (!shouldFallback || isOffline()) return [];
+    return loadSharedJobsViaRestFallback(reason);
+  }
+
+  window.tapCalcFetchSharedJobsViaRest = fetchSharedJobsViaRest;
+  window.tapCalcLoadSharedJobsViaRestFallback = loadSharedJobsViaRestFallback;
+
   function syncSelectedJobId(id) {
     const value = String(id || '').trim();
     if (!value) return;
@@ -766,18 +922,20 @@
         try { window.renderJobsList?.(); } catch {}
         return [];
       }
-      if (!previousLoadCloudJobs) return [];
+      if (!previousLoadCloudJobs) return loadSharedJobsViaRestFallback('no-sdk-loader');
       try {
         const result = await previousLoadCloudJobs(...args);
         scrubSharedStatus();
+        await maybeLoadSharedJobsViaRest('after-sdk-load');
         scheduleSharedHistoryRender([0, 120, 360]);
         return result;
       } catch (error) {
         console.warn('Shared jobs load unavailable', error);
-        setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
+        const fallbackJobs = await loadSharedJobsViaRestFallback('sdk-error');
+        if (!fallbackJobs.length) setCloudStatus(friendlySharedSyncMessage(error), 'Connection failed');
         try { window.renderJobsList?.(); } catch {}
         scheduleSharedHistoryRender([0, 120, 360]);
-        return [];
+        return fallbackJobs;
       }
     };
     try { loadCloudJobs = window.loadCloudJobs; } catch {}

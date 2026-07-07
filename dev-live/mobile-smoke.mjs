@@ -14,7 +14,7 @@ for (let index = 2; index < process.argv.length; index += 1) {
 }
 
 const base = args.get('--base') || 'http://127.0.0.1:8765/dev-live/';
-const expectedVersion = args.get('--expect-version') || '3.0.0-devlive9';
+const expectedVersion = args.get('--expect-version') || '3.0.0-devlive10';
 const target = new URL('measurement-card.html', base).toString();
 const results = [];
 const warnings = [];
@@ -310,6 +310,22 @@ try {
   })()`);
   record(sharedState.lane === 'shared' && sharedState.panelActive && !sharedState.panelHidden && sharedState.buttonActive, 'Library Shared lane opens', JSON.stringify(sharedState));
 
+  const restFallbackProbe = await evaluate(cdp, `window.tapCalcFetchSharedJobsViaRest
+    ? window.tapCalcFetchSharedJobsViaRest({ pageSize: 2 }).then((jobs) => ({
+        available: true,
+        count: jobs.length,
+        firstId: jobs[0]?.id || '',
+        firstSource: jobs[0]?.source || ''
+      })).catch((error) => ({ available: true, count: 0, error: error?.message || String(error) }))
+    : Promise.resolve({ available: false, count: 0 })`);
+  record(
+    restFallbackProbe.available &&
+      restFallbackProbe.count > 0 &&
+      restFallbackProbe.firstSource === 'cloud',
+    'Shared jobs REST fallback can list Firebase jobs',
+    JSON.stringify(restFallbackProbe)
+  );
+
   const sharedRowLayout = await evaluate(cdp, `(() => {
     const rows = Array.from(document.querySelectorAll('#jobsSelect .jobs-list-item[data-job-id]'));
     const item = rows
@@ -386,6 +402,7 @@ try {
     const sharedNote = document.querySelector('.jobs-panel-shared .jobs-note');
     const sharedStatusGrid = document.querySelector('.jobs-panel-shared .jobs-status-grid');
     const sharedStatus = document.getElementById('jobsCloudStatus');
+    const cloudStatusMirror = document.getElementById('jobsCloudStatusMirror');
     const sharedDetail = document.getElementById('jobsList');
     const sharedMeta = document.getElementById('jobsResultsMeta');
     const viewToggle = document.querySelector('.jobs-panel-shared .jobs-view-toggle');
@@ -399,6 +416,7 @@ try {
       : null;
     const statusGridStyle = sharedStatusGrid ? getComputedStyle(sharedStatusGrid) : null;
     const statusStyle = sharedStatus ? getComputedStyle(sharedStatus) : null;
+    const cloudStatusMirrorStyle = cloudStatusMirror ? getComputedStyle(cloudStatusMirror) : null;
     const detailStyle = sharedDetail ? getComputedStyle(sharedDetail) : null;
     const metaBeforeStyle = sharedMeta ? getComputedStyle(sharedMeta, '::before') : null;
     const viewStyle = viewToggle ? getComputedStyle(viewToggle) : null;
@@ -414,6 +432,8 @@ try {
       chevronDisplay: chevronStyle?.display || '',
       statusGridDisplay: statusGridStyle?.display || '',
       statusDisplay: statusStyle?.display || '',
+      cloudStatusMirrorDisplay: cloudStatusMirrorStyle?.display || '',
+      cloudStatusMirrorText: cloudStatusMirror?.textContent?.trim() || '',
       detailDisplay: detailStyle?.display || '',
       metaBefore: metaBeforeStyle?.content || '',
       noteText: sharedNote?.textContent?.trim() || '',
@@ -431,6 +451,7 @@ try {
       sharedVisualMatch.chevronDisplay === 'none' &&
       sharedVisualMatch.statusGridDisplay === 'none' &&
       sharedVisualMatch.statusDisplay === 'none' &&
+      sharedVisualMatch.cloudStatusMirrorDisplay === 'none' &&
       sharedVisualMatch.detailDisplay === 'none' &&
       /Shared Job History/i.test(sharedVisualMatch.metaBefore) &&
       /^Search shared jobs/i.test(sharedVisualMatch.noteText) &&

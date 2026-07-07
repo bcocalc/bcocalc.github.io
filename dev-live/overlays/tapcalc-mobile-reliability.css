@@ -124,6 +124,11 @@ body.measurement-page #jobsScreen #jobsCloudStatus {
   display: none !important;
 }
 
+body.measurement-page #jobsScreen #jobsCloudStatusMirror {
+  display: none !important;
+  visibility: hidden !important;
+}
+
 body.measurement-page #jobsScreen .jobs-view-toggle {
   display: grid !important;
   grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
