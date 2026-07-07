@@ -609,15 +609,6 @@
     return true;
   }
 
-  function hideLegacyLoadDebug() {
-    ['mobileLoadDebugTop', 'mobileLoadDebugPanel'].forEach((id) => {
-      const el = byId(id);
-      if (!el) return;
-      el.hidden = true;
-      el.style.display = 'none';
-    });
-  }
-
   function getHistoryItems() {
     try {
       const parsed = JSON.parse(localStorage.getItem('measurementCardHistoryV1') || '[]');
@@ -878,7 +869,6 @@
   }
 
   function normalizeLoadButtons() {
-    hideLegacyLoadDebug();
     document.querySelectorAll(LEGACY_LOAD_BUTTON_SELECTOR).forEach((button) => {
       if (button.dataset.tapcalcCanonicalizedLoad === 'true') return;
       const replacement = document.createElement('button');

@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-devlive10';
+const BUILD_VERSION = '3.0.0-devlive11';
 
 (function(){
 
@@ -1046,8 +1046,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = '../reference/stackups/';
-const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive10';
-const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive10';
+const STACKUP_PDFJS_URL = '../pdf.mjs?v=3.0.0-devlive11';
+const STACKUP_PDFJS_WORKER_URL = '../pdf.worker.mjs?v=3.0.0-devlive11';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2463,7 +2463,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive10', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-devlive11', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2662,7 +2662,6 @@ const DEFAULT_STATE_VALUES = {
 };
 const syncJobsBtnEl = document.getElementById('syncJobsBtn');
 const refreshCloudJobsBtnEl = document.getElementById('refreshCloudJobsBtn');
-const testFirestoreBtnEl = document.getElementById('testFirestoreBtn');
 const jobsListEl = document.getElementById('jobsList');
 const jobsSelectEl = document.getElementById('jobsSelect');
 const jobsResultsMetaEl = document.getElementById('jobsResultsMeta');
@@ -4456,7 +4455,6 @@ async function syncLocalJobsToCloud() {
   updateUnsyncedCount();
 
   if (syncJobsBtnEl) syncJobsBtnEl.disabled = true;
-  if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = true;
   if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
 
   try {
@@ -4514,7 +4512,6 @@ async function syncLocalJobsToCloud() {
     }
   } finally {
     if (syncJobsBtnEl) syncJobsBtnEl.disabled = false;
-    if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = false;
     if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
   }
 }
@@ -5035,48 +5032,7 @@ if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
 if (syncJobsBtnEl) syncJobsBtnEl.addEventListener('click', syncLocalJobsToCloud);
 
-async function testFirestoreUpload() {
-  const ready = await ensureFirebaseReady();
-  if (!ready.enabled) {
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase not ready for test upload.';
-    alert('Firebase not ready.');
-    return;
-  }
-
-  if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = true;
-
-  try {
-    const { collection, addDoc, serverTimestamp } = ready.modules;
-
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Firestore test upload timeout after 10000ms')), 10000);
-    });
-
-    const ref = await Promise.race([
-      addDoc(
-        collection(ready.db, getJobsCollectionName()),
-        {
-          debug: 'tapcalc-test',
-          created: serverTimestamp(),
-          source: 'debug-button'
-        }
-      ),
-      timeoutPromise
-    ]);
-
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firestore test upload succeeded. Doc ID: ${ref.id}`;
-    alert(`Firestore write success. Doc ID: ${ref.id}`);
-    await loadCloudJobs();
-  } catch (error) {
-    console.error('Firestore test upload failed', error);
-    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firestore test upload FAILED. ${formatFirebaseError(error)}`;
-    alert(`Firestore write FAILED: ${error?.message || error}`);
-  } finally {
-    if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = false;
-  }
-}
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
-if (testFirestoreBtnEl) testFirestoreBtnEl.addEventListener('click', testFirestoreUpload);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => {
   jobsSearchTerm = event.target.value.trim();
   try {
@@ -6625,7 +6581,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-devlive10';
+const TC63_VERSION = '3.0.0-devlive11';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -6871,7 +6827,7 @@ const TC63_VERSION = '3.0.0-devlive10';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-devlive10';
+const VERSION = '3.0.0-devlive11';
 
   function tc65GetJobs() {
     try {
@@ -10034,66 +9990,9 @@ const VERSION = '3.0.0-devlive10';
 })();
 
 
-// alpha115 mobile Load Job debug tracer
-(function(){
-  const isCompact = () => {
-    try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return false; }
-  };
-  const status = (msg) => {
-    try {
-      const el = document.getElementById('jobsCloudStatus');
-      if (el) el.textContent = msg;
-      console.log('[alpha115-mobile-debug]', msg);
-    } catch {}
-  };
-  const txt = (sel) => (document.querySelector(sel)?.textContent || '').trim();
-  const val = (id) => (document.getElementById(id)?.value || '').trim();
-  const mobileTrace = (phase) => {
-    if (!isCompact()) return;
-    const activeId = (window.selectedJobId || '').toString();
-    const title = txt('.job-detail-title');
-    const subtitle = txt('.job-detail-subtitle');
-    const currentClient = val('jobClient');
-    const currentJob = val('jobDescription') || val('jobNumber');
-    status(`${phase} | selectedJobId=${activeId || 'none'} | detail=${title || 'none'} | currentClient=${currentClient || 'blank'} | currentJob=${currentJob || 'blank'} | ${subtitle || ''}`);
-  };
-  document.addEventListener('click', (e) => {
-    if (!isCompact()) return;
-    const item = e.target.closest('.jobs-list-item[data-job-id]');
-    if (item) {
-      setTimeout(() => {
-        status(`ROW CLICK | rowId=${item.dataset.jobId || 'none'} | detail=${txt('.job-detail-title') || 'none'}`);
-      }, 25);
-    }
-  }, true);
-  const bindBtn = () => {
-    if (!isCompact()) return;
-    const btn = document.getElementById('jobsLoadSelectedBtn');
-    if (!btn || btn.dataset.alpha115DebugBound) return;
-    btn.dataset.alpha115DebugBound = '1';
-    ['touchstart','pointerdown','click'].forEach((evt) => {
-      btn.addEventListener(evt, () => {
-        mobileTrace(`LOAD BTN ${evt}`);
-        setTimeout(() => mobileTrace(`POST ${evt} 150ms`), 150);
-        setTimeout(() => mobileTrace(`POST ${evt} 500ms`), 500);
-        setTimeout(() => mobileTrace(`POST ${evt} 1200ms`), 1200);
-      }, true);
-    });
-  };
-  const mo = new MutationObserver(() => bindBtn());
-  const start = () => {
-    bindBtn();
-    try { mo.observe(document.body, {childList:true, subtree:true}); } catch {}
-  };
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start, {once:true});
-  else start();
-})();
-
-
-
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-devlive10';
+const VERSION = '3.0.0-devlive11';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -10550,19 +10449,11 @@ const VERSION = '3.0.0-devlive10';
 })();
 
 
-/* ===== 3.0.0-alpha134 mobile current debug ===== */
+/* ===== 3.0.0-alpha134 mobile load fallback ===== */
 (function(){
   const isMobile = () => window.matchMedia && window.matchMedia('(max-width: 860px)').matches;
   const $ = (id) => document.getElementById(id);
-  function dbg(msg){
-    try {
-      const panel = $('mobileLoadDebugPanel');
-      const text = $('mobileLoadDebugText');
-      if(panel) panel.style.display = isMobile() ? 'block' : 'none';
-      const stamp = new Date().toLocaleTimeString();
-      if(text) text.textContent = `[${stamp}] ${msg}\n` + (text.textContent || '').slice(0, 3000);
-      try { console.log('[alpha115 mobile dbg]', msg); } catch {}
-    } catch {}
+  function dbg(_msg){
   }
   function summarizeRecord(record){
     if(!record) return 'record=<none>';
@@ -10634,7 +10525,7 @@ const VERSION = '3.0.0-devlive10';
     const libTab = e.target.closest && e.target.closest('.screen-tab[data-screen="jobs"]');
     if(libTab){ setTimeout(bindMobileDebugLoad, 80); }
   }, true);
-  window.addEventListener('load', ()=>{ setTimeout(bindMobileDebugLoad, 300); if(isMobile()){ try{ const p=$('mobileLoadDebugTop'); if(p) p.style.display='block'; }catch{} dbg('alpha115 debug active'); } });
+  window.addEventListener('load', ()=>{ setTimeout(bindMobileDebugLoad, 300); });
   window.addEventListener('pageshow', ()=>{ setTimeout(bindMobileDebugLoad, 200); });
   const oldShow = window.showScreen;
   if(typeof oldShow==='function'){

@@ -456,11 +456,6 @@ body.light.measurement-page #jobsScreen #jobsSelect.tapcalc-shared-history-list 
     pointer-events: auto !important;
   }
 
-  body.measurement-page #mobileLoadDebugTop,
-  body.measurement-page #mobileLoadDebugPanel {
-    display: none !important;
-  }
-
   body.measurement-page #jobsScreen .jobs-status-strip {
     grid-template-columns: 1fr !important;
     gap: 10px !important;

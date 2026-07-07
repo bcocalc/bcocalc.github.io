@@ -325,13 +325,6 @@
     });
   }
 
-  function hideLegacyDebugPanels(){
-    ['mobileLoadDebugTop', 'mobileLoadDebugPanel'].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.hidden = true;
-    });
-  }
-
   function run(){
     updateVersionText();
     removeLegacyBoltingPdfAction();
@@ -340,7 +333,6 @@
     installScreenOwnershipBridge();
     installLibrarySearchBridge();
     installMobileLoadBridge();
-    hideLegacyDebugPanels();
   }
 
   if (document.readyState === 'loading') {
