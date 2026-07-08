@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha241';
+const BUILD_VERSION = '3.0.0-alpha242';
 
 (function(){
 
@@ -615,8 +615,8 @@ function triggerLiveBcoCalculation() {
 [bcoMaterialEl, bcoPipeOdEl, bcoScheduleEl].forEach(el => {
   if (!el) return;
   el.addEventListener('change', () => {
+    bcoIdManuallyEdited = false;
     if (el === bcoMaterialEl) {
-      bcoIdManuallyEdited = false;
       populateBcoPipeSizes();
     } else {
       updateBcoPipeId();
@@ -901,7 +901,7 @@ function syncReferenceShortcutState(view) {
   });
 }
 
-function setReferenceView(view) {
+function setReferenceView(view, options = {}) {
   const nextView = getSafeReferenceView(view);
   let activated = false;
   referenceViewEls.forEach((panel) => {
@@ -916,9 +916,11 @@ function setReferenceView(view) {
   syncReferenceShortcutState(nextView);
   syncReferenceLibraryLabels(nextView);
   try { localStorage.setItem('tapcalcReferenceViewV1', nextView); } catch {}
-  try {
-    document.querySelector(`.reference-view[data-reference-view="${nextView}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  } catch {}
+  if (options.scroll === true) {
+    try {
+      document.querySelector(`.reference-view[data-reference-view="${nextView}"]`)?.scrollIntoView({ behavior: options.behavior || 'smooth', block: 'nearest' });
+    } catch {}
+  }
 }
 
 function getReferenceLibraryFilteredItems(query) {
@@ -971,7 +973,7 @@ if (referenceLibraryOptionsEl) {
   referenceLibraryOptionsEl.addEventListener('click', (event) => {
     const trigger = event.target?.closest?.('[data-reference-target]');
     if (!trigger) return;
-    setReferenceView(trigger.dataset.referenceTarget || 'converter');
+    setReferenceView(trigger.dataset.referenceTarget || 'converter', { scroll: true });
     if (referenceLibrarySearchEl) referenceLibrarySearchEl.value = '';
     setReferenceLibraryOpen(false);
   });
@@ -993,11 +995,11 @@ document.addEventListener('keydown', (event) => {
 renderReferenceLibraryOptions();
 
 if (referenceViewSelectEl) {
-  referenceViewSelectEl.addEventListener('change', () => setReferenceView(referenceViewSelectEl.value));
+  referenceViewSelectEl.addEventListener('change', () => setReferenceView(referenceViewSelectEl.value, { scroll: true }));
   try {
-    setReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl.value || 'converter');
+    setReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl.value || 'converter', { scroll: false });
   } catch {
-    setReferenceView(referenceViewSelectEl.value || 'converter');
+    setReferenceView(referenceViewSelectEl.value || 'converter', { scroll: false });
   }
 } else {
   syncReferenceShortcutState('converter');
@@ -1046,8 +1048,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha241';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha241';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha242';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha242';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2440,7 +2442,7 @@ function initReferenceWorkspaceHard() {
     if (typeof initMachineReference === 'function') initMachineReference();
     if (typeof initBoltingReference === 'function') initBoltingReference();
     const safeView = getSafeReferenceView(localStorage.getItem('tapcalcReferenceViewV1') || referenceViewSelectEl?.value || 'converter');
-    setReferenceView(safeView);
+    setReferenceView(safeView, { scroll: false });
   } catch (error) {
     console.warn('alpha71 reference workspace init fallback failed', error);
   }
@@ -2463,7 +2465,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha241', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha242', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4517,15 +4519,24 @@ async function ensureFirebaseReady(options = {}) {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase config is missing in this build.';
     return { enabled: false };
   }
+  if (!options.forceRetry && typeof navigator !== 'undefined' && navigator.onLine === false) {
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Offline mode';
+    if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Offline mode. Local history still works; shared jobs reconnect when service returns.';
+    return { enabled: false, offline: true };
+  }
   if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connecting...';
   if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Connecting to shared job database...';
   firebaseInitPromise = (async () => {
     try {
-      const [appModule, firestoreModule, authModule] = await Promise.all([
-        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
-        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
-        import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
-      ]);
+      const [appModule, firestoreModule, authModule] = await withTimeout(
+        Promise.all([
+          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js'),
+          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js'),
+          import('https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js')
+        ]),
+        5000,
+        'Firebase SDK load'
+      );
       const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
       const auth = authModule.getAuth(app);
       if (!auth.currentUser) {
@@ -4537,11 +4548,16 @@ async function ensureFirebaseReady(options = {}) {
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Connected to shared job database (${config.projectId}).`;
       return { enabled: true, db: firebaseDb, modules: firestoreModule };
     } catch (error) {
-      console.error('Firebase init failed', error);
+      const formattedError = formatFirebaseError(error);
+      if (/network|timeout|failed to fetch|internet|offline/i.test(formattedError)) {
+        console.warn('Firebase init unavailable', error);
+      } else {
+        console.error('Firebase init failed', error);
+      }
       firebaseDb = null;
       firebaseModuleCache = null;
       if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
-      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Firebase could not connect. ${formatFirebaseError(error)}`;
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Shared sync unavailable. Local history still works. ${formattedError}`;
       return { enabled: false, error };
     } finally {
       firebaseInitPromise = null;
@@ -5306,7 +5322,7 @@ var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
 var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
 var selectedJobId = window.selectedJobId || '';
 
-/* ===== 3.0.0-alpha241 auto-scroll guard ===== */
+/* ===== 3.0.0-alpha242 auto-scroll guard ===== */
 (function(){
   let lastFieldEditAt = 0;
   const editableSelector = 'input, textarea, select, [contenteditable="true"]';
@@ -6793,7 +6809,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha241';
+const TC63_VERSION = '3.0.0-alpha242';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -7039,7 +7055,7 @@ const TC63_VERSION = '3.0.0-alpha241';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha241';
+const VERSION = '3.0.0-alpha242';
 
   function tc65GetJobs() {
     try {
@@ -10261,7 +10277,7 @@ const VERSION = '3.0.0-alpha241';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha241';
+const VERSION = '3.0.0-alpha242';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -14594,7 +14610,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitUwireCalculator = initUwireCalculator;
 })();
 
-/* ===== 3.0.0-alpha241 shared library row consistency ===== */
+/* ===== 3.0.0-alpha242 shared library row consistency ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
