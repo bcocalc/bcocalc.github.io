@@ -1,4 +1,4 @@
-/* TapCalc alpha243 workflow browse mode: navigation is advisory, not locked. */
+/* TapCalc alpha244 workflow browse mode: navigation is advisory, not locked. */
 (function(){
   const READY_FLAG = '__tapcalcWorkflowBrowseReady';
   if (window[READY_FLAG]) return;
@@ -57,6 +57,37 @@
     window.__tapcalcWorkflowBrowseSuppressScrollUntil = Date.now() + 1200;
   }
 
+  function scrollRoot() {
+    return document.scrollingElement || document.documentElement || document.body;
+  }
+
+  function captureScrollPosition() {
+    const root = scrollRoot();
+    return {
+      left: Number(window.scrollX || root?.scrollLeft || 0),
+      top: Number(window.scrollY || root?.scrollTop || 0)
+    };
+  }
+
+  function restoreScrollPosition(position) {
+    if (!position) return;
+    const restore = () => {
+      if (!document.body?.classList?.contains('tapcalc-workflow-browse')) return;
+      try { window.scrollTo({ left: position.left, top: position.top, behavior: 'auto' }); }
+      catch {
+        try { window.scrollTo(position.left, position.top); } catch {}
+      }
+      const root = scrollRoot();
+      if (root) {
+        try {
+          root.scrollLeft = position.left;
+          root.scrollTop = position.top;
+        } catch {}
+      }
+    };
+    [0, 50, 140, 320, 700].forEach((delay) => setTimeout(restore, delay));
+  }
+
   function isWorkflowScrollTarget(el) {
     if (!el || !document.body?.classList?.contains('tapcalc-workflow-browse')) return false;
     if (Date.now() > Number(window.__tapcalcWorkflowBrowseSuppressScrollUntil || 0)) return false;
@@ -90,6 +121,7 @@
       heldStage = target;
       heldStageUntil = Date.now() + 1800;
     }
+    const previousScroll = captureScrollPosition();
     suppressWorkflowScroll();
     const setter = window.__tapcalcAlpha201OriginalSetStage || window.__tapcalcWorkflowBrowseOriginalSetStage || window.tapCalcSetWorkflowStage;
     if (typeof setter === 'function' && setter !== setStage) {
@@ -100,12 +132,14 @@
         }));
         setTimeout(applyBrowseMode, 0);
         setTimeout(applyBrowseMode, 80);
+        restoreScrollPosition(previousScroll);
         return result;
       } catch {}
     }
     window.__tapCalcWorkflowStage = target;
     try { localStorage.setItem(STAGE_KEY, target); } catch {}
     applyBrowseMode();
+    restoreScrollPosition(previousScroll);
     return true;
   }
 
@@ -146,9 +180,7 @@
       if (label && active) label.textContent = 'Current Step';
       else if (label && /^locked$/i.test(text(label.textContent))) label.textContent = 'Preview';
     });
-    document.querySelectorAll('#cardScreen [data-workflow-stage-panel]').forEach((panel) => {
-      panel.classList.toggle('active', panel.dataset.workflowStagePanel === current);
-    });
+    syncHelperPanelVisibility();
     if (MODE_STAGES.has(current)) {
       document.querySelectorAll('.workflow-card[data-workflow-target]').forEach((card) => {
         card.classList.toggle('active', card.dataset.workflowTarget === current);
@@ -159,14 +191,17 @@
     }
   }
 
-  function keepPanelsBrowseable() {
+  function syncHelperPanelVisibility() {
+    const current = activeStage();
     document.querySelectorAll('#cardScreen [data-workflow-stage-panel]').forEach((panel) => {
-      panel.hidden = false;
-      panel.setAttribute('aria-hidden', 'false');
-      panel.style.display = 'block';
-      panel.style.visibility = 'visible';
-      panel.style.opacity = '1';
-      panel.style.pointerEvents = 'auto';
+      const active = panel.dataset.workflowStagePanel === current;
+      panel.classList.toggle('active', active);
+      panel.hidden = !active;
+      panel.setAttribute('aria-hidden', active ? 'false' : 'true');
+      panel.style.display = active ? 'block' : 'none';
+      panel.style.visibility = active ? 'visible' : 'hidden';
+      panel.style.opacity = active ? '1' : '0';
+      panel.style.pointerEvents = active ? 'auto' : 'none';
     });
   }
 
@@ -259,7 +294,7 @@
     document.body?.classList?.add('tapcalc-workflow-browse');
     installScrollGuard();
     enforceHeldJobType();
-    keepPanelsBrowseable();
+    syncHelperPanelVisibility();
     unlockStageChips();
     syncActiveStageDecorations();
     softenGateNotice();

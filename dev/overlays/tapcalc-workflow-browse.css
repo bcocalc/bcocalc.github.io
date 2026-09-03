@@ -1,10 +1,10 @@
-/* TapCalc alpha243 workflow browse mode: keep steps accessible and stop lock-style UX. */
+/* TapCalc alpha244 workflow browse mode: keep steps accessible without showing every helper panel at once. */
 body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-guided-shell {
   scroll-margin-top: 12px;
 }
 
-body.measurement-page.tapcalc-workflow-browse #cardScreen [data-workflow-stage-panel],
-body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel {
+body.measurement-page.tapcalc-workflow-browse #cardScreen [data-workflow-stage-panel].active,
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel.active {
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
@@ -14,14 +14,17 @@ body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel
   overflow: visible !important;
 }
 
+body.measurement-page.tapcalc-workflow-browse #cardScreen [data-workflow-stage-panel]:not(.active),
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel:not(.active) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel {
   border-color: rgba(138, 185, 247, 0.2);
   background: linear-gradient(180deg, rgba(9, 29, 52, 0.98), rgba(8, 22, 39, 0.96));
-}
-
-body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel:not(.active) {
-  border-style: solid;
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
 }
 
 body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel.active {
