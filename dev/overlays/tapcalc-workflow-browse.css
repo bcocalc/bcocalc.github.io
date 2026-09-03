@@ -1,0 +1,133 @@
+/* TapCalc alpha243 workflow browse mode: keep steps accessible and stop lock-style UX. */
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-guided-shell {
+  scroll-margin-top: 12px;
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen [data-workflow-stage-panel],
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel {
+  border-color: rgba(138, 185, 247, 0.2);
+  background: linear-gradient(180deg, rgba(9, 29, 52, 0.98), rgba(8, 22, 39, 0.96));
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel:not(.active) {
+  border-style: solid;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel.active {
+  border-color: rgba(95, 158, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(95, 158, 255, 0.25), 0 18px 42px rgba(17, 78, 165, 0.22);
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip {
+  cursor: pointer !important;
+  opacity: 1 !important;
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[disabled],
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] {
+  cursor: pointer !important;
+  border-style: solid !important;
+  filter: none !important;
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"]:not(.active) {
+  background: rgba(13, 34, 59, 0.96) !important;
+  border-color: rgba(113, 158, 220, 0.3) !important;
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] small,
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] span,
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] em {
+  color: #dcecff !important;
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-gate-notice[data-state="blocked"],
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-gate-notice[data-state="advisory"] {
+  display: block !important;
+  border: 1px solid rgba(238, 195, 104, 0.45) !important;
+  background: rgba(97, 69, 16, 0.38) !important;
+  color: #ffe8ac !important;
+}
+
+body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-readiness-panel[data-state="blocked"] {
+  border-color: rgba(238, 195, 104, 0.42);
+}
+
+body.measurement-page.tapcalc-workflow-browse #workflowNextActionTitle::after {
+  content: " - browse mode";
+  color: #9ec7ff;
+  font-size: 0.78em;
+  font-weight: 750;
+}
+
+body.measurement-page.tapcalc-workflow-browse #workflowSaveStatus {
+  color: #b9d4f4;
+}
+
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel,
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel {
+  background: linear-gradient(180deg, #ffffff 0%, #edf5ff 100%) !important;
+  border-color: rgba(61, 94, 139, 0.22) !important;
+  box-shadow: 0 12px 24px rgba(39, 66, 103, 0.08) !important;
+}
+
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel.active,
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel.active {
+  background: linear-gradient(180deg, #f7fbff 0%, #e6f0ff 100%) !important;
+  border-color: rgba(47, 105, 225, 0.45) !important;
+  box-shadow: 0 0 0 1px rgba(47, 105, 225, 0.15), 0 16px 32px rgba(47, 105, 225, 0.12) !important;
+}
+
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"]:not(.active),
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"]:not(.active) {
+  background: #f4f8ff !important;
+  border-color: rgba(81, 116, 161, 0.25) !important;
+}
+
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] small,
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] span,
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] em,
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] small,
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] span,
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-chip[data-stage-locked="true"] em {
+  color: #183451 !important;
+}
+
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-gate-notice[data-state="blocked"],
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-gate-notice[data-state="advisory"],
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-gate-notice[data-state="blocked"],
+body.light.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-gate-notice[data-state="advisory"] {
+  background: #fff8df !important;
+  border-color: #e3bf5d !important;
+  color: #5f4300 !important;
+}
+
+:root[data-theme="light"] body.measurement-page.tapcalc-workflow-browse #workflowNextActionTitle::after,
+body.light.measurement-page.tapcalc-workflow-browse #workflowNextActionTitle::after {
+  color: #245fa8;
+}
+
+@media (max-width: 820px) {
+  body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-stage-nav {
+    gap: 8px;
+  }
+
+  body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel {
+    margin-top: 12px !important;
+  }
+
+  body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-guided-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
