@@ -619,8 +619,12 @@
   }
 
   function updateReferenceCount(){
+    const countValue = document.querySelectorAll('#referenceWorkspaceContent > .reference-view[data-reference-view]').length ||
+      document.querySelectorAll('#referenceViewSelect option').length ||
+      15;
+    const label = `${countValue} refs`;
     document.querySelectorAll('#refScreen .reference-library-count').forEach((count) => {
-      if (count.textContent.trim() !== '15 refs') count.textContent = '15 refs';
+      if (count.textContent.trim() !== label) count.textContent = label;
     });
   }
 

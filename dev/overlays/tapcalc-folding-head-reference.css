@@ -1,0 +1,421 @@
+/* TapCalc alpha245 Folding Head reference styles. */
+body.measurement-page #refScreen .tapcalc-folding-head-view {
+  color: #f6faff;
+}
+
+body.measurement-page #refScreen .folding-head-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 300px);
+  gap: 16px;
+  align-items: stretch;
+  padding: 18px;
+  margin-bottom: 14px;
+  border: 1px solid rgba(143, 191, 248, .26);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(39, 136, 197, .30), transparent 42%),
+    linear-gradient(135deg, rgba(8, 31, 58, .98), rgba(5, 18, 35, .98));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, .20);
+}
+
+body.measurement-page #refScreen .folding-head-hero h3,
+body.measurement-page #refScreen .folding-head-card h4,
+body.measurement-page #refScreen .folding-head-detail h4 {
+  margin: 0;
+  color: #fff;
+}
+
+body.measurement-page #refScreen .folding-head-hero h3 {
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+}
+
+body.measurement-page #refScreen .folding-head-eyebrow {
+  margin: 0 0 6px;
+  color: #9fcaff;
+  font-size: .74rem;
+  font-weight: 900;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+
+body.measurement-page #refScreen .folding-head-source-card {
+  display: grid;
+  gap: 8px;
+  align-content: center;
+  padding: 14px;
+  border: 1px solid rgba(154, 200, 255, .30);
+  border-radius: 18px;
+  background: rgba(3, 14, 29, .58);
+}
+
+body.measurement-page #refScreen .folding-head-source-card strong {
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+body.measurement-page #refScreen .folding-head-source-card span,
+body.measurement-page #refScreen .folding-head-muted {
+  color: rgba(226, 239, 255, .76);
+  font-size: .86rem;
+  font-weight: 700;
+}
+
+body.measurement-page #refScreen .folding-head-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+body.measurement-page #refScreen .folding-head-chip-row span {
+  border: 1px solid rgba(139, 189, 246, .32);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: rgba(11, 37, 68, .78);
+  color: #dcecff;
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+body.measurement-page #refScreen .folding-head-card,
+body.measurement-page #refScreen .folding-head-detail {
+  margin-top: 14px;
+  border-color: rgba(132, 183, 238, .26);
+  background: linear-gradient(180deg, rgba(17, 43, 74, .88), rgba(10, 28, 52, .92));
+}
+
+body.measurement-page #refScreen .folding-head-section-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+body.measurement-page #refScreen .folding-head-lookup-grid,
+body.measurement-page #refScreen .folding-head-result-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+body.measurement-page #refScreen .folding-head-input-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 10px 0;
+}
+
+body.measurement-page #refScreen .folding-head-control {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+body.measurement-page #refScreen .folding-head-control span,
+body.measurement-page #refScreen .folding-head-metric span,
+body.measurement-page #refScreen .folding-head-result span {
+  color: #9fcaff;
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body.measurement-page #refScreen .folding-head-control select,
+body.measurement-page #refScreen .folding-head-control input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid rgba(139, 189, 246, .34);
+  border-radius: 13px;
+  background: rgba(4, 18, 35, .76);
+  color: #f8fbff;
+  padding: 9px 11px;
+  font-weight: 850;
+}
+
+body.measurement-page #refScreen .folding-head-metric,
+body.measurement-page #refScreen .folding-head-result {
+  display: grid;
+  gap: 5px;
+  align-content: center;
+  min-height: 70px;
+  border: 1px solid rgba(126, 178, 236, .22);
+  border-radius: 16px;
+  background: rgba(4, 18, 35, .58);
+  padding: 11px;
+}
+
+body.measurement-page #refScreen .folding-head-metric strong,
+body.measurement-page #refScreen .folding-head-result strong {
+  color: #fff;
+  font-size: 1rem;
+}
+
+body.measurement-page #refScreen .folding-head-formula-card {
+  display: grid;
+  gap: 5px;
+  border: 1px solid rgba(118, 203, 238, .26);
+  border-radius: 16px;
+  background: rgba(8, 45, 71, .48);
+  padding: 12px;
+}
+
+body.measurement-page #refScreen .folding-head-formula-card strong {
+  color: #eaf7ff;
+  font-size: 1.02rem;
+}
+
+body.measurement-page #refScreen .folding-head-formula-card span,
+body.measurement-page #refScreen .folding-head-note,
+body.measurement-page #refScreen .folding-head-status {
+  color: rgba(232, 242, 255, .78);
+  line-height: 1.42;
+}
+
+body.measurement-page #refScreen .folding-head-note,
+body.measurement-page #refScreen .folding-head-status {
+  margin: 10px 0 0;
+  font-size: .88rem;
+}
+
+body.measurement-page #refScreen .folding-head-status[data-state="ready"] {
+  color: #baf3d0;
+  font-weight: 800;
+}
+
+body.measurement-page #refScreen .folding-head-table-wrap {
+  margin-top: 12px;
+  overflow-x: auto;
+  border: 1px solid rgba(126, 178, 236, .24);
+  border-radius: 16px;
+}
+
+body.measurement-page #refScreen .folding-head-table {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+body.measurement-page #refScreen .folding-head-table th,
+body.measurement-page #refScreen .folding-head-table td {
+  border-bottom: 1px solid rgba(126, 178, 236, .16);
+  padding: 10px 12px;
+  text-align: left;
+}
+
+body.measurement-page #refScreen .folding-head-table th {
+  background: rgba(13, 48, 88, .78);
+  color: #dcebff;
+  font-size: .74rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+body.measurement-page #refScreen .folding-head-table td {
+  color: #fff;
+  font-weight: 850;
+}
+
+body.measurement-page #refScreen .folding-head-table tr.active td {
+  background: rgba(50, 121, 224, .28);
+}
+
+body.measurement-page #refScreen .folding-head-actions {
+  margin-top: 2px;
+}
+
+body.measurement-page #refScreen .folding-head-detail {
+  padding: 0;
+  overflow: hidden;
+}
+
+body.measurement-page #refScreen .folding-head-detail summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+  padding: 15px 16px;
+}
+
+body.measurement-page #refScreen .folding-head-detail summary::-webkit-details-marker {
+  display: none;
+}
+
+body.measurement-page #refScreen .folding-head-detail summary span {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+body.measurement-page #refScreen .folding-head-detail summary small {
+  color: rgba(226, 239, 255, .70);
+  font-weight: 750;
+  text-align: right;
+}
+
+body.measurement-page #refScreen .folding-head-detail[open] summary {
+  border-bottom: 1px solid rgba(126, 178, 236, .18);
+}
+
+body.measurement-page #refScreen .folding-head-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px 16px 16px;
+}
+
+body.measurement-page #refScreen .folding-head-list,
+body.measurement-page #refScreen .folding-head-procedure-wrap,
+body.measurement-page #refScreen .folding-head-detail > .folding-head-note {
+  margin: 14px 16px 16px;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .tapcalc-folding-head-view,
+body.light.measurement-page #refScreen .tapcalc-folding-head-view {
+  color: #071d35;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-hero,
+body.light.measurement-page #refScreen .folding-head-hero {
+  background:
+    radial-gradient(circle at top left, rgba(95, 150, 213, .30), transparent 40%),
+    linear-gradient(135deg, #edf6ff, #dcebf8);
+  border-color: rgba(71, 121, 176, .26);
+  box-shadow: 0 14px 34px rgba(45, 74, 105, .14);
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-hero h3,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-card h4,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-detail h4,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-source-card strong,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-metric strong,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-result strong,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-detail summary span,
+body.light.measurement-page #refScreen .folding-head-hero h3,
+body.light.measurement-page #refScreen .folding-head-card h4,
+body.light.measurement-page #refScreen .folding-head-detail h4,
+body.light.measurement-page #refScreen .folding-head-source-card strong,
+body.light.measurement-page #refScreen .folding-head-metric strong,
+body.light.measurement-page #refScreen .folding-head-result strong,
+body.light.measurement-page #refScreen .folding-head-detail summary span {
+  color: #071d35;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-eyebrow,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-control span,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-metric span,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-result span,
+body.light.measurement-page #refScreen .folding-head-eyebrow,
+body.light.measurement-page #refScreen .folding-head-control span,
+body.light.measurement-page #refScreen .folding-head-metric span,
+body.light.measurement-page #refScreen .folding-head-result span {
+  color: #245f9f;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-source-card,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-card,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-detail,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-metric,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-result,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-formula-card,
+body.light.measurement-page #refScreen .folding-head-source-card,
+body.light.measurement-page #refScreen .folding-head-card,
+body.light.measurement-page #refScreen .folding-head-detail,
+body.light.measurement-page #refScreen .folding-head-metric,
+body.light.measurement-page #refScreen .folding-head-result,
+body.light.measurement-page #refScreen .folding-head-formula-card {
+  background: rgba(255, 255, 255, .76);
+  border-color: rgba(75, 125, 177, .24);
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-source-card span,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-muted,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-chip-row span,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-formula-card span,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-note,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-status,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-detail summary small,
+body.light.measurement-page #refScreen .folding-head-source-card span,
+body.light.measurement-page #refScreen .folding-head-muted,
+body.light.measurement-page #refScreen .folding-head-chip-row span,
+body.light.measurement-page #refScreen .folding-head-formula-card span,
+body.light.measurement-page #refScreen .folding-head-note,
+body.light.measurement-page #refScreen .folding-head-status,
+body.light.measurement-page #refScreen .folding-head-detail summary small {
+  color: #315171;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-chip-row span,
+body.light.measurement-page #refScreen .folding-head-chip-row span {
+  background: rgba(255, 255, 255, .72);
+  border-color: rgba(75, 125, 177, .26);
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-control select,
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-control input,
+body.light.measurement-page #refScreen .folding-head-control select,
+body.light.measurement-page #refScreen .folding-head-control input {
+  background: #f8fbff;
+  border-color: rgba(75, 125, 177, .28);
+  color: #071d35;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-table th,
+body.light.measurement-page #refScreen .folding-head-table th {
+  background: #d8e9f8;
+  color: #17395f;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-table td,
+body.light.measurement-page #refScreen .folding-head-table td {
+  color: #071d35;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-table tr.active td,
+body.light.measurement-page #refScreen .folding-head-table tr.active td {
+  background: #d8e8ff;
+}
+
+:root[data-theme="light"] body.measurement-page #refScreen .folding-head-status[data-state="ready"],
+body.light.measurement-page #refScreen .folding-head-status[data-state="ready"] {
+  color: #136436;
+}
+
+@media (max-width: 820px) {
+  body.measurement-page #refScreen .folding-head-hero,
+  body.measurement-page #refScreen .folding-head-lookup-grid,
+  body.measurement-page #refScreen .folding-head-input-grid,
+  body.measurement-page #refScreen .folding-head-result-grid,
+  body.measurement-page #refScreen .folding-head-detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  body.measurement-page #refScreen .folding-head-detail summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  body.measurement-page #refScreen .folding-head-detail summary small {
+    text-align: left;
+  }
+}
+
+@media (max-width: 430px) {
+  body.measurement-page #refScreen .folding-head-hero,
+  body.measurement-page #refScreen .folding-head-card {
+    padding: 13px;
+    border-radius: 18px;
+  }
+
+  body.measurement-page #refScreen .folding-head-section-heading {
+    display: grid;
+  }
+
+  body.measurement-page #refScreen .folding-head-table {
+    min-width: 470px;
+  }
+}

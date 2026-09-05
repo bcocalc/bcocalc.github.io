@@ -18,6 +18,7 @@
     gaskettorque: ['Field Reference', 'Graphonic', 'Starred RF gasket torque lookup with engineering 600# data'],
     papergaskets: ['Field Reference', 'Paper Gaskets', 'Compressed sheet and GYLON ring gasket torque tables'],
     fieldmanual: ['Field Reference', 'Field Manual', 'Inline RPM, Hi-Stop, machine specs, and checks'],
+    foldinghead: ['Field Reference', 'Folding Head Line Stop', 'Capacity table, set-point helper, and field checks'],
     smartstop: ['Field Reference', 'SmartStop Field Guide', 'Source map and verified lookup staging']
   };
 
@@ -100,9 +101,10 @@
       (select.querySelector('optgroup[label="Field Reference"]') || select).appendChild(option);
     };
     addSelectOption('fieldmanual', 'Field Manual');
+    if (panelFor('foldinghead')) addSelectOption('foldinghead', 'Folding Head Line Stop');
     if (panelFor('smartstop')) addSelectOption('smartstop', 'SmartStop Field Guide');
 
-    const refCount = panelFor('smartstop') ? '15 refs' : '14 refs';
+    const refCount = `${views().length || document.querySelectorAll('#referenceViewSelect option').length || 13} refs`;
     document.querySelectorAll('#refScreen .reference-library-count').forEach((count) => {
       if (count.textContent.trim() !== refCount) count.textContent = refCount;
     });
@@ -136,8 +138,11 @@
       }
     };
     appendReferenceButton('fieldmanual', 'Field Manual', 'Inline RPM, Hi-Stop, machine specs, and checks');
+    if (panelFor('foldinghead')) {
+      appendReferenceButton('foldinghead', 'Folding Head Line Stop', 'Capacity table, set-point helper, and field checks', 'fieldmanual');
+    }
     if (panelFor('smartstop')) {
-      appendReferenceButton('smartstop', 'SmartStop Field Guide', 'Source map and verified lookup staging', 'fieldmanual');
+      appendReferenceButton('smartstop', 'SmartStop Field Guide', 'Source map and verified lookup staging', panelFor('foldinghead') ? 'foldinghead' : 'fieldmanual');
     }
   }
 

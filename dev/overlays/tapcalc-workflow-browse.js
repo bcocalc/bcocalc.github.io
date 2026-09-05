@@ -1,4 +1,4 @@
-/* TapCalc alpha244 workflow browse mode: navigation is advisory, not locked. */
+/* TapCalc alpha245 workflow browse mode: navigation is advisory, not locked. */
 (function(){
   const READY_FLAG = '__tapcalcWorkflowBrowseReady';
   if (window[READY_FLAG]) return;

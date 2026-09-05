@@ -1,4 +1,4 @@
-/* TapCalc alpha244 workflow browse mode: keep steps accessible without showing every helper panel at once. */
+/* TapCalc alpha245 workflow browse mode: keep steps accessible without showing every helper panel at once. */
 body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-guided-shell {
   scroll-margin-top: 12px;
 }
