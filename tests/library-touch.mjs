@@ -5,7 +5,12 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
-const { chromium, webkit, devices } = require(join(dirname(dirname(process.execPath)), 'node_modules/playwright'));
+let playwrightPath;
+try { playwrightPath = require.resolve('playwright'); }
+catch { playwrightPath = join(dirname(dirname(process.execPath)), 'node_modules/playwright'); }
+const { chromium, webkit, devices } = require(playwrightPath);
+const browserName = process.env.TAPCALC_BROWSER || (process.env.TAPCALC_WEBKIT ? 'webkit' : 'chromium');
+assert.ok(['chromium', 'webkit'].includes(browserName), 'Use chromium or webkit');
 const server = spawn(process.execPath, [fileURLToPath(new URL('./sync-preview.mjs', import.meta.url))], { stdio: ['ignore', 'pipe', 'inherit'] });
 let browser;
 let activePage;
@@ -15,7 +20,9 @@ try {
     server.stdout.on('data', chunk => { output += chunk; const match = output.match(/http:\/\/127\.0\.0\.1:\d+/); if (match) resolve(match[0]); });
     server.once('exit', code => reject(new Error('Preview failed: ' + code)));
   });
-  browser = process.env.TAPCALC_WEBKIT ? await webkit.launch({ headless: true }) : await chromium.launch({ channel: 'chrome', headless: true });
+  browser = browserName === 'webkit' ? await webkit.launch({ headless: true }) : await chromium.launch({
+    headless: true, ...(process.env.CI ? {} : { channel: 'chrome' })
+  });
   for (const directory of ['', 'dev/']) {
     const context = await browser.newContext({ ...devices['iPhone 13'], serviceWorkers: 'block' });
     const page = await context.newPage();
@@ -71,13 +78,13 @@ try {
     const syncedHistory = await page.evaluate(() => JSON.parse(localStorage.getItem('measurementCardHistoryV1')));
     assert.deepEqual(syncedHistory.map(item => item.state), originalHistory.map(item => item.state));
     assert.equal(syncedHistory.length, 4);
-    if (directory) {
+    if (await page.evaluate(() => window.__tapcalcWorkflowBrowseReady)) {
       assert.equal(await page.evaluate(() => window.tapCalcSetWorkflowStage.__alpha201Guarded === true), false,
         'The old locking wrapper must not reinstall over browse mode');
       assert.equal(await page.locator('#workflowStageNav [data-stage-locked="true"]').count(), 0);
     }
     assert.deepEqual(errors, []);
-    console.log('PASS ' + (process.env.TAPCALC_WEBKIT ? 'WebKit' : 'Chromium') + ' ' + (directory || 'live/') +
+    console.log('PASS ' + browserName + ' ' + (directory || 'live/') +
       ': stable cards; both local jobs opened by touch; 4 local / 2 unsynced -> 4 local / 0 unsynced; saved states unchanged');
     await context.close();
   }

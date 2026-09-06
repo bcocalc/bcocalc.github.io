@@ -1,0 +1,46 @@
+name: Library safeguard
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: library-safeguard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contract-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tests/release-check.mjs --unit-only
+
+  mobile-library:
+    needs: contract-and-sync
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned test-only dependency
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.62.1
+      - name: Install browser
+        run: npx --no-install playwright install --with-deps ${{ matrix.browser }}
+      - name: Check local-job opening and syncing by touch
+        run: node tests/library-touch.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}

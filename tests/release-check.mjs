@@ -1,0 +1,29 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const args = process.argv.slice(2);
+if (args.some(arg => arg !== '--unit-only')) throw new Error('Usage: node tests/release-check.mjs [--unit-only]');
+const root = fileURLToPath(new URL('../', import.meta.url));
+const checks = [
+  ['library-release-guard.mjs', {}],
+  ['library-release-guard-test.mjs', {}],
+  ['library-tap-unit.mjs', {}],
+  ['cloud-sync.mjs', {}],
+  ['sync-local-jobs.mjs', {}]
+];
+if (!args.includes('--unit-only')) {
+  for (const browser of ['chromium', 'webkit']) checks.push(['library-touch.mjs', { TAPCALC_BROWSER: browser }]);
+}
+for (const [file, environment] of checks) {
+  console.log('\nChecking ' + file + (environment.TAPCALC_BROWSER ? ' (' + environment.TAPCALC_BROWSER + ')' : ''));
+  const result = spawnSync(process.execPath, ['tests/' + file], {
+    cwd: root, env: { ...process.env, ...environment }, stdio: 'inherit', timeout: 180000
+  });
+  if (result.error || result.status !== 0) {
+    console.error('RELEASE CHECK FAILED. Do not promote or publish this build.', result.error?.message || '');
+    process.exit(1);
+  }
+}
+console.log(args.includes('--unit-only')
+  ? '\nUnit checks passed. Mobile browser checks are still required before release.'
+  : '\nRELEASE CHECK PASSED for live and dev, including both mobile browser engines.');

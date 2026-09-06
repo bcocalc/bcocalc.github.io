@@ -29,9 +29,9 @@ jobs and two unsynced. Both recent-job cards and Sync ignore taps on the phone.
   to 4 local / 0 unsynced. Saved measurement snapshots remain unchanged.
 - Tests use a disposable localhost origin with fake Firebase and CSP isolation.
   No production database writes, rules changes, storage clearing, or migrations.
-- The exact physical iPhone Sync failure is still unconfirmed. Desktop-sized
-  mouse checks from older releases did not establish mobile touch reliability.
-  A real-device retry is required after this release.
+- The user confirmed the fix worked on the actual iPhone on 2026-09-05 after
+  livefix19 was deployed. This is the phone-confirmed stable baseline, not just
+  a desktop-sized mouse preview. See `dev-to-live.md` for promotion safeguards.
 - Only this Library fix and the dev refresh-loop repair are released. The larger
   dev feature bundle is not promoted to live.
 

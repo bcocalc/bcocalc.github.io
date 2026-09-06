@@ -1,13 +1,35 @@
 # Alpha250 / Livefix19 Library and Sync Checks
 
+Before promoting dev to live, run the complete release check:
+
+```powershell
+node tests/release-check.mjs
+```
+
+This includes shared-fix parity, six simulated regression checks, the 66 existing
+unit/sync cases, and both mobile browser engines. `--unit-only` is available for
+quick checks but is not enough to release. See `docs/dev-to-live.md` and `AGENTS.md`.
+The GitHub Library safeguard runs these checks on pushes and pull requests; it
+does not replace or gate the separate branch-based Pages deployment.
+
+Use Node 24. For a standard checkout, install the pinned test-only dependency:
+
+```powershell
+npm install --no-save --package-lock=false --ignore-scripts playwright@1.62.1
+npx --no-install playwright install webkit
+```
+
+Local runs use installed Google Chrome plus Playwright WebKit. CI installs both
+Playwright browser binaries with `--with-deps` and uses bundled Chromium.
+
 Run the touch-handler unit checks (24 network-free cases):
 
 ```powershell
 node tests/library-tap-unit.mjs
 ```
 
-Run the real browser regression with a Node runtime that has Playwright installed
-in its sibling `node_modules` directory:
+Run the real browser regression with locally installed Playwright or the Codex
+bundled Node runtime (whose sibling `node_modules` includes Playwright):
 
 ```powershell
 node tests/library-touch.mjs
