@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha251';
+const BUILD_VERSION = '3.0.0-alpha252';
 
 (function(){
 
@@ -861,6 +861,7 @@ const referenceLibraryItems = [
   { id: 'bolting', group: 'Charts', label: 'Bolting Chart', description: 'Flange class, stud, wrench, counts', keywords: 'bolting flange class stud wrench count asme' },
   { id: 'glossary', group: 'Charts', label: 'Glossary', description: 'Abbreviations and field meanings', keywords: 'glossary abbreviations terms field meanings' },
   { id: 'htp', group: 'Charts', label: 'HTP Chart', description: 'Pipe size, branch, head, and cutter lookup', keywords: 'htp pipe branch head cutter bco' },
+  { id: 'cutters', group: 'Charts', label: 'Cutter Sizes', description: 'Standard Hot Tap and Line Stop cutter lookup', keywords: 'cutter cutters diameter od hot tap linestop line stop pipe sizes' },
   { id: 'stopmath', group: 'Charts', label: 'Stop Math', description: 'Standard, HTP, and Hi-Stop formulas', keywords: 'line stop math htp hi stop formula tco plug set' },
   { id: 'pivothead', group: 'Setup Guides', label: 'Pivot Head Setup', description: 'Seal size, load pad, nose/backing plate, and Clearance B', keywords: 'pivot head line stop setup sealing element seal load pad nose plate backing plate clearance b wall thickness' },
   { id: 'machines', group: 'Machine Reference', label: 'Machine Stack-Ups', description: 'Tap, stop, plug, and manual index', keywords: 'machine stack ups hot tap line stop completion plug manuals' },
@@ -1052,8 +1053,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha251';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha251';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha252';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha252';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2469,7 +2470,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha251', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha252', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5495,7 +5496,7 @@ window.addEventListener('load', async () => {
   renderJobsList();
   updateJobInfoSummary();
   const waiting = getHistory().filter((item) => !item.cloudId).length;
-  reportJobsSyncStatus(`Sync ready (3.0.0-alpha251). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
+  reportJobsSyncStatus(`Sync ready (3.0.0-alpha252). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
   initAccordionSections();
   ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
 });
@@ -5506,7 +5507,7 @@ var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
 var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
 var selectedJobId = window.selectedJobId || '';
 
-/* ===== 3.0.0-alpha251 auto-scroll guard ===== */
+/* ===== 3.0.0-alpha252 auto-scroll guard ===== */
 (function(){
   let lastFieldEditAt = 0;
   const editableSelector = 'input, textarea, select, [contenteditable="true"]';
@@ -7010,7 +7011,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha251';
+const TC63_VERSION = '3.0.0-alpha252';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -7256,7 +7257,7 @@ const TC63_VERSION = '3.0.0-alpha251';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha251';
+const VERSION = '3.0.0-alpha252';
 
   function tc65GetJobs() {
     try {
@@ -10478,7 +10479,7 @@ const VERSION = '3.0.0-alpha251';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha251';
+const VERSION = '3.0.0-alpha252';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -14825,7 +14826,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitUwireCalculator = initUwireCalculator;
 })();
 
-/* ===== 3.0.0-alpha251 shared library row consistency ===== */
+/* ===== 3.0.0-alpha252 shared library row consistency ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 

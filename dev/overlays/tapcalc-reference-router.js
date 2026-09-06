@@ -8,6 +8,7 @@
     bolting: ['Charts', 'Bolting Chart', 'Flange class, stud, wrench, counts'],
     glossary: ['Charts', 'Glossary', 'Abbreviations and field meanings'],
     htp: ['Charts', 'HTP Chart', 'Pipe size, branch, head, and cutter lookup'],
+    cutters: ['Charts', 'Cutter Sizes', 'Standard Hot Tap and Line Stop cutter lookup'],
     stopmath: ['Charts', 'Stop Math', 'Standard, HTP, and Hi-Stop formulas'],
     pivothead: ['Setup Guides', 'Pivot Head Setup', 'Seal size, load pad, nose/backing plate, and Clearance B'],
     machines: ['Machine Reference', 'Machine Stack-Ups', 'Tap, stop, plug, and manual index'],

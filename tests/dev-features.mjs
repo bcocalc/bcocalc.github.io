@@ -75,7 +75,51 @@ try {
     for (const theme of ['dark', 'light']) {
       step = label + ' / ' + theme + ' Reference';
       if (await page.locator('html').getAttribute('data-theme') !== theme) await activate(page.locator('#themeToggle'));
-      for (const view of ['glossary', 'fieldmanual', 'smartstop', 'foldinghead', 'glossary']) await openReference(view);
+      for (const view of ['glossary', 'fieldmanual', 'smartstop', 'foldinghead', 'cutters', 'glossary']) await openReference(view);
+
+      step = label + ' / ' + theme + ' cutter sizes';
+      await openReference('cutters');
+      const cutterBefore = await page.locator('#bcoCutterOD').inputValue();
+      const cutterType = page.locator('#cutterReferenceType');
+      const cutterPipe = page.locator('#cutterReferencePipe');
+      await cutterType.scrollIntoViewIfNeeded();
+      await cutterType.selectOption('hotTap');
+      await cutterPipe.selectOption('16');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), '14.688 in');
+      await cutterType.selectOption('lineStop');
+      assert.equal(await cutterPipe.inputValue(), '16');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), '15.063 in');
+      await cutterPipe.selectOption('24');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), '23.000 in');
+      const firstCutterRow = page.locator('#cutterReferenceRows tr').first();
+      assert.equal(await firstCutterRow.isVisible(), false, 'Full chart stays collapsed until requested');
+      await activate(page.locator('#cutterReferenceChartToggle'));
+      assert.equal(await firstCutterRow.isVisible(), true);
+      assert.equal(await page.locator('#cutterReferenceRows tr').count(), 13);
+      assert.equal(await page.locator('#cutterReferenceRows tr[aria-current="true"]').getAttribute('data-pipe-size'), '24');
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Cutter chart fits the page');
+      await activate(page.locator('#cutterReferenceChartToggle'));
+      await cutterType.scrollIntoViewIfNeeded();
+      await cutterType.selectOption('hotTap');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), '21.000 in');
+      await cutterPipe.selectOption('4');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), '2.438 in');
+      assert.match(await page.locator('#cutterReferenceStatus').textContent(), /both 3 in and 4 in/);
+      await cutterPipe.selectOption('42');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), '39.000 in');
+      await cutterType.selectOption('lineStop');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), 'Not listed');
+      await cutterPipe.selectOption('unlisted');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), 'Not listed');
+      await cutterPipe.selectOption('');
+      assert.equal(await page.locator('#cutterReferenceSize').textContent(), '-');
+      assert.equal(await page.locator('#bcoCutterOD').inputValue(), cutterBefore, 'Reference does not alter the job cutter');
+      await cutterPipe.selectOption('16');
+      if (process.env.TAPCALC_SCREENSHOTS) {
+        await page.locator('#cuttersReferenceView').screenshot({
+          path: join(process.env.TAPCALC_SCREENSHOTS, 'cutters-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '-' + theme + '.png')
+        });
+      }
 
       step = label + ' / ' + theme + ' SmartStop lookup';
       await openReference('smartstop');

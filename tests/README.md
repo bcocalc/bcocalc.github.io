@@ -1,4 +1,4 @@
-# Alpha251 / Livefix19 Release Checks
+# Alpha252 / Livefix19 Release Checks
 
 Before promoting dev to live, run the complete release check:
 
@@ -7,7 +7,7 @@ node tests/release-check.mjs
 ```
 
 This includes shared-fix parity, six simulated regression checks, the 66 existing
-unit/sync cases, 20 measurement-parser cases, and both mobile browser engines.
+unit/sync cases, 20 measurement-parser cases, all 27 cutter-chart rows, and both mobile browser engines.
 `--unit-only` is available for
 quick checks but is not enough to release. See `docs/dev-to-live.md` and `AGENTS.md`.
 The GitHub Library safeguard runs these checks on pushes and pull requests; it
@@ -25,6 +25,10 @@ dropdowns are scrolled into view before selection, as a user would do.
 `tests/reference-measurements.mjs` exercises the existing folding-head parser,
 including signed mixed fractions and invalid input. These are software behavior
 checks, not a new engineering validation of source ratings or operating limits.
+
+`tests/cutter-reference.mjs` checks the supplied standard Hot Tap / Line Stop
+chart without changing printed precision. Browser checks cover the read-only
+lookup, unsupported sizes, type switching, and collapsed mobile-friendly chart.
 
 Use Node 24. For a standard checkout, install the pinned test-only dependency:
 
