@@ -1,4 +1,5 @@
 const CACHE_NAME = 'tapcalc-dev-live-cache-3.0.0-devlive21';
+const CACHE_PREFIX = 'tapcalc-dev-live-cache-';
 const SHELL_FALLBACK = './measurement-card.html';
 const ASSETS = [
   './',
@@ -40,7 +41,9 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.map((key) => key === CACHE_NAME ? Promise.resolve() : caches.delete(key))))
+      .then((keys) => Promise.all(keys
+        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+        .map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -75,16 +78,25 @@ function cacheFresh(request) {
   });
 }
 
-function cacheFallback(request) {
-  return caches.match(request)
-    .then((cached) => cached || caches.match(request, { ignoreSearch: true }))
-    .then((cached) => cached || caches.match(SHELL_FALLBACK))
-    .then((cached) => cached || caches.match(SHELL_FALLBACK, { ignoreSearch: true }));
+async function matchCurrentCache(request) {
+  const cache = await caches.open(CACHE_NAME);
+  return await cache.match(request) || await cache.match(request, { ignoreSearch: true });
+}
+
+async function cacheFallback(request) {
+  const cached = await matchCurrentCache(request);
+  if (cached) return cached;
+  if (request.mode === 'navigate') return matchCurrentCache(SHELL_FALLBACK);
+  return Response.error();
 }
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+
+  // Cache public shell assets and SDK files, never authenticated database reads.
+  if (event.request.headers.has('Authorization')) return;
+  if (url.origin !== self.location.origin && url.hostname !== 'www.gstatic.com') return;
 
   if (event.request.mode === 'navigate') {
     event.respondWith(cacheFresh(event.request).catch(() => cacheFallback(event.request)));
@@ -97,8 +109,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then((cached) => cached || caches.match(event.request, { ignoreSearch: true }))
+    matchCurrentCache(event.request)
       .then((cached) => cached || fetch(event.request).then((response) => {
         if (response && response.ok) {
           const copy = response.clone();

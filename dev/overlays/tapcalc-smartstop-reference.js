@@ -701,6 +701,7 @@
   }
 
   function shouldRestoreSmartStop(){
+    if (typeof window.tapcalcSetReferenceView === 'function') return false;
     if (isReferenceMenuOpen()) return false;
     if (byId('referenceViewSelect')?.value === VIEW_KEY) return true;
     try {
@@ -746,6 +747,10 @@
     document.addEventListener('click', (event) => {
       const trigger = event.target?.closest?.(`[data-reference-target="${VIEW_KEY}"], [data-smartstop-open]`);
       if (!trigger) return;
+      if (typeof window.tapcalcSetReferenceView === 'function') {
+        window.tapcalcSetReferenceView(VIEW_KEY);
+        return;
+      }
       setTimeout(selectSmartStop, 0);
       setTimeout(selectSmartStop, 90);
       setTimeout(selectSmartStop, 260);
@@ -759,6 +764,7 @@
 
     document.addEventListener('change', (event) => {
       if (event.target?.id !== 'referenceViewSelect' || event.target.value !== VIEW_KEY) return;
+      if (typeof window.tapcalcSetReferenceView === 'function') return;
       setTimeout(selectSmartStop, 0);
       setTimeout(selectSmartStop, 90);
     }, true);

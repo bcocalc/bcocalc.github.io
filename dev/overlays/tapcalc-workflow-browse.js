@@ -1,4 +1,4 @@
-/* TapCalc alpha245 workflow browse mode: navigation is advisory, not locked. */
+/* TapCalc alpha246 workflow browse mode: navigation is advisory, not locked. */
 (function(){
   const READY_FLAG = '__tapcalcWorkflowBrowseReady';
   if (window[READY_FLAG]) return;
@@ -118,6 +118,7 @@
       return setStage(heldStage, Object.assign({}, options, { __reassert: true }));
     }
     if (userInitiated) {
+      window.__tapcalcWorkflowNavigationRevision = Number(window.__tapcalcWorkflowNavigationRevision || 0) + 1;
       heldStage = target;
       heldStageUntil = Date.now() + 1800;
     }

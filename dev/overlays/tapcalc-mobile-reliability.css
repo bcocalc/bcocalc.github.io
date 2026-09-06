@@ -124,6 +124,14 @@ body.measurement-page #jobsScreen #jobsCloudStatus {
   display: none !important;
 }
 
+body.measurement-page #jobsScreen #jobsCloudStatus[data-shared-load-state="loading"],
+body.measurement-page #jobsScreen #jobsCloudStatus[data-shared-load-state="error"] {
+  display: block !important;
+  visibility: visible !important;
+  margin: 8px 0 !important;
+  color: inherit;
+}
+
 body.measurement-page #jobsScreen #jobsCloudStatusMirror {
   display: none !important;
   visibility: hidden !important;

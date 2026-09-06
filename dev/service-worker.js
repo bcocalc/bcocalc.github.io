@@ -1,38 +1,39 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha245';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha246';
+const CACHE_PREFIX = 'tapcalc-dev-cache-';
 const SHELL_FALLBACK = './measurement-card.html';
 const ASSETS = [
   './',
   './index.html',
   './measurement-card.html',
-  './styles.css?v=3.0.0-alpha245',
-  './measurement.js?v=3.0.0-alpha245',
-  './tapcalc-dev-overlays.css?v=3.0.0-alpha245',
-  './tapcalc-dev-overlays.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-workflow-library.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-workflow-library.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-shell-reference.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-shell-reference.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-field-manual.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-smartstop-reference.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-smartstop-reference.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-folding-head-reference.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-folding-head-reference.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-light-mode.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-reference-router.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-reference-router.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-alpha245',
-  './overlays/tapcalc-workflow-browse.css?v=3.0.0-alpha245',
-  './overlays/tapcalc-workflow-browse.js?v=3.0.0-alpha245',
-  './pdf.mjs?v=3.0.0-alpha245',
-  './pdf.worker.mjs?v=3.0.0-alpha245',
-  './stackup-data.js?v=3.0.0-alpha245',
+  './styles.css?v=3.0.0-alpha246',
+  './measurement.js?v=3.0.0-alpha246',
+  './tapcalc-dev-overlays.css?v=3.0.0-alpha246',
+  './tapcalc-dev-overlays.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-workflow-library.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-workflow-library.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-shell-reference.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-shell-reference.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-field-manual.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-smartstop-reference.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-smartstop-reference.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-folding-head-reference.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-folding-head-reference.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-light-mode.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-reference-router.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-reference-router.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-alpha246',
+  './overlays/tapcalc-workflow-browse.css?v=3.0.0-alpha246',
+  './overlays/tapcalc-workflow-browse.js?v=3.0.0-alpha246',
+  './pdf.mjs?v=3.0.0-alpha246',
+  './pdf.worker.mjs?v=3.0.0-alpha246',
+  './stackup-data.js?v=3.0.0-alpha246',
   './script.js',
   './manifest.json',
-  './firebase-config.js?v=3.0.0-alpha245',
+  './firebase-config.js?v=3.0.0-alpha246',
   './team-logo.png'
 ];
 
@@ -47,7 +48,9 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.map((key) => key === CACHE_NAME ? Promise.resolve() : caches.delete(key))))
+      .then((keys) => Promise.all(keys
+        .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+        .map((key) => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
@@ -83,16 +86,25 @@ function cacheFresh(request) {
   });
 }
 
-function cacheFallback(request) {
-  return caches.match(request)
-    .then((cached) => cached || caches.match(request, { ignoreSearch: true }))
-    .then((cached) => cached || caches.match(SHELL_FALLBACK))
-    .then((cached) => cached || caches.match(SHELL_FALLBACK, { ignoreSearch: true }));
+async function matchCurrentCache(request) {
+  const cache = await caches.open(CACHE_NAME);
+  return await cache.match(request) || await cache.match(request, { ignoreSearch: true });
+}
+
+async function cacheFallback(request) {
+  const cached = await matchCurrentCache(request);
+  if (cached) return cached;
+  if (request.mode === 'navigate') return matchCurrentCache(SHELL_FALLBACK);
+  return Response.error();
 }
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+
+  // Cache public shell assets and SDK files, never authenticated database reads.
+  if (event.request.headers.has('Authorization')) return;
+  if (url.origin !== self.location.origin && url.hostname !== 'www.gstatic.com') return;
 
   if (event.request.mode === 'navigate') {
     event.respondWith(cacheFresh(event.request).catch(() => cacheFallback(event.request)));
@@ -105,8 +117,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(event.request)
-      .then((cached) => cached || caches.match(event.request, { ignoreSearch: true }))
+    matchCurrentCache(event.request)
       .then((cached) => cached || fetch(event.request).then((response) => {
         if (response && response.ok) {
           const copy = response.clone();

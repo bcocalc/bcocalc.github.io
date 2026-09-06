@@ -30,6 +30,7 @@
   let activeView = DEFAULT_VIEW;
   let applying = false;
   let scheduled = false;
+  let selectionRevision = 0;
 
   function byId(id){
     return document.getElementById(id);
@@ -154,15 +155,6 @@
     return views()[0]?.dataset.referenceView || DEFAULT_VIEW;
   }
 
-  function currentDomView(){
-    const activePanel = document.querySelector('#referenceWorkspaceContent > .reference-view.active[data-reference-view]');
-    if (activePanel?.dataset?.referenceView && panelFor(activePanel.dataset.referenceView)) {
-      return activePanel.dataset.referenceView;
-    }
-    const selected = byId('referenceViewSelect')?.value || '';
-    return panelFor(selected) ? selected : '';
-  }
-
   function setPanelState(panel, isActive){
     panel.classList.toggle('active', isActive);
     panel.hidden = !isActive;
@@ -264,9 +256,11 @@
   }
 
   function scheduleSelect(view, options = {}){
+    const revision = ++selectionRevision;
     selectReference(view, options);
-    setTimeout(() => selectReference(view, options), 80);
-    setTimeout(() => selectReference(view, options), 260);
+    [80, 260].forEach((delay) => setTimeout(() => {
+      if (revision === selectionRevision) selectReference(view, { ...options, closeMenu: false });
+    }, delay));
   }
 
   function scheduleMaintenance(){
@@ -274,7 +268,7 @@
     scheduled = true;
     setTimeout(() => {
       scheduled = false;
-      selectReference(currentDomView() || activeView, { closeMenu: false, persist: false });
+      selectReference(activeView, { closeMenu: false, persist: false });
     }, 80);
   }
 
@@ -312,7 +306,7 @@
     }
 
     scheduleSelect(startupView(), { closeMenu: false, persist: true });
-    window.tapcalcSetReferenceView = (view) => scheduleSelect(view || DEFAULT_VIEW, { closeMenu: true, persist: true });
+    window.tapcalcSetReferenceView = (view, options = {}) => scheduleSelect(view || DEFAULT_VIEW, { closeMenu: true, persist: true, ...options });
   }
 
   if (document.readyState === 'loading') {

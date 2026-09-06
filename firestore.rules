@@ -1,0 +1,16 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Temporary public access for TapCalc Shared jobs only.
+    match /tapcalcJobs/{jobId} {
+      allow read, create, update: if true;
+      allow delete: if false;
+    }
+
+    // Keep all other collections and subcollections private.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -399,6 +399,10 @@
   }
 
   function showFieldManual(){
+    if (typeof window.tapcalcSetReferenceView === 'function') {
+      window.tapcalcSetReferenceView('fieldmanual');
+      return;
+    }
     const workspace = document.getElementById('referenceWorkspaceContent');
     if (!workspace) return;
     renderFieldManualView(workspace);

@@ -91,6 +91,7 @@
   }
 
   function refreshWorkflowAfterLoad() {
+    const browseStage = window.__tapcalcWorkflowBrowseReady ? activeStage() : '';
     withScrollGuard(() => {
       try { window.tapCalcSyncWorkflowJobSetup?.(); } catch {}
       try { window.tapCalcSyncWorkflowTools?.(); } catch {}
@@ -98,7 +99,7 @@
       try { window.tapCalcRenderOperationManager?.(); } catch {}
       dispatchRefreshEvents();
       const selected = window.tapCalcGetSelectedOperation?.();
-      const targetStage = selected ? stageFromOperation(selected) : activeStage();
+      const targetStage = browseStage || (selected ? stageFromOperation(selected) : activeStage());
       try {
         if (MODE_STAGES.has(targetStage) && typeof window.setMode === 'function') window.setMode(targetStage);
       } catch {}

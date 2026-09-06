@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha245';
+const BUILD_VERSION = '3.0.0-alpha246';
 
 (function(){
 
@@ -902,6 +902,10 @@ function syncReferenceShortcutState(view) {
 }
 
 function setReferenceView(view, options = {}) {
+  if (typeof window.tapcalcSetReferenceView === 'function') {
+    if (options.scroll === true) window.tapcalcSetReferenceView(view);
+    return;
+  }
   const nextView = getSafeReferenceView(view);
   let activated = false;
   referenceViewEls.forEach((panel) => {
@@ -1048,8 +1052,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha245';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha245';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha246';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha246';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2465,7 +2469,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha245', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha246', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2677,6 +2681,7 @@ const firebaseStatusEl = document.getElementById('firebaseStatus');
 const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
 const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
+let firebaseAuth = null;
 let firebaseModuleCache = null;
 let firebaseInitPromise = null;
 let cloudJobsCache = [];
@@ -4193,27 +4198,7 @@ function loadRecordIntoCalculator(record, options = {}) {
   const state = sanitizeLoadedJobState(buildStateFromRecord(record));
   if (!state || !Object.keys(state).length) return;
   try {
-    localStorage.setItem('tapcalcV3Screen', 'job');
     localStorage.setItem('tapcalcLibraryLaneV1', 'local');
-    document.body.dataset.activeScreen = 'job';
-  } catch {}
-  try {
-    document.querySelectorAll('.screen-panel').forEach(panel => {
-      if (panel.id === 'jobScreen') panel.classList.add('active');
-      else panel.classList.remove('active');
-      panel.style.pointerEvents = panel.id === 'jobScreen' ? 'auto' : 'none';
-    });
-  } catch {}
-  try {
-    const jobsScreenEl = document.getElementById('jobsScreen');
-    if (jobsScreenEl) {
-      jobsScreenEl.classList.remove('active');
-      jobsScreenEl.style.pointerEvents = 'none';
-      jobsScreenEl.style.zIndex = '0';
-      jobsScreenEl.dataset.activeLane = 'local';
-    }
-    const jobsPanelEl = document.getElementById('jobsPanel');
-    if (jobsPanelEl) jobsPanelEl.classList.remove('active');
   } catch {}
   if (record?.jobBundle?.operations?.length) applyJobBundle(record.jobBundle, { record });
   else applyJobState(state);
@@ -4300,19 +4285,10 @@ function loadRecordIntoCalculator(record, options = {}) {
   }
   const targetMode = WORKFLOW_SCREEN_MODES.has(normalizeMode(state?.activeMode)) ? normalizeMode(state.activeMode) : 'hotTap';
   if (targetMode) setMode(targetMode);
-  try {
-    const jobTab = document.querySelector('.screen-tab[data-screen="job"]');
-    jobTab?.click();
-    setTimeout(() => {
-      document.body.dataset.activeScreen = 'job';
-      const jobScreen = document.getElementById('jobScreen');
-      if (jobScreen) { jobScreen.classList.add('active'); jobScreen.style.pointerEvents = 'auto'; }
-      const jobsScreenEl = document.getElementById('jobsScreen');
-      if (jobsScreenEl) { jobsScreenEl.classList.remove('active'); jobsScreenEl.style.pointerEvents = 'none'; jobsScreenEl.style.zIndex = '0'; }
-      const jobsPanelEl = document.getElementById('jobsPanel');
-      if (jobsPanelEl) jobsPanelEl.classList.remove('active');
-    }, 40);
-  } catch {}
+  if (options.switchScreen !== false) {
+    // Job setup now lives in Workflow; do not revive the retired Job screen.
+    try { window.tapCalcSetScreen?.('card', { keepWorkflowStage: true }); } catch {}
+  }
   if (record?.jobBundle?.operations?.length > 1 && options.focusOperations === true) {
     focusJobInfoOperations(currentJobBundle, { behavior: 'auto', delay: 140 });
   }
@@ -4498,21 +4474,28 @@ function buildHistorySnapshot() {
   };
 }
 
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms))
-  ]);
+async function withTimeout(promise, ms, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms); })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function ensureFirebaseReady(options = {}) {
-  if (firebaseDb && !options.forceRetry) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+  if (firebaseInitPromise) return firebaseInitPromise;
+  if (firebaseDb && firebaseAuth?.currentUser && !options.forceRetry) {
+    return { enabled: true, db: firebaseDb, modules: firebaseModuleCache, auth: firebaseAuth };
+  }
   if (options.forceRetry) {
     firebaseDb = null;
     firebaseModuleCache = null;
     firebaseInitPromise = null;
   }
-  if (firebaseInitPromise) return firebaseInitPromise;
   const config = window.TAPCALC_FIREBASE_CONFIG;
   if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
@@ -4539,14 +4522,16 @@ async function ensureFirebaseReady(options = {}) {
       );
       const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
       const auth = authModule.getAuth(app);
+      await withTimeout(auth.authStateReady(), 5000, 'Firebase sign-in restore');
       if (!auth.currentUser) {
-        await authModule.signInAnonymously(auth);
+        await withTimeout(authModule.signInAnonymously(auth), 5000, 'Firebase sign-in');
       }
-      firebaseDb = firestoreModule.getFirestore(app);
+      firebaseAuth = auth;
+      firebaseDb = firestoreModule.getFirestore(app, window.TAPCALC_FIRESTORE_DATABASE || '(default)');
       firebaseModuleCache = firestoreModule;
       if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Connected to shared job database (${config.projectId}).`;
-      return { enabled: true, db: firebaseDb, modules: firestoreModule };
+      return { enabled: true, db: firebaseDb, modules: firestoreModule, auth };
     } catch (error) {
       const formattedError = formatFirebaseError(error);
       if (/network|timeout|failed to fetch|internet|offline/i.test(formattedError)) {
@@ -4566,6 +4551,48 @@ async function ensureFirebaseReady(options = {}) {
   })();
   return firebaseInitPromise;
 }
+
+async function fetchFirestoreJson(url) {
+  const target = new URL(url);
+  const project = encodeURIComponent(window.TAPCALC_FIREBASE_CONFIG?.projectId || '');
+  const database = encodeURIComponent(window.TAPCALC_FIRESTORE_DATABASE || '(default)');
+  if (target.origin !== 'https://firestore.googleapis.com' ||
+      !target.pathname.startsWith(`/v1/projects/${project}/databases/${database}/documents/`)) {
+    throw new Error('Invalid shared jobs request.');
+  }
+  const ready = await ensureFirebaseReady();
+  if (!ready.enabled || !ready.auth?.currentUser) {
+    throw ready.error || new Error('Shared jobs are unavailable. Check your connection and retry.');
+  }
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const token = await withTimeout(ready.auth.currentUser.getIdToken(attempt > 0), 5000, 'Firebase sign-in refresh');
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    try {
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` },
+        signal: controller.signal
+      });
+      if (response.status === 401 && attempt === 0) continue;
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        const error = new Error(`Shared jobs request failed (${response.status})`);
+        error.code = /billing.*enabled/i.test(payload.error?.message || '') ? 'billing-disabled'
+          : response.status === 403 ? 'permission-denied' : String(response.status);
+        throw error;
+      }
+      return await response.json();
+    } catch (error) {
+      if (controller.signal.aborted) throw new Error('Shared jobs request timeout. Check your connection and retry.');
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+}
+
+window.tapCalcFetchFirestoreJson = fetchFirestoreJson;
 
 function getJobsCollectionName() {
   return window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
@@ -4683,25 +4710,25 @@ function renderJobRecordDetails(record) {
   ].filter(Boolean);
   return `
     <div class="job-detail-grid">
-      <div><strong>Customer:</strong> ${record?.job?.client || '-'}</div>
-      <div><strong>Location:</strong> ${record?.job?.location || '-'}</div>
-      <div><strong>Technician:</strong> ${record?.job?.technician || '-'}</div>
-      <div><strong>Job #:</strong> ${record?.job?.jobNumber || '-'}</div>
-      <div><strong>Pipe:</strong> ${record?.pipe?.material || '-'} ${record?.pipe?.nominalSize || ''}</div>
-      <div><strong>Wall:</strong> ${record?.pipe?.wallThickness || '-'}</div>
-      <div><strong>Cutter:</strong> ${record?.machine?.cutterOd || '-'}</div>
-      <div><strong>Machine:</strong> ${record?.machine?.machine || '-'}</div>
-      <div><strong>BCO:</strong> ${record?.calculations?.bco || '-'}</div>
-      <div><strong>ETA:</strong> ${record?.machine?.etaRange || '-'}</div>
-      <div><strong>HTP TCO:</strong> ${record?.calculations?.htpTco || '-'}</div>
-      <div><strong>Operation:</strong> ${record?.meta?.operationType || '-'}</div>
-      <div><strong>Notes:</strong> ${record?.job?.notes || '-'}</div>
+      <div><strong>Customer:</strong> ${escapeHtml(record?.job?.client || '-')}</div>
+      <div><strong>Location:</strong> ${escapeHtml(record?.job?.location || '-')}</div>
+      <div><strong>Technician:</strong> ${escapeHtml(record?.job?.technician || '-')}</div>
+      <div><strong>Job #:</strong> ${escapeHtml(record?.job?.jobNumber || '-')}</div>
+      <div><strong>Pipe:</strong> ${escapeHtml(record?.pipe?.material || '-')} ${escapeHtml(record?.pipe?.nominalSize || '')}</div>
+      <div><strong>Wall:</strong> ${escapeHtml(record?.pipe?.wallThickness || '-')}</div>
+      <div><strong>Cutter:</strong> ${escapeHtml(record?.machine?.cutterOd || '-')}</div>
+      <div><strong>Machine:</strong> ${escapeHtml(record?.machine?.machine || '-')}</div>
+      <div><strong>BCO:</strong> ${escapeHtml(record?.calculations?.bco || '-')}</div>
+      <div><strong>ETA:</strong> ${escapeHtml(record?.machine?.etaRange || '-')}</div>
+      <div><strong>HTP TCO:</strong> ${escapeHtml(record?.calculations?.htpTco || '-')}</div>
+      <div><strong>Operation:</strong> ${escapeHtml(record?.meta?.operationType || '-')}</div>
+      <div><strong>Notes:</strong> ${escapeHtml(record?.job?.notes || '-')}</div>
     </div>
     <div class="job-detail-grid">
-      <div><strong>Hot Tap LI:</strong> ${record?.calculations?.hotTapLi || '-'}</div>
-      <div><strong>Line Stop LI:</strong> ${record?.calculations?.lineStopLi || '-'}</div>
-      <div><strong>Completion Plug LI:</strong> ${record?.calculations?.completionPlugLi || '-'}</div>
-      <div><strong>Warnings:</strong> ${warnings.length ? warnings.join(' | ') : 'None'}</div>
+      <div><strong>Hot Tap LI:</strong> ${escapeHtml(record?.calculations?.hotTapLi || '-')}</div>
+      <div><strong>Line Stop LI:</strong> ${escapeHtml(record?.calculations?.lineStopLi || '-')}</div>
+      <div><strong>Completion Plug LI:</strong> ${escapeHtml(record?.calculations?.completionPlugLi || '-')}</div>
+      <div><strong>Warnings:</strong> ${escapeHtml(warnings.length ? warnings.join(' | ') : 'None')}</div>
     </div>`;
 }
 
@@ -4893,7 +4920,9 @@ function renderJobsList() {
 }
 
 async function loadCloudJobs() {
-
+  if (typeof window.tapCalcLoadSharedJobsViaRestFallback === 'function') {
+    return window.tapCalcLoadSharedJobsViaRestFallback('app');
+  }
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) {
     cloudJobsCache = [];
@@ -4963,6 +4992,13 @@ async function loadCloudJobs() {
 
   updateUnsyncedCount();
 }
+
+window.tapCalcApplySharedJobs = function(jobs) {
+  cloudJobsCache = Array.isArray(jobs) ? jobs : [];
+  renderJobsList();
+  updateUnsyncedCount();
+};
+
 function updateUnsyncedCount() {
   if (!unsyncedJobsCountEl) return;
   const unsynced = getHistory().filter((item) => !item.cloudId).length;
@@ -5322,7 +5358,7 @@ var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
 var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
 var selectedJobId = window.selectedJobId || '';
 
-/* ===== 3.0.0-alpha245 auto-scroll guard ===== */
+/* ===== 3.0.0-alpha246 auto-scroll guard ===== */
 (function(){
   let lastFieldEditAt = 0;
   const editableSelector = 'input, textarea, select, [contenteditable="true"]';
@@ -6809,7 +6845,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha245';
+const TC63_VERSION = '3.0.0-alpha246';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -7055,7 +7091,7 @@ const TC63_VERSION = '3.0.0-alpha245';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha245';
+const VERSION = '3.0.0-alpha246';
 
   function tc65GetJobs() {
     try {
@@ -10277,7 +10313,7 @@ const VERSION = '3.0.0-alpha245';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha245';
+const VERSION = '3.0.0-alpha246';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -13157,8 +13193,8 @@ const VERSION = '3.0.0-alpha245';
     openScreenCore(saved);
   }
 
-  window.tapCalcSetScreen = function(name){
-    return openScreenCore(name);
+  window.tapCalcSetScreen = function(name, options = {}){
+    return openScreenCore(name, options);
   };
   window.openScreen = window.tapCalcSetScreen;
   window.showScreen = window.tapCalcSetScreen;
@@ -13265,14 +13301,13 @@ const VERSION = '3.0.0-alpha245';
     const collectionName = typeof getJobsCollectionName === 'function'
       ? getJobsCollectionName()
       : (window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs');
+    const database = encodeURIComponent(window.TAPCALC_FIRESTORE_DATABASE || '(default)');
     const url =
       `https://firestore.googleapis.com/v1/projects/${encodeURIComponent(projectId)}` +
-      `/databases/(default)/documents/${encodeURIComponent(collectionName)}/${encodeURIComponent(docId)}` +
+      `/databases/${database}/documents/${encodeURIComponent(collectionName)}/${encodeURIComponent(docId)}` +
       (apiKey ? `?key=${encodeURIComponent(apiKey)}` : '');
 
-    const response = await fetch(url, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`Firestore document read failed (${response.status})`);
-    const fullRecord = firestoreDocumentToRecord(await response.json(), docId);
+    const fullRecord = firestoreDocumentToRecord(await window.tapCalcFetchFirestoreJson(url), docId);
     window.__tapcalcFullSharedRecordCache[docId] = fullRecord;
     return fullRecord;
   }
@@ -13441,7 +13476,10 @@ const VERSION = '3.0.0-alpha245';
     return selectedStage || liveStage || recordStage || 'hotTap';
   }
 
+  let lastWorkflowOperationId = '';
+
   function applyLoadedJobWorkflow(record = null) {
+    lastWorkflowOperationId = String(document.getElementById('jobOperationSelect')?.value || '');
     const stage = inferWorkflowStageFromLoadedJob(record);
     if (!stage) return false;
     const select = document.getElementById('operationType');
@@ -13463,9 +13501,13 @@ const VERSION = '3.0.0-alpha245';
   }
 
   function scheduleLoadedJobWorkflow(record = null, options = {}) {
+    const navigationRevision = Number(window.__tapcalcWorkflowNavigationRevision || 0);
     const delays = options.quick ? [0, 80, 220, 520] : [0, 80, 220, 520, 900, 1400];
     delays.forEach((delay) => {
-      setTimeout(() => applyLoadedJobWorkflow(record || window.__tapcalcLastBundledLoadRecord || null), delay);
+      setTimeout(() => {
+        if (navigationRevision !== Number(window.__tapcalcWorkflowNavigationRevision || 0)) return;
+        applyLoadedJobWorkflow(record || window.__tapcalcLastBundledLoadRecord || null);
+      }, delay);
     });
   }
 
@@ -13513,9 +13555,13 @@ const VERSION = '3.0.0-alpha245';
 
   function scheduleBundleRestore(record, options = {}) {
     if (!hasSavedOperationBundle(record)) return;
+    const navigationRevision = Number(window.__tapcalcWorkflowNavigationRevision || 0);
     window.__tapcalcLastBundledLoadRecord = record;
     [0, 40, 120, 260, 620, 1100].forEach((delay) => {
-      setTimeout(() => restoreOperationBundleFromRecord(record, options), delay);
+      setTimeout(() => {
+        if (navigationRevision !== Number(window.__tapcalcWorkflowNavigationRevision || 0)) return;
+        restoreOperationBundleFromRecord(record, options);
+      }, delay);
     });
   }
 
@@ -13654,6 +13700,9 @@ const VERSION = '3.0.0-alpha245';
   document.addEventListener('touchend', bindLoadButtonCapture, { capture: true, passive: false });
   document.addEventListener('change', (event) => {
     if (event.target?.id !== 'jobOperationSelect') return;
+    const operationId = String(event.target.value || '');
+    if (!operationId || operationId === lastWorkflowOperationId) return;
+    lastWorkflowOperationId = operationId;
     setTimeout(() => scheduleLoadedJobWorkflow(window.__tapcalcLastBundledLoadRecord || null, { quick: true }), 30);
   });
 window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
@@ -14610,7 +14659,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitUwireCalculator = initUwireCalculator;
 })();
 
-/* ===== 3.0.0-alpha245 shared library row consistency ===== */
+/* ===== 3.0.0-alpha246 shared library row consistency ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 
@@ -14654,6 +14703,8 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
     if (!listEl) return;
     const jobs = getJobs();
     listEl.querySelectorAll('.jobs-list-item[data-job-id]').forEach((item) => {
+      // The history renderer owns these cards, including their Load buttons.
+      if (item.classList.contains('tapcalc-shared-history-card')) return;
       const id = String(item.dataset.jobId || '').trim();
       const entry = jobs.find((job) => String(job?.id || '') === id);
       const oldTitle = item.querySelector('.jobs-list-title, .jobs-list-item-title')?.textContent?.trim() || item.textContent?.trim() || 'Saved Job';

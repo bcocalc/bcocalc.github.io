@@ -1,4 +1,4 @@
-/* TapCalc alpha245 Folding Head reference. */
+/* TapCalc alpha246 Folding Head reference. */
 (function(){
   const READY_FLAG = '__tapcalcFoldingHeadReferenceReady';
   const VIEW_KEY = 'foldinghead';
@@ -501,6 +501,7 @@
     ensureSelectOption();
     ensureLibraryOption();
     updateReferenceCount();
+    if (typeof window.tapcalcSetReferenceView === 'function') return;
     try {
       if (localStorage.getItem(SAVED_VIEW_KEY) === VIEW_KEY || byId('referenceViewSelect')?.value === VIEW_KEY) {
         setTimeout(() => selectFoldingHead({ closeMenu: false }), 20);
@@ -526,12 +527,17 @@
     document.addEventListener('click', (event) => {
       const trigger = event.target?.closest?.(`[data-reference-target="${VIEW_KEY}"], [data-folding-head-open]`);
       if (!trigger) return;
+      if (typeof window.tapcalcSetReferenceView === 'function') {
+        window.tapcalcSetReferenceView(VIEW_KEY);
+        return;
+      }
       setTimeout(selectFoldingHead, 0);
       setTimeout(selectFoldingHead, 90);
     }, true);
 
     document.addEventListener('change', (event) => {
       if (event.target?.id !== 'referenceViewSelect' || event.target.value !== VIEW_KEY) return;
+      if (typeof window.tapcalcSetReferenceView === 'function') return;
       setTimeout(selectFoldingHead, 0);
       setTimeout(selectFoldingHead, 90);
     }, true);
