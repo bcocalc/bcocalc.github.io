@@ -7,12 +7,16 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const checks = [
   ['library-release-guard.mjs', {}],
   ['library-release-guard-test.mjs', {}],
+  ['reference-measurements.mjs', {}],
   ['library-tap-unit.mjs', {}],
   ['cloud-sync.mjs', {}],
   ['sync-local-jobs.mjs', {}]
 ];
 if (!args.includes('--unit-only')) {
-  for (const browser of ['chromium', 'webkit']) checks.push(['library-touch.mjs', { TAPCALC_BROWSER: browser }]);
+  for (const browser of ['chromium', 'webkit']) {
+    checks.push(['library-touch.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['dev-features.mjs', { TAPCALC_BROWSER: browser, TAPCALC_DEVICE: '' }]);
+  }
 }
 for (const [file, environment] of checks) {
   console.log('\nChecking ' + file + (environment.TAPCALC_BROWSER ? ' (' + environment.TAPCALC_BROWSER + ')' : ''));

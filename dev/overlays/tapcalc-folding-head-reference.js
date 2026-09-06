@@ -127,7 +127,8 @@
       const whole = Number(mixed[1]);
       const numerator = Number(mixed[2]);
       const denominator = Number(mixed[3]);
-      if (denominator) return whole + (numerator / denominator);
+      // The leading sign applies to the entire mixed number, including -0 1/2.
+      if (denominator) return (mixed[1].startsWith('-') ? -1 : 1) * (Math.abs(whole) + numerator / denominator);
     }
     const fraction = raw.match(/^(-?\d+)\/(\d+)$/);
     if (fraction) {

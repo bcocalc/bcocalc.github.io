@@ -200,7 +200,8 @@
       panel.hidden = !active;
       panel.setAttribute('aria-hidden', active ? 'false' : 'true');
       panel.style.display = active ? 'block' : 'none';
-      panel.style.visibility = active ? 'visible' : 'hidden';
+      // display:none hides inactive steps without stale inherited visibility in WebKit.
+      panel.style.visibility = 'visible';
       panel.style.opacity = active ? '1' : '0';
       panel.style.pointerEvents = active ? 'auto' : 'none';
     });

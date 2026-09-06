@@ -160,7 +160,8 @@
     panel.hidden = !isActive;
     panel.setAttribute('aria-hidden', isActive ? 'false' : 'true');
     panel.style.setProperty('display', isActive ? 'block' : 'none', 'important');
-    panel.style.setProperty('visibility', isActive ? 'visible' : 'hidden', 'important');
+    // display:none hides inactive panels without leaving inherited hidden controls in WebKit.
+    panel.style.setProperty('visibility', 'visible', 'important');
     panel.style.setProperty('pointer-events', isActive ? 'auto' : 'none', 'important');
     panel.style.opacity = isActive ? '1' : '0';
     if (isActive) {

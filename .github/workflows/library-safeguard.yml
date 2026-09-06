@@ -44,3 +44,7 @@ jobs:
         run: node tests/library-touch.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check pending dev workflow and Reference on phone and desktop
+        run: node tests/dev-features.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}

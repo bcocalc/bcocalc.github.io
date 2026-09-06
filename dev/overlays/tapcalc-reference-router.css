@@ -1,7 +1,6 @@
 /* TapCalc Dev reference router and Field Manual cleanup */
 #refScreen #referenceWorkspaceContent > .reference-view[data-reference-view]:not(.active) {
   display: none !important;
-  visibility: hidden !important;
   pointer-events: none !important;
 }
 

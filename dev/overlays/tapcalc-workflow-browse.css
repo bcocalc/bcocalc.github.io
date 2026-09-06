@@ -17,7 +17,6 @@ body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel
 body.measurement-page.tapcalc-workflow-browse #cardScreen [data-workflow-stage-panel]:not(.active),
 body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-helper-panel:not(.active) {
   display: none !important;
-  visibility: hidden !important;
   opacity: 0 !important;
   pointer-events: none !important;
 }
