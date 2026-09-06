@@ -75,7 +75,10 @@ const server = createServer((request, response) => {
       if (path.endsWith('/cloud-sync.js')) content = content.replace("target.searchParams.set('key', key);", "target.searchParams.set('key', key); target.searchParams.set('fixture', new URL(location.href).searchParams.get('fixture') || 'denied');");
       if (path.endsWith('/firebase-config.js')) content = content.replace(/window.TAPCALC_FIREBASE_CONFIG = \{[\s\S]*?\};/, 'window.TAPCALC_FIREBASE_CONFIG={apiKey:"fixture",projectId:"demo-tapcalc-test",appId:"fixture"};');
       if (path.endsWith('/measurement-card.html')) content = content.replace('<body class="measurement-page">', `<body class="measurement-page"><script>
-        if(!localStorage.getItem('measurementCardHistoryV1'))localStorage.setItem('measurementCardHistoryV1',JSON.stringify(['A','B'].map(id=>({id,cloudId:null,state:{jobDescription:'Preview '+id},record:{meta:{title:'Preview '+id},state:{jobDescription:'Preview '+id}},summary:{title:'Preview '+id},savedAt:'2026-09-05'}))));
+        if(!localStorage.getItem('measurementCardHistoryV1'))localStorage.setItem('measurementCardHistoryV1',JSON.stringify(['A','B','C','D'].map(id=>{
+          const state={jobDescription:'Preview '+id,jobClient:'Fixture Customer',operationType:'Hot Tap',activeMode:'hotTap',bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'4.0',bcoPipeID:'4.026',bcoCutterOD:'3.875',bcoSchedule:'STD',md:id==='A'?'12':'24',ptc:'2.5',mt:'52'};
+          return {id,cloudId:['C','D'].includes(id)?'already-synced-'+id:null,state,record:{meta:{title:'Preview '+id},state},summary:{title:'Preview '+id},savedAt:'2026-09-05'};
+        })));
         </script>`);
     }
     response.writeHead(200, { 'Content-Type': mime[extname(file)] || 'application/octet-stream' }); response.end(content);

@@ -178,7 +178,7 @@
       if (active) chip.setAttribute('aria-current', 'step');
       else chip.removeAttribute('aria-current');
       const label = chip.querySelector('em');
-      if (label && active) label.textContent = 'Current Step';
+      if (label && active && label.textContent !== 'Current Step') label.textContent = 'Current Step';
       else if (label && /^locked$/i.test(text(label.textContent))) label.textContent = 'Preview';
     });
     syncHelperPanelVisibility();
@@ -218,7 +218,8 @@
 
   function updateGuidanceCopy() {
     const save = byId('workflowSaveStatus');
-    if (save) save.textContent = 'Browse any step in any order. Save remains available while the checklist tracks what still needs attention.';
+    const saveCopy = 'Browse any step in any order. Save remains available while the checklist tracks what still needs attention.';
+    if (save && save.textContent !== saveCopy) save.textContent = saveCopy;
     const copy = byId('workflowNextActionCopy');
     if (copy && /before continuing|then move to the next step/i.test(copy.textContent || '')) {
       copy.textContent = 'Use this as a readiness checklist. You can keep browsing now, then come back to fill the missing calculation fields.';

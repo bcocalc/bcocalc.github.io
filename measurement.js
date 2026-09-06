@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-livefix18';
+const BUILD_VERSION = '3.0.0-livefix19';
 
 (function(){
 
@@ -1048,8 +1048,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix18';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix18';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix19';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix19';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2465,7 +2465,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix18', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix19', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4514,6 +4514,59 @@ function reportJobsSyncStatus(message, state = 'info') {
 window.tapCalcReportSyncStatus = reportJobsSyncStatus;
 window.tapCalcDescribeSyncFailure = describeSyncFailure;
 
+function bindLibraryTap(element, handler, selector = '') {
+  if (!element) return;
+  let gesture = null;
+  let lastTouchTarget = null;
+  let suppressClickUntil = 0;
+  const targetFor = (event) => {
+    const target = selector ? event.target?.closest?.(selector) : element;
+    return target && element.contains(target) && !target.disabled ? target : null;
+  };
+  element.addEventListener('touchstart', (event) => {
+    const target = targetFor(event);
+    const touch = event.touches.length === 1 ? event.touches[0] : null;
+    gesture = target && touch ? {
+      target, id: touch.identifier, x: touch.clientX, y: touch.clientY,
+      startedAt: Date.now(), moved: false, scrollX: window.scrollX, scrollY: window.scrollY,
+      scrollLeft: element.scrollLeft, scrollTop: element.scrollTop
+    } : null;
+  }, { passive: true });
+  element.addEventListener('touchmove', (event) => {
+    if (!gesture) return;
+    const touch = Array.from(event.touches).find((item) => item.identifier === gesture.id);
+    if (event.touches.length !== 1 || !touch ||
+        Math.hypot(touch.clientX - gesture.x, touch.clientY - gesture.y) > 12) gesture.moved = true;
+  }, { passive: true });
+  element.addEventListener('touchcancel', () => { gesture = null; }, { passive: true });
+  element.addEventListener('touchend', (event) => {
+    const tap = gesture;
+    gesture = null;
+    const touch = tap && Array.from(event.changedTouches).find((item) => item.identifier === tap.id);
+    if (!tap || !touch || tap.moved || event.touches.length || !event.cancelable ||
+        Date.now() - tap.startedAt > 700 || targetFor(event) !== tap.target || !tap.target.isConnected ||
+        Math.hypot(touch.clientX - tap.x, touch.clientY - tap.y) > 12 ||
+        window.scrollX !== tap.scrollX || window.scrollY !== tap.scrollY ||
+        element.scrollLeft !== tap.scrollLeft || element.scrollTop !== tap.scrollTop) return;
+    // Safari's delayed compatibility click can be lost during layout updates.
+    event.preventDefault();
+    lastTouchTarget = tap.target;
+    suppressClickUntil = Date.now() + 700;
+    handler(event);
+  }, { passive: false });
+  element.addEventListener('click', (event) => {
+    const target = targetFor(event);
+    if (!target) return;
+    if (event.isTrusted && event.detail > 0 && event.pointerType !== 'mouse' &&
+        target === lastTouchTarget && Date.now() < suppressClickUntil) {
+      event.preventDefault();
+      return;
+    }
+    handler(event);
+  });
+}
+window.tapCalcBindLibraryTap = bindLibraryTap;
+
 async function syncLocalJobsToCloud() {
   if (localJobsSyncInProgress) return;
   localJobsSyncInProgress = true;
@@ -5125,7 +5178,7 @@ window.loadCloudJobs = loadCloudJobs;
 if (saveHistoryBtnEl) saveHistoryBtnEl.addEventListener('click', saveCurrentJobToHistory);
 if (resetJobBtnEl) resetJobBtnEl.addEventListener('click', resetCurrentJob);
 if (clearHistoryBtnEl) clearHistoryBtnEl.addEventListener('click', clearHistory);
-if (syncJobsBtnEl) syncJobsBtnEl.addEventListener('click', syncLocalJobsToCloud);
+bindLibraryTap(syncJobsBtnEl, syncLocalJobsToCloud);
 
 if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.addEventListener('click', loadCloudJobs);
 if (jobsSearchInputEl) jobsSearchInputEl.addEventListener('input', (event) => {
@@ -5210,7 +5263,7 @@ window.addEventListener('load', async () => {
   renderJobsList();
   updateJobInfoSummary();
   const waiting = getHistory().filter((item) => !item.cloudId).length;
-  reportJobsSyncStatus(`Sync ready (3.0.0-livefix18). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
+  reportJobsSyncStatus(`Sync ready (3.0.0-livefix19). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
   initAccordionSections();
   if (jobsCloudStatusEl) {
     jobsCloudStatusEl.textContent = navigator.onLine === false
@@ -8631,7 +8684,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-livefix18';
+const VERSION = '3.0.0-livefix19';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }

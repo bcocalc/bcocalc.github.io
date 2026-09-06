@@ -178,6 +178,7 @@
   }
 
   function decorateStageNav() {
+    if (window.__tapcalcWorkflowBrowseReady) return;
     const stages = getStages();
     const current = activeStage();
     const currentIndex = Math.max(0, stages.indexOf(current));
@@ -187,7 +188,8 @@
       const locked = index > currentIndex && stages.slice(currentIndex, index).some((priorStage) => requirement(priorStage).missing.length);
       chip.dataset.stageLocked = locked ? 'true' : 'false';
       const label = chip.querySelector('em');
-      if (locked && label) label.textContent = 'Locked';
+      // This label is observed below; rewriting identical text creates a refresh loop.
+      if (locked && label && label.textContent !== 'Locked') label.textContent = 'Locked';
     });
   }
 
@@ -224,6 +226,7 @@
   }
 
   function installWorkflowGuard() {
+    if (window.__tapcalcWorkflowBrowseReady) return;
     if (typeof window.tapCalcSetWorkflowStage === 'function' && !window.tapCalcSetWorkflowStage.__alpha201Guarded) {
       const original = window.tapCalcSetWorkflowStage;
       window.__tapcalcAlpha201OriginalSetStage = original;
@@ -300,9 +303,10 @@
   }
 
   function updateVersionText() {
-    const label = 'TapCalc Dev v3.0.0-alpha201 - 2026-05-15';
+    const label = window.TAPCALC_BUILD?.label;
+    if (!label) return;
     document.querySelectorAll('.version-badge, .top-app-title').forEach((el) => {
-      if (/TapCalc Dev v/i.test(el.textContent || '')) el.textContent = label;
+      if (/TapCalc.*v/i.test(el.textContent || '') && el.textContent !== label) el.textContent = label;
     });
   }
 
@@ -372,36 +376,48 @@
   function renderRecent(history) {
     const list = byId('jobsRecentList');
     if (!list) return;
-    list.innerHTML = '';
     const recent = history.slice(0, 4);
     if (!recent.length) {
       list.classList.add('empty');
-      list.textContent = 'No local saves yet.';
+      if (list.textContent !== 'No local saves yet.') list.textContent = 'No local saves yet.';
       return;
     }
     list.classList.remove('empty');
-    const frag = document.createDocumentFragment();
-    recent.forEach((item) => {
+    if (!list.querySelector('[data-recent-history-id]')) list.textContent = '';
+    const existing = new Map(Array.from(list.querySelectorAll('[data-recent-history-id]'),
+      (button) => [button.dataset.recentHistoryId, button]));
+    const keep = new Set();
+    recent.forEach((item, index) => {
       const record = item?.record || {};
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'jobs-recent-item';
-      button.dataset.recentHistoryId = String(item?.id || '');
-      const title = document.createElement('span');
-      title.className = 'jobs-recent-title';
-      title.textContent = record?.meta?.title || item?.summary?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
-      const meta = document.createElement('span');
-      meta.className = 'jobs-recent-meta';
-      meta.textContent = [
+      const id = String(item?.id || '');
+      let button = existing.get(id);
+      if (!button) {
+        button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'jobs-recent-item';
+        button.dataset.recentHistoryId = id;
+        const title = document.createElement('span');
+        title.className = 'jobs-recent-title';
+        const meta = document.createElement('span');
+        meta.className = 'jobs-recent-meta';
+        button.append(title, meta);
+      }
+      const title = button.querySelector('.jobs-recent-title');
+      const meta = button.querySelector('.jobs-recent-meta');
+      const titleText = record?.meta?.title || item?.summary?.title || record?.job?.description || record?.job?.jobNumber || 'Saved Job';
+      const metaText = [
         record?.meta?.operationType || item?.summary?.operationType || 'Job',
         item?.summary?.pipe || [record?.pipe?.material, record?.pipe?.nominalSize].filter(Boolean).join(' ') || 'Pipe -',
         dateTimeLabel(record?.meta?.savedAtIso || item?.savedAt || record?.meta?.savedAtDisplay),
         item?.cloudId ? 'Synced' : 'Local'
       ].filter(Boolean).join(' | ');
-      button.append(title, meta);
-      frag.appendChild(button);
+      if (title.textContent !== titleText) title.textContent = titleText;
+      if (meta.textContent !== metaText) meta.textContent = metaText;
+      // Keep the touch target alive through background status refreshes.
+      keep.add(button);
+      if (list.children[index] !== button) list.insertBefore(button, list.children[index] || null);
     });
-    list.appendChild(frag);
+    existing.forEach((button) => { if (!keep.has(button)) button.remove(); });
   }
 
   function updateLibraryPolish() {
@@ -449,8 +465,17 @@
   function loadRecent(id) {
     const item = historyItems().find((entry) => String(entry?.id || '') === String(id || ''));
     const record = item?.record || (item?.state ? { state: item.state } : null);
-    if (!record) return;
-    try { window.loadRecordIntoCalculator?.(record, { switchScreen: true, skipPersist: false, message: true }); } catch {}
+    if (!record) {
+      window.tapCalcReportSyncStatus?.('This local job could not be found. Your saved jobs are unchanged.', 'error');
+      return;
+    }
+    try {
+      if (typeof window.loadRecordIntoCalculator !== 'function') throw new Error('Job loader did not finish loading. Refresh this page without clearing site data.');
+      window.loadRecordIntoCalculator(record, { switchScreen: true, skipPersist: false, message: true });
+    } catch (error) {
+      window.tapCalcReportSyncStatus?.(`Could not open this local job: ${error.message}`, 'error');
+      return;
+    }
     setTimeout(() => {
       try { window.tapCalcSetScreen?.('card'); } catch {}
       updateLibraryPolish();
@@ -461,12 +486,13 @@
     const recent = byId('jobsRecentList');
     if (recent && recent.dataset.alpha201Bound !== '1') {
       recent.dataset.alpha201Bound = '1';
-      recent.addEventListener('click', (event) => {
+      const bindTap = window.tapCalcBindLibraryTap || ((element, handler) => element.addEventListener('click', handler));
+      bindTap(recent, (event) => {
         const button = event.target?.closest?.('[data-recent-history-id]');
         if (!button) return;
         event.preventDefault();
         loadRecent(button.dataset.recentHistoryId);
-      });
+      }, '[data-recent-history-id]');
     }
     const viewAll = byId('jobsRecentViewAllBtn');
     if (viewAll && viewAll.dataset.alpha201Bound !== '1') {

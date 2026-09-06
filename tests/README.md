@@ -1,4 +1,28 @@
-# Alpha249 / Livefix18 Sync Checks
+# Alpha250 / Livefix19 Library and Sync Checks
+
+Run the touch-handler unit checks (24 network-free cases):
+
+```powershell
+node tests/library-tap-unit.mjs
+```
+
+Run the real browser regression with a Node runtime that has Playwright installed
+in its sibling `node_modules` directory:
+
+```powershell
+node tests/library-touch.mjs
+$env:TAPCALC_WEBKIT = '1'
+node tests/library-touch.mjs
+Remove-Item Env:TAPCALC_WEBKIT
+```
+
+The default browser is installed Chrome; the second run requires Playwright's
+WebKit browser. Both use iPhone touch emulation in disposable contexts, a
+localhost fake database, rewritten Firebase configuration, and a restrictive CSP.
+The tests open both unsynced cards, preserve card nodes across refreshes, verify
+the original saved snapshots, and sync from 4 local / 2 waiting to 4 local / 0
+waiting. The loader is allowed to finish its existing hydration timers before
+navigating back. These tests do not access the phone's data or production writes.
 
 Run the current public transport and app integration regressions:
 
@@ -28,7 +52,7 @@ node tests/sync-preview.mjs
 ```
 
 The printed local URL simulates denied uploads while Shared reads work. Add
-`?fixture=success` to simulate recovery. Its two local fixture jobs never use real Firebase. The preview is a
+`?fixture=success` to simulate recovery. Its four local fixture jobs (two unsynced) never use real Firebase. The preview is a
 diagnostic harness, not evidence of production network success.
 
 ## Archived Feature Regression
