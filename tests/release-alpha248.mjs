@@ -137,10 +137,10 @@ try {
       return route.fulfill({ json: url.searchParams.has('pageToken')
         ? { documents: [] } : { documents: [document], nextPageToken: 'page-2' } });
     });
-    await page.goto(new URL('dev/measurement-card.html?v=3.0.0-alpha247', base).href);
+    await page.goto(new URL('dev/measurement-card.html?v=3.0.0-alpha248', base).href);
     await page.waitForFunction(() => window.__tapcalcWorkflowBrowseReady && window.__tapcalcReferenceRouterReady);
     await page.waitForTimeout(1600);
-    assert.match(await page.locator('.top-app-title').innerText(), /alpha247/);
+    assert.match(await page.locator('.top-app-title').innerText(), /alpha248/);
     if (!process.env.TAPCALC_SHARED_ONLY) {
       await page.locator('.screen-nav [data-screen="card"]').click();
       await page.locator('#workflowStageNav [data-workflow-stage="setup"]').click();
@@ -263,7 +263,7 @@ try {
         }
         return route.continue();
       });
-      await page.goto(new URL('dev/measurement-card.html?v=3.0.0-alpha247', base).href);
+      await page.goto(new URL('dev/measurement-card.html?v=3.0.0-alpha248', base).href);
       await page.waitForFunction(() => window.__tapcalcWorkflowBrowseReady && window.__tapcalcReferenceRouterReady);
       await page.waitForTimeout(1600);
       await page.locator('.screen-nav [data-screen="jobs"]').click();
@@ -273,7 +273,7 @@ try {
       await page.locator('#jobsSelect .tapcalc-shared-load-btn').first().waitFor({ state: 'visible' });
       await page.waitForTimeout(1400);
       assert.equal(await page.locator('#jobsSelect .tapcalc-shared-load-btn').count(), count);
-      assert.match(await page.locator('.top-app-title').innerText(), /alpha247/);
+      assert.match(await page.locator('.top-app-title').innerText(), /alpha248/);
       assert.deepEqual(errors, []);
       // The SDK uses POST for its read-only Listen transport; keep it blocked so
       // this check still relies exclusively on the authenticated REST GET path.
@@ -288,7 +288,7 @@ try {
     const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
     await context.route('https://**', (route) => route.abort());
     const devPage = await context.newPage();
-    await devPage.goto(new URL('dev/measurement-card.html?v=3.0.0-alpha247', base).href);
+    await devPage.goto(new URL('dev/measurement-card.html?v=3.0.0-alpha248', base).href);
     await devPage.waitForFunction(() => navigator.serviceWorker.controller?.scriptURL.includes('/dev/service-worker.js'));
     await devPage.evaluate(() => navigator.serviceWorker.ready);
     const rootPage = await context.newPage();
@@ -301,9 +301,9 @@ try {
     await context.setOffline(true);
     await devPage.reload();
     await devPage.waitForFunction(() => window.__tapcalcWorkflowBrowseReady);
-    assert.match(await devPage.locator('.top-app-title').innerText(), /alpha247/);
+    assert.match(await devPage.locator('.top-app-title').innerText(), /alpha248/);
     await rootPage.reload();
-    assert.match(await rootPage.locator('.top-app-title').innerText(), /livefix16/);
+    assert.match(await rootPage.locator('.top-app-title').innerText(), /livefix17/);
     console.log('PASS real browser dev/live cache coexistence and offline reloads');
     await context.close();
   }

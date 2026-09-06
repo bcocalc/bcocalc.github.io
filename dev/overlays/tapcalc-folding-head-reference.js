@@ -1,4 +1,4 @@
-/* TapCalc alpha247 Folding Head reference. */
+/* TapCalc alpha248 Folding Head reference. */
 (function(){
   const READY_FLAG = '__tapcalcFoldingHeadReferenceReady';
   const VIEW_KEY = 'foldinghead';

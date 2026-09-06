@@ -8,18 +8,19 @@ window.TAPCALC_FIREBASE_CONFIG = {
 };
 
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
+window.TAPCALC_FIRESTORE_DATABASE = window.TAPCALC_FIRESTORE_DATABASE || '(default)';
 window.TAPCALC_BUILD = Object.assign({
   channel: 'live',
-  version: '3.0.0-livefix16',
-  label: 'TapCalc v3.0.0-livefix16 - 2026-07-07',
-  overlayVersion: '3.0.0-livefix16',
-  serviceWorkerVersion: '3.0.0-livefix16',
-  syncPill: 'DEV-LIVE'
+  version: '3.0.0-livefix17',
+  label: 'TapCalc v3.0.0-livefix17 - 2026-09-05',
+  overlayVersion: '3.0.0-livefix17',
+  serviceWorkerVersion: '3.0.0-livefix17',
+  syncPill: 'LIVE'
 }, window.TAPCALC_BUILD || {});
 
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix16';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix17';
   const OVERLAYS = [
     { css: 'tapcalc-overlays.css', js: 'tapcalc-overlays.js' }
   ];

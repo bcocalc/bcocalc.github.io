@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-livefix16';
+const BUILD_VERSION = '3.0.0-livefix17';
 
 (function(){
 
@@ -1048,8 +1048,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix16';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix16';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix17';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix17';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2465,7 +2465,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix16', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix17', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -2676,6 +2676,7 @@ const firebaseStatusEl = document.getElementById('firebaseStatus');
 const unsyncedJobsCountEl = document.getElementById('unsyncedJobsCount');
 const FIREBASE_ENABLED_KEY = 'tapcalcFirebaseEnabledV1';
 let firebaseDb = null;
+let firebaseAuth = null;
 let firebaseModuleCache = null;
 let firebaseInitPromise = null;
 let cloudJobsCache = [];
@@ -4343,21 +4344,28 @@ function buildHistorySnapshot() {
   };
 }
 
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms))
-  ]);
+async function withTimeout(promise, ms, label) {
+  let timer;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${label} timeout after ${ms}ms`)), ms); })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 async function ensureFirebaseReady(options = {}) {
-  if (firebaseDb && !options.forceRetry) return { enabled: true, db: firebaseDb, modules: firebaseModuleCache };
+  if (firebaseInitPromise) return firebaseInitPromise;
+  if (firebaseDb && firebaseAuth?.currentUser && !options.forceRetry) {
+    return { enabled: true, db: firebaseDb, modules: firebaseModuleCache, auth: firebaseAuth };
+  }
   if (options.forceRetry) {
     firebaseDb = null;
     firebaseModuleCache = null;
     firebaseInitPromise = null;
   }
-  if (firebaseInitPromise) return firebaseInitPromise;
   const config = window.TAPCALC_FIREBASE_CONFIG;
   if (!config || typeof config !== 'object' || !config.apiKey || !config.projectId || !config.appId) {
     if (firebaseStatusEl) firebaseStatusEl.textContent = 'Not connected';
@@ -4384,14 +4392,16 @@ async function ensureFirebaseReady(options = {}) {
       );
       const app = appModule.getApps().length ? appModule.getApp() : appModule.initializeApp(config);
       const auth = authModule.getAuth(app);
+      await withTimeout(auth.authStateReady(), 5000, 'Firebase sign-in restore');
       if (!auth.currentUser) {
-        await authModule.signInAnonymously(auth);
+        await withTimeout(authModule.signInAnonymously(auth), 5000, 'Firebase sign-in');
       }
-      firebaseDb = firestoreModule.getFirestore(app);
+      firebaseAuth = auth;
+      firebaseDb = firestoreModule.getFirestore(app, window.TAPCALC_FIRESTORE_DATABASE || '(default)');
       firebaseModuleCache = firestoreModule;
       if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${config.projectId}`;
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Connected to shared job database (${config.projectId}).`;
-      return { enabled: true, db: firebaseDb, modules: firestoreModule };
+      return { enabled: true, db: firebaseDb, modules: firestoreModule, auth };
     } catch (error) {
       const formattedError = formatFirebaseError(error);
       if (/network|timeout|failed to fetch|internet|offline/i.test(formattedError)) {
@@ -4403,6 +4413,7 @@ async function ensureFirebaseReady(options = {}) {
       firebaseModuleCache = null;
       if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
       if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Shared sync unavailable. Local history still works. ${formattedError}`;
+      reportJobsSyncStatus(`Connection failed. ${describeSyncFailure(error)} Your local jobs are unchanged.`, 'error');
       return { enabled: false, error };
     } finally {
       firebaseInitPromise = null;
@@ -4427,7 +4438,7 @@ function formatFirebaseError(error) {
 
 async function uploadHistoryItemToCloud(item) {
   const ready = await ensureFirebaseReady();
-  if (!ready.enabled) return null;
+  if (!ready.enabled) throw ready.error || new Error(ready.offline ? 'Offline' : 'Firebase is not connected. Tap Connect to retry.');
 
   const { collection, addDoc, serverTimestamp } = ready.modules;
 
@@ -4451,7 +4462,33 @@ async function uploadHistoryItemToCloud(item) {
   return docRef.id;
 }
 
+let localJobsSyncInProgress = false;
+
+function describeSyncFailure(error) {
+  const detail = formatFirebaseError(error);
+  if (/sign-in.*timeout/i.test(detail)) return 'Firebase sign-in timed out. Tap Connect to retry, or try another network.';
+  if (/permission|unauthorized|403/i.test(detail)) return 'Firebase denied access. Tap Connect to retry; if it continues, the database permissions need checking.';
+  if (/offline|network|failed to fetch|internet/i.test(detail)) return 'Cannot reach Firebase. Check your connection, then tap Connect and Sync.';
+  if (/timeout/i.test(detail)) return 'Firebase did not confirm the upload in time. Keep this page open and check Shared before retrying.';
+  return detail;
+}
+
+function reportJobsSyncStatus(message, state = 'info') {
+  const status = document.getElementById('jobsSyncStatus');
+  if (status) {
+    status.textContent = message;
+    status.dataset.state = state;
+    status.hidden = !message;
+  }
+  if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = message;
+}
+
+window.tapCalcReportSyncStatus = reportJobsSyncStatus;
+window.tapCalcDescribeSyncFailure = describeSyncFailure;
+
 async function syncLocalJobsToCloud() {
+  if (localJobsSyncInProgress) return;
+  localJobsSyncInProgress = true;
   const items = getHistory();
   const unsynced = items.filter((item) => !item.cloudId);
   updateUnsyncedCount();
@@ -4461,58 +4498,65 @@ async function syncLocalJobsToCloud() {
 
   try {
     if (!unsynced.length) {
-      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'All local jobs are already synced.';
+      reportJobsSyncStatus('All local jobs are already synced.', 'success');
       return;
     }
 
-    if (jobsCloudStatusEl) {
-      jobsCloudStatusEl.textContent =
-        `Syncing 0 of ${unsynced.length} job${unsynced.length === 1 ? '' : 's'}...`;
-    }
+    reportJobsSyncStatus('Connecting before uploading your saved jobs...', 'loading');
+    const ready = await ensureFirebaseReady();
+    if (!ready.enabled) throw ready.error || new Error(ready.offline ? 'Offline' : 'Firebase is not connected. Tap Connect to retry.');
 
     let successCount = 0;
     let failCount = 0;
+    let firstError = '';
 
     for (let i = 0; i < unsynced.length; i += 1) {
       const item = unsynced[i];
 
-      if (jobsCloudStatusEl) {
-        jobsCloudStatusEl.textContent =
-          `Syncing ${i + 1} of ${unsynced.length}: ${item?.record?.meta?.title || 'Saved Job'}...`;
-      }
+      reportJobsSyncStatus(`Syncing ${i + 1} of ${unsynced.length}: ${item?.record?.meta?.title || 'Saved Job'}...`, 'loading');
 
       try {
         const cloudId = await uploadHistoryItemToCloud(item);
         if (cloudId) {
-          item.cloudId = cloudId;
-          item.synced = true;
+          // Merge each confirmation into fresh history, preserving concurrent saves.
+          const latest = getHistory();
+          const target = latest.find((entry) => entry.id === item.id);
+          if (target) {
+            target.cloudId = cloudId;
+            target.synced = true;
+            saveHistory(latest);
+          }
+          updateUnsyncedCount();
           successCount += 1;
         } else {
           failCount += 1;
         }
       } catch (error) {
         failCount += 1;
+        if (!firstError) firstError = describeSyncFailure(error);
         console.error('TapCalc sync failed', error);
       }
     }
 
-    saveHistory(items);
     renderHistory();
     updateUnsyncedCount();
-    await loadCloudJobs();
+    if (successCount > 0) await loadCloudJobs();
 
     if (jobsCloudStatusEl) {
       if (failCount === 0) {
-        jobsCloudStatusEl.textContent = `Sync complete. ${successCount} job${successCount === 1 ? '' : 's'} uploaded.`;
+        reportJobsSyncStatus(`Sync complete. ${successCount} job${successCount === 1 ? '' : 's'} uploaded.`, 'success');
         if (successCount > 0) {
           try { window.tapCalcSetSaveState?.('synced', { syncedAtIso: new Date().toISOString() }); } catch {}
         }
       } else {
-        jobsCloudStatusEl.textContent = `Sync finished with issues. Uploaded ${successCount}, failed ${failCount}.`;
-        try { window.tapCalcSetSaveState?.(successCount > 0 ? 'synced' : 'error'); } catch {}
+        reportJobsSyncStatus(`Uploaded ${successCount}; ${failCount} still unconfirmed. ${firstError} Your local copies are kept.`, 'error');
+        try { window.tapCalcSetSaveState?.('error'); } catch {}
       }
     }
+  } catch (error) {
+    reportJobsSyncStatus(`Sync could not finish. ${describeSyncFailure(error)} Your local jobs are unchanged.`, 'error');
   } finally {
+    localJobsSyncInProgress = false;
     if (syncJobsBtnEl) syncJobsBtnEl.disabled = false;
     if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
   }
@@ -5498,7 +5542,24 @@ var selectedJobId = window.selectedJobId || '';
     document.getElementById('currentSaveLocalBtn')?.addEventListener('click', async ()=>{ await window.saveCurrentJobToHistory(); });
     document.getElementById('currentSyncSharedBtn')?.addEventListener('click', async ()=>{ await window.saveCurrentJobToHistory(); document.getElementById('syncJobsBtn')?.click(); });
     document.getElementById('currentResetBtn')?.addEventListener('click', ()=>document.getElementById('resetJobBtn')?.click());
-    document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async ()=>{ await window.ensureFirebaseReady({ forceRetry:true }); await window.loadCloudJobs(); });
+    document.getElementById('firebaseReconnectBtn')?.addEventListener('click', async (event)=>{
+      const button = event.currentTarget;
+      button.disabled = true;
+      window.tapCalcReportSyncStatus?.('Connecting to Firebase...', 'loading');
+      try {
+        const ready = await window.ensureFirebaseReady({ forceRetry:true });
+        if (!ready.enabled) {
+          window.tapCalcReportSyncStatus?.(`Connection failed. ${window.tapCalcDescribeSyncFailure?.(ready.error || new Error(ready.offline ? 'Offline' : 'Firebase is unavailable.'))} Your local jobs are unchanged.`, 'error');
+          return;
+        }
+        window.tapCalcReportSyncStatus?.('Connected. Tap Sync to upload your unsynced jobs.', 'success');
+        await window.loadCloudJobs();
+      } catch (error) {
+        window.tapCalcReportSyncStatus?.(`Connection failed. ${window.tapCalcDescribeSyncFailure?.(error)} Your local jobs are unchanged.`, 'error');
+      } finally {
+        button.disabled = false;
+      }
+    });
     document.getElementById('cardFocusJumpBtn')?.addEventListener('click', ()=>focusActiveCardPanel(getActiveWorkflowMode()));
   }
   function syncOperationSelection(){
@@ -8519,7 +8580,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-livefix16';
+const VERSION = '3.0.0-livefix17';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }

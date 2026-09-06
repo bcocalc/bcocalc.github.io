@@ -124,6 +124,34 @@ body.measurement-page #jobsScreen #jobsCloudStatus {
   display: none !important;
 }
 
+body.measurement-page #jobsScreen #jobsSyncStatus:not([hidden]) {
+  display: block !important;
+  margin: 10px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid #7399c4;
+  border-radius: 12px;
+  background: #122b44;
+  color: #edf5ff;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+body.measurement-page #jobsScreen #jobsSyncStatus[data-state="error"] {
+  border-color: #dba95c;
+  background: #382b16;
+  color: #fff0d7;
+}
+
+:root[data-theme="light"] body.measurement-page #jobsScreen #jobsSyncStatus {
+  background: #e2ebf5;
+  color: #143756;
+}
+
+:root[data-theme="light"] body.measurement-page #jobsScreen #jobsSyncStatus[data-state="error"] {
+  background: #fff1d5;
+  color: #634009;
+}
+
 body.measurement-page #jobsScreen #jobsCloudStatusMirror {
   display: none !important;
   visibility: hidden !important;
