@@ -9,18 +9,20 @@ window.TAPCALC_FIREBASE_CONFIG = {
 
 window.TAPCALC_FIREBASE_COLLECTION = window.TAPCALC_FIREBASE_COLLECTION || 'tapcalcJobs';
 window.TAPCALC_FIRESTORE_DATABASE = window.TAPCALC_FIRESTORE_DATABASE || '(default)';
+// Matches the current public read/create policy; this does not change server rules.
+window.TAPCALC_PUBLIC_SYNC = true;
 window.TAPCALC_BUILD = Object.assign({
   channel: 'live',
-  version: '3.0.0-livefix17',
-  label: 'TapCalc v3.0.0-livefix17 - 2026-09-05',
-  overlayVersion: '3.0.0-livefix17',
-  serviceWorkerVersion: '3.0.0-livefix17',
+  version: '3.0.0-livefix18',
+  label: 'TapCalc v3.0.0-livefix18 - 2026-09-05',
+  overlayVersion: '3.0.0-livefix18',
+  serviceWorkerVersion: '3.0.0-livefix18',
   syncPill: 'LIVE'
 }, window.TAPCALC_BUILD || {});
 
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix17';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix18';
   const OVERLAYS = [
     { css: 'tapcalc-overlays.css', js: 'tapcalc-overlays.js' }
   ];

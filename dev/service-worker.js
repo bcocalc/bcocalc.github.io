@@ -1,39 +1,40 @@
-const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha248';
+const CACHE_NAME = 'tapcalc-dev-cache-3.0.0-alpha249';
 const CACHE_PREFIX = 'tapcalc-dev-cache-';
 const SHELL_FALLBACK = './measurement-card.html';
 const ASSETS = [
   './',
   './index.html',
   './measurement-card.html',
-  './styles.css?v=3.0.0-alpha248',
-  './measurement.js?v=3.0.0-alpha248',
-  './tapcalc-dev-overlays.css?v=3.0.0-alpha248',
-  './tapcalc-dev-overlays.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-workflow-library.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-workflow-library.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-shell-reference.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-shell-reference.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-field-manual.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-smartstop-reference.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-smartstop-reference.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-folding-head-reference.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-folding-head-reference.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-light-mode.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-reference-router.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-reference-router.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-alpha248',
-  './overlays/tapcalc-workflow-browse.css?v=3.0.0-alpha248',
-  './overlays/tapcalc-workflow-browse.js?v=3.0.0-alpha248',
-  './pdf.mjs?v=3.0.0-alpha248',
-  './pdf.worker.mjs?v=3.0.0-alpha248',
-  './stackup-data.js?v=3.0.0-alpha248',
+  './styles.css?v=3.0.0-alpha249',
+  './measurement.js?v=3.0.0-alpha249',
+  './cloud-sync.js?v=3.0.0-alpha249',
+  './tapcalc-dev-overlays.css?v=3.0.0-alpha249',
+  './tapcalc-dev-overlays.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-workflow-library.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-workflow-library.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-shell-reference.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-shell-reference.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-field-manual.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-smartstop-reference.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-smartstop-reference.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-folding-head-reference.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-folding-head-reference.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-light-mode.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-reference-router.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-reference-router.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-alpha249',
+  './overlays/tapcalc-workflow-browse.css?v=3.0.0-alpha249',
+  './overlays/tapcalc-workflow-browse.js?v=3.0.0-alpha249',
+  './pdf.mjs?v=3.0.0-alpha249',
+  './pdf.worker.mjs?v=3.0.0-alpha249',
+  './stackup-data.js?v=3.0.0-alpha249',
   './script.js',
   './manifest.json',
-  './firebase-config.js?v=3.0.0-alpha248',
+  './firebase-config.js?v=3.0.0-alpha249',
   './team-logo.png'
 ];
 
@@ -63,6 +64,7 @@ function isShellAsset(url) {
     url.pathname.endsWith('/dev/measurement-card.html') ||
     url.pathname.endsWith('/dev/styles.css') ||
     url.pathname.endsWith('/dev/measurement.js') ||
+    url.pathname.endsWith('/dev/cloud-sync.js') ||
     url.pathname.endsWith('/dev/tapcalc-dev-overlays.css') ||
     url.pathname.endsWith('/dev/tapcalc-dev-overlays.js') ||
     url.pathname.includes('/dev/overlays/tapcalc-') ||

@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha248';
+const BUILD_VERSION = '3.0.0-alpha249';
 
 (function(){
 
@@ -1052,8 +1052,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha248';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha248';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha249';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha249';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2469,7 +2469,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha248', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha249', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -4489,6 +4489,19 @@ async function withTimeout(promise, ms, label) {
 }
 
 async function ensureFirebaseReady(options = {}) {
+  if (window.TAPCALC_PUBLIC_SYNC) {
+    if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connecting...';
+    try {
+      if (!window.tapCalcCloud) throw new Error('Sync files did not load. Refresh this page; do not clear site data.');
+      const ready = await window.tapCalcCloud.connect();
+      if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${window.TAPCALC_FIREBASE_CONFIG?.projectId}`;
+      return ready;
+    } catch (error) {
+      if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
+      reportJobsSyncStatus(`Connection failed. ${describeSyncFailure(error)} Your local jobs are unchanged.`, 'error');
+      return { enabled: false, error };
+    }
+  }
   if (firebaseInitPromise) return firebaseInitPromise;
   if (firebaseDb && firebaseAuth?.currentUser && !options.forceRetry) {
     return { enabled: true, db: firebaseDb, modules: firebaseModuleCache, auth: firebaseAuth };
@@ -4556,6 +4569,10 @@ async function ensureFirebaseReady(options = {}) {
 }
 
 async function fetchFirestoreJson(url) {
+  if (window.TAPCALC_PUBLIC_SYNC) {
+    if (!window.tapCalcCloud) throw new Error('Sync files did not load. Refresh this page; do not clear site data.');
+    return window.tapCalcCloud.request(url);
+  }
   const target = new URL(url);
   const project = encodeURIComponent(window.TAPCALC_FIREBASE_CONFIG?.projectId || '');
   const database = encodeURIComponent(window.TAPCALC_FIRESTORE_DATABASE || '(default)');
@@ -4610,7 +4627,11 @@ function formatFirebaseError(error) {
 }
 
 
-async function uploadHistoryItemToCloud(item) {
+async function uploadHistoryItemToCloud(item, existingJobs = null) {
+  if (window.TAPCALC_PUBLIC_SYNC) {
+    if (!window.tapCalcCloud) throw new Error('Sync files did not load. Refresh this page; do not clear site data.');
+    return window.tapCalcCloud.upload(item, existingJobs);
+  }
   const ready = await ensureFirebaseReady();
   if (!ready.enabled) throw ready.error || new Error(ready.offline ? 'Offline' : 'Firebase is not connected. Tap Connect to retry.');
 
@@ -4648,7 +4669,18 @@ function describeSyncFailure(error) {
 }
 
 function reportJobsSyncStatus(message, state = 'info') {
-  const status = document.getElementById('jobsSyncStatus');
+  let status = document.getElementById('jobsSyncStatus');
+  if (!status) {
+    const bar = document.querySelector('#jobsScreen .jobs-screen-topbar');
+    if (bar) {
+      status = document.createElement('p');
+      status.id = 'jobsSyncStatus';
+      status.className = 'note';
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+      bar.after(status);
+    }
+  }
   if (status) {
     status.textContent = message;
     status.dataset.state = state;
@@ -4663,15 +4695,15 @@ window.tapCalcDescribeSyncFailure = describeSyncFailure;
 async function syncLocalJobsToCloud() {
   if (localJobsSyncInProgress) return;
   localJobsSyncInProgress = true;
-  const items = getHistory();
-  const unsynced = items.filter((item) => !item.cloudId);
-  updateUnsyncedCount();
 
   if (syncJobsBtnEl) syncJobsBtnEl.disabled = true;
   if (testFirestoreBtnEl) testFirestoreBtnEl.disabled = true;
   if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
 
   try {
+    const items = getHistory();
+    const unsynced = items.filter((item) => !item.cloudId);
+    updateUnsyncedCount();
     if (!unsynced.length) {
       reportJobsSyncStatus('All local jobs are already synced.', 'success');
       return;
@@ -4680,6 +4712,7 @@ async function syncLocalJobsToCloud() {
     reportJobsSyncStatus('Connecting before uploading your saved jobs...', 'loading');
     const ready = await ensureFirebaseReady();
     if (!ready.enabled) throw ready.error || new Error(ready.offline ? 'Offline' : 'Firebase is not connected. Tap Connect to retry.');
+    const existingJobs = window.TAPCALC_PUBLIC_SYNC ? await window.tapCalcCloud.list() : null;
 
     let successCount = 0;
     let failCount = 0;
@@ -4691,7 +4724,7 @@ async function syncLocalJobsToCloud() {
       reportJobsSyncStatus(`Syncing ${i + 1} of ${unsynced.length}: ${item?.record?.meta?.title || 'Saved Job'}...`, 'loading');
 
       try {
-        const cloudId = await uploadHistoryItemToCloud(item);
+        const cloudId = await uploadHistoryItemToCloud(item, existingJobs);
         if (cloudId) {
           // Merge each confirmation into fresh history, preserving concurrent saves.
           const latest = getHistory();
@@ -4700,6 +4733,9 @@ async function syncLocalJobsToCloud() {
             target.cloudId = cloudId;
             target.synced = true;
             saveHistory(latest);
+            if (getHistory().find((entry) => entry.id === item.id)?.cloudId !== cloudId) {
+              throw new Error('Upload confirmed, but this device could not save its sync receipt. Keep the local copy and retry Sync.');
+            }
           }
           updateUnsyncedCount();
           successCount += 1;
@@ -4715,19 +4751,17 @@ async function syncLocalJobsToCloud() {
 
     renderHistory();
     updateUnsyncedCount();
-    if (successCount > 0) await loadCloudJobs();
-
-    if (jobsCloudStatusEl) {
-      if (failCount === 0) {
-        reportJobsSyncStatus(`Sync complete. ${successCount} job${successCount === 1 ? '' : 's'} uploaded.`, 'success');
-        if (successCount > 0) {
-          try { window.tapCalcSetSaveState?.('synced', { syncedAtIso: new Date().toISOString() }); } catch {}
-        }
-      } else {
-        reportJobsSyncStatus(`Uploaded ${successCount}; ${failCount} still unconfirmed. ${firstError} Your local copies are kept.`, 'error');
-        try { window.tapCalcSetSaveState?.('error'); } catch {}
+    if (failCount === 0) {
+      reportJobsSyncStatus(`Sync complete. ${successCount} job${successCount === 1 ? '' : 's'} uploaded.`, 'success');
+      if (successCount > 0) {
+        try { window.tapCalcSetSaveState?.('synced', { syncedAtIso: new Date().toISOString() }); } catch {}
       }
+    } else {
+      reportJobsSyncStatus(`Uploaded ${successCount}; ${failCount} still unconfirmed. ${firstError} Your local copies are kept.`, 'error');
+      try { window.tapCalcSetSaveState?.('error'); } catch {}
     }
+    // Show upload receipts without waiting for a separate Shared-list refresh.
+    if (successCount > 0) loadCloudJobs().catch((error) => console.warn('Shared refresh after sync failed', error));
   } catch (error) {
     reportJobsSyncStatus(`Sync could not finish. ${describeSyncFailure(error)} Your local jobs are unchanged.`, 'error');
   } finally {
@@ -4956,6 +4990,25 @@ function renderJobsList() {
 }
 
 async function loadCloudJobs() {
+  if (window.TAPCALC_PUBLIC_SYNC) {
+    if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = true;
+    try {
+      if (!window.tapCalcCloud) throw new Error('Sync files did not load. Refresh this page; do not clear site data.');
+      cloudJobsCache = await window.tapCalcCloud.list();
+      window.__tapcalcRestCloudJobsCache = cloudJobsCache;
+      if (firebaseStatusEl) firebaseStatusEl.textContent = `Connected to ${window.TAPCALC_FIREBASE_CONFIG?.projectId}`;
+      if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = `Loaded ${cloudJobsCache.length} shared jobs.`;
+      renderJobsList();
+      updateUnsyncedCount();
+      return cloudJobsCache;
+    } catch (error) {
+      if (firebaseStatusEl) firebaseStatusEl.textContent = 'Connection failed';
+      reportJobsSyncStatus(`Shared jobs could not refresh. ${describeSyncFailure(error)} Your local jobs are unchanged.`, 'error');
+      return [];
+    } finally {
+      if (refreshCloudJobsBtnEl) refreshCloudJobsBtnEl.disabled = false;
+    }
+  }
   if (typeof window.tapCalcLoadSharedJobsViaRestFallback === 'function') {
     return window.tapCalcLoadSharedJobsViaRestFallback('app');
   }
@@ -5263,6 +5316,10 @@ if (syncJobsBtnEl) syncJobsBtnEl.addEventListener('click', syncLocalJobsToCloud)
 
 async function testFirestoreUpload() {
   const ready = await ensureFirebaseReady();
+  if (ready.transport === 'rest') {
+    reportJobsSyncStatus('Connection check passed. Use Sync for saved jobs; no test record was created.', 'success');
+    return;
+  }
   if (!ready.enabled) {
     if (jobsCloudStatusEl) jobsCloudStatusEl.textContent = 'Firebase not ready for test upload.';
     alert('Firebase not ready.');
@@ -5384,6 +5441,8 @@ window.addEventListener('load', async () => {
   updateUnsyncedCount();
   renderJobsList();
   updateJobInfoSummary();
+  const waiting = getHistory().filter((item) => !item.cloudId).length;
+  reportJobsSyncStatus(`Sync ready (3.0.0-alpha249). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
   initAccordionSections();
   ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
 });
@@ -5394,7 +5453,7 @@ var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
 var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
 var selectedJobId = window.selectedJobId || '';
 
-/* ===== 3.0.0-alpha248 auto-scroll guard ===== */
+/* ===== 3.0.0-alpha249 auto-scroll guard ===== */
 (function(){
   let lastFieldEditAt = 0;
   const editableSelector = 'input, textarea, select, [contenteditable="true"]';
@@ -6898,7 +6957,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha248';
+const TC63_VERSION = '3.0.0-alpha249';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -7144,7 +7203,7 @@ const TC63_VERSION = '3.0.0-alpha248';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha248';
+const VERSION = '3.0.0-alpha249';
 
   function tc65GetJobs() {
     try {
@@ -10366,7 +10425,7 @@ const VERSION = '3.0.0-alpha248';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha248';
+const VERSION = '3.0.0-alpha249';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -14713,7 +14772,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitUwireCalculator = initUwireCalculator;
 })();
 
-/* ===== 3.0.0-alpha248 shared library row consistency ===== */
+/* ===== 3.0.0-alpha249 shared library row consistency ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 

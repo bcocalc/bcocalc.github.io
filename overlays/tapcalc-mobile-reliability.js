@@ -569,7 +569,7 @@
     const jobsScreen = byId('jobsScreen');
     const sharedActive = jobsScreen?.dataset?.activeLane === 'shared'
       || !!document.querySelector('[data-library-lane-panel="shared"].active');
-    if (!sharedActive) {
+    if (!sharedActive && !/connected to/i.test(byId('firebaseStatus')?.textContent || '')) {
       setCloudStatus('Local history is ready. Open Shared to connect to the shared job database.', 'Not connected');
     }
     return false;
@@ -677,6 +677,10 @@
   }
 
   async function fetchSharedJobsViaRest(options = {}) {
+    if (window.TAPCALC_PUBLIC_SYNC) {
+      if (!window.tapCalcCloud) throw new Error('Sync files did not load. Refresh this page; do not clear site data.');
+      return window.tapCalcCloud.list();
+    }
     const config = window.TAPCALC_FIREBASE_CONFIG || {};
     const projectId = String(config.projectId || '').trim();
     const apiKey = String(config.apiKey || '').trim();

@@ -1,32 +1,33 @@
-const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix17';
+const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix18';
 const CACHE_PREFIX = 'tapcalc-cache-';
 const SHELL_FALLBACK = './measurement-card.html';
 const ASSETS = [
   './',
   './index.html',
   './measurement-card.html',
-  './styles.css?v=3.0.0-livefix17',
-  './measurement.js?v=3.0.0-livefix17',
-  './tapcalc-overlays.css?v=3.0.0-livefix17',
-  './tapcalc-overlays.js?v=3.0.0-livefix17',
-  './overlays/tapcalc-workflow-library.css?v=3.0.0-livefix17',
-  './overlays/tapcalc-workflow-library.js?v=3.0.0-livefix17',
-  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-livefix17',
-  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-livefix17',
-  './overlays/tapcalc-shell-reference.css?v=3.0.0-livefix17',
-  './overlays/tapcalc-shell-reference.js?v=3.0.0-livefix17',
-  './overlays/tapcalc-field-manual.js?v=3.0.0-livefix17',
-  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-livefix17',
-  './overlays/tapcalc-light-mode.css?v=3.0.0-livefix17',
-  './overlays/tapcalc-reference-router.css?v=3.0.0-livefix17',
-  './overlays/tapcalc-reference-router.js?v=3.0.0-livefix17',
-  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-livefix17',
-  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-livefix17',
-  './pdf.mjs?v=3.0.0-livefix17',
-  './pdf.worker.mjs?v=3.0.0-livefix17',
-  './stackup-data.js?v=3.0.0-livefix17',
+  './styles.css?v=3.0.0-livefix18',
+  './measurement.js?v=3.0.0-livefix18',
+  './cloud-sync.js?v=3.0.0-livefix18',
+  './tapcalc-overlays.css?v=3.0.0-livefix18',
+  './tapcalc-overlays.js?v=3.0.0-livefix18',
+  './overlays/tapcalc-workflow-library.css?v=3.0.0-livefix18',
+  './overlays/tapcalc-workflow-library.js?v=3.0.0-livefix18',
+  './overlays/tapcalc-livefix11-workflow.css?v=3.0.0-livefix18',
+  './overlays/tapcalc-livefix11-workflow.js?v=3.0.0-livefix18',
+  './overlays/tapcalc-shell-reference.css?v=3.0.0-livefix18',
+  './overlays/tapcalc-shell-reference.js?v=3.0.0-livefix18',
+  './overlays/tapcalc-field-manual.js?v=3.0.0-livefix18',
+  './overlays/tapcalc-field-manual-mobile.css?v=3.0.0-livefix18',
+  './overlays/tapcalc-light-mode.css?v=3.0.0-livefix18',
+  './overlays/tapcalc-reference-router.css?v=3.0.0-livefix18',
+  './overlays/tapcalc-reference-router.js?v=3.0.0-livefix18',
+  './overlays/tapcalc-mobile-reliability.css?v=3.0.0-livefix18',
+  './overlays/tapcalc-mobile-reliability.js?v=3.0.0-livefix18',
+  './pdf.mjs?v=3.0.0-livefix18',
+  './pdf.worker.mjs?v=3.0.0-livefix18',
+  './stackup-data.js?v=3.0.0-livefix18',
   './manifest.json',
-  './firebase-config.js?v=3.0.0-livefix17',
+  './firebase-config.js?v=3.0.0-livefix18',
   './team-logo.png'
 ];
 
@@ -56,6 +57,7 @@ function isShellAsset(url) {
     url.pathname.endsWith('/measurement-card.html') ||
     url.pathname.endsWith('/styles.css') ||
     url.pathname.endsWith('/measurement.js') ||
+    url.pathname.endsWith('/cloud-sync.js') ||
     url.pathname.endsWith('/tapcalc-overlays.css') ||
     url.pathname.endsWith('/tapcalc-overlays.js') ||
     url.pathname.includes('/overlays/tapcalc-') ||

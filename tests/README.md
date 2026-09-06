@@ -1,4 +1,15 @@
-# Alpha248 / Livefix17 Checks
+# Alpha249 / Livefix18 Sync Checks
+
+Run the current public transport and app integration regressions:
+
+```powershell
+node tests/cloud-sync.mjs
+```
+
+These 28 network-free cases cover both live and dev, two-operation saved states,
+offline/timeout/denied responses, partial success, lost write acknowledgements,
+create-only collision protection, old addDoc receipt recovery, concurrent saves,
+storage failures, and pagination. All fetch calls go to an in-memory fake.
 
 The sync regression uses Node's VM with injected modules, no browser and no network:
 
@@ -16,9 +27,16 @@ For a visual preview with local-only SDK stubs and CSP blocking external traffic
 node tests/sync-preview.mjs
 ```
 
-The printed local URL simulates stalled sign-in. Add `?fixture=success` to simulate
-recovery. Its two local fixture jobs never use real Firebase. The preview is a
+The printed local URL simulates denied uploads while Shared reads work. Add
+`?fixture=success` to simulate recovery. Its two local fixture jobs never use real Firebase. The preview is a
 diagnostic harness, not evidence of production network success.
+
+## Archived Feature Regression
+
+The alpha248 suite below predates the new public REST transport. It was not rerun
+for alpha249 and still targets the older build. Do not use its older browser
+interception as isolation for production write tests. Use the VM tests and
+CSP-isolated local preview above for this release.
 
 Requirements: Node.js, Playwright, and Google Chrome. The script uses an installed
 `playwright` package or the Codex bundled Node runtime package as a fallback.
