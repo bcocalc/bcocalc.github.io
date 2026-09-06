@@ -35,7 +35,10 @@ Remove-Item Env:TAPCALC_LIVE_READ_ONLY
 Remove-Item Env:TAPCALC_TEST_BASE
 ```
 
-This mode blocks every non-GET Firestore request. It checks the alpha246 label and
+This mode blocks every non-GET Firestore request, including the SDK's read-only
+POST Listen transport; results must arrive through REST GET requests. A blocked
+Listen request is allowed in the audit, but any other non-GET request fails it.
+It checks the alpha246 label and
 visible Load buttons for the retrieved jobs, but does not click Load or test real
 cloud saves, updates, or deletion. It uses the app's anonymous sign-in in a fresh
 browser context, not the user's browser profile.

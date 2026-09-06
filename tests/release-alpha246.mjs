@@ -229,11 +229,11 @@ try {
       const context = await browser.newContext({ viewport: { width, height: 844 }, serviceWorkers: 'block' });
       const page = await context.newPage();
       const errors = [];
-      const blockedWrites = [];
+      const blockedNonGet = [];
       page.on('pageerror', (error) => errors.push(error.message));
       await context.route('https://firestore.googleapis.com/**', async (route) => {
         if (route.request().method() !== 'GET') {
-          blockedWrites.push(route.request().method());
+          blockedNonGet.push({ method: route.request().method(), url: route.request().url() });
           return route.abort();
         }
         return route.continue();
@@ -250,7 +250,11 @@ try {
       assert.equal(await page.locator('#jobsSelect .tapcalc-shared-load-btn').count(), count);
       assert.match(await page.locator('.top-app-title').innerText(), /alpha246/);
       assert.deepEqual(errors, []);
-      assert.deepEqual(blockedWrites, [], 'Read-only check must not initiate Firestore writes');
+      // The SDK uses POST for its read-only Listen transport; keep it blocked so
+      // this check still relies exclusively on the authenticated REST GET path.
+      const unexpectedRequests = blockedNonGet.filter(({ method, url }) =>
+        method !== 'POST' || new URL(url).pathname !== '/google.firestore.v1.Firestore/Listen/channel');
+      assert.deepEqual(unexpectedRequests, [], 'Read-only check must not initiate Firestore writes');
       console.log('PASS real Firebase read and visible Load buttons: ' + count + ' jobs at ' + width + 'px');
       await context.close();
     }

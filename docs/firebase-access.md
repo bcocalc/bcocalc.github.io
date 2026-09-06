@@ -18,7 +18,8 @@ Verified in the Firebase console on 2026-09-05:
 Billing shows Blaze. The initial billing-enablement error cleared after
 publication, and read-only checks retrieved 29 Shared jobs from `(default)`.
 The alpha246 app displays all 29 jobs with Load buttons at both 390px
-and 1280px widths. These checks blocked every non-GET Firestore request; no job
+and 1280px widths, both locally and on the deployed GitHub Pages dev site.
+These checks blocked every non-GET Firestore request; no job
 records were changed. Creating/updating real cloud jobs was not exercised.
 
 The alpha246 configuration explicitly retains `(default)`, matching the
