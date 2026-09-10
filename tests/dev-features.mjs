@@ -125,11 +125,67 @@ try {
       await openReference('smartstop');
       const sizes = await page.locator('#smartStopSizeSelect option').evaluateAll(nodes => nodes.map(node => node.value));
       await page.locator('#smartStopSizeSelect').scrollIntoViewIfNeeded();
-      for (const size of [sizes[0], sizes.at(-1)]) {
+      let totalSuffixes = 0;
+      for (const size of sizes) {
         step = label + ' / ' + theme + ' SmartStop size ' + size;
         await page.locator('#smartStopSizeSelect').selectOption(size);
         assert.ok(await page.locator('#smartStopLookupResults .smartstop-result-row').count() > 0);
+        totalSuffixes += await page.locator('#smartStopLookupResults .smartstop-result-row').count();
       }
+      assert.equal(totalSuffixes, 55);
+      const smartSection = page.locator('#smartStopSectionSelect');
+      const smartSize = page.locator('#smartStopSizeSelect');
+      const smartWall = page.locator('#smartStopWallFilter');
+      const smartId = page.locator('#smartStopPipeIdFilter');
+      const smartRows = page.locator('#smartStopLookupResults .smartstop-result-row');
+      const smartStatus = page.locator('#smartStopFilterStatus');
+      for (const invalid of ['bad', '-.25', '0', '1/4', '1e-1']) {
+        await smartWall.fill(invalid);
+        assert.equal(await smartWall.getAttribute('aria-invalid'), 'true');
+        assert.equal(await smartRows.count(), 0);
+      }
+      await smartSize.scrollIntoViewIfNeeded();
+      await smartSize.selectOption('6');
+      assert.equal(await smartWall.inputValue(), '');
+      await smartWall.fill('.235');
+      assert.equal(await smartRows.count(), 2);
+      assert.match(await smartStatus.textContent(), /Overlapping ranges/);
+      await smartId.fill('6.10');
+      assert.equal(await smartRows.count(), 1);
+      assert.equal(await smartRows.first().getAttribute('data-suffix'), '-03');
+      assert.equal(await smartRows.first().getAttribute('open'), '');
+      await smartId.fill('5');
+      assert.equal(await smartRows.count(), 0);
+      await activate(page.locator('[data-smartstop-clear-filters]'));
+      assert.equal(await smartId.inputValue(), '');
+      await smartSize.scrollIntoViewIfNeeded();
+      await smartSize.selectOption('4');
+      assert.equal(await page.locator('.smartstop-kit-grid').first().isVisible(), false);
+      await page.locator('#smartStopSuffixSelect').selectOption('-07');
+      assert.equal(await smartRows.count(), 1);
+      assert.match(await smartRows.textContent(), /Primary -01 \/ Secondary -07/);
+      if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#smartStopReferenceView').screenshot({
+        path: join(process.env.TAPCALC_SCREENSHOTS, 'smartstop-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '-' + theme + '.png')
+      });
+      await smartSection.scrollIntoViewIfNeeded();
+      await smartSection.selectOption('torque');
+      assert.equal(await smartSize.isVisible(), false);
+      await page.locator('#smartStopScrewSelect').selectOption('0');
+      assert.equal(await page.locator('#smartStopTorqueResult').textContent(), '#8: 2.5 ft-lb / 30 in-lb');
+      await page.locator('#smartStopScrewSelect').selectOption('5');
+      assert.equal(await page.locator('#smartStopTorqueResult').textContent(), '1/2": 80 ft-lb / in-lb not printed');
+      assert.equal(await page.locator('.smartstop-table').isVisible(), false);
+      await activate(page.locator('.smartstop-torque-section summary'));
+      assert.equal(await page.locator('.smartstop-table tbody tr').count(), 10);
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+      await activate(page.locator('.smartstop-torque-section summary'));
+      await smartSection.scrollIntoViewIfNeeded();
+      await smartSection.selectOption('source');
+      assert.equal(await page.locator('#smartStopScrewSelect').isVisible(), false);
+      assert.equal(await page.locator('[data-smartstop-section="source"]').isVisible(), true);
+      await smartSection.selectOption('suffix');
+      assert.equal(await page.locator('[data-smartstop-section="source"]').isVisible(), false);
+      assert.equal(await page.locator('#bcoCutterOD').inputValue(), cutterBefore);
       await page.locator('#smartStopWallFilter').fill('999');
       assert.equal(await page.locator('#smartStopLookupResults .smartstop-result-row').count(), 0);
       await activate(page.locator('[data-smartstop-clear-filters]'));

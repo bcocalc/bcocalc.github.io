@@ -9,6 +9,7 @@ const checks = [
   ['library-release-guard-test.mjs', {}],
   ['reference-measurements.mjs', {}],
   ['cutter-reference.mjs', {}],
+  ['smartstop-reference.mjs', {}],
   ['library-tap-unit.mjs', {}],
   ['cloud-sync.mjs', {}],
   ['sync-local-jobs.mjs', {}]

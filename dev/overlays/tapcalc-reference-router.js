@@ -20,7 +20,7 @@
     papergaskets: ['Field Reference', 'Paper Gaskets', 'Compressed sheet and GYLON ring gasket torque tables'],
     fieldmanual: ['Field Reference', 'Field Manual', 'Inline RPM, Hi-Stop, machine specs, and checks'],
     foldinghead: ['Field Reference', 'Folding Head Line Stop', 'Capacity table, set-point helper, and field checks'],
-    smartstop: ['Field Reference', 'SmartStop Field Guide', 'Source map and verified lookup staging']
+    smartstop: ['Field Reference', 'SmartStop Field Guide', 'Suffixes, parts and seal ring torque']
   };
 
   if (window[READY_FLAG]) return;
@@ -144,7 +144,7 @@
       appendReferenceButton('foldinghead', 'Folding Head Line Stop', 'Capacity table, set-point helper, and field checks', 'fieldmanual');
     }
     if (panelFor('smartstop')) {
-      appendReferenceButton('smartstop', 'SmartStop Field Guide', 'Source map and verified lookup staging', panelFor('foldinghead') ? 'foldinghead' : 'fieldmanual');
+      appendReferenceButton('smartstop', 'SmartStop Field Guide', 'Suffixes, parts and seal ring torque', panelFor('foldinghead') ? 'foldinghead' : 'fieldmanual');
     }
   }
 

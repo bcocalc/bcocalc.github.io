@@ -1,4 +1,4 @@
-/* TapCalc Dev SmartStop reference source map. */
+/* SmartStop read-only field reference. Main Reference routing stays with its existing owner. */
 (function(){
   const READY_FLAG = '__tapcalcSmartStopReferenceReady';
   const VIEW_KEY = 'smartstop';
@@ -9,91 +9,6 @@
   if (window[READY_FLAG]) return;
   window[READY_FLAG] = true;
 
-  const pageMap = [
-    {
-      pages: '1-2',
-      section: 'Cover / Admin',
-      appUse: 'Source identification',
-      status: 'Mapped',
-      notes: 'Cover page and table of contents. Keep as source provenance, not field lookup content.'
-    },
-    {
-      pages: '4-18',
-      section: 'Introduction / Nomenclature',
-      appUse: 'Training context',
-      status: 'Mapped',
-      notes: 'Overview, service context, and labeled SmartStop component visuals.'
-    },
-    {
-      pages: '20-44',
-      section: 'Set-Up',
-      appUse: 'Procedure reference candidate',
-      status: 'Mapped',
-      notes: 'Equipment setup, stick/update references, head and seal assembly, latch pins, and central bit prep.'
-    },
-    {
-      pages: '46-66',
-      section: 'Break-Down',
-      appUse: 'Procedure reference candidate',
-      status: 'Mapped',
-      notes: 'Disassembly/removal flow for seals, heads, latch pins, control bar, and related components.'
-    },
-    {
-      pages: '68-78',
-      section: 'Field Execution',
-      appUse: 'Field guide candidate',
-      status: 'Mapped',
-      notes: 'Execution photos and sequence references for chip removal, seating, and retrieving SmartStop.'
-    },
-    {
-      pages: '80-92',
-      section: 'Case Studies',
-      appUse: 'Background only',
-      status: 'Mapped',
-      notes: 'Field photos and notes. Useful for context, but likely too bulky for the app workflow.'
-    },
-    {
-      pages: '93',
-      section: 'Experience Matrix',
-      appUse: 'Optional compact matrix',
-      status: 'Candidate',
-      notes: 'Possible field-facing summary if kit counts/deployments help planning.'
-    },
-    {
-      pages: '95-103',
-      section: 'Stopping Information',
-      appUse: 'High-value lookup candidate',
-      status: 'Extract next',
-      notes: 'Overview sheet, suffix charts, seal-ring torque spec, and SmartStop stack-up drawings.'
-    }
-  ];
-
-  const lookupCandidates = [
-    {
-      title: 'SmartStop Suffix Charts',
-      pages: '96-101',
-      status: 'Verified in dev',
-      fields: 'Size, wall range, pipe I.D. range, shims, nose ring, seal, retaining ring, foot pad, nose pad'
-    },
-    {
-      title: 'Seal-Ring Torque',
-      pages: '102',
-      status: 'Verified in dev',
-      fields: 'Screw size with ft-lb torque and source in-lb where printed'
-    },
-    {
-      title: 'Stack-Up Drawings',
-      pages: '95-103',
-      status: 'Index first',
-      fields: 'Drawing/page index before any dimensional lookup is exposed'
-    },
-    {
-      title: 'Experience Matrix',
-      pages: '93',
-      status: 'Optional',
-      fields: 'Kit/deployment matrix only if it helps field planning'
-    }
-  ];
 
   function rangeLabel(min, max){
     return `${Number(min).toFixed(3).replace(/^0/, '')} - ${Number(max).toFixed(3).replace(/^0/, '')}`;
@@ -248,13 +163,6 @@
     { screwSize: '1"', ftLb: '650', inLb: '' }
   ];
 
-  const extractionSteps = [
-    'Confirm the PDF page number against the printed page label before entering any value.',
-    'Crop and OCR the suffix chart pages, then manually compare against the scan.',
-    'Transcribe chart values into a dev-only data file with source page and row notes.',
-    'Double-enter or spot-check wall range, pipe I.D. range, and kit component codes.',
-    'Only wire job helpers after the lookup table is traceable back to a source page.'
-  ];
 
   function byId(id){
     return document.getElementById(id);
@@ -270,46 +178,17 @@
     }[char]));
   }
 
-  function statusClass(status){
-    return String(status || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'mapped';
-  }
-
-  function renderPageMap(){
-    return pageMap.map((item) => `
-      <article class="smartstop-map-row">
-        <div class="smartstop-map-pages">Pages ${escapeHtml(item.pages)}</div>
-        <div class="smartstop-map-main">
-          <strong>${escapeHtml(item.section)}</strong>
-          <span>${escapeHtml(item.appUse)}</span>
-          <p>${escapeHtml(item.notes)}</p>
-        </div>
-        <span class="smartstop-status smartstop-status-${escapeHtml(statusClass(item.status))}">${escapeHtml(item.status)}</span>
-      </article>
-    `).join('');
-  }
-
-  function renderLookupCards(){
-    return lookupCandidates.map((item) => `
-      <article class="smartstop-lookup-card">
-        <div>
-          <span class="smartstop-card-kicker">Pages ${escapeHtml(item.pages)}</span>
-          <strong>${escapeHtml(item.title)}</strong>
-        </div>
-        <p>${escapeHtml(item.fields)}</p>
-        <span class="smartstop-status smartstop-status-${escapeHtml(statusClass(item.status))}">${escapeHtml(item.status)}</span>
-      </article>
-    `).join('');
-  }
 
   function renderSizeOptions(){
     return suffixCharts.map((chart) => `<option value="${escapeHtml(chart.size)}">${escapeHtml(chart.label)}</option>`).join('');
   }
 
   function parseDecimal(value){
-    const normalized = String(value || '').trim().replace(/^0*(?=\.)/, '');
+    const normalized = String(value ?? '').trim();
     if (!normalized) return null;
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(normalized)) return NaN;
     const parsed = Number(normalized);
-    return Number.isFinite(parsed) ? parsed : null;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : NaN;
   }
 
   function lookupValueLabel(value){
@@ -319,7 +198,7 @@
 
   function matchesRange(value, min, max){
     if (value === null) return true;
-    return value >= min && value <= max;
+    return Number.isFinite(value) && value >= min && value <= max;
   }
 
   function visibleNosePad(row){
@@ -329,7 +208,7 @@
     return row.nosePad || '-';
   }
 
-  function renderSuffixRow(row){
+  function renderSuffixRow(row, expanded = false){
     const pressure = row.pressure && row.pressure !== 'Standard'
       ? `<span class="smartstop-pressure-chip">${escapeHtml(row.pressure)}</span>`
       : '';
@@ -337,8 +216,8 @@
       ? `<p class="smartstop-row-note">${escapeHtml(row.sourceNote)}</p>`
       : '';
     return `
-      <article class="smartstop-result-row">
-        <div class="smartstop-result-main">
+      <details class="smartstop-result-row" data-suffix="${escapeHtml(row.suffix)}"${expanded ? ' open' : ''}>
+        <summary class="smartstop-result-main">
           <div>
             <span class="smartstop-card-kicker">Suffix</span>
             <strong>${escapeHtml(row.sourceLabel)}</strong>
@@ -348,8 +227,8 @@
             <span>Wall ${escapeHtml(row.wallLabel)}</span>
             <span>Pipe I.D. ${escapeHtml(row.pipeIdLabel)}</span>
           </div>
-          ${sourceNote}
-        </div>
+        </summary>
+        ${sourceNote}
         <div class="smartstop-kit-grid">
           <span><b>Foot shims</b>${escapeHtml(row.footPadShims)}</span>
           <span><b>Nose shims</b>${escapeHtml(row.nosePadShims)}</span>
@@ -359,7 +238,7 @@
           <span><b>Foot pad</b>${escapeHtml(row.footPad)}</span>
           <span class="smartstop-kit-wide"><b>Nose pad</b>${escapeHtml(visibleNosePad(row))}</span>
         </div>
-      </article>
+      </details>
     `;
   }
 
@@ -377,10 +256,10 @@
     ].filter(Boolean).join(' and ');
     const matchText = filterSummary
       ? `${rows.length} match${rows.length === 1 ? '' : 'es'} for ${escapeHtml(filterSummary)}`
-      : `${chart.rows.length} staged rows shown`;
+      : `${rows.length} chart rows shown`;
     const rowsHtml = rows.length
-      ? rows.map(renderSuffixRow).join('')
-      : '<div class="smartstop-empty-result">No staged suffix row matches those filters. Clear one value or confirm the pipe size/source chart.</div>';
+      ? rows.map(row => renderSuffixRow(row, rows.length === 1)).join('')
+      : '<div class="smartstop-empty-result">No chart row matches all selections. Confirm the source chart and measurements; no nearest-match substitution is made.</div>';
     return `
       <div class="smartstop-result-summary">
         <strong>${escapeHtml(chart.label)}</strong>
@@ -402,156 +281,129 @@
     `).join('');
   }
 
+  function resetSmartStopFilters(view){
+    for (const id of ['smartStopWallFilter', 'smartStopPipeIdFilter', 'smartStopSuffixSelect']) view.querySelector('#' + id).value = '';
+  }
+
+  function populateSmartStopSuffixes(view){
+    const chart = suffixCharts.find(item => item.size === view.querySelector('#smartStopSizeSelect').value);
+    view.querySelector('#smartStopSuffixSelect').innerHTML = '<option value="">All suffixes</option>' +
+      (chart?.rows || []).map(row => `<option value="${escapeHtml(row.suffix)}">${escapeHtml(row.sourceLabel)}</option>`).join('');
+  }
+
   function updateSmartStopLookup(view){
-    const size = view.querySelector('#smartStopSizeSelect')?.value || suffixCharts[0]?.size || '4';
-    const chart = suffixCharts.find((item) => item.size === size) || suffixCharts[0];
-    const wallValue = parseDecimal(view.querySelector('#smartStopWallFilter')?.value);
-    const pipeIdValue = parseDecimal(view.querySelector('#smartStopPipeIdFilter')?.value);
-    const rows = filterChartRows(chart, wallValue, pipeIdValue);
+    const chart = suffixCharts.find(item => item.size === view.querySelector('#smartStopSizeSelect').value);
+    const wall = view.querySelector('#smartStopWallFilter');
+    const pipeId = view.querySelector('#smartStopPipeIdFilter');
+    const wallValue = parseDecimal(wall.value);
+    const pipeIdValue = parseDecimal(pipeId.value);
+    wall.setAttribute('aria-invalid', String(Number.isNaN(wallValue)));
+    pipeId.setAttribute('aria-invalid', String(Number.isNaN(pipeIdValue)));
     const target = view.querySelector('#smartStopLookupResults');
-    if (target) {
-      target.innerHTML = renderLookupResults(chart, rows, { wallValue, pipeIdValue });
+    const status = view.querySelector('#smartStopFilterStatus');
+    const invalid = Number.isNaN(wallValue) || Number.isNaN(pipeIdValue);
+    status.dataset.state = invalid ? 'error' : '';
+    if (!chart || invalid) {
+      target.innerHTML = '';
+      status.textContent = !chart ? 'Choose a listed SmartStop size.' : 'Enter positive decimal inches, or leave the measurement blank. Fractions and negative values are not accepted.';
+      return;
     }
+    const suffix = view.querySelector('#smartStopSuffixSelect').value;
+    const rows = filterChartRows(chart, wallValue, pipeIdValue).filter(row => !suffix || row.suffix === suffix);
+    const filtered = !!suffix || wallValue !== null || pipeIdValue !== null;
+    status.textContent = filtered && rows.length > 1
+      ? rows.length + ' matching rows. Overlapping ranges require review; no kit is automatically selected.'
+      : filtered ? rows.length + ' matching row(s). Confirm the source and approved equipment requirements.'
+      : rows.length + ' suffixes. Open a row to see its parts, or filter by measurements.';
+    status.dataset.state = filtered && rows.length !== 1 ? 'warning' : '';
+    target.innerHTML = renderLookupResults(chart, rows, { wallValue, pipeIdValue });
+  }
+
+  function showSmartStopSection(view){
+    const selected = view.querySelector('#smartStopSectionSelect').value;
+    for (const section of view.querySelectorAll('[data-smartstop-section]')) {
+      section.hidden = section.dataset.smartstopSection !== selected;
+    }
+  }
+
+  function updateSmartStopTorque(view){
+    const value = view.querySelector('#smartStopScrewSelect').value;
+    const row = /^\d+$/.test(value) ? torqueRows[Number(value)] : null;
+    view.querySelector('#smartStopTorqueResult').textContent = row
+      ? row.screwSize + ': ' + row.ftLb + ' ft-lb / ' + (row.inLb ? row.inLb + ' in-lb' : 'in-lb not printed')
+      : 'Choose a screw size.';
   }
 
   function bindSmartStopControls(view){
     if (!view || view.dataset.smartstopControlsReady === 'true') return;
     view.dataset.smartstopControlsReady = 'true';
-    view.addEventListener('input', (event) => {
-      if (!event.target?.closest?.('.smartstop-lookup-controls')) return;
+    view.addEventListener('input', event => {
+      if (event.target.matches('#smartStopWallFilter, #smartStopPipeIdFilter')) updateSmartStopLookup(view);
+    });
+    view.addEventListener('change', event => {
+      if (event.target.id === 'smartStopSectionSelect') showSmartStopSection(view);
+      if (event.target.id === 'smartStopScrewSelect') updateSmartStopTorque(view);
+      if (event.target.id === 'smartStopSizeSelect') {
+        resetSmartStopFilters(view);
+        populateSmartStopSuffixes(view);
+      }
+      if (event.target.closest('.smartstop-lookup-controls')) updateSmartStopLookup(view);
+    });
+    view.addEventListener('click', event => {
+      if (!event.target.closest('[data-smartstop-clear-filters]')) return;
+      resetSmartStopFilters(view);
       updateSmartStopLookup(view);
     });
-    view.addEventListener('change', (event) => {
-      if (!event.target?.closest?.('.smartstop-lookup-controls')) return;
-      updateSmartStopLookup(view);
-    });
-    view.addEventListener('click', (event) => {
-      const clear = event.target?.closest?.('[data-smartstop-clear-filters]');
-      if (!clear) return;
-      const wall = view.querySelector('#smartStopWallFilter');
-      const pipeId = view.querySelector('#smartStopPipeIdFilter');
-      if (wall) wall.value = '';
-      if (pipeId) pipeId.value = '';
-      updateSmartStopLookup(view);
-    });
+    populateSmartStopSuffixes(view);
+    showSmartStopSection(view);
     updateSmartStopLookup(view);
   }
 
-  function renderExtractionSteps(){
-    return extractionSteps.map((step, index) => `
-      <li>
-        <span>${index + 1}</span>
-        <p>${escapeHtml(step)}</p>
-      </li>
-    `).join('');
-  }
 
   function renderSmartStopReference(){
     return `
-      <section class="smartstop-hero">
-        <div>
-          <p class="smartstop-eyebrow">Dev Reference - Source Map</p>
-          <h3>SmartStop Field Guide</h3>
-          <p class="reference-copy">This is the staging area for the 104-page TEAM SmartStop Training scan. It maps what is in the packet now, then gives us a safe checklist for extracting the suffix and torque charts later.</p>
-        </div>
-        <div class="smartstop-source-card" aria-label="SmartStop source status">
-          <strong>2316_001.pdf</strong>
-          <span>104 pages</span>
-          <span>Scan-only PDF</span>
-          <span>Dev-only intake</span>
-        </div>
-      </section>
-
-      <div class="smartstop-chip-row" aria-label="SmartStop build status">
-        <span>Source mapped</span>
-        <span>Suffix charts verified in dev</span>
-        <span>Torque table verified in dev</span>
-        <span>No SmartStop calculator active</span>
-      </div>
-
-      <section class="reference-card smartstop-section">
-        <div class="smartstop-section-heading">
-          <div>
-            <p class="smartstop-eyebrow">Packet Index</p>
-            <h4>What The Scan Contains</h4>
-          </div>
-          <span class="smartstop-muted">Use this to decide what belongs in the app.</span>
-        </div>
-        <div class="smartstop-map-list">
-          ${renderPageMap()}
-        </div>
-      </section>
-
-      <section class="reference-card smartstop-section">
-        <div class="smartstop-section-heading">
-          <div>
-            <p class="smartstop-eyebrow">Lookup Status</p>
-            <h4>Extraction Progress</h4>
-          </div>
-          <span class="smartstop-muted">Second-pass checked against enlarged scan crops.</span>
-        </div>
-        <div class="smartstop-lookup-grid">
-          ${renderLookupCards()}
-        </div>
-      </section>
-
-      <section class="reference-card smartstop-section smartstop-lookup-section">
-        <div class="smartstop-section-heading">
-          <div>
-            <p class="smartstop-eyebrow">Verified Dev Lookup</p>
-            <h4>SmartStop Suffix Chart</h4>
-          </div>
-          <span class="smartstop-muted">Pages 96-101. Filter by wall and/or pipe I.D.</span>
-        </div>
+      <header class="smartstop-hero">
+        <h3>SmartStop Field Guide</h3>
+        <p class="reference-copy">Suffix and parts lookup for 4, 6, 8, 10, 12 and 16 inch SmartStops. Reference only; confirm the approved equipment and job requirements.</p>
+      </header>
+      <label class="smartstop-topic-label" for="smartStopSectionSelect">Choose SmartStop reference</label>
+      <select id="smartStopSectionSelect">
+        <option value="suffix">Suffix &amp; Parts</option>
+        <option value="torque">Seal Ring Torque</option>
+        <option value="source">Source &amp; Limits</option>
+      </select>
+      <section class="smartstop-section smartstop-lookup-section" data-smartstop-section="suffix">
         <div class="smartstop-lookup-controls">
-          <label>
-            <span>SmartStop size</span>
-            <select id="smartStopSizeSelect">${renderSizeOptions()}</select>
-          </label>
-          <label>
-            <span>Wall thickness</span>
-            <input id="smartStopWallFilter" type="number" inputmode="decimal" step="0.001" placeholder=".250">
-          </label>
-          <label>
-            <span>Pipe I.D.</span>
-            <input id="smartStopPipeIdFilter" type="number" inputmode="decimal" step="0.001" placeholder="8.125">
-          </label>
-          <button type="button" data-smartstop-clear-filters>Clear</button>
+          <label for="smartStopSizeSelect">SmartStop size<select id="smartStopSizeSelect">${renderSizeOptions()}</select></label>
+          <label for="smartStopSuffixSelect">Known suffix<select id="smartStopSuffixSelect"><option value="">All suffixes</option></select></label>
+          <label for="smartStopWallFilter">Wall (decimal inches)<input id="smartStopWallFilter" type="text" inputmode="decimal" placeholder=".250" aria-describedby="smartStopFilterStatus"></label>
+          <label for="smartStopPipeIdFilter">Pipe I.D. (decimal inches)<input id="smartStopPipeIdFilter" type="text" inputmode="decimal" placeholder="8.125" aria-describedby="smartStopFilterStatus"></label>
+          <button type="button" data-smartstop-clear-filters>Clear filters</button>
         </div>
-        <p class="smartstop-source-note">Source cells with merged part suffixes are expanded per row here. Values were second-pass checked against enlarged scan crops on 2026-06-07.</p>
-        <div id="smartStopLookupResults" class="smartstop-lookup-results" aria-live="polite"></div>
+        <p id="smartStopFilterStatus" role="status" aria-live="polite"></p>
+        <div id="smartStopLookupResults" class="smartstop-lookup-results"></div>
       </section>
-
-      <section class="reference-card smartstop-section smartstop-torque-section">
-        <div class="smartstop-section-heading">
-          <div>
-            <p class="smartstop-eyebrow">Verified Dev Lookup</p>
-            <h4>Seal Ring Torque Specification</h4>
-          </div>
-          <span class="smartstop-muted">PDF page 102 / printed page 35.</span>
-        </div>
-        <div class="smartstop-table-wrap">
-          <table class="smartstop-table">
-            <thead>
-              <tr><th>Screw size</th><th>Torque ft-lb</th><th>Torque in-lb</th></tr>
-            </thead>
+      <section class="smartstop-section smartstop-torque-section" data-smartstop-section="torque" hidden>
+        <h4>Seal Ring Torque</h4>
+        <p class="smartstop-source-note">Only for the source assumptions: ASTM A574/F835 screw material, .14 K-factor / .10 friction factor, lubricated with nickel-based anti-seize. Not a general bolt-torque chart.</p>
+        <label for="smartStopScrewSelect">Screw size</label>
+        <select id="smartStopScrewSelect"><option value="">Choose screw size</option>${torqueRows.map((row, index) => `<option value="${index}">${escapeHtml(row.screwSize)}</option>`).join('')}</select>
+        <p id="smartStopTorqueResult" class="smartstop-torque-result" role="status" aria-live="polite">Choose a screw size.</p>
+        <details><summary>View complete torque chart</summary>
+          <div class="smartstop-table-wrap"><table class="smartstop-table">
+            <caption>Seal ring torque - PDF page 102 / printed page 35</caption>
+            <thead><tr><th scope="col">Screw</th><th scope="col">ft-lb</th><th scope="col">in-lb</th></tr></thead>
             <tbody>${renderTorqueRows()}</tbody>
-          </table>
-        </div>
-        <p class="smartstop-source-note">Source notes indicate ASTM A574/F835 screw material and nickel-based anti-seize assumptions. In-lb values are only shown where printed in the source table.</p>
+          </table></div>
+        </details>
       </section>
-
-      <section class="reference-card smartstop-section smartstop-extraction-section">
-        <div class="smartstop-section-heading">
-          <div>
-            <p class="smartstop-eyebrow">Data Safety</p>
-            <h4>Extraction Checklist</h4>
-          </div>
-          <span class="smartstop-muted">This prevents bad scan data from becoming app data.</span>
-        </div>
-        <ol class="smartstop-extraction-list">
-          ${renderExtractionSteps()}
-        </ol>
+      <section class="smartstop-section" data-smartstop-section="source" hidden>
+        <h4>Source &amp; Limits</h4>
+        <p>TEAM SmartStop Training packet, 2316_001.pdf. Suffix charts: PDF pages 96-101 / printed pages 29-34. Seal ring torque: PDF page 102 / printed page 35.</p>
+        <p>Chart values and merged component cells are transcribed from the supplied scan. Range overlaps, shared endpoints, and source annotations are preserved. Multiple matches require review; this lookup never chooses a kit for you.</p>
+        <p>The 6 inch and 12 inch charts include overlapping wall ranges. Use the applicable source and approved equipment requirements to resolve ambiguity. Do not round measurements into a matching range.</p>
+        <p>Rows marked 1480 psi retain that source annotation; it is not approval of the complete assembly or job. Unmarked rows do not receive an inferred pressure rating.</p>
+        <p>This read-only reference does not change job data or replace the approved setup, breakdown, field-execution procedures, or equipment drawings. Those procedures and dimensional stack-ups are not reproduced here.</p>
       </section>
     `;
   }
@@ -599,7 +451,7 @@
     button.setAttribute('data-reference-target', VIEW_KEY);
     button.setAttribute('role', 'option');
     button.setAttribute('aria-selected', 'false');
-    button.innerHTML = '<strong>SmartStop Field Guide</strong><span>Source map and verified lookup staging</span>';
+    button.innerHTML = '<strong>SmartStop Field Guide</strong><span>Suffixes, parts and seal ring torque</span>';
 
     const fieldManual = options.querySelector('[data-reference-target="fieldmanual"]');
     if (fieldManual) {
@@ -653,7 +505,7 @@
     const description = byId('referenceLibraryDescription');
     if (group) group.textContent = 'Field Reference';
     if (current) current.textContent = 'SmartStop Field Guide';
-    if (description) description.textContent = 'Source map and verified lookup staging';
+    if (description) description.textContent = 'Suffixes, parts and seal ring torque';
 
     const select = byId('referenceViewSelect');
     if (select) select.value = VIEW_KEY;
