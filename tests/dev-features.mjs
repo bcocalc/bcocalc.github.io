@@ -234,6 +234,9 @@ try {
     };
     await screen('card');
     assert.equal(await page.locator('#workflowOperationsCard').isVisible(), true);
+    assert.equal(await page.locator('#workflowJobInfoCard').isVisible(), true);
+    assert.ok(await page.locator('#workflowJobInfoCard').evaluate(node => node.compareDocumentPosition(document.getElementById('workflowOperationsCard')) & Node.DOCUMENT_POSITION_FOLLOWING));
+    assert.equal(await page.locator('#workflowAddLineStopOpBtn').isVisible(), true, 'Add buttons do not require expanding a menu');
     await activate(page.locator('#workflowApplicationJobDetails'));
     await page.waitForTimeout(500);
     await checkWorkflowPanels('setup');
@@ -247,6 +250,25 @@ try {
     await activate(page.locator('#workflowPrevBtn'));
     await page.waitForTimeout(500);
     assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'hotTap');
+    step = label + ' visible job information';
+    await activate(page.locator('#workflowEditJobInfo'));
+    await page.waitForTimeout(500);
+    for (const [id, value] of [['workflowJobClient', 'Test Customer'], ['workflowJobLocation', 'West location'], ['workflowJobDate', '2026-09-10']]) {
+      assert.equal(await page.locator('#' + id).isVisible(), true);
+      await page.locator('#' + id).fill(value);
+      await page.locator('#' + id).blur();
+    }
+    await page.waitForTimeout(600);
+    await activate(page.locator('#workflowApplicationsBack'));
+    await page.waitForTimeout(300);
+    assert.equal(await page.locator('#workflowVisibleCustomer').textContent(), 'Test Customer');
+    assert.equal(await page.locator('#workflowVisibleLocation').textContent(), 'West location');
+    assert.equal(await page.locator('#workflowVisibleDate').textContent(), '2026-09-10');
+    if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowJobInfoCard').screenshot({
+      path: join(process.env.TAPCALC_SCREENSHOTS, 'job-info-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '.png')
+    });
+    await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id]').first());
+    await page.waitForTimeout(600);
 
     step = label + ' separate operation measurements';
     const setup = async () => {
@@ -270,7 +292,6 @@ try {
     };
     for (const item of measurements) {
       await activate(page.locator('#workflowApplicationsBack'));
-      await activate(page.locator('#workflowApplicationAdd > summary'));
       await activate(page.locator('#' + item.add));
       await page.waitForTimeout(900);
       item.id = await page.evaluate(() => window.currentJobBundle.selectedOperationId);

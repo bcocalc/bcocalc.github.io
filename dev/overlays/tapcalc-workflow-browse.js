@@ -338,20 +338,37 @@
       options.appendChild(manager.querySelector('.workflow-operations-grid'));
       options.appendChild(byId('workflowDuplicateOperationBtn'));
       options.appendChild(byId('workflowDeleteOperationBtn'));
-      options.querySelector('summary').textContent = 'Application options & checklist';
+      options.querySelector('summary').textContent = 'Edit application name & notes';
       options.appendChild(header.querySelector('p'));
-      options.appendChild(checklist);
-      options.appendChild(otherSheets);
-      const add = document.createElement('details');
+      const add = document.createElement('section');
       add.id = 'workflowApplicationAdd';
-      add.innerHTML = '<summary>Add Application</summary>';
+      add.innerHTML = '<h4>Add an application</h4>';
       add.appendChild(manager.querySelector('.workflow-operations-actions'));
-      manager.appendChild(add);
+      manager.querySelector('#workflowJobOperationPreviewList').before(add);
+      const jobInfo = document.createElement('section');
+      jobInfo.id = 'workflowJobInfoCard';
+      jobInfo.innerHTML = '<div class="workflow-job-info-head"><h3>Job Info</h3></div><dl><div><dt>Customer</dt><dd id="workflowVisibleCustomer"></dd></div><div><dt>Location</dt><dd id="workflowVisibleLocation"></dd></div><div><dt>Date</dt><dd id="workflowVisibleDate"></dd></div></dl>';
+      manager.before(jobInfo);
       const shared = document.createElement('button');
       shared.type = 'button';
       shared.id = 'workflowApplicationJobDetails';
-      shared.textContent = 'Shared job details';
-      manager.appendChild(shared);
+      shared.textContent = 'Edit Job Info';
+      jobInfo.querySelector('.workflow-job-info-head').appendChild(shared);
+      const jobInfoShortcut = document.createElement('button');
+      jobInfoShortcut.type = 'button';
+      jobInfoShortcut.id = 'workflowEditJobInfo';
+      jobInfoShortcut.textContent = 'Job Info';
+      const toolbar = document.createElement('div');
+      toolbar.className = 'workflow-application-toolbar';
+      const back = byId('workflowApplicationsBack');
+      back.textContent = 'Applications';
+      back.setAttribute('aria-label', 'Back to Applications');
+      toolbar.append(back, jobInfoShortcut);
+      header.prepend(toolbar);
+      jobInfoShortcut.addEventListener('click', () => shared.click());
+      const setupHead = byId('workflowSetupPanel').querySelector('.workflow-helper-head');
+      setupHead.querySelector('h3').textContent = 'Job Info';
+      setupHead.querySelector('p').textContent = 'Customer, location, date and other job details are shared across all applications in this job.';
       byId('workflowApplicationsBack').addEventListener('click', () => {
         applicationsOpen = true;
         applyBrowseMode();
@@ -365,9 +382,11 @@
       manager.addEventListener('click', event => {
         if (!event.target.closest('[data-operation-id], #workflowAddHotTapOpBtn, #workflowAddLineStopOpBtn, #workflowAddCompletionOpBtn')) return;
         applicationsOpen = false;
-        add.open = false;
         heldStage = '';
         heldStageUntil = 0;
+        // A newly chosen application must not inherit the previous job-type hold.
+        heldJobType = '';
+        heldJobTypeUntil = 0;
         setTimeout(() => {
           if (event.target.closest('#workflowAddHotTapOpBtn, #workflowAddLineStopOpBtn, #workflowAddCompletionOpBtn')) {
             setStage('pipe', { userInitiated: true, skipSetMode: true });
@@ -375,16 +394,20 @@
           applyBrowseMode();
           byId('workflowApplicationTitle').focus({ preventScroll: true });
         }, 100);
-      });
+      }, true);
       const label = byId('workflowJobOperationLabel')?.closest('label')?.querySelector('span');
       if (label) label.textContent = 'Application name (for example: 16 inch West)';
       byId('workflowApplicationTitle').tabIndex = -1;
     }
     screen.classList.add('application-workspace');
     screen.classList.toggle('applications-overview', applicationsOpen);
+    for (const [target, source] of [['workflowVisibleCustomer', 'jobClient'], ['workflowVisibleLocation', 'jobLocation'], ['workflowVisibleDate', 'jobDate']]) {
+      const value = text(byId(source)?.value) || 'Not entered';
+      if (byId(target).textContent !== value) byId(target).textContent = value;
+    }
     const selected = window.tapCalcGetSelectedOperation?.();
     const title = byId('workflowApplicationTitle');
-    const name = text(selected?.label || selected?.operationType) || 'Current application';
+    const name = activeStage() === 'setup' && !applicationsOpen ? 'Job Info' : text(selected?.label || selected?.operationType) || 'Current application';
     if (title.textContent !== name) title.textContent = name;
     const mode = text(selected?.mode || selected?.state?.activeMode);
     const measurementStage = MODE_STAGES.has(mode) ? mode : 'hotTap';
