@@ -19,6 +19,8 @@
   const text = (value) => String(value ?? '').trim();
 
   function activeJobType() {
+    const selectedType = text(window.tapCalcGetSelectedOperation?.()?.operationType).toLowerCase();
+    if (selectedType) return selectedType.includes('completion') ? 'Completion Plug' : (selectedType.includes('stop') || selectedType.includes('htp')) ? 'Line Stop' : 'Hot Tap';
     const raw = text(byId('workflowOperationType')?.value || byId('operationType')?.value || 'Hot Tap').toLowerCase();
     if (raw.includes('line stop') || raw.includes('completion')) return 'Line Stop';
     try {
@@ -32,6 +34,7 @@
   }
 
   function stages() {
+    if (activeJobType() === 'Completion Plug') return ['setup', 'pipe', 'completionPlug', 'review'];
     return activeJobType() === 'Line Stop'
       ? ['setup', 'pipe', 'hotTap', 'lineStop', 'completionPlug', 'review']
       : ['setup', 'pipe', 'hotTap', 'review'];
@@ -146,11 +149,7 @@
   }
 
   function setStageByDelta(delta, options = {}) {
-    const operation = window.tapCalcGetSelectedOperation?.();
-    const mode = text(operation?.mode || operation?.state?.activeMode);
-    const list = byId('workflowApplicationHeader')
-      ? ['setup', 'pipe', MODE_STAGES.has(mode) ? mode : 'hotTap', 'review']
-      : stages();
+    const list = stages();
     const current = activeStage();
     const index = Math.max(0, list.indexOf(current));
     const nextIndex = Math.max(0, Math.min(list.length - 1, index + (Number(delta) || 0)));
@@ -321,7 +320,7 @@
       manager.querySelector('.hero-eyebrow').textContent = 'Choose an application';
       const header = document.createElement('section');
       header.id = 'workflowApplicationHeader';
-      header.innerHTML = '<button type="button" id="workflowApplicationsBack">Back to Applications</button><h3 id="workflowApplicationTitle"></h3><p>Working on this application only. Customer and location are shared across the job.</p><nav aria-label="Application sections" id="workflowApplicationNav"><button type="button" data-workflow-stage="pipe">Setup</button><button type="button" id="workflowApplicationMeasurements" data-workflow-stage="hotTap">Measurements</button><button type="button" data-workflow-stage="review">Results</button></nav><details id="workflowApplicationDetails"><summary>Application name, notes and options</summary></details>';
+      header.innerHTML = '<button type="button" id="workflowApplicationsBack">Back to Applications</button><h3 id="workflowApplicationTitle"></h3><p>Working on this application only. Customer and location are shared across the job.</p><nav aria-label="Application steps" id="workflowApplicationNav"><button type="button" data-workflow-stage="pipe">Pipe / Cutter</button><button type="button" data-workflow-stage="hotTap">Hot Tap</button><button type="button" data-workflow-stage="lineStop">Line Stop</button><button type="button" data-workflow-stage="completionPlug">Completion Plug</button><button type="button" data-workflow-stage="review">Review</button></nav><details id="workflowApplicationDetails"><summary>Application name, notes and options</summary></details>';
       manager.after(header);
       header.appendChild(byId('workflowNextBtn').closest('.workflow-guided-actions'));
       const checklist = document.createElement('details');
@@ -329,11 +328,8 @@
       checklist.innerHTML = '<summary>Calculation checklist</summary>';
       checklist.appendChild(byId('workflowReadinessPanel'));
       header.appendChild(checklist);
-      const otherSheets = document.createElement('details');
-      otherSheets.id = 'workflowApplicationOtherSheets';
-      otherSheets.innerHTML = '<summary>Other measurement sheets for this application</summary><p>These are additional sheets within the same application, not a different application in the job.</p>';
-      otherSheets.appendChild(screen.querySelector('.workflow-mode-subnav'));
-      header.appendChild(otherSheets);
+      const otherSheets = screen.querySelector('.workflow-mode-subnav');
+      otherSheets.hidden = true;
       const options = header.querySelector('details');
       options.appendChild(manager.querySelector('.workflow-operations-grid'));
       options.appendChild(byId('workflowDuplicateOperationBtn'));
@@ -409,19 +405,18 @@
     const title = byId('workflowApplicationTitle');
     const name = activeStage() === 'setup' && !applicationsOpen ? 'Job Info' : text(selected?.label || selected?.operationType) || 'Current application';
     if (title.textContent !== name) title.textContent = name;
-    const mode = text(selected?.mode || selected?.state?.activeMode);
-    const measurementStage = MODE_STAGES.has(mode) ? mode : 'hotTap';
-    byId('workflowApplicationMeasurements').dataset.workflowStage = measurementStage;
     const current = activeStage();
-    const path = ['setup', 'pipe', measurementStage, 'review'];
+    const path = stages();
     const index = path.indexOf(current);
     const next = byId('workflowNextBtn');
-    const nextCopy = current === 'review' ? 'At Results' : current === 'setup' ? 'Next: Setup' : current === 'pipe' ? 'Next: Measurements' : 'Next: Results';
+    const labels = { pipe: 'Pipe / Cutter', hotTap: 'Hot Tap', lineStop: 'Line Stop', completionPlug: 'Completion Plug', review: 'Review' };
+    const nextCopy = current === 'review' ? 'At Review' : 'Next: ' + labels[path[index + 1]];
     if (next.textContent !== nextCopy) next.textContent = nextCopy;
     next.disabled = current === 'review';
     byId('workflowPrevBtn').disabled = index <= 0;
     for (const button of byId('workflowApplicationNav').querySelectorAll('button')) {
-      const active = button.dataset.workflowStage === current || (button.dataset.workflowStage === 'pipe' && current === 'setup');
+      button.hidden = !path.includes(button.dataset.workflowStage);
+      const active = button.dataset.workflowStage === current;
       button.classList.toggle('active', active);
       button.setAttribute('aria-pressed', String(active));
     }
@@ -463,7 +458,7 @@
     if (trigger.matches?.('[data-workflow-stage]')) return trigger.dataset.workflowStage || '';
     if (trigger.matches?.('[data-workflow-setup-next]')) return 'pipe';
     if (trigger.id === 'workflowSetupNextBtn') return 'pipe';
-    if (trigger.id === 'workflowPipeNextBtn') return text(window.getActiveWorkflowMode?.()) || 'hotTap';
+    if (trigger.id === 'workflowPipeNextBtn') return stages()[stages().indexOf('pipe') + 1];
     return '';
   }
 

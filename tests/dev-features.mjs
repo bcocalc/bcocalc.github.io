@@ -284,7 +284,7 @@ try {
       { add: 'workflowAddCompletionOpBtn', stage: 'completionPlug', field: 'cpStart', value: 8.5 }
     ];
     const revealMeasurement = async item => {
-      await activate(page.locator('#workflowApplicationMeasurements'));
+      await activate(page.locator('#workflowApplicationNav [data-workflow-stage="' + item.stage + '"]'));
       await page.waitForTimeout(400);
       await checkWorkflowPanels(item.stage);
       const heading = page.locator('.section.collapsed:has(#' + item.field + ') > .accordion-heading');
@@ -295,12 +295,26 @@ try {
       await activate(page.locator('#' + item.add));
       await page.waitForTimeout(900);
       item.id = await page.evaluate(() => window.currentJobBundle.selectedOperationId);
+      if (item.stage === 'lineStop') {
+        await activate(page.locator('#workflowNextBtn'));
+        await page.waitForTimeout(500);
+        assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'hotTap', 'Line Stop begins with Hot Tap after Pipe / Cutter');
+        await checkWorkflowPanels('hotTap');
+        const heading = page.locator('.section.collapsed:has(#md) > .accordion-heading');
+        if (await heading.count()) await activate(heading);
+        await page.locator('#md').fill(String(item.value + 10));
+        await page.locator('#md').blur();
+        await activate(page.locator('#workflowNextBtn'));
+        await page.waitForTimeout(500);
+        assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'lineStop');
+        assert.equal(await page.evaluate(() => window.tapCalcGetSelectedOperation().operationType), 'Line Stop');
+      }
       await revealMeasurement(item);
       await page.locator('#' + item.field).fill(String(item.value));
       await page.locator('#' + item.field).blur();
       await activate(page.locator('#workflowNextBtn'));
       await page.waitForTimeout(500);
-      assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'review');
+      assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), item.stage === 'lineStop' ? 'completionPlug' : 'review');
       await activate(page.locator('#workflowPrevBtn'));
       await page.waitForTimeout(500);
       assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), item.stage);
@@ -316,6 +330,12 @@ try {
         'Switching operations preserves each operation measurement');
       assert.equal(await page.locator('#workflowApplicationTitle').textContent(),
         await page.evaluate(() => window.tapCalcGetSelectedOperation().label));
+      if (item.stage === 'lineStop') {
+        await activate(page.locator('#workflowApplicationNav [data-workflow-stage="hotTap"]'));
+        await page.waitForTimeout(500);
+        assert.equal(Number(await page.locator('#md').inputValue()), item.value + 10, 'Each Line Stop retains its own preceding Hot Tap measurements');
+        assert.equal(await page.evaluate(() => window.tapCalcGetSelectedOperation().operationType), 'Line Stop');
+      }
     }
     if (process.env.TAPCALC_SCREENSHOTS) {
       await page.locator('#workflowApplicationHeader').screenshot({ path: join(process.env.TAPCALC_SCREENSHOTS, 'application-editor-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '.png') });
@@ -330,8 +350,9 @@ try {
         await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id="' + measurements[0].id + '"]'));
         await page.waitForTimeout(600);
       }
-      const measurementTab = page.locator('#workflowApplicationMeasurements');
-      assert.ok(await measurementTab.evaluate(node => node.scrollWidth <= node.clientWidth + 1), 'Measurements label fits its tab');
+      for (const button of await page.locator('#workflowApplicationNav button:visible').all()) {
+        assert.ok(await button.evaluate(node => node.scrollWidth <= node.clientWidth + 1), 'Step label fits its tab');
+      }
       if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowApplicationHeader').screenshot({
         path: join(process.env.TAPCALC_SCREENSHOTS, 'application-header-' + browserName + '-' + (mobile ? 'small-phone' : 'desktop') + '-' + theme + '.png')
       });
