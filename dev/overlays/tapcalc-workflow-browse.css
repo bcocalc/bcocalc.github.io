@@ -1,5 +1,7 @@
 /* TapCalc alpha248 workflow browse mode: keep steps accessible without showing every helper panel at once. */
 /* Application-first presentation uses the existing workflow and operation handlers. */
+/* Keep browser-revealed controls below the sticky application navigation. */
+body.measurement-page #cardScreen.application-workspace :is(button, summary, input, select, textarea) { scroll-margin-top:160px; }
 body.measurement-page #cardScreen.application-workspace.applications-overview > :not(#workflowOperationsCard):not(#workflowJobInfoCard) { display:none!important; }
 body.measurement-page #cardScreen.application-workspace:not(.applications-overview) > #workflowJobInfoCard { display:none!important; }
 body.measurement-page #cardScreen.application-workspace:not(.applications-overview) > #workflowOperationsCard { display:none!important; }
