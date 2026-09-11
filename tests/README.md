@@ -1,4 +1,4 @@
-# Alpha252 / Livefix19 Release Checks
+# Alpha254 / Livefix19 Release Checks
 
 Before promoting dev to live, run the complete release check:
 
@@ -18,7 +18,11 @@ WebKit, with phone touch and desktop mouse input. Reference checks run in both
 light and dark themes: one active panel, SmartStop size/filter/clear controls,
 and folding-head lookups and number entry. Workflow checks cover unrestricted
 next/back navigation, inactive-panel isolation, and separate Line Stop /
-Completion measurements when creating and switching operations.
+Completion measurements when creating and switching operations. Application
+checks include three distinct Line Stops, card-based opening, per-application
+next/back, and 320-pixel tabs in both themes. The release runner executes phone
+and desktop separately for each engine with the existing 180-second per-run
+limit; no device coverage is skipped.
 It uses the same CSP-isolated localhost fixture as the Library test. Native
 dropdowns are scrolled into view before selection, as a user would do.
 
@@ -51,9 +55,9 @@ bundled Node runtime (whose sibling `node_modules` includes Playwright):
 
 ```powershell
 node tests/library-touch.mjs
-$env:TAPCALC_WEBKIT = '1'
+$env:TAPCALC_BROWSER = 'webkit'
 node tests/library-touch.mjs
-Remove-Item Env:TAPCALC_WEBKIT
+Remove-Item Env:TAPCALC_BROWSER
 ```
 
 The default browser is installed Chrome; the second run requires Playwright's

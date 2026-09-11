@@ -1,4 +1,41 @@
 /* TapCalc alpha248 workflow browse mode: keep steps accessible without showing every helper panel at once. */
+/* Application-first presentation uses the existing workflow and operation handlers. */
+body.measurement-page #cardScreen.application-workspace.applications-overview > :not(#workflowOperationsCard) { display:none!important; }
+body.measurement-page #cardScreen.application-workspace:not(.applications-overview) > #workflowOperationsCard { display:none!important; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader { padding:16px; margin-bottom:12px; border-radius:14px; background:#102a43; color:#edf5ff; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader h3 { color:inherit; margin:14px 0 6px; overflow-wrap:anywhere; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader p { color:inherit; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationNav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:14px 0; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationNav button { min-width:0; min-height:48px; padding:8px 3px; font-size:clamp(11px,3.5vw,14px); white-space:normal; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationNav button.active { background:#2464d9!important; color:#fff!important; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationDetails summary,
+body.measurement-page #cardScreen.application-workspace #workflowApplicationAdd summary,
+body.measurement-page #cardScreen.application-workspace #workflowApplicationChecklist summary { padding:14px 0; cursor:pointer; min-height:44px; box-sizing:border-box; }
+body.measurement-page #cardScreen.application-workspace #workflowJobOperationPreviewList { display:grid; grid-template-columns:1fr; gap:12px; }
+body.measurement-page #cardScreen.application-workspace #workflowJobOperationPreviewList .job-operation-detail-grid,
+body.measurement-page #cardScreen.application-workspace #workflowJobOperationPreviewList .job-operation-card-note,
+body.measurement-page #cardScreen.application-workspace label:has(> #workflowJobOperationSelect),
+body.measurement-page #cardScreen.application-workspace .workflow-phase-shell,
+body.measurement-page #cardScreen.application-workspace .workflow-next-banner,
+body.measurement-page #cardScreen.application-workspace .workflow-guided-head,
+body.measurement-page #cardScreen.application-workspace #workflowStageNav,
+body.measurement-page #cardScreen.application-workspace #workflowSaveStatus { display:none!important; }
+body.measurement-page #cardScreen.application-workspace .workflow-guided-shell { padding:0; border:0; box-shadow:none; background:none; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationJobDetails { margin-top:14px; }
+body.measurement-page #cardScreen.application-workspace #workflowStartNewJobInlineBtn { display:none!important; }
+body.measurement-page #cardScreen.application-workspace .card-screen-intro { display:none!important; }
+body.measurement-page #cardScreen.application-workspace .card-focus-shell,
+body.measurement-page #cardScreen.application-workspace .card-workflow-strip { display:none!important; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationOtherSheets summary { padding:14px 0; cursor:pointer; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationOtherSheets .workflow-mode-subnav { display:flex!important; flex-wrap:wrap; }
+:root[data-theme="light"] body.measurement-page #cardScreen.application-workspace #workflowReadinessPanel :is(h5,p,span,li,strong) { color:#193650!important; }
+:root[data-theme="light"] body.measurement-page #cardScreen.application-workspace #workflowReadinessPanel > div { background:#e3edf5!important; }
+body.measurement-page #cardScreen.application-workspace #workflowJobOperationPreviewList .job-operation-card { padding:12px!important; gap:6px; min-height:0; box-shadow:none; }
+body.measurement-page #cardScreen.application-workspace #workflowJobOperationStatus { font-size:14px; padding:8px; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader .workflow-guided-actions { display:flex; flex-wrap:wrap; gap:8px; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationsBack { width:auto; min-height:40px; padding:8px 12px; font-size:14px; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader h3 { font-size:1.2rem; }
+:root[data-theme="light"] body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader { background:#e3edf5; color:#193650; }
 body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-guided-shell {
   scroll-margin-top: 12px;
 }

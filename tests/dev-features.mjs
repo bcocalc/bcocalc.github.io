@@ -34,7 +34,9 @@ try {
   browser = browserName === 'webkit' ? await webkit.launch({ headless: true }) : await chromium.launch({
     headless: true, ...(process.env.CI ? {} : { channel: 'chrome' })
   });
-  for (const mobile of (process.env.TAPCALC_DEVICE === 'desktop' ? [false] : [true, false])) {
+  const deviceSelection = process.env.TAPCALC_DEVICE || '';
+  assert.ok(['', 'phone', 'desktop'].includes(deviceSelection), 'Unknown device selection');
+  for (const mobile of (deviceSelection === 'desktop' ? [false] : deviceSelection === 'phone' ? [true] : [true, false])) {
     const label = browserName + ' / ' + (mobile ? 'phone touch' : 'desktop mouse');
     const context = await browser.newContext({
       ...(mobile ? devices['iPhone 13'] : { viewport: { width: 1280, height: 900 } }), serviceWorkers: 'block'
@@ -231,7 +233,8 @@ try {
       }
     };
     await screen('card');
-    await activate(page.locator('#workflowStageNav [data-workflow-stage="setup"]'));
+    assert.equal(await page.locator('#workflowOperationsCard').isVisible(), true);
+    await activate(page.locator('#workflowApplicationJobDetails'));
     await page.waitForTimeout(500);
     await checkWorkflowPanels('setup');
     assert.equal(await page.locator('#md').inputValue(), '');
@@ -247,40 +250,70 @@ try {
 
     step = label + ' separate operation measurements';
     const setup = async () => {
-      await activate(page.locator('#workflowStageNav [data-workflow-stage="setup"]'));
+      await activate(page.locator('#workflowApplicationsBack'));
+      await activate(page.locator('#workflowApplicationJobDetails'));
       await page.waitForTimeout(500);
       await checkWorkflowPanels('setup');
     };
     const measurements = [
       { add: 'workflowAddLineStopOpBtn', stage: 'lineStop', field: 'lsMd', value: 21.75 },
+      { add: 'workflowAddLineStopOpBtn', stage: 'lineStop', field: 'lsMd', value: 32.25 },
+      { add: 'workflowAddLineStopOpBtn', stage: 'lineStop', field: 'lsMd', value: 43.5 },
       { add: 'workflowAddCompletionOpBtn', stage: 'completionPlug', field: 'cpStart', value: 8.5 }
     ];
     const revealMeasurement = async item => {
-      await activate(page.locator('#workflowStageNav [data-workflow-stage="' + item.stage + '"]'));
+      await activate(page.locator('#workflowApplicationMeasurements'));
       await page.waitForTimeout(400);
       await checkWorkflowPanels(item.stage);
       const heading = page.locator('.section.collapsed:has(#' + item.field + ') > .accordion-heading');
       if (await heading.count()) await activate(heading);
     };
     for (const item of measurements) {
-      await setup();
+      await activate(page.locator('#workflowApplicationsBack'));
+      await activate(page.locator('#workflowApplicationAdd > summary'));
       await activate(page.locator('#' + item.add));
       await page.waitForTimeout(900);
       item.id = await page.evaluate(() => window.currentJobBundle.selectedOperationId);
       await revealMeasurement(item);
       await page.locator('#' + item.field).fill(String(item.value));
       await page.locator('#' + item.field).blur();
+      await activate(page.locator('#workflowNextBtn'));
+      await page.waitForTimeout(500);
+      assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'review');
+      await activate(page.locator('#workflowPrevBtn'));
+      await page.waitForTimeout(500);
+      assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), item.stage);
     }
-    assert.equal(await page.evaluate(() => window.currentJobBundle.operations.length), 3);
+    assert.equal(await page.evaluate(() => window.currentJobBundle.operations.length), 5);
     assert.notEqual(measurements[0].id, measurements[1].id);
     for (const item of measurements) {
-      await setup();
-      await page.locator('#workflowJobOperationSelect').scrollIntoViewIfNeeded();
-      await page.locator('#workflowJobOperationSelect').selectOption(item.id);
+      await activate(page.locator('#workflowApplicationsBack'));
+      await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id="' + item.id + '"]'));
       await page.waitForTimeout(1000);
       await revealMeasurement(item);
       assert.equal(Number(await page.locator('#' + item.field).inputValue()), item.value,
         'Switching operations preserves each operation measurement');
+      assert.equal(await page.locator('#workflowApplicationTitle').textContent(),
+        await page.evaluate(() => window.tapCalcGetSelectedOperation().label));
+    }
+    if (process.env.TAPCALC_SCREENSHOTS) {
+      await page.locator('#workflowApplicationHeader').screenshot({ path: join(process.env.TAPCALC_SCREENSHOTS, 'application-editor-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '.png') });
+      await activate(page.locator('#workflowApplicationsBack'));
+      await page.screenshot({ path: join(process.env.TAPCALC_SCREENSHOTS, 'application-list-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '.png') });
+    }
+    if (mobile) await page.setViewportSize({ width: 320, height: 700 });
+    for (const theme of ['dark', 'light']) {
+      if (await page.locator('html').getAttribute('data-theme') !== theme) await activate(page.locator('#themeToggle'));
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Application workspace fits narrow phones');
+      if (await page.locator('#workflowOperationsCard').isVisible()) {
+        await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id="' + measurements[0].id + '"]'));
+        await page.waitForTimeout(600);
+      }
+      const measurementTab = page.locator('#workflowApplicationMeasurements');
+      assert.ok(await measurementTab.evaluate(node => node.scrollWidth <= node.clientWidth + 1), 'Measurements label fits its tab');
+      if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowApplicationHeader').screenshot({
+        path: join(process.env.TAPCALC_SCREENSHOTS, 'application-header-' + browserName + '-' + (mobile ? 'small-phone' : 'desktop') + '-' + theme + '.png')
+      });
     }
     assert.deepEqual(errors, []);
     console.log('PASS ' + label + ': blank next/back; separate Line Stop / Completion measurements; no uncaught errors');

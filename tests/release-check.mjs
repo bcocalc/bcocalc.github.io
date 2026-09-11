@@ -17,11 +17,14 @@ const checks = [
 if (!args.includes('--unit-only')) {
   for (const browser of ['chromium', 'webkit']) {
     checks.push(['library-touch.mjs', { TAPCALC_BROWSER: browser }]);
-    checks.push(['dev-features.mjs', { TAPCALC_BROWSER: browser, TAPCALC_DEVICE: '' }]);
+    // Bound each device separately as the application-switching coverage grows.
+    for (const device of ['phone', 'desktop']) {
+      checks.push(['dev-features.mjs', { TAPCALC_BROWSER: browser, TAPCALC_DEVICE: device }]);
+    }
   }
 }
 for (const [file, environment] of checks) {
-  console.log('\nChecking ' + file + (environment.TAPCALC_BROWSER ? ' (' + environment.TAPCALC_BROWSER + ')' : ''));
+  console.log('\nChecking ' + file + (environment.TAPCALC_BROWSER ? ' (' + environment.TAPCALC_BROWSER + (environment.TAPCALC_DEVICE ? ' / ' + environment.TAPCALC_DEVICE : '') + ')' : ''));
   const result = spawnSync(process.execPath, ['tests/' + file], {
     cwd: root, env: { ...process.env, ...environment }, stdio: 'inherit', timeout: 180000
   });

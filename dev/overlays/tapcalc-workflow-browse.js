@@ -13,6 +13,7 @@
   let heldStageUntil = 0;
   let heldJobType = '';
   let heldJobTypeUntil = 0;
+  let applicationsOpen = true;
 
   const byId = (id) => document.getElementById(id);
   const text = (value) => String(value ?? '').trim();
@@ -145,7 +146,11 @@
   }
 
   function setStageByDelta(delta, options = {}) {
-    const list = stages();
+    const operation = window.tapCalcGetSelectedOperation?.();
+    const mode = text(operation?.mode || operation?.state?.activeMode);
+    const list = byId('workflowApplicationHeader')
+      ? ['setup', 'pipe', MODE_STAGES.has(mode) ? mode : 'hotTap', 'review']
+      : stages();
     const current = activeStage();
     const index = Math.max(0, list.indexOf(current));
     const nextIndex = Math.max(0, Math.min(list.length - 1, index + (Number(delta) || 0)));
@@ -302,6 +307,101 @@
     syncActiveStageDecorations();
     softenGateNotice();
     updateGuidanceCopy();
+    syncApplicationWorkspace();
+  }
+
+  function syncApplicationWorkspace() {
+    const screen = byId('cardScreen');
+    const manager = byId('workflowOperationsCard');
+    if (!screen || !manager) return;
+    if (!byId('workflowApplicationHeader')) {
+      // Move the existing manager and controls; keep their data and event owners.
+      screen.prepend(manager);
+      manager.querySelector('h4').textContent = 'Applications in this job';
+      manager.querySelector('.hero-eyebrow').textContent = 'Choose an application';
+      const header = document.createElement('section');
+      header.id = 'workflowApplicationHeader';
+      header.innerHTML = '<button type="button" id="workflowApplicationsBack">Back to Applications</button><h3 id="workflowApplicationTitle"></h3><p>Working on this application only. Customer and location are shared across the job.</p><nav aria-label="Application sections" id="workflowApplicationNav"><button type="button" data-workflow-stage="pipe">Setup</button><button type="button" id="workflowApplicationMeasurements" data-workflow-stage="hotTap">Measurements</button><button type="button" data-workflow-stage="review">Results</button></nav><details id="workflowApplicationDetails"><summary>Application name, notes and options</summary></details>';
+      manager.after(header);
+      header.appendChild(byId('workflowNextBtn').closest('.workflow-guided-actions'));
+      const checklist = document.createElement('details');
+      checklist.id = 'workflowApplicationChecklist';
+      checklist.innerHTML = '<summary>Calculation checklist</summary>';
+      checklist.appendChild(byId('workflowReadinessPanel'));
+      header.appendChild(checklist);
+      const otherSheets = document.createElement('details');
+      otherSheets.id = 'workflowApplicationOtherSheets';
+      otherSheets.innerHTML = '<summary>Other measurement sheets for this application</summary><p>These are additional sheets within the same application, not a different application in the job.</p>';
+      otherSheets.appendChild(screen.querySelector('.workflow-mode-subnav'));
+      header.appendChild(otherSheets);
+      const options = header.querySelector('details');
+      options.appendChild(manager.querySelector('.workflow-operations-grid'));
+      options.appendChild(byId('workflowDuplicateOperationBtn'));
+      options.appendChild(byId('workflowDeleteOperationBtn'));
+      options.querySelector('summary').textContent = 'Application options & checklist';
+      options.appendChild(header.querySelector('p'));
+      options.appendChild(checklist);
+      options.appendChild(otherSheets);
+      const add = document.createElement('details');
+      add.id = 'workflowApplicationAdd';
+      add.innerHTML = '<summary>Add Application</summary>';
+      add.appendChild(manager.querySelector('.workflow-operations-actions'));
+      manager.appendChild(add);
+      const shared = document.createElement('button');
+      shared.type = 'button';
+      shared.id = 'workflowApplicationJobDetails';
+      shared.textContent = 'Shared job details';
+      manager.appendChild(shared);
+      byId('workflowApplicationsBack').addEventListener('click', () => {
+        applicationsOpen = true;
+        applyBrowseMode();
+        byId('workflowApplicationJobDetails').focus({ preventScroll: true });
+      });
+      shared.addEventListener('click', () => {
+        applicationsOpen = false;
+        setStage('setup', { userInitiated: true, skipSetMode: true });
+        applyBrowseMode();
+      });
+      manager.addEventListener('click', event => {
+        if (!event.target.closest('[data-operation-id], #workflowAddHotTapOpBtn, #workflowAddLineStopOpBtn, #workflowAddCompletionOpBtn')) return;
+        applicationsOpen = false;
+        add.open = false;
+        heldStage = '';
+        heldStageUntil = 0;
+        setTimeout(() => {
+          if (event.target.closest('#workflowAddHotTapOpBtn, #workflowAddLineStopOpBtn, #workflowAddCompletionOpBtn')) {
+            setStage('pipe', { userInitiated: true, skipSetMode: true });
+          }
+          applyBrowseMode();
+          byId('workflowApplicationTitle').focus({ preventScroll: true });
+        }, 100);
+      });
+      const label = byId('workflowJobOperationLabel')?.closest('label')?.querySelector('span');
+      if (label) label.textContent = 'Application name (for example: 16 inch West)';
+      byId('workflowApplicationTitle').tabIndex = -1;
+    }
+    screen.classList.add('application-workspace');
+    screen.classList.toggle('applications-overview', applicationsOpen);
+    const selected = window.tapCalcGetSelectedOperation?.();
+    const title = byId('workflowApplicationTitle');
+    const name = text(selected?.label || selected?.operationType) || 'Current application';
+    if (title.textContent !== name) title.textContent = name;
+    const mode = text(selected?.mode || selected?.state?.activeMode);
+    const measurementStage = MODE_STAGES.has(mode) ? mode : 'hotTap';
+    byId('workflowApplicationMeasurements').dataset.workflowStage = measurementStage;
+    const current = activeStage();
+    const path = ['setup', 'pipe', measurementStage, 'review'];
+    const index = path.indexOf(current);
+    const next = byId('workflowNextBtn');
+    const nextCopy = current === 'review' ? 'At Results' : current === 'setup' ? 'Next: Setup' : current === 'pipe' ? 'Next: Measurements' : 'Next: Results';
+    if (next.textContent !== nextCopy) next.textContent = nextCopy;
+    next.disabled = current === 'review';
+    byId('workflowPrevBtn').disabled = index <= 0;
+    for (const button of byId('workflowApplicationNav').querySelectorAll('button')) {
+      const active = button.dataset.workflowStage === current || (button.dataset.workflowStage === 'pipe' && current === 'setup');
+      button.classList.toggle('active', active);
+      button.setAttribute('aria-pressed', String(active));
+    }
   }
 
   function installFunctionWraps() {
