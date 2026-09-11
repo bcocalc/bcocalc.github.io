@@ -350,7 +350,7 @@ try {
         await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id="' + measurements[0].id + '"]'));
         await page.waitForTimeout(600);
       }
-      for (const button of await page.locator('#workflowApplicationNav button:visible').all()) {
+      for (const button of await page.locator('#workflowApplicationNav button:visible, #workflowNextBtn').all()) {
         assert.ok(await button.evaluate(node => node.scrollWidth <= node.clientWidth + 1), 'Step label fits its tab');
       }
       if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowApplicationHeader').screenshot({

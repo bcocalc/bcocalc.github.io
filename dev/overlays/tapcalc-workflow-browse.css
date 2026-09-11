@@ -38,6 +38,8 @@ body.measurement-page #cardScreen.application-workspace #workflowApplicationOthe
 body.measurement-page #cardScreen.application-workspace #workflowJobOperationPreviewList .job-operation-card { padding:12px!important; gap:6px; min-height:0; box-shadow:none; }
 body.measurement-page #cardScreen.application-workspace #workflowJobOperationStatus { font-size:14px; padding:8px; }
 body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader .workflow-guided-actions { display:flex; flex-wrap:wrap; gap:8px; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader .workflow-guided-actions button { flex:1 1 0; min-width:0; padding:10px 4px; font-family:inherit; font-size:14px; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader .workflow-guided-actions #workflowNextBtn { flex:2 1 0; }
 body.measurement-page #cardScreen.application-workspace #workflowApplicationsBack { width:auto; min-height:40px; padding:8px 12px; font-size:14px; }
 body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader h3 { font-size:1.2rem; }
 :root[data-theme="light"] body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader { background:#e3edf5; color:#193650; }
