@@ -13,14 +13,11 @@
   let heldStageUntil = 0;
   let heldJobType = '';
   let heldJobTypeUntil = 0;
-  let applicationsOpen = true;
 
   const byId = (id) => document.getElementById(id);
   const text = (value) => String(value ?? '').trim();
 
   function activeJobType() {
-    const selectedType = text(window.tapCalcGetSelectedOperation?.()?.operationType).toLowerCase();
-    if (selectedType) return selectedType.includes('completion') ? 'Completion Plug' : (selectedType.includes('stop') || selectedType.includes('htp')) ? 'Line Stop' : 'Hot Tap';
     const raw = text(byId('workflowOperationType')?.value || byId('operationType')?.value || 'Hot Tap').toLowerCase();
     if (raw.includes('line stop') || raw.includes('completion')) return 'Line Stop';
     try {
@@ -34,7 +31,6 @@
   }
 
   function stages() {
-    if (activeJobType() === 'Completion Plug') return ['setup', 'pipe', 'completionPlug', 'review'];
     return activeJobType() === 'Line Stop'
       ? ['setup', 'pipe', 'hotTap', 'lineStop', 'completionPlug', 'review']
       : ['setup', 'pipe', 'hotTap', 'review'];
@@ -306,120 +302,6 @@
     syncActiveStageDecorations();
     softenGateNotice();
     updateGuidanceCopy();
-    syncApplicationWorkspace();
-  }
-
-  function syncApplicationWorkspace() {
-    const screen = byId('cardScreen');
-    const manager = byId('workflowOperationsCard');
-    if (!screen || !manager) return;
-    if (!byId('workflowApplicationHeader')) {
-      // Move the existing manager and controls; keep their data and event owners.
-      screen.prepend(manager);
-      manager.querySelector('h4').textContent = 'Applications in this job';
-      manager.querySelector('.hero-eyebrow').textContent = 'Choose an application';
-      const header = document.createElement('section');
-      header.id = 'workflowApplicationHeader';
-      header.innerHTML = '<button type="button" id="workflowApplicationsBack">Back to Applications</button><h3 id="workflowApplicationTitle"></h3><p>Working on this application only. Customer and location are shared across the job.</p><nav aria-label="Application steps" id="workflowApplicationNav"><button type="button" data-workflow-stage="pipe">Pipe / Cutter</button><button type="button" data-workflow-stage="hotTap">Hot Tap</button><button type="button" data-workflow-stage="lineStop">Line Stop</button><button type="button" data-workflow-stage="completionPlug">Completion Plug</button><button type="button" data-workflow-stage="review">Review</button></nav><details id="workflowApplicationDetails"><summary>Application name, notes and options</summary></details>';
-      manager.after(header);
-      header.appendChild(byId('workflowNextBtn').closest('.workflow-guided-actions'));
-      const checklist = document.createElement('details');
-      checklist.id = 'workflowApplicationChecklist';
-      checklist.innerHTML = '<summary>Calculation checklist</summary>';
-      checklist.appendChild(byId('workflowReadinessPanel'));
-      header.appendChild(checklist);
-      const otherSheets = screen.querySelector('.workflow-mode-subnav');
-      otherSheets.hidden = true;
-      const options = header.querySelector('details');
-      options.appendChild(manager.querySelector('.workflow-operations-grid'));
-      options.appendChild(byId('workflowDuplicateOperationBtn'));
-      options.appendChild(byId('workflowDeleteOperationBtn'));
-      options.querySelector('summary').textContent = 'Edit application name & notes';
-      options.appendChild(header.querySelector('p'));
-      const add = document.createElement('section');
-      add.id = 'workflowApplicationAdd';
-      add.innerHTML = '<h4>Add an application</h4>';
-      add.appendChild(manager.querySelector('.workflow-operations-actions'));
-      manager.querySelector('#workflowJobOperationPreviewList').before(add);
-      const jobInfo = document.createElement('section');
-      jobInfo.id = 'workflowJobInfoCard';
-      jobInfo.innerHTML = '<div class="workflow-job-info-head"><h3>Job Info</h3></div><dl><div><dt>Customer</dt><dd id="workflowVisibleCustomer"></dd></div><div><dt>Location</dt><dd id="workflowVisibleLocation"></dd></div><div><dt>Date</dt><dd id="workflowVisibleDate"></dd></div></dl>';
-      manager.before(jobInfo);
-      const shared = document.createElement('button');
-      shared.type = 'button';
-      shared.id = 'workflowApplicationJobDetails';
-      shared.textContent = 'Edit Job Info';
-      jobInfo.querySelector('.workflow-job-info-head').appendChild(shared);
-      const jobInfoShortcut = document.createElement('button');
-      jobInfoShortcut.type = 'button';
-      jobInfoShortcut.id = 'workflowEditJobInfo';
-      jobInfoShortcut.textContent = 'Job Info';
-      const toolbar = document.createElement('div');
-      toolbar.className = 'workflow-application-toolbar';
-      const back = byId('workflowApplicationsBack');
-      back.textContent = 'Applications';
-      back.setAttribute('aria-label', 'Back to Applications');
-      toolbar.append(back, jobInfoShortcut);
-      header.prepend(toolbar);
-      jobInfoShortcut.addEventListener('click', () => shared.click());
-      const setupHead = byId('workflowSetupPanel').querySelector('.workflow-helper-head');
-      setupHead.querySelector('h3').textContent = 'Job Info';
-      setupHead.querySelector('p').textContent = 'Customer, location, date and other job details are shared across all applications in this job.';
-      byId('workflowApplicationsBack').addEventListener('click', () => {
-        applicationsOpen = true;
-        applyBrowseMode();
-        byId('workflowApplicationJobDetails').focus({ preventScroll: true });
-      });
-      shared.addEventListener('click', () => {
-        applicationsOpen = false;
-        setStage('setup', { userInitiated: true, skipSetMode: true });
-        applyBrowseMode();
-      });
-      manager.addEventListener('click', event => {
-        if (!event.target.closest('[data-operation-id], #workflowAddHotTapOpBtn, #workflowAddLineStopOpBtn, #workflowAddCompletionOpBtn')) return;
-        applicationsOpen = false;
-        heldStage = '';
-        heldStageUntil = 0;
-        // A newly chosen application must not inherit the previous job-type hold.
-        heldJobType = '';
-        heldJobTypeUntil = 0;
-        setTimeout(() => {
-          if (event.target.closest('#workflowAddHotTapOpBtn, #workflowAddLineStopOpBtn, #workflowAddCompletionOpBtn')) {
-            setStage('pipe', { userInitiated: true, skipSetMode: true });
-          }
-          applyBrowseMode();
-          byId('workflowApplicationTitle').focus({ preventScroll: true });
-        }, 100);
-      }, true);
-      const label = byId('workflowJobOperationLabel')?.closest('label')?.querySelector('span');
-      if (label) label.textContent = 'Application name (for example: 16 inch West)';
-      byId('workflowApplicationTitle').tabIndex = -1;
-    }
-    screen.classList.add('application-workspace');
-    screen.classList.toggle('applications-overview', applicationsOpen);
-    for (const [target, source] of [['workflowVisibleCustomer', 'jobClient'], ['workflowVisibleLocation', 'jobLocation'], ['workflowVisibleDate', 'jobDate']]) {
-      const value = text(byId(source)?.value) || 'Not entered';
-      if (byId(target).textContent !== value) byId(target).textContent = value;
-    }
-    const selected = window.tapCalcGetSelectedOperation?.();
-    const title = byId('workflowApplicationTitle');
-    const name = activeStage() === 'setup' && !applicationsOpen ? 'Job Info' : text(selected?.label || selected?.operationType) || 'Current application';
-    if (title.textContent !== name) title.textContent = name;
-    const current = activeStage();
-    const path = stages();
-    const index = path.indexOf(current);
-    const next = byId('workflowNextBtn');
-    const labels = { pipe: 'Pipe / Cutter', hotTap: 'Hot Tap', lineStop: 'Line Stop', completionPlug: 'Completion Plug', review: 'Review' };
-    const nextCopy = current === 'review' ? 'At Review' : 'Next: ' + labels[path[index + 1]];
-    if (next.textContent !== nextCopy) next.textContent = nextCopy;
-    next.disabled = current === 'review';
-    byId('workflowPrevBtn').disabled = index <= 0;
-    for (const button of byId('workflowApplicationNav').querySelectorAll('button')) {
-      button.hidden = !path.includes(button.dataset.workflowStage);
-      const active = button.dataset.workflowStage === current;
-      button.classList.toggle('active', active);
-      button.setAttribute('aria-pressed', String(active));
-    }
   }
 
   function installFunctionWraps() {
@@ -458,11 +340,17 @@
     if (trigger.matches?.('[data-workflow-stage]')) return trigger.dataset.workflowStage || '';
     if (trigger.matches?.('[data-workflow-setup-next]')) return 'pipe';
     if (trigger.id === 'workflowSetupNextBtn') return 'pipe';
-    if (trigger.id === 'workflowPipeNextBtn') return stages()[stages().indexOf('pipe') + 1];
+    if (trigger.id === 'workflowPipeNextBtn') return 'hotTap';
     return '';
   }
 
   function handleWorkflowTap(event) {
+    if (event.type === 'click' && event.target?.closest?.('#workflowAddHotTapOpBtn, #workflowAddLineStopOpBtn, #workflowAddCompletionOpBtn, [data-operation-id]')) {
+      heldStage = '';
+      heldStageUntil = 0;
+      heldJobType = '';
+      heldJobTypeUntil = 0;
+    }
     const trigger = event.target?.closest?.(
       '.workflow-card[data-workflow-target], .workflow-submode-btn[data-mode], [data-workflow-stage], [data-workflow-setup-next], #workflowPrevBtn, #workflowNextBtn, #workflowSetupNextBtn, #workflowPipeNextBtn, #workflowNextPrimaryBtn'
     );
@@ -506,6 +394,13 @@
 
   function handleWorkflowTypeChange(event) {
     const target = event.target;
+    if (target?.id === 'workflowJobOperationSelect' || target?.id === 'jobOperationSelect') {
+      heldStage = '';
+      heldStageUntil = 0;
+      heldJobType = '';
+      heldJobTypeUntil = 0;
+      return;
+    }
     if (!target || (target.id !== 'workflowOperationType' && target.id !== 'operationType')) return;
     if (target.id === 'operationType' && event.isTrusted !== true && window.__tapcalcWorkflowBrowseHandlingType !== true) return;
     syncWorkflowJobType(target.value, { hold: target.id === 'workflowOperationType' || event.isTrusted === true });

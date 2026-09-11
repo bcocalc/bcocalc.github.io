@@ -233,50 +233,38 @@ try {
       }
     };
     await screen('card');
-    assert.equal(await page.locator('#workflowOperationsCard').isVisible(), true);
-    assert.equal(await page.locator('#workflowJobInfoCard').isVisible(), true);
-    assert.ok(await page.locator('#workflowJobInfoCard').evaluate(node => node.compareDocumentPosition(document.getElementById('workflowOperationsCard')) & Node.DOCUMENT_POSITION_FOLLOWING));
-    assert.equal(await page.locator('#workflowAddLineStopOpBtn').isVisible(), true, 'Add buttons do not require expanding a menu');
-    await activate(page.locator('#workflowApplicationJobDetails'));
-    await page.waitForTimeout(500);
-    await checkWorkflowPanels('setup');
+    assert.equal(await page.locator('#workflowApplicationHeader').count(), 0, 'Application-first screen is retired');
+    assert.equal(await page.locator('#workflowStageNav').isVisible(), true, 'Original guided step cards are visible');
+    const setup = async () => {
+      await activate(page.locator('#workflowStageNav [data-workflow-stage="setup"]'));
+      await page.waitForTimeout(700);
+      await checkWorkflowPanels('setup');
+    };
+    await setup();
     assert.equal(await page.locator('#md').inputValue(), '');
     for (const stage of ['pipe', 'hotTap', 'review']) {
       await activate(page.locator('#workflowNextBtn'));
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(700);
       assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), stage, 'Blank job can advance one step');
       await checkWorkflowPanels(stage);
     }
     await activate(page.locator('#workflowPrevBtn'));
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(700);
     assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'hotTap');
-    step = label + ' visible job information';
-    await activate(page.locator('#workflowEditJobInfo'));
-    await page.waitForTimeout(500);
+
+    step = label + ' original Job Setup fields';
+    await setup();
     for (const [id, value] of [['workflowJobClient', 'Test Customer'], ['workflowJobLocation', 'West location'], ['workflowJobDate', '2026-09-10']]) {
       assert.equal(await page.locator('#' + id).isVisible(), true);
       await page.locator('#' + id).fill(value);
       await page.locator('#' + id).blur();
     }
-    await page.waitForTimeout(600);
-    await activate(page.locator('#workflowApplicationsBack'));
-    await page.waitForTimeout(300);
-    assert.equal(await page.locator('#workflowVisibleCustomer').textContent(), 'Test Customer');
-    assert.equal(await page.locator('#workflowVisibleLocation').textContent(), 'West location');
-    assert.equal(await page.locator('#workflowVisibleDate').textContent(), '2026-09-10');
-    if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowJobInfoCard').screenshot({
-      path: join(process.env.TAPCALC_SCREENSHOTS, 'job-info-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '.png')
-    });
-    await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id]').first());
-    await page.waitForTimeout(600);
+    await page.waitForTimeout(700);
+    assert.equal(await page.locator('#jobClient').inputValue(), 'Test Customer');
+    assert.equal(await page.locator('#jobLocation').inputValue(), 'West location');
+    assert.equal(await page.locator('#jobDate').inputValue(), '2026-09-10');
 
     step = label + ' separate operation measurements';
-    const setup = async () => {
-      await activate(page.locator('#workflowApplicationsBack'));
-      await activate(page.locator('#workflowApplicationJobDetails'));
-      await page.waitForTimeout(500);
-      await checkWorkflowPanels('setup');
-    };
     const measurements = [
       { add: 'workflowAddLineStopOpBtn', stage: 'lineStop', field: 'lsMd', value: 21.75 },
       { add: 'workflowAddLineStopOpBtn', stage: 'lineStop', field: 'lsMd', value: 32.25 },
@@ -284,28 +272,28 @@ try {
       { add: 'workflowAddCompletionOpBtn', stage: 'completionPlug', field: 'cpStart', value: 8.5 }
     ];
     const revealMeasurement = async item => {
-      await activate(page.locator('#workflowApplicationNav [data-workflow-stage="' + item.stage + '"]'));
-      await page.waitForTimeout(400);
+      await activate(page.locator('#workflowStageNav [data-workflow-stage="' + item.stage + '"]'));
+      await page.waitForTimeout(700);
       await checkWorkflowPanels(item.stage);
       const heading = page.locator('.section.collapsed:has(#' + item.field + ') > .accordion-heading');
       if (await heading.count()) await activate(heading);
     };
     for (const item of measurements) {
-      await activate(page.locator('#workflowApplicationsBack'));
+      await setup();
       await activate(page.locator('#' + item.add));
-      await page.waitForTimeout(900);
+      await page.waitForTimeout(1000);
       item.id = await page.evaluate(() => window.currentJobBundle.selectedOperationId);
       if (item.stage === 'lineStop') {
+        await activate(page.locator('#workflowStageNav [data-workflow-stage="pipe"]'));
+        await page.waitForTimeout(700);
         await activate(page.locator('#workflowNextBtn'));
-        await page.waitForTimeout(500);
-        assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'hotTap', 'Line Stop begins with Hot Tap after Pipe / Cutter');
-        await checkWorkflowPanels('hotTap');
-        const heading = page.locator('.section.collapsed:has(#md) > .accordion-heading');
-        if (await heading.count()) await activate(heading);
+        await page.waitForTimeout(700);
+        assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'hotTap');
+        await revealMeasurement({ stage: 'hotTap', field: 'md' });
         await page.locator('#md').fill(String(item.value + 10));
         await page.locator('#md').blur();
         await activate(page.locator('#workflowNextBtn'));
-        await page.waitForTimeout(500);
+        await page.waitForTimeout(700);
         assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), 'lineStop');
         assert.equal(await page.evaluate(() => window.tapCalcGetSelectedOperation().operationType), 'Line Stop');
       }
@@ -313,48 +301,35 @@ try {
       await page.locator('#' + item.field).fill(String(item.value));
       await page.locator('#' + item.field).blur();
       await activate(page.locator('#workflowNextBtn'));
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(700);
       assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), item.stage === 'lineStop' ? 'completionPlug' : 'review');
       await activate(page.locator('#workflowPrevBtn'));
-      await page.waitForTimeout(500);
+      await page.waitForTimeout(700);
       assert.equal(await page.evaluate(() => window.__tapCalcWorkflowStage), item.stage);
     }
     assert.equal(await page.evaluate(() => window.currentJobBundle.operations.length), 5);
     assert.notEqual(measurements[0].id, measurements[1].id);
     for (const item of measurements) {
-      await activate(page.locator('#workflowApplicationsBack'));
-      await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id="' + item.id + '"]'));
+      await setup();
+      await page.locator('#workflowJobOperationSelect').scrollIntoViewIfNeeded();
+      await page.locator('#workflowJobOperationSelect').selectOption(item.id);
       await page.waitForTimeout(1000);
       await revealMeasurement(item);
       assert.equal(Number(await page.locator('#' + item.field).inputValue()), item.value,
         'Switching operations preserves each operation measurement');
-      assert.equal(await page.locator('#workflowApplicationTitle').textContent(),
-        await page.evaluate(() => window.tapCalcGetSelectedOperation().label));
       if (item.stage === 'lineStop') {
-        await activate(page.locator('#workflowApplicationNav [data-workflow-stage="hotTap"]'));
-        await page.waitForTimeout(500);
-        assert.equal(Number(await page.locator('#md').inputValue()), item.value + 10, 'Each Line Stop retains its own preceding Hot Tap measurements');
+        await revealMeasurement({ stage: 'hotTap', field: 'md' });
+        assert.equal(Number(await page.locator('#md').inputValue()), item.value + 10);
         assert.equal(await page.evaluate(() => window.tapCalcGetSelectedOperation().operationType), 'Line Stop');
       }
-    }
-    if (process.env.TAPCALC_SCREENSHOTS) {
-      await page.locator('#workflowApplicationHeader').screenshot({ path: join(process.env.TAPCALC_SCREENSHOTS, 'application-editor-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '.png') });
-      await activate(page.locator('#workflowApplicationsBack'));
-      await page.screenshot({ path: join(process.env.TAPCALC_SCREENSHOTS, 'application-list-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '.png') });
     }
     if (mobile) await page.setViewportSize({ width: 320, height: 700 });
     for (const theme of ['dark', 'light']) {
       if (await page.locator('html').getAttribute('data-theme') !== theme) await activate(page.locator('#themeToggle'));
-      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Application workspace fits narrow phones');
-      if (await page.locator('#workflowOperationsCard').isVisible()) {
-        await activate(page.locator('#workflowJobOperationPreviewList [data-operation-id="' + measurements[0].id + '"]'));
-        await page.waitForTimeout(600);
-      }
-      for (const button of await page.locator('#workflowApplicationNav button:visible, #workflowNextBtn').all()) {
-        assert.ok(await button.evaluate(node => node.scrollWidth <= node.clientWidth + 1), 'Step label fits its tab');
-      }
-      if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowApplicationHeader').screenshot({
-        path: join(process.env.TAPCALC_SCREENSHOTS, 'application-header-' + browserName + '-' + (mobile ? 'small-phone' : 'desktop') + '-' + theme + '.png')
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Guided workflow fits narrow phones');
+      assert.equal(await page.locator('#workflowStageNav').isVisible(), true);
+      if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowStageNav').screenshot({
+        path: join(process.env.TAPCALC_SCREENSHOTS, 'restored-stages-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '-' + theme + '.png')
       });
     }
     assert.deepEqual(errors, []);
