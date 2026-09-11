@@ -5,8 +5,8 @@ body.measurement-page #cardScreen.application-workspace:not(.applications-overvi
 body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader { padding:16px; margin-bottom:12px; border-radius:14px; background:#102a43; color:#edf5ff; }
 body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader h3 { color:inherit; margin:14px 0 6px; overflow-wrap:anywhere; }
 body.measurement-page #cardScreen.application-workspace #workflowApplicationHeader p { color:inherit; }
-body.measurement-page #cardScreen.application-workspace #workflowApplicationNav { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6px; margin:14px 0; }
-body.measurement-page #cardScreen.application-workspace #workflowApplicationNav button { min-width:0; min-height:48px; padding:8px 3px; font-size:clamp(11px,3.5vw,14px); white-space:normal; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationNav { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.7fr) minmax(0,1fr); gap:6px; margin:14px 0; }
+body.measurement-page #cardScreen.application-workspace #workflowApplicationNav button { min-width:0; min-height:48px; padding:8px 3px; font-family:inherit; font-size:clamp(12px,3.5vw,14px); font-weight:600; white-space:normal; }
 body.measurement-page #cardScreen.application-workspace #workflowApplicationNav button.active { background:#2464d9!important; color:#fff!important; }
 body.measurement-page #cardScreen.application-workspace #workflowApplicationDetails summary,
 body.measurement-page #cardScreen.application-workspace #workflowApplicationAdd summary,

@@ -2,6 +2,10 @@
 
 Dev only. No live promotion or calculation changes.
 
+Alpha255 follow-up: GitHub's Linux WebKit check caught a 320-pixel font-width
+difference. Give Measurements a wider grid column and inherit the app font.
+The overflow assertion remains unchanged.
+
 - Workflow starts with the existing job's application cards.
 - Open a card to work on its saved measurements, with its name visible.
 - Setup, Measurements and Results navigation; Next follows the selected sheet.

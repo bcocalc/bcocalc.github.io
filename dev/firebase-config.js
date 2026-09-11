@@ -13,16 +13,16 @@ window.TAPCALC_FIRESTORE_DATABASE = window.TAPCALC_FIRESTORE_DATABASE || '(defau
 window.TAPCALC_PUBLIC_SYNC = true;
 window.TAPCALC_BUILD = Object.assign({
   channel: 'dev',
-  version: '3.0.0-alpha254',
-  label: 'TapCalc Dev v3.0.0-alpha254 - 2026-09-10',
-  overlayVersion: '3.0.0-alpha254',
-  serviceWorkerVersion: '3.0.0-alpha254',
+  version: '3.0.0-alpha255',
+  label: 'TapCalc Dev v3.0.0-alpha255 - 2026-09-10',
+  overlayVersion: '3.0.0-alpha255',
+  serviceWorkerVersion: '3.0.0-alpha255',
   syncPill: 'DEV'
 }, window.TAPCALC_BUILD || {});
 
 (function(){
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha254';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-alpha255';
   const OVERLAYS = [
     { css: 'tapcalc-dev-overlays.css', js: 'tapcalc-dev-overlays.js' }
   ];
