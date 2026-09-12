@@ -1,7 +1,10 @@
 /* TapCalc alpha248 workflow browse mode: keep steps accessible without showing every helper panel at once. */
-body.measurement-page .hot-tap-field-reading { margin:12px 0; padding:12px; background:#102c48; color:#edf5ff; border-left:3px solid #80baff; }
+body.measurement-page .hot-tap-field-reading { margin:8px 0; padding:8px 10px; background:#102c48; color:#edf5ff; border-left:3px solid #80baff; }
 body.measurement-page .hot-tap-field-reading :is(h4,p,label,caption,th,td) { color:inherit!important; }
-body.measurement-page .hot-tap-field-reading p { font-size:14px; line-height:1.4; }
+body.measurement-page .hot-tap-field-reading p { margin:6px 0; font-size:13px; line-height:1.35; }
+body.measurement-page .hot-tap-field-reading label { display:block; margin:0 0 4px; font-size:14px; font-weight:700; }
+body.measurement-page .hot-tap-field-optional { font-weight:400; }
+body.measurement-page #hotTapFieldReading:not([data-expanded="true"]) :is(#htFieldStatus,#htFieldPreview,.hot-tap-field-actions,.hot-tap-field-note) { display:none!important; }
 body.measurement-page .hot-tap-field-reading :is(input,button) { font-family:inherit; }
 body.measurement-page .hot-tap-field-reading input[type="number"] { width:100%; box-sizing:border-box; min-height:44px; }
 body.measurement-page #htFieldPreview { overflow-x:auto; }

@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha262">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha263">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha262 - 2026-09-12</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha263 - 2026-09-12</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha262 - 2026-09-12</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha263 - 2026-09-12</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -763,10 +763,9 @@
 
         <div class="row"><label>Rod Start</label><input id="start" type="number" step="any"></div>
         <div id="hotTapFieldReading" class="hot-tap-field-reading">
-          <h4>Actual Pilot on Pipe</h4>
-          <p>Optional: enter the actual reading on the same rod scale. Rod Start must still be correct. Original setup inputs stay unchanged.</p>
-          <label for="htActualPop">Actual POP (inches)</label>
-          <input id="htActualPop" type="number" step="any" inputmode="decimal" placeholder="Actual rod reading">
+          <label for="htActualPop">Actual POP <span class="hot-tap-field-optional">(optional, inches)</span></label>
+          <input id="htActualPop" type="number" step="any" inputmode="decimal" placeholder="Enter field reading" aria-describedby="htFieldHint">
+          <p id="htFieldHint">Same rod scale; Rod Start must be correct.</p>
           <input id="htFieldBasis" type="hidden" value="">
           <p id="htFieldStatus" role="status">Original calculated results are in use.</p>
           <div id="htFieldPreview" hidden></div>
@@ -774,7 +773,7 @@
             <button id="htFieldApply" type="button" disabled>Apply actual POP</button>
             <button id="htFieldUndo" type="button" disabled>Undo adjustment</button>
           </div>
-          <p>Hot Tap only. Line Stop and Completion Plug measurements are not adjusted. COP remains calculated, not field-verified.</p>
+          <p class="hot-tap-field-note">Hot Tap only; original inputs stay unchanged. Line Stop / Plug are unaffected. COP is calculated, not field-verified.</p>
         </div>
 
         <div class="row"><label>POP (Pilot on Pipe)</label><span id="pop" class="calc"></span></div>
@@ -1899,10 +1898,10 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha262"></script>
-<script src="cloud-sync.js?v=3.0.0-alpha262"></script>
-<script src="stackup-data.js?v=3.0.0-alpha262"></script>
-<script src="measurement.js?v=3.0.0-alpha262"></script>
+<script src="firebase-config.js?v=3.0.0-alpha263"></script>
+<script src="cloud-sync.js?v=3.0.0-alpha263"></script>
+<script src="stackup-data.js?v=3.0.0-alpha263"></script>
+<script src="measurement.js?v=3.0.0-alpha263"></script>
   </section>
 </body>
 </html>

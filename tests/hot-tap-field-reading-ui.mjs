@@ -46,9 +46,14 @@ try {
     if (await collapsed.count()) await (phone ? collapsed.tap() : collapsed.click());
     if (await value('pop') !== 17) console.error('Fixture state', errors, await page.evaluate(() => ({ fields: ['md','ld','ptc','start','htActualPop'].map(id => [id, document.getElementById(id)?.value]), status: document.getElementById('htFieldStatus')?.textContent, bco: localStorage.getItem('bcoData'), pop: document.getElementById('pop')?.textContent })));
     assert.equal(await value('pop'), 17);
+    assert.equal(await page.locator('#htFieldApply').isVisible(), false, 'Empty optional reading keeps actions out of the way');
+    assert.equal(await page.locator('#htFieldStatus').isVisible(), false);
+    assert.ok(await page.locator('#hotTapFieldReading').evaluate(el => el.getBoundingClientRect().height < 160), 'Empty panel stays compact');
+    if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#hotTapFieldReading').screenshot({ path: join(process.env.TAPCALC_SCREENSHOTS, 'actual-pop-empty-' + engine + '-' + (phone ? 'phone' : 'desktop') + '.png') });
     await page.locator('#htActualPop').fill('18.5');
     assert.equal(await value('pop'), 17, 'Preview must not apply itself');
     assert.equal(await page.locator('#htFieldPreview').isVisible(), true);
+    assert.equal(await page.locator('#htFieldApply').isVisible(), true);
     await activate('#htFieldApply');
     await page.waitForTimeout(300);
     assert.equal(await value('pop'), 18.5);
