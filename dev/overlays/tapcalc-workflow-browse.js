@@ -218,6 +218,21 @@
   }
 
   function updateGuidanceCopy() {
+    const application = byId('workflowCurrentApplication');
+    const operations = window.currentJobBundle?.operations || [];
+    const selectedId = window.currentJobBundle?.selectedOperationId;
+    const index = operations.findIndex(operation => operation.id === selectedId);
+    if (application) {
+      application.hidden = index < 0;
+      if (index >= 0) {
+        const selected = operations[index];
+        const name = text(selected.label || selected.operationType) || 'Unnamed application';
+        const position = `Application ${index + 1} of ${operations.length}`;
+        // Avoid replacing unchanged text during the existing refresh passes.
+        if (byId('workflowCurrentApplicationName').textContent !== name) byId('workflowCurrentApplicationName').textContent = name;
+        if (byId('workflowCurrentApplicationPosition').textContent !== position) byId('workflowCurrentApplicationPosition').textContent = position;
+      }
+    }
     const save = byId('workflowSaveStatus');
     const saveCopy = 'Browse any step in any order. Save remains available while the checklist tracks what still needs attention.';
     if (save && save.textContent !== saveCopy) save.textContent = saveCopy;

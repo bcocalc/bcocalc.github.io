@@ -1,4 +1,9 @@
 /* TapCalc alpha248 workflow browse mode: keep steps accessible without showing every helper panel at once. */
+body.measurement-page #workflowCurrentApplication { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; padding:10px 12px; margin-bottom:12px; border-left:3px solid #80baff; background:#102c48; color:#edf5ff; border-radius:6px; font-size:14px; }
+body.measurement-page #workflowCurrentApplication[hidden] { display:none!important; }
+body.measurement-page #workflowCurrentApplicationName { color:inherit; overflow-wrap:anywhere; min-width:0; }
+body.measurement-page #workflowCurrentApplicationPosition { color:inherit; }
+:root[data-theme="light"] body.measurement-page #workflowCurrentApplication { background:#dbe9f5; color:#173653; border-left-color:#2869b7; }
 body.measurement-page.tapcalc-workflow-browse #cardScreen .workflow-guided-shell {
   scroll-margin-top: 12px;
 }

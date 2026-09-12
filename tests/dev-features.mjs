@@ -231,6 +231,14 @@ try {
         assert.equal(panel.display === 'none', panel.stage !== stage);
         if (panel.stage !== stage) assert.equal(panel.pointerEvents, 'none');
       }
+      const application = await page.evaluate(() => {
+        const bundle = window.currentJobBundle;
+        const index = bundle.operations.findIndex(item => item.id === bundle.selectedOperationId);
+        return { name: bundle.operations[index].label, position: 'Application ' + (index + 1) + ' of ' + bundle.operations.length };
+      });
+      assert.equal(await page.locator('#workflowCurrentApplication').isVisible(), true);
+      assert.equal(await page.locator('#workflowCurrentApplicationName').textContent(), application.name);
+      assert.equal(await page.locator('#workflowCurrentApplicationPosition').textContent(), application.position);
     };
     await screen('card');
     assert.equal(await page.locator('#workflowApplicationHeader').count(), 0, 'Application-first screen is retired');
@@ -314,6 +322,13 @@ try {
       await page.locator('#workflowJobOperationSelect').scrollIntoViewIfNeeded();
       await page.locator('#workflowJobOperationSelect').selectOption(item.id);
       await page.waitForTimeout(1000);
+      if (item === measurements[0]) {
+        await setup();
+        await page.locator('#workflowJobOperationLabel').fill('16-inch West Line Stop');
+        await page.locator('#workflowJobOperationLabel').blur();
+        await page.waitForTimeout(500);
+        assert.equal(await page.locator('#workflowCurrentApplicationName').textContent(), '16-inch West Line Stop');
+      }
       await revealMeasurement(item);
       assert.equal(Number(await page.locator('#' + item.field).inputValue()), item.value,
         'Switching operations preserves each operation measurement');
@@ -328,6 +343,10 @@ try {
       if (await page.locator('html').getAttribute('data-theme') !== theme) await activate(page.locator('#themeToggle'));
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Guided workflow fits narrow phones');
       assert.equal(await page.locator('#workflowStageNav').isVisible(), true);
+      assert.equal(await page.locator('#workflowCurrentApplication').isVisible(), true);
+      if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowCurrentApplication').screenshot({
+        path: join(process.env.TAPCALC_SCREENSHOTS, 'current-application-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '-' + theme + '.png')
+      });
       if (process.env.TAPCALC_SCREENSHOTS) await page.locator('#workflowStageNav').screenshot({
         path: join(process.env.TAPCALC_SCREENSHOTS, 'restored-stages-' + browserName + '-' + (mobile ? 'phone' : 'desktop') + '-' + theme + '.png')
       });
