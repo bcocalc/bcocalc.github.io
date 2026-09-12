@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-alpha261';
+const BUILD_VERSION = '3.0.0-alpha262';
 
 (function(){
 
@@ -1053,8 +1053,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha261';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha261';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-alpha262';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-alpha262';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2470,7 +2470,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha261', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-alpha262', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -3060,8 +3060,9 @@ function buildOperationSnapshotRows(item = {}) {
     pushOperationSnapshotRow(rows, 'MD', state.md);
     pushOperationSnapshotRow(rows, 'LD', Number.isFinite(ld) ? operationSnapshotDisplay(ld) : state.ld);
     pushOperationSnapshotRow(rows, 'PTC', state.ptc);
-    pushOperationSnapshotRow(rows, 'LI', operationSnapshotDisplay(li));
-    pushOperationSnapshotRow(rows, 'TTD', operationSnapshotDisplay(ttd));
+    pushOperationSnapshotRow(rows, state.htActualPop ? 'Setup LI' : 'LI', operationSnapshotDisplay(li));
+    pushOperationSnapshotRow(rows, state.htActualPop ? 'Setup TTD' : 'TTD', operationSnapshotDisplay(ttd));
+    pushOperationSnapshotRow(rows, 'Recorded POP', state.htActualPop);
     pushOperationSnapshotRow(rows, 'MT', state.mt);
   } else if (operationType === 'HTP Hot Tap') {
     pushOperationSnapshotRow(rows, 'HTP Size', state.htpPipeSize);
@@ -3335,6 +3336,9 @@ function isMeaningfulPersistedJobPayload(payload) {
 function shouldHoldStartupJobPersist(bundle) {
   if (jobDraftRestoreComplete) return false;
   const stored = getStoredJobStatePayload();
+  // Startup defaults (including ETA's cached BCO) are not restored job data.
+  // Keep any saved draft intact until restoreCurrentJob has consumed it.
+  if (stored && typeof stored === 'object') return true;
   const storedMeaningful = isMeaningfulPersistedJobPayload(stored);
   const nextMeaningful = isMeaningfulPersistedJobPayload(buildPersistedJobBundlePayload(bundle));
   if (storedMeaningful && !nextMeaningful) return true;
@@ -3618,9 +3622,73 @@ function initAccordionSections() {
 }
 
 
+function evaluateHotTapFieldReading(input) {
+  const { md, ld, ptc, pod, start, bco, mt, actualPop } = input;
+  const required = [md, ld, ptc, pod, start, bco, actualPop];
+  if (!required.every(value => typeof value === 'number' && Number.isFinite(value))) {
+    return { error: 'Enter actual POP and complete MD, LD, PTC, Rod Start and valid BCO geometry. Enter 0 explicitly where applicable.' };
+  }
+  if (md < 0 || ptc < 0 || pod <= 0 || bco < 0 || md + ld < 0 || actualPop < start || (mt !== null && (!Number.isFinite(mt) || mt <= 0))) {
+    return { error: 'Check the measurements. Actual POP cannot be below Rod Start; geometry and travel must be valid.' };
+  }
+  const calculate = li => {
+    const pop = start + li;
+    const cop = pop + ptc;
+    const mco = pod / 2 + ptc;
+    return { li, mco, ttd: li + ptc + bco, pop, cop, rbco: cop + bco, rmco: pop + mco };
+  };
+  const original = calculate(md + ld);
+  const adjusted = calculate(actualPop - start);
+  if (![...Object.values(original), ...Object.values(adjusted)].every(Number.isFinite)) return { error: 'Measurements are outside the supported numeric range.' };
+  return { original, adjusted, delta: actualPop - original.pop, exceedsTravel: mt !== null && adjusted.ttd > mt, missingTravel: mt === null };
+}
+
+function getHotTapFieldPreview() {
+  const read = id => {
+    const el = document.getElementById(id);
+    return !el || !String(el.value).trim() ? null : getMeasurementValue(el);
+  };
+  const rawLd = read('ld');
+  const input = { md: read('md'), ld: rawLd === null ? null : rawLd * (signEl?.value === '-' ? -1 : 1), ptc: read('ptc'), pod: read('pod') ?? geometry.pipeOD,
+    start: read('start'), bco: data && data.bco != null && String(data.bco).trim() && Number.isFinite(Number(data.bco)) ? Number(data.bco) : null, mt: read('mt'), actualPop: read('htActualPop') };
+  const result = evaluateHotTapFieldReading(input);
+  result.basis = JSON.stringify({ version: 1, operationId: currentJobBundle?.selectedOperationId, ...input, wall: geometry.wall });
+  result.applied = !result.error && document.getElementById('htFieldBasis')?.value === result.basis;
+  return result;
+}
+
+function renderHotTapFieldPreview(result) {
+  const preview = document.getElementById('htFieldPreview');
+  const status = document.getElementById('htFieldStatus');
+  if (!preview || !status) return;
+  const hasReading = String(document.getElementById('htActualPop').value).trim() !== '';
+  const savedBasis = document.getElementById('htFieldBasis').value;
+  const message = result.applied ? 'ACTUAL POP APPLIED: Hot Tap travel and rod results are adjusted. Original inputs are preserved.'
+    : savedBasis ? 'Setup or reading changed. Original calculated results are in use. Review and apply again.'
+    : hasReading ? result.error || 'Preview only. Original calculated results are still in use.' : 'Original calculated results are in use.';
+  const travel = !result.error && hasReading ? result.exceedsTravel ? ' WARNING: adjusted total travel exceeds Machine Travel.' : result.missingTravel ? ' Machine Travel is missing; travel margin cannot be checked.' : '' : '';
+  if (status.textContent !== message + travel) status.textContent = message + travel;
+  status.dataset.applied = String(result.applied);
+  preview.hidden = !hasReading || !!result.error;
+  if (!preview.hidden) {
+    const labels = { li: 'Lower In', ttd: 'Total Travel', pop: 'POP', cop: 'COP (calc.)', rbco: 'Rod BCO', rmco: 'Rod MCO' };
+    const rows = Object.entries(labels).map(([key, label]) => `<tr><th scope="row">${label}</th><td>${result.original[key].toFixed(4)}</td><td>${result.adjusted[key].toFixed(4)}</td></tr>`).join('');
+    const html = `<p>POP difference: ${result.delta >= 0 ? '+' : ''}${result.delta.toFixed(4)} in. Cutter geometry (MCO) is unchanged.</p><table><caption>Original vs actual-POP adjustment (inches)</caption><thead><tr><th>Result</th><th>Original</th><th>Adjusted</th></tr></thead><tbody>${rows}</tbody></table>`;
+    if (preview.innerHTML !== html) preview.innerHTML = html;
+  }
+  document.getElementById('htFieldApply').disabled = !!result.error || result.applied;
+  document.getElementById('htFieldUndo').disabled = !savedBasis;
+}
+
 function calcHotTap() {
+  const fieldPreview = getHotTapFieldPreview();
+  renderHotTapFieldPreview(fieldPreview);
   if (!data) {
     if (rbcoGeomEl) rbcoGeomEl.textContent = "-";
+    [liEl, ttdEl, mcoEl, popEl, copEl, rbcoEl, rmcoEl].forEach(el => { if (el) el.textContent = '-'; });
+    lastHotTap = { li: NaN, ttd: NaN, warnings: ['BCO geometry unavailable; Hot Tap results cannot be verified.'] };
+    hotTapWarnEl.textContent = lastHotTap.warnings[0];
+    hotTapWarnEl.classList.add('active');
     return;
   }
 
@@ -3635,7 +3703,7 @@ function calcHotTap() {
   const start = getMeasurementValue(startEl) || 0;
   const mt = getMeasurementValue(mtEl) || 0;
 
-  const li = md + ld;
+  const li = fieldPreview.applied ? fieldPreview.adjusted.li : md + ld;
   const mco = (pod / 2) + ptc;
   const ttd = li + ptc + (Number(data.bco) || 0);
   const pop = start + li;
@@ -3652,6 +3720,7 @@ function calcHotTap() {
   rmcoEl.textContent = rmco.toFixed(4);
 
   const warnings = [];
+  if (fieldPreview.applied) warnings.push('Actual POP adjustment applied to Hot Tap results; original setup inputs are unchanged.');
   const wall = geometry.wall || 0;
   const ptcLimit = (pod / 2) - wall;
 
@@ -3671,9 +3740,37 @@ function calcHotTap() {
 }
 
 [mdEl, ldEl, ptcEl, podEl, startEl, mtEl, signEl].forEach(el => {
-  if (el) el.addEventListener("input", calcHotTap);
+  if (el) el.addEventListener('input', event => {
+    if (event.isTrusted && !suppressJobBundleUiSync) document.getElementById('htFieldBasis').value = '';
+    calcHotTap();
+  });
 });
-if (signEl) signEl.addEventListener("change", calcHotTap);
+if (signEl) signEl.addEventListener('change', event => {
+  if (event.isTrusted && !suppressJobBundleUiSync) document.getElementById('htFieldBasis').value = '';
+  calcHotTap();
+});
+for (const id of bcoGeometryFieldIds) document.getElementById(id)?.addEventListener('change', event => {
+  if (event.isTrusted && !suppressJobBundleUiSync) document.getElementById('htFieldBasis').value = '';
+  calcHotTap();
+});
+
+document.getElementById('htActualPop')?.addEventListener('input', (event) => {
+  if (event.isTrusted || !getHotTapFieldPreview().applied) document.getElementById('htFieldBasis').value = '';
+  calcHotTap();
+  persistCurrentJob({ render: false });
+});
+document.getElementById('htFieldApply')?.addEventListener('click', () => {
+  const preview = getHotTapFieldPreview();
+  if (preview.error) return;
+  document.getElementById('htFieldBasis').value = preview.basis;
+  calcHotTap();
+  persistCurrentJob();
+});
+document.getElementById('htFieldUndo')?.addEventListener('click', () => {
+  document.getElementById('htFieldBasis').value = '';
+  calcHotTap();
+  persistCurrentJob();
+});
 
 // ===== HI-STOP =====
 const hsMdEl = document.getElementById('hsMd');
@@ -4114,6 +4211,7 @@ function getStateFields() {
     'jobClient','jobDescription','jobNumber','jobPressure','jobTemperature','jobDate','jobProduct','jobLocation','jobTechnician','jobNotes','machineType','operationType','geometryLockToggle',
     'bcoPipeMaterial','bcoPipeOD','bcoSchedule','bcoPipeID','bcoCutterOD',
     'md','ld','ldSign','ptc','pod','start','mt','valveBore','gtf',
+    'htActualPop','htFieldBasis',
     'htpPipeSize','htpMd','htpLd','htpLdSign','htpPtc','htpMachine','lineStopVariant',
     'lsMd','lsLd','lsLdSign','lsLiManualToggle','lsLiManual','lsTravel','lsMachineTravel',
     'hsMd','hsLd','hsLdSign','hsRl','hsPod','hsCl','hsPtc','hsRcd','hsPb','hsPtp',
@@ -4139,6 +4237,10 @@ function persistCurrentJob(options = {}) {
 
 function applyJobState(state) {
   if (!state || typeof state !== 'object') return;
+  // Older jobs have no field-reading state; never inherit it from the last job.
+  ['htActualPop', 'htFieldBasis'].forEach(id => {
+    if (!(id in state) && document.getElementById(id)) document.getElementById(id).value = '';
+  });
   getStateFields().forEach(id => {
     const el = document.getElementById(id);
     if (!el || !(id in state)) return;
@@ -5499,7 +5601,7 @@ window.addEventListener('load', async () => {
   renderJobsList();
   updateJobInfoSummary();
   const waiting = getHistory().filter((item) => !item.cloudId).length;
-  reportJobsSyncStatus(`Sync ready (3.0.0-alpha261). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
+  reportJobsSyncStatus(`Sync ready (3.0.0-alpha262). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
   initAccordionSections();
   ensureFirebaseReady().then(()=>loadCloudJobs()).catch(()=>{});
 });
@@ -5510,7 +5612,7 @@ var jobsSearchTerm = window.tapCalcJobsSearchTerm || '';
 var jobsBrowseMode = window.tapCalcJobsBrowseMode || 'all';
 var selectedJobId = window.selectedJobId || '';
 
-/* ===== 3.0.0-alpha261 auto-scroll guard ===== */
+/* ===== 3.0.0-alpha262 auto-scroll guard ===== */
 (function(){
   let lastFieldEditAt = 0;
   const editableSelector = 'input, textarea, select, [contenteditable="true"]';
@@ -7014,7 +7116,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha65 forced load-job hydration + version pass ===== */
 (function(){
-const TC63_VERSION = '3.0.0-alpha261';
+const TC63_VERSION = '3.0.0-alpha262';
 
   function tc63SetValue(id, value) {
     const el = document.getElementById(id);
@@ -7260,7 +7362,7 @@ const TC63_VERSION = '3.0.0-alpha261';
 
 /* ===== 3.0.0-alpha65 jobs/library cleanup base ===== */
 (function(){
-const VERSION = '3.0.0-alpha261';
+const VERSION = '3.0.0-alpha262';
 
   function tc65GetJobs() {
     try {
@@ -10482,7 +10584,7 @@ const VERSION = '3.0.0-alpha261';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-alpha261';
+const VERSION = '3.0.0-alpha262';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }
@@ -14829,7 +14931,7 @@ window.tapCalcApplyLoadedJobWorkflow = applyLoadedJobWorkflow;
   window.tapCalcInitUwireCalculator = initUwireCalculator;
 })();
 
-/* ===== 3.0.0-alpha261 shared library row consistency ===== */
+/* ===== 3.0.0-alpha262 shared library row consistency ===== */
 (function(){
   const $ = (id) => document.getElementById(id);
 

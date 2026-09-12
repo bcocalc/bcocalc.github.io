@@ -1,4 +1,18 @@
 /* TapCalc alpha248 workflow browse mode: keep steps accessible without showing every helper panel at once. */
+body.measurement-page .hot-tap-field-reading { margin:12px 0; padding:12px; background:#102c48; color:#edf5ff; border-left:3px solid #80baff; }
+body.measurement-page .hot-tap-field-reading :is(h4,p,label,caption,th,td) { color:inherit!important; }
+body.measurement-page .hot-tap-field-reading p { font-size:14px; line-height:1.4; }
+body.measurement-page .hot-tap-field-reading :is(input,button) { font-family:inherit; }
+body.measurement-page .hot-tap-field-reading input[type="number"] { width:100%; box-sizing:border-box; min-height:44px; }
+body.measurement-page #htFieldPreview { overflow-x:auto; }
+body.measurement-page #htFieldPreview[hidden] { display:none!important; }
+body.measurement-page #htFieldPreview table { width:100%; min-width:0; table-layout:fixed; border-collapse:collapse; font-size:13px; }
+body.measurement-page #htFieldPreview :is(caption,th,td) { white-space:normal; overflow-wrap:anywhere; }
+body.measurement-page #htFieldPreview :is(th,td) { padding:6px 2px; text-align:left; border-bottom:1px solid #7892a8; }
+body.measurement-page .hot-tap-field-actions { display:flex; flex-wrap:wrap; gap:8px; }
+body.measurement-page .hot-tap-field-actions button { flex:1 1 110px; min-height:44px; font-size:14px; }
+body.measurement-page #htFieldStatus[data-applied="true"] { font-weight:700; }
+:root[data-theme="light"] body.measurement-page .hot-tap-field-reading { background:#dbe9f5; color:#173653; border-left-color:#2869b7; }
 body.measurement-page #workflowCurrentApplication { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; padding:10px 12px; margin-bottom:12px; border-left:3px solid #80baff; background:#102c48; color:#edf5ff; border-radius:6px; font-size:14px; }
 body.measurement-page #workflowCurrentApplication[hidden] { display:none!important; }
 body.measurement-page #workflowCurrentApplicationName { color:inherit; overflow-wrap:anywhere; min-width:0; }

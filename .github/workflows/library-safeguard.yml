@@ -48,3 +48,7 @@ jobs:
         run: node tests/dev-features.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check actual POP preview, apply, undo and saved state
+        run: node tests/hot-tap-field-reading-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
