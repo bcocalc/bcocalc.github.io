@@ -97,7 +97,7 @@ try {
       assert.equal(await firstCutterRow.isVisible(), false, 'Full chart stays collapsed until requested');
       await activate(page.locator('#cutterReferenceChartToggle'));
       assert.equal(await firstCutterRow.isVisible(), true);
-      assert.equal(await page.locator('#cutterReferenceRows tr').count(), 13);
+      assert.equal(await page.locator('#cutterReferenceRows tr').count(), 16);
       assert.equal(await page.locator('#cutterReferenceRows tr[aria-current="true"]').getAttribute('data-pipe-size'), '24');
       assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Cutter chart fits the page');
       await activate(page.locator('#cutterReferenceChartToggle'));
@@ -115,6 +115,14 @@ try {
       assert.equal(await page.locator('#cutterReferenceSize').textContent(), 'Not listed');
       await cutterPipe.selectOption('');
       assert.equal(await page.locator('#cutterReferenceSize').textContent(), '-');
+      for (const [type, sizes] of [['hotTap', {22:'19.000',26:'23.000',28:'25.000'}], ['lineStop', {22:'21.000',26:'25.000',28:'27.000'}]]) {
+        await cutterType.selectOption(type);
+        for (const [size, diameter] of Object.entries(sizes)) {
+          await cutterPipe.selectOption(size);
+          assert.equal(await page.locator('#cutterReferenceSize').textContent(), diameter + ' in');
+          assert.match(await page.locator('#cutterReferenceStatus').textContent(), /Supplemental Furmanite\/IPSCO/);
+        }
+      }
       assert.equal(await page.locator('#bcoCutterOD').inputValue(), cutterBefore, 'Reference does not alter the job cutter');
       await cutterPipe.selectOption('16');
       if (process.env.TAPCALC_SCREENSHOTS) {

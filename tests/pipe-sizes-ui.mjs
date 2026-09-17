@@ -58,8 +58,40 @@ try {
         assert.equal(await page.evaluate(() => localStorage.getItem('bcoData')), null, 'No stale geometry after blank ID');
       }
     }
+    const cutterBeforeLookup = await page.locator('#bcoCutterOD').inputValue();
+    await page.locator('.screen-nav [data-screen="ref"]').tap();
+    await page.locator('#referenceLibraryToggle').tap();
+    await page.locator('#referenceLibraryOptions [data-reference-target="cutters"]').tap();
+    for (const theme of ['light', 'dark']) {
+      await page.evaluate(theme => {
+        document.documentElement.dataset.theme = theme;
+        document.body.classList.toggle('light', theme === 'light');
+      }, theme);
+      for (const [type, values] of Object.entries({hotTap: ['19.000', '23.000', '25.000'], lineStop: ['21.000', '25.000', '27.000']})) {
+        await page.locator('#cutterReferenceType').selectOption(type);
+        for (const [i, size] of ['22', '26', '28'].entries()) {
+          await page.locator('#cutterReferencePipe').selectOption(size);
+          assert.equal(await page.locator('#cutterReferenceSize').textContent(), values[i] + ' in');
+          assert.match(await page.locator('#cutterReferenceStatus').textContent(), /Furmanite\/IPSCO/);
+        }
+      }
+      assert.ok(await page.locator('#cuttersReferenceView').isVisible());
+      for (const [type, values] of Object.entries({floStopHotTap: ['3.438', '5.468', '7.312', '9.5', '11.5'], floStopLineStop: ['3.8', '5.8', '7.9', '9.8', '11.8']})) {
+        await page.locator('#cutterReferenceType').selectOption(type);
+        for (const [i, size] of ['4', '6', '8', '10', '12'].entries()) {
+          await page.locator('#cutterReferencePipe').selectOption(size);
+          assert.equal(await page.locator('#cutterReferenceSize').textContent(), values[i] + ' in');
+          assert.match(await page.locator('#cutterReferenceResultLabel').textContent(), /FloStop II \/ IP-412/);
+          assert.match(await page.locator('#cutterReferenceStatus').textContent(), /ONLY/);
+        }
+        await page.locator('#cutterReferencePipe').selectOption('22');
+        assert.equal(await page.locator('#cutterReferenceSize').textContent(), 'Not listed');
+      }
+      assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
+    }
+    assert.equal(await page.locator('#bcoCutterOD').inputValue(), cutterBeforeLookup, 'Reference must not modify the job cutter');
     assert.deepEqual(errors, []);
     await context.close();
-    console.log('PASS pipe sizes ' + engine + '/' + (folder || 'live') + ': dropdown, STD/XS, BCO and unsupported schedule clearing');
+    console.log('PASS pipe sizes ' + engine + '/' + (folder || 'live') + ': dropdown, STD/XS, BCO, unsupported schedules and light/dark cutter reference');
   }
 } finally { await browser?.close(); server.kill(); }

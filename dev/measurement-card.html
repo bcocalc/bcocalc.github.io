@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="TapCalc">
   <title>TapCalc</title>
-<link rel="stylesheet" href="styles.css?v=3.0.0-alpha264">
+<link rel="stylesheet" href="styles.css?v=3.0.0-alpha265">
 </head>
 <body class="measurement-page">
 <div class="card app-shell">
   <header class="app-header">
     <div class="app-tabs">
       <a href="measurement-card.html" class="tab active">TapCalc v3</a>
-    <span class="version-badge">TapCalc Dev v3.0.0-alpha264 - 2026-09-17</span>
+    <span class="version-badge">TapCalc Dev v3.0.0-alpha265 - 2026-09-17</span>
     </div>
 
     <img src="team-logo.png" alt="TEAM Logo" class="app-logo">
@@ -26,7 +26,7 @@
 
   <header class="top-app-bar">
     <div class="top-app-left">
-      <div class="top-app-title">TapCalc Dev v3.0.0-alpha264 - 2026-09-17</div>
+      <div class="top-app-title">TapCalc Dev v3.0.0-alpha265 - 2026-09-17</div>
       <div class="top-app-subtitle" id="topCurrentJobLabel">No current job</div>
     </div>
     <div class="top-app-right">
@@ -1165,10 +1165,13 @@
       </div>
       <div id="cuttersReferenceView" class="reference-view" data-reference-view="cutters" hidden>
         <h3 class="reference-subheading">Cutter Sizes</h3>
-        <p class="reference-copy">Standard Hot Tap and Line Stop cutters. Pick an operation and nominal pipe size.</p>
+        <p class="reference-copy">Pick the correct cutter family and nominal pipe size. FloStop II / IP-412 is listed separately from standard Hot Tap and Line Stop.</p>
         <div class="cutter-lookup-controls">
-          <label for="cutterReferenceType">Operation
-            <select id="cutterReferenceType"><option value="hotTap">Hot Tap</option><option value="lineStop">Line Stop</option></select>
+          <label for="cutterReferenceType">Cutter family / operation
+            <select id="cutterReferenceType">
+              <optgroup label="Standard"><option value="hotTap">Standard Hot Tap</option><option value="lineStop">Standard Line Stop</option></optgroup>
+              <optgroup label="FloStop II / IP-412 only"><option value="floStopHotTap">FloStop II Hot Tap</option><option value="floStopLineStop">FloStop II Line Stop</option></optgroup>
+            </select>
           </label>
           <label for="cutterReferencePipe">Nominal pipe size
             <select id="cutterReferencePipe"><option value="">Choose size</option></select>
@@ -1191,8 +1194,10 @@
         <details class="cutter-reference-details">
           <summary>Source and scope</summary>
           <p>TEAM HTS Cutter Chart, dated January 15, 2016. Technician Information Book, Section 6: Cutters and BCO, PDF page 2 (printed page 8-B-1).</p>
-          <p>Values retain the chart's three-decimal precision; they are not exact fractional conversions or measured cutter diameters. Unlisted sizes are not estimated.</p>
-          <p>Standard cutters only. Short Stop, oversized HSS II, HTP, folding-head, and other special setups require their own applicable references.</p>
+          <p>22, 26 and 28 in sizes supplement that chart using the Furmanite/IPSCO OEM catalog, printed page 25 (IP-914 cutters). Confirm equipment and fitting compatibility; these are reference diameters, not automatic cutter selections.</p>
+          <p>FloStop II / IP-412 carbide cutters: Furmanite/IPSCO OEM catalog, printed page 33 (Hot Tap, HTC-xx-CR-41) and page 34 (Line Stop, LSC-xx-CR-41). Only 4, 6, 8, 10 and 12 in are listed. These are separate equipment-specific charts, not substitutes for the standard cutters.</p>
+          <p>Values retain each source's printed precision; they are not exact fractional conversions or measured cutter diameters. Unlisted sizes are not estimated.</p>
+          <p>Only the selected cutter family is covered. Short Stop, oversized HSS II, HTP, folding-head, and other special setups require their own applicable references.</p>
         </details>
       </div>
       <div class="reference-view" data-reference-view="stopmath">
@@ -1898,10 +1903,10 @@
 
 </div>
 
-<script src="firebase-config.js?v=3.0.0-alpha264"></script>
-<script src="cloud-sync.js?v=3.0.0-alpha264"></script>
-<script src="stackup-data.js?v=3.0.0-alpha264"></script>
-<script src="measurement.js?v=3.0.0-alpha264"></script>
+<script src="firebase-config.js?v=3.0.0-alpha265"></script>
+<script src="cloud-sync.js?v=3.0.0-alpha265"></script>
+<script src="stackup-data.js?v=3.0.0-alpha265"></script>
+<script src="measurement.js?v=3.0.0-alpha265"></script>
   </section>
 </body>
 </html>

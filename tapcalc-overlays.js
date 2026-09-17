@@ -5,12 +5,13 @@
   window[READY_FLAG] = true;
 
   const BUILD = window.TAPCALC_BUILD || {};
-  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix20';
+  const VERSION = BUILD.overlayVersion || BUILD.version || '3.0.0-livefix21';
   const FILES = [
     'overlays/tapcalc-workflow-library.js',
     'overlays/tapcalc-livefix11-workflow.js',
     'overlays/tapcalc-shell-reference.js',
     'overlays/tapcalc-field-manual.js',
+    'reference/cutter-sizes.js',
     'overlays/tapcalc-reference-router.js',
     'overlays/tapcalc-mobile-reliability.js'
   ];

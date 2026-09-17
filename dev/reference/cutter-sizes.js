@@ -2,13 +2,23 @@
 (function(){
   // TEAM HTS Cutter Chart, 2016-01-15; Section 6 Cutters and BCO.pdf, page 2.
   // Keep printed precision, including the identical 3-inch and 4-inch Hot Tap entries.
+  // 22/26/28 supplement: Furmanite/IPSCO OEM catalog, printed page 25, IP-914 cutters.
   const CHARTS = {
+    floStopHotTap: {
+      label: 'FloStop II / IP-412 Hot Tap',
+      rows: [['4', '3.438'], ['6', '5.468'], ['8', '7.312'], ['10', '9.5'], ['12', '11.5']]
+    },
+    floStopLineStop: {
+      label: 'FloStop II / IP-412 Line Stop',
+      rows: [['4', '3.8'], ['6', '5.8'], ['8', '7.9'], ['10', '9.8'], ['12', '11.8']]
+    },
     hotTap: {
       label: 'Standard Hot Tap',
       rows: [
         ['3', '2.438'], ['4', '2.438'], ['6', '5.469'], ['8', '7.313'],
         ['10', '9.500'], ['12', '11.500'], ['14', '12.750'], ['16', '14.688'],
-        ['18', '15.063'], ['20', '17.000'], ['24', '21.000'], ['30', '27.000'],
+        ['18', '15.063'], ['20', '17.000'], ['22', '19.000'], ['24', '21.000'],
+        ['26', '23.000'], ['28', '25.000'], ['30', '27.000'],
         ['36', '33.000'], ['42', '39.000']
       ]
     },
@@ -17,7 +27,8 @@
       rows: [
         ['3', '2.938'], ['4', '3.938'], ['6', '5.938'], ['8', '7.875'],
         ['10', '9.875'], ['12', '11.813'], ['14', '13.063'], ['16', '15.063'],
-        ['18', '17.000'], ['20', '19.000'], ['24', '23.000'], ['30', '29.000'],
+        ['18', '17.000'], ['20', '19.000'], ['22', '21.000'], ['24', '23.000'],
+        ['26', '25.000'], ['28', '27.000'], ['30', '29.000'],
         ['36', '35.000']
       ]
     }
@@ -46,6 +57,12 @@
       status.textContent = 'Choose a pipe size to look up its cutter.';
     } else if (!row) {
       status.textContent = 'No entry in this chart for the selected operation and size. Confirm the applicable equipment chart; do not use the nearest listed size.';
+    } else if (type.value.startsWith('floStop')) {
+      const hotTap = type.value === 'floStopHotTap';
+      const part = (hotTap ? 'HTC-' : 'LSC-') + pipe.value.padStart(2, '0') + '-CR-41';
+      status.textContent = 'FloStop II / IP-412 ONLY. ' + part + '; Furmanite/IPSCO catalog, page ' + (hotTap ? '33' : '34') + '. Not the standard Hot Tap / Line Stop chart. Confirm equipment and fitting compatibility.';
+    } else if (['22', '26', '28'].includes(pipe.value)) {
+      status.textContent = pipe.value + ' in nominal size. Supplemental Furmanite/IPSCO IP-914 catalog reference, page 25; confirm cutter, fitting and equipment compatibility. Not an entry in the supplied TEAM chart.';
     } else if (type.value === 'hotTap' && ['3', '4'].includes(pipe.value)) {
       status.textContent = pipe.value + ' in nominal pipe. The supplied chart lists 2.438 in for both 3 in and 4 in Hot Taps; confirm the job-specific requirement.';
     } else {

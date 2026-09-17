@@ -1,4 +1,4 @@
-const BUILD_VERSION = '3.0.0-livefix20';
+const BUILD_VERSION = '3.0.0-livefix21';
 
 (function(){
 
@@ -861,6 +861,7 @@ const referenceLibraryCurrentEl = document.getElementById('referenceLibraryCurre
 const referenceLibraryDescriptionEl = document.getElementById('referenceLibraryDescription');
 const referenceLibraryGroupEl = document.getElementById('referenceLibraryGroup');
 const referenceLibraryItems = [
+  { id: 'cutters', group: 'Charts', label: 'Cutter Sizes', description: 'Standard and FloStop II Hot Tap / Line Stop cutters', keywords: 'cutter cutters diameter od hot tap linestop line stop pipe sizes flostop flo stop ip412' },
   { id: 'converter', group: 'Charts', label: 'Decimal / Fraction', description: 'Quick conversion and full chart', keywords: 'decimal fraction conversion chart' },
   { id: 'bolting', group: 'Charts', label: 'Bolting Chart', description: 'Flange class, stud, wrench, counts', keywords: 'bolting flange class stud wrench count asme' },
   { id: 'glossary', group: 'Charts', label: 'Glossary', description: 'Abbreviations and field meanings', keywords: 'glossary abbreviations terms field meanings' },
@@ -1052,8 +1053,8 @@ const machineReferenceVisualWrapEl = machineReferenceVisualCanvasEl?.closest('.s
 const machineReferenceVisualFallbackEl = document.getElementById('machineReferenceVisualFallback');
 const machineReferenceVisualOpenEl = document.getElementById('machineReferenceVisualOpen');
 const STACKUP_VISUAL_BASE_PATH = 'reference/stackups/';
-const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix20';
-const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix20';
+const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix21';
+const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix21';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 const stackupPdfDocumentCache = new Map();
@@ -2469,7 +2470,7 @@ initBoltingReference();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix20', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
+navigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
   });
 }
 
@@ -5267,7 +5268,7 @@ window.addEventListener('load', async () => {
   renderJobsList();
   updateJobInfoSummary();
   const waiting = getHistory().filter((item) => !item.cloudId).length;
-  reportJobsSyncStatus(`Sync ready (3.0.0-livefix20). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
+  reportJobsSyncStatus(`Sync ready (3.0.0-livefix21). ${waiting ? waiting + ' local job(s) waiting. Tap Sync to upload.' : 'Local jobs are up to date.'}`);
   initAccordionSections();
   if (jobsCloudStatusEl) {
     jobsCloudStatusEl.textContent = navigator.onLine === false
@@ -8688,7 +8689,7 @@ var selectedJobId = window.selectedJobId || '';
 
 /* ===== 3.0.0-alpha134 mobile pending hydrate + library layout fix ===== */
 (() => {
-const VERSION = '3.0.0-livefix20';
+const VERSION = '3.0.0-livefix21';
   const $ = (id) => document.getElementById(id);
   const isMobile = () => {
     try { return window.matchMedia ? window.matchMedia('(max-width: 820px)').matches : window.innerWidth <= 820; } catch { return window.innerWidth <= 820; }

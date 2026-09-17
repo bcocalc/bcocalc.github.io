@@ -4,6 +4,7 @@
   const SAVED_VIEW_KEY = 'tapcalcReferenceViewV1';
   const DEFAULT_VIEW = 'converter';
   const labels = {
+    cutters: ['Charts', 'Cutter Sizes', 'Standard and FloStop II Hot Tap / Line Stop cutters'],
     converter: ['Charts', 'Decimal / Fraction', 'Quick conversion and full chart'],
     bolting: ['Charts', 'Bolting Chart', 'Flange class, stud, wrench, counts'],
     glossary: ['Charts', 'Glossary', 'Abbreviations and field meanings'],
@@ -99,7 +100,8 @@
     }
 
     document.querySelectorAll('#refScreen .reference-library-count').forEach((count) => {
-      if (count.textContent.trim() !== '14 refs') count.textContent = '14 refs';
+      const refCount = views().length + ' refs';
+      if (count.textContent.trim() !== refCount) count.textContent = refCount;
     });
 
     const options = byId('referenceLibraryOptions');

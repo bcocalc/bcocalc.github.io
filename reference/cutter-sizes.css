@@ -1,0 +1,130 @@
+#cuttersReferenceView {
+  --cutter-ink: #edf5ff;
+  --cutter-muted: #bacde2;
+  --cutter-line: #3d5672;
+  --cutter-surface: #112a43;
+  --cutter-control: #172e46;
+  --cutter-accent: #95caff;
+  color: var(--cutter-ink);
+  min-width: 0;
+}
+:root[data-theme="light"] #cuttersReferenceView,
+body.light #cuttersReferenceView {
+  --cutter-ink: #17324d;
+  --cutter-muted: #3f5b76;
+  --cutter-line: #9eb2c7;
+  --cutter-surface: #dae6f1;
+  --cutter-control: #e8f0f7;
+  --cutter-accent: #124d88;
+}
+#cuttersReferenceView .reference-copy,
+#cuttersReferenceView .cutter-reference-note,
+#cuttersReferenceView .cutter-reference-details p {
+  color: var(--cutter-muted) !important;
+  line-height: 1.45;
+}
+#cuttersReferenceView .reference-subheading {
+  color: var(--cutter-ink) !important;
+}
+#cuttersReferenceView .cutter-lookup-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+}
+#cuttersReferenceView label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: var(--cutter-ink) !important;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+#cuttersReferenceView select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  padding: 10px 8px;
+  border: 1px solid var(--cutter-line);
+  border-radius: 10px;
+  color: var(--cutter-ink) !important;
+  background: var(--cutter-control) !important;
+  font: inherit;
+  font-size: 16px;
+}
+#cuttersReferenceView .cutter-lookup-result {
+  padding: 18px 16px;
+  border-left: 4px solid var(--cutter-accent);
+  border-radius: 4px 12px 12px 4px;
+  background: var(--cutter-surface) !important;
+}
+#cuttersReferenceView .cutter-lookup-result > span {
+  display: block;
+  color: var(--cutter-muted) !important;
+}
+#cuttersReferenceView #cutterReferenceSize {
+  display: block;
+  margin: 6px 0;
+  color: var(--cutter-ink) !important;
+  font-size: 2rem;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+#cuttersReferenceView #cutterReferenceStatus {
+  margin: 8px 0 0;
+  color: var(--cutter-muted) !important;
+  line-height: 1.4;
+}
+#cuttersReferenceView .cutter-reference-note {
+  margin: 14px 0;
+  font-size: 0.85rem;
+}
+#cuttersReferenceView .cutter-reference-details {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--cutter-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#cuttersReferenceView summary {
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 14px 2px;
+  color: var(--cutter-ink) !important;
+  font-weight: 700;
+  cursor: pointer;
+}
+#cuttersReferenceView select:focus-visible,
+#cuttersReferenceView summary:focus-visible {
+  outline: 2px solid var(--cutter-accent);
+  outline-offset: 3px;
+}
+#cuttersReferenceView .cutter-reference-table {
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 16px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+#cuttersReferenceView caption {
+  padding: 4px 0 12px;
+  color: var(--cutter-muted) !important;
+  text-align: left;
+}
+#cuttersReferenceView th,
+#cuttersReferenceView td {
+  padding: 10px 8px;
+  border-bottom: 1px solid var(--cutter-line);
+  color: var(--cutter-ink) !important;
+  background: transparent !important;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+#cuttersReferenceView thead,
+#cuttersReferenceView tr[aria-current="true"] {
+  background: var(--cutter-surface) !important;
+}
