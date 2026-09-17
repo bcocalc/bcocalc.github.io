@@ -52,3 +52,7 @@ jobs:
         run: node tests/hot-tap-field-reading-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check added steel pipe sizes on live and dev
+        run: node tests/pipe-sizes-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
