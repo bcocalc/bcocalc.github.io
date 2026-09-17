@@ -21,8 +21,12 @@ try {
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base + '/' + folder + 'measurement-card.html?fixture=success');
+    if (folder) await page.waitForFunction(() => window.__tapcalcWorkflowBrowseReady && window.__tapcalcReferenceRouterReady);
     await page.waitForTimeout(2000);
     await page.locator('.screen-nav [data-screen="calc"]').tap();
+    await page.locator('.calc-submode-btn[data-mode="bco"]').tap();
+    const collapsedBco = page.locator('.section.collapsed:has(#bcoPipeMaterial) > .accordion-heading');
+    if (await collapsedBco.count()) await collapsedBco.tap();
     await page.locator('#bcoPipeMaterial').selectOption('CarbonSteel');
     for (const size of [22, 26, 28]) {
       await page.locator('#bcoPipeOD').selectOption(size.toFixed(1));
