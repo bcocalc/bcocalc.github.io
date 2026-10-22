@@ -10,6 +10,7 @@ const checks = [
   ['reference-measurements.mjs', {}],
   ['pipe-size-data.mjs', {}],
   ['cutter-reference.mjs', {}],
+  ['coupon-free.mjs', {}],
   ['smartstop-reference.mjs', {}],
   ['hot-tap-field-reading.mjs', {}],
   ['library-tap-unit.mjs', {}],
@@ -20,6 +21,7 @@ if (!args.includes('--unit-only')) {
   for (const browser of ['chromium', 'webkit']) {
     checks.push(['library-touch.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pipe-sizes-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['coupon-free-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['hot-tap-field-reading-ui.mjs', { TAPCALC_BROWSER: browser }]);
     // Bound each device separately as the application-switching coverage grows.
     for (const device of ['phone', 'desktop']) {
