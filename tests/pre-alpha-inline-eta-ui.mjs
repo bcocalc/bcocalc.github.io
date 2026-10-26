@@ -110,6 +110,7 @@ export async function runInlineEtaChecks({browser,pw,base,mobile,engine}) {
         if(layout.pageWidth>layout.viewport+1)layout.afterTwoFrames=await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve({viewport:innerWidth,pageWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth})))));
         assert.ok(layout.pageWidth<=layout.viewport+1,'No page overflow at '+width+'px: '+JSON.stringify(layout));
         assert.ok(await summary().evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Summary fits at '+width+'px');
+        assert.ok(await page.locator('#fields .field > select').evaluateAll(controls=>controls.every(el=>el.getBoundingClientRect().width<=el.parentElement.clientWidth+1)),'Native selects fit their field grid track at '+width+'px');
         assert.ok(await metric('time').isVisible());
       }
       await summary().screenshot({path:join(tmpdir(),'pre-alpha-inline-eta-'+engine+(mobile?'-phone':'-desktop')+(dark?'-dark':'-light')+'.png'),animations:'disabled'});
