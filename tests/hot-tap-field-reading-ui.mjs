@@ -37,6 +37,9 @@ try {
     await page.goto(base + '/dev/measurement-card.html?fixture=success');
     await page.waitForTimeout(1800);
     await activate('.screen-nav [data-screen="card"]');
+    // Entering Workflow schedules its setup stage; let that navigation finish
+    // before selecting a fixture stage (as in the workflow navigation tests).
+    await page.waitForTimeout(450);
     await page.evaluate(() => {
       applyFieldFixture({ md: '10', ld: '2', ldSign: '+', ptc: '1', pod: '16', start: '5', mt: '30', htActualPop: '', htFieldBasis: '' });
       tapCalcSetWorkflowStage('hotTap', { userInitiated: true, guard: false, skipScroll: true });
@@ -68,10 +71,10 @@ try {
     await page.reload();
     await page.waitForTimeout(1800);
     await activate('.screen-nav [data-screen="card"]');
+    await page.waitForTimeout(450);
     await activate('#workflowStageNav [data-workflow-stage="hotTap"]');
-    // Deferred job hydration can run 900 ms after navigation and rebuild sections.
-    // Open the accordion only after it settles, rather than racing its restore.
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(450);
+    await page.waitForFunction(() => window.__tapCalcWorkflowStage === 'hotTap' && document.getElementById('hotTapPanel')?.offsetWidth > 0);
     const restoredCollapsed = page.locator('.section.collapsed:has(#htActualPop) > .accordion-heading');
     if (await restoredCollapsed.count()) await (phone ? restoredCollapsed.tap() : restoredCollapsed.click());
     assert.equal(await value('pop'), 18.5, 'Confirmed adjustment survives a reload');
