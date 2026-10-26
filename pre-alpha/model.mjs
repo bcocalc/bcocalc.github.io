@@ -1,4 +1,5 @@
-export const BUILD = 'pre-alpha02';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha03';
+export const BUILD = 'pre-alpha03';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
@@ -18,10 +19,30 @@ export const number = value => {
   if (!match || Number(match[4]) === 0) return NaN;
   return (match[1] === '-' ? -1 : 1) * (Number(match[2] || 0) + Number(match[3]) / Number(match[4]));
 };
-const TRUE_OD = {
-  CarbonSteel: {'3.0':3.5,'4.0':4.5,'6.0':6.625,'8.0':8.625,'10.0':10.75,'12.0':12.75,'14.0':14,'16.0':16,'18.0':18,'20.0':20,'22.0':22,'24.0':24,'26.0':26,'28.0':28,'30.0':30,'36.0':36,'42.0':42,'48.0':48},
-  DuctileIron: {'3.0':3.96,'4.0':4.8,'6.0':6.9,'8.0':9.05,'10.0':11.1,'12.0':13.2,'14.0':15.3,'16.0':17.4,'18.0':19.5,'20.0':21.6,'24.0':25.8,'30.0':32,'36.0':38.3,'42.0':44.5,'48.0':50.8}
-};
+export function pipeMaterialKey(value) {
+  return /ductile/i.test(value) ? 'DuctileIron' : /carbon|steel/i.test(value) ? 'CarbonSteel' : 'Other';
+}
+export function pipeSizes(state) {
+  const material=pipeMaterialKey(state.bcoPipeMaterial);
+  return Object.keys(PIPE_DATA[material]||{}).map(size=>[size,TRUE_OD[material][size]]);
+}
+export function pipeSchedules(state) {
+  const row=PIPE_DATA[pipeMaterialKey(state.bcoPipeMaterial)]?.[number(state.bcoPipeOD).toFixed(1)];
+  return ['STD','40','XS','80'].filter(key=>row&&key in row);
+}
+export function choosePipeSelection(state,key,value) {
+  if(!['bcoPipeMaterial','bcoPipeOD','bcoSchedule'].includes(key))return;
+  state[key]=value;
+  if(key!=='bcoSchedule')state.preAlphaPipeOD='';
+  const sizes=pipeSizes(state).map(([size])=>size);
+  if(key==='bcoPipeMaterial' && !sizes.includes(number(state.bcoPipeOD).toFixed(1)))state.bcoPipeOD='';
+  const schedules=pipeSchedules(state);
+  if(key!=='bcoSchedule'&&!schedules.includes(state.bcoSchedule))state.bcoSchedule=schedules.includes('STD')?'STD':'custom';
+  if(key==='bcoSchedule'&&value==='custom')return;
+  const row=PIPE_DATA[pipeMaterialKey(state.bcoPipeMaterial)]?.[number(state.bcoPipeOD).toFixed(1)];
+  const id=row?.[state.bcoSchedule];
+  state.bcoPipeID=typeof id==='number'&&id>0 ? String(id) : '';
+}
 export function operationType(operation) {
   const state = operation.state || {};
   const type = String(operation.workflowType || operation.operationType || state.operationType || operation.mode || state.activeMode || 'Hot Tap');
@@ -46,6 +67,15 @@ export function chooseOperationType(job, operation, type) {
     operation.label=type+' '+index;
   }
 }
+export function deleteOperation(job, operationId) {
+  const index=job.operations.findIndex(operation=>operation.id===operationId);
+  if(index<0)return false;
+  job.operations.splice(index,1);
+  if(job.selectedOperationId===operationId) {
+    job.selectedOperationId=job.operations[Math.min(index,job.operations.length-1)]?.id ?? null;
+  }
+  return true;
+}
 export function normalizeJob(entry) {
   const record = entry.record || entry;
   const saved = entry.state || record.state || {};
@@ -65,6 +95,7 @@ export function normalizeJob(entry) {
   const defaults = {
     bcoPipeMaterial:record.pipe?.material, bcoPipeOD:record.pipe?.nominalSize,
     bcoPipeID:record.pipe?.pipeId, bcoCutterOD:record.machine?.cutterOd,
+    bcoSchedule:record.pipe?.schedule,
     preAlphaPipeOD:record.pipe?.trueOd,
     operationType: record.meta?.operationType
   };
@@ -113,8 +144,7 @@ export function normalizeJob(entry) {
 export function pipeOD(state) {
   if (String(state.preAlphaPipeOD ?? '').trim()) return number(state.preAlphaPipeOD);
   const nominal = number(state.bcoPipeOD);
-  const rawMaterial = String(state.bcoPipeMaterial || '');
-  const material = /ductile/i.test(rawMaterial) ? 'DuctileIron' : /carbon|steel/i.test(rawMaterial) ? 'CarbonSteel' : '';
+  const material = pipeMaterialKey(state.bcoPipeMaterial || '');
   return TRUE_OD[material]?.[nominal.toFixed(1)] ?? number(state.preAlphaPipeOD ?? state.pod);
 }
 export function geometry(state) {

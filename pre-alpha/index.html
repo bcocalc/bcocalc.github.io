@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f2ec">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
-  <title>TapCalc Pre-Alpha 02</title>
-  <link rel="stylesheet" href="./workspace.css?v=pre-alpha02">
-  <script src="./firebase-config.js?v=pre-alpha02" defer></script>
+  <title>TapCalc Pre-Alpha 03</title>
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha03">
+  <script src="./firebase-config.js?v=pre-alpha03" defer></script>
   <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
-  <script type="module" src="./workspace.mjs?v=pre-alpha02"></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha03"></script>
 </head>
 <body>
   <header class="masthead">
-    <a class="wordmark" href="./"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 02</span></a>
+    <a class="wordmark" href="./"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 03</span></a>
     <button id="theme" class="quiet">Dark mode</button>
   </header>
   <div class="experiment-strip"><span class="status-dot"></span>A new workspace, taking shape.<span class="experiment-detail">Experimental jobs save separately on this device.</span></div>
@@ -29,9 +29,10 @@
       </div>
       <div id="job-workspace" hidden>
         <header class="job-heading"><div><p class="eyebrow" id="job-origin">WORKING COPY</p><h1 id="job-title"></h1><p id="job-meta"></p></div><button data-action="details">Job details <span aria-hidden="true">&nearr;</span></button></header>
-        <div class="operations-heading"><h2>Operations <span id="operation-count"></span></h2><button class="quiet" data-action="add">+ Add operation</button></div>
+        <div class="operations-heading"><h2>Operations <span id="operation-count"></span></h2><div class="operations-actions"><button class="quiet" data-action="add">+ Add operation</button><button id="delete-operation" class="quiet danger-text" data-action="delete">Delete operation</button></div></div>
         <nav id="operations" aria-label="Job operations"></nav>
-        <div class="work-layout">
+        <section id="empty-operations" class="empty-state" hidden><h2>No operations yet.</h2><p>Your job details are saved. Add an operation to start entering measurements.</p><button class="primary" data-action="add">+ Add operation</button></section>
+        <div id="measurement-workspace" class="work-layout">
           <aside class="journey"><p class="eyebrow">WORK THROUGH THE JOB</p><nav id="steps" aria-label="Measurement steps"></nav><p class="journey-note">Browse any step.<br>Your measurements stay with this operation.</p></aside>
           <section class="measurement-area" aria-labelledby="step-title">
             <div class="step-heading"><div><p class="eyebrow" id="step-count"></p><h2 id="step-title"></h2><p id="step-description"></p></div><span class="unit-label">INCHES</span></div>
@@ -54,5 +55,6 @@
   <dialog id="details-dialog"><form id="details-form"><div class="dialog-heading"><h2>Job details</h2><button type="button" data-close="details-dialog" aria-label="Close job details">&times;</button></div><div id="details-fields"></div><button class="primary" type="submit">Save details</button></form></dialog>
   <dialog id="add-dialog"><div class="dialog-heading"><h2>Add an operation</h2><button data-close="add-dialog" aria-label="Close add operation">&times;</button></div><p>Each operation keeps its own measurements.</p><div class="add-options"><button data-add-type="Hot Tap">1. Hot Tap <span>Hot tap only</span></button><button data-add-type="Line Stop">2. Line Stop <span>Hot tap, line stop, then completion plug</span></button><button data-add-type="Tap &amp; Complete">3. Tap &amp; Complete <span>Hot tap, then completion plug</span></button></div></dialog>
   <div id="notice" role="status" hidden></div>
+  <dialog id="delete-operation-dialog" aria-labelledby="delete-operation-title" aria-describedby="delete-operation-description"><form id="delete-operation-form"><h2 id="delete-operation-title">Delete this operation?</h2><p id="delete-operation-description"></p><div class="dialog-actions"><button type="button" data-close="delete-operation-dialog" autofocus>Cancel</button><button type="submit" class="danger-button">Delete operation</button></div></form></dialog>
 </body>
 </html>

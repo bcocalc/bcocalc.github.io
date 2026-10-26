@@ -1,4 +1,4 @@
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,chooseOperationType,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha02';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha03';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -13,7 +13,7 @@ const stages = {
 };
 const fields = {
   setup:[['operationType','Operation','operation'],['machineType','Machine','machine']],
-  pipe:[['bcoPipeMaterial','Pipe material','material'],['bcoPipeOD','Nominal pipe size','text'],['preAlphaPipeOD','Actual pipe O.D.','text'],['bcoPipeID','Pipe I.D.','text'],['bcoCutterOD','Cutter O.D.','text'],['bcoCutterID','Cutter I.D.','text','Optional, for coupon free']],
+  pipe:[['bcoPipeMaterial','Pipe material','material'],['bcoPipeOD','Nominal pipe size','pipe-size'],['bcoSchedule','Schedule','schedule'],['preAlphaPipeOD','Actual pipe O.D.','text','Filled from size; editable'],['bcoPipeID','Pipe I.D.','text','Editable for measured dimensions'],['bcoCutterOD','Cutter O.D.','text'],['bcoCutterID','Cutter I.D.','text','Optional, for coupon free']],
   tap:[['md','Measured distance (MD)','text'],['ld','Lost distance (LD)','text'],['ldSign','LD direction','sign'],['ptc','Pilot to cutter (PTC)','text'],['start','Rod start','text'],['mt','Machine travel','text']],
   stop:[['lsMd','Measured distance (MD)','text'],['lsLd','Lost distance (LD)','text'],['lsLdSign','LD direction','sign'],['lsPod','Pipe O.D. at line stop','text','Blank uses pipe setup'],['lsTravel','Line stop travel','text','Optional check'],['lsMachineTravel','Machine travel','text','Optional check'],['lsLiManualToggle','Lower-in mode','toggle'],['lsLiManual','Manual lower in','text']],
   plug:[['cpStart','Start','text'],['cpJbf','Jack bolt flange (JBF)','text'],['cpLd','Lost distance (LD)','text'],['cpPt','Plug thickness (PT)','text'],['cpLiManualToggle','Lower-in mode','toggle'],['cpLiManual','Manual lower in','text']],
@@ -22,6 +22,7 @@ const fields = {
 const details = [['jobDescription','Job name'],['jobClient','Customer'],['jobLocation','Location'],['jobNumber','Job number'],['jobDate','Date','date'],['jobTechnician','Technician'],['machineType','Machine','machine'],['jobNotes','Notes','textarea']];
 let jobs=[],active=null,stage='setup',source='shared',shared=[],visibleLimit=30;
 let connectionBusy=false, noticeTimer;
+let pendingDeleteId=null;
 function notify(message) {
   $('notice').textContent=message; $('notice').hidden=false;
   clearTimeout(noticeTimer); noticeTimer=setTimeout(() => $('notice').hidden=true,4500);
@@ -52,9 +53,18 @@ function page(name) {
 function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field') {
   const attrs=attribute+'="'+escape(key)+'" id="'+escape(attribute+key)+'"';
   let control;
-  if(['material','sign','toggle','operation','machine'].includes(type)){
-    const options=type==='machine'?[['','Choose a machine'],...MACHINE_OPTIONS.map(name=>[name,name])]:type==='operation'?OPERATION_CHOICES.map((name,index)=>[name,(index+1)+'. '+name]):type==='material'?[['CarbonSteel','Carbon steel'],['DuctileIron','Ductile iron'],['Other','Other / measured O.D.']]:type==='toggle'?[['false','Calculated'],['true','Manual override']]:[['+','Add (+)'],['-','Subtract (-)']];
-    const current=String(value??'')||(type==='sign'?'+':type==='toggle'?'false':type==='machine'?'':type==='operation'?'Hot Tap':'CarbonSteel');
+  if(type==='pipe-size'||type==='schedule'){
+    const state=operation().state;
+    const options=type==='pipe-size'
+      ? [['','Choose a size'],...pipeSizes(state).map(([size,od])=>[size,Number(size)+' in ('+od+' O.D.)']),['custom','Other size']]
+      : [['','Choose'],...pipeSchedules(state).map(schedule=>[schedule,schedule]),['custom','Measured']];
+    const raw=String(value??'');
+    const canonical=type==='pipe-size'&&Number.isFinite(number(raw))?number(raw).toFixed(1):raw;
+    if(canonical&&!options.some(([v])=>v===canonical))options.push([canonical,raw+' (saved)']);
+    control='<select '+attrs+'>'+options.map(([v,t])=>'<option value="'+escape(v)+'"'+(v===canonical?' selected':'')+'>'+escape(t)+'</option>').join('')+'</select>';
+  }else if(['material','sign','toggle','operation','machine'].includes(type)){
+    const options=type==='machine'?[['','Choose a machine'],...MACHINE_OPTIONS.map(name=>[name,name])]:type==='operation'?OPERATION_CHOICES.map((name,index)=>[name,(index+1)+'. '+name]):type==='material'?[['','Choose material'],['CarbonSteel','Carbon steel'],['DuctileIron','Ductile iron'],['Other','Other / measured O.D.']]:type==='toggle'?[['false','Calculated'],['true','Manual override']]:[['+','Add (+)'],['-','Subtract (-)']];
+    const current=String(value??'')||(type==='sign'?'+':type==='toggle'?'false':type==='operation'?'Hot Tap':'');
     if(!options.some(([v])=>v===current))options.push([current,current+(type==='operation'||type==='machine'?' (saved)':'')]);
     control='<select '+attrs+'>'+options.map(([v,t])=>'<option value="'+escape(v)+'"'+(v===current?' selected':'')+'>'+escape(t)+'</option>').join('')+'</select>';
   }else if(type==='textarea')control='<textarea '+attrs+'>'+escape(value)+'</textarea>';
@@ -78,7 +88,12 @@ function renderWorkspace() {
   $('job-origin').textContent=active.source==='shared'?'SHARED JOB / PRE-ALPHA WORKING COPY':active.source==='device'?'DEVICE JOB / PRE-ALPHA WORKING COPY':'PRE-ALPHA JOB';
   $('job-meta').textContent=[active.sharedState.jobClient,active.sharedState.jobLocation,active.sharedState.jobNumber,active.sharedState.jobDate].filter(Boolean).join(' / ')||'Add the customer and location in Job details.';
   renderOperations();
-  const op=operation(),steps=stepsFor(op);
+  const op=operation();
+  $('delete-operation').disabled=!op;
+  $('empty-operations').hidden=!!op;
+  $('measurement-workspace').hidden=!op;
+  if(!op)return;
+  const steps=stepsFor(op);
   if(!steps.includes(stage))stage=steps[0];
   $('steps').innerHTML=steps.map((key,i)=>'<button data-step="'+key+'"'+(key===stage?' aria-current="step"':'')+'><span class="step-number">'+(i+1)+'</span>'+escape(stages[key][0])+'</button>').join('');
   $('step-title').textContent=stages[stage][0];
@@ -87,7 +102,7 @@ function renderWorkspace() {
   $('fields').innerHTML=fields[stage].map(field=>{
     const key=field[0];
     if((key==='lsLiManual'||key==='cpLiManual') && ![true,'true'].includes(op.state[key+'Toggle']))return '';
-    const value=key==='operationType'?operationType(op):key==='machineType'?active.sharedState.machineType:key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):op.state[key];
+    const value=key==='operationType'?operationType(op):key==='machineType'?active.sharedState.machineType:key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):key==='bcoSchedule'?(op.state.bcoSchedule || (String(op.state.bcoPipeID??'').trim()?'custom':'')):op.state[key];
     return fieldMarkup(field,value);
   }).join('');
   $('back').disabled=steps.indexOf(stage)===0;
@@ -105,9 +120,11 @@ function renderResults() {
   if(results.length) {
     const [main,...rest]=results;
     $('results').innerHTML='<div class="result-panel"><p class="eyebrow">'+escape(main[0])+'</p><strong class="big-value">'+format(main[1])+' <small>in</small></strong><div class="result-subgrid">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+format(value)+' <small>in</small></strong></div>').join('')+'</div></div>';
-    const missing=results.some(([,value])=>!Number.isFinite(value));
+    const optional=stage==='pipe'?['Coupon free']:stage==='stop'?['Travel margin']:[];
+    const missing=results.some(([label,value])=>!optional.includes(label)&&!Number.isFinite(value));
     if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.</p>');
     if(stage==='pipe')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
+    if(stage==='pipe'&&op.state.bcoPipeOD&&!String(op.state.bcoPipeID??'').trim())$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Choose chart dimensions or enter a measured Pipe I.D. Unlisted dimensions are left blank.</p>');
     if(stage==='tap'&&number(op.state.mt)>0&&results.find(([key])=>key==='Total travel')?.[1]>number(op.state.mt))$('results').insertAdjacentHTML('beforeend','<p class="warning">Calculated travel exceeds machine travel. Recheck the setup.</p>');
     if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
     if((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle)))$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Manual lower-in override is active. Select Calculated in Lower-in mode to use the setup measurements.</p>');
@@ -168,6 +185,11 @@ document.addEventListener('click',event=>{
   if(button.dataset.action==='new'){active=newJob();stage='setup';persist();renderWorkspace();page('workspace');editDetails();}
   if(button.dataset.action==='details')editDetails();
   if(button.dataset.action==='add')$('add-dialog').showModal();
+  if(button.dataset.action==='delete'&&operation()){
+    pendingDeleteId=operation().id;
+    $('delete-operation-description').textContent='Delete "'+operation().label+'" and its measurements from this Pre-Alpha working copy?';
+    $('delete-operation-dialog').showModal();
+  }
   if(button.dataset.close)$(button.dataset.close).close();
   if(button.dataset.operation){active.selectedOperationId=button.dataset.operation;stage='setup';persist();renderWorkspace();}
   if(button.dataset.step){stage=button.dataset.step;renderWorkspace();}
@@ -180,7 +202,7 @@ document.addEventListener('click',event=>{
 });
 $('fields').addEventListener('input',event=>{
   const key=event.target.dataset.field;if(!key)return;
-  if(key==='operationType')return;
+  if(['operationType','bcoPipeMaterial','bcoPipeOD','bcoSchedule'].includes(key))return;
   else if(key==='machineType')active.sharedState.machineType=event.target.value;
   else operation().state[key]=key.endsWith('Toggle') ? event.target.value==='true' : event.target.value;
   persist();renderResults();
@@ -188,7 +210,7 @@ $('fields').addEventListener('input',event=>{
 $('fields').addEventListener('change',event=>{
   const key=event.target.dataset.field;
   if(key==='operationType'){chooseOperationType(active,operation(),event.target.value);persist();renderWorkspace();return;}
-  if(key==='bcoPipeMaterial'||key==='bcoPipeOD'){delete operation().state.preAlphaPipeOD;persist();renderWorkspace();}
+  if(['bcoPipeMaterial','bcoPipeOD','bcoSchedule'].includes(key)){choosePipeSelection(operation().state,key,event.target.value);persist();renderWorkspace();}
   if(key==='lsLiManualToggle'||key==='cpLiManualToggle'){persist();renderWorkspace();}
 });
 $('details-form').addEventListener('submit',event=>{
@@ -197,6 +219,18 @@ $('details-form').addEventListener('submit',event=>{
   active.title=active.sharedState.jobDescription||active.sharedState.jobNumber||'Untitled job';
   persist();$('details-dialog').close();renderWorkspace();
 });
+$('delete-operation-form').addEventListener('submit',event=>{
+  event.preventDefault();
+  if(!active||!pendingDeleteId)return;
+  const removed=deleteOperation(active,pendingDeleteId);
+  $('delete-operation-dialog').close();
+  if(!removed)return;
+  stage='setup';persist();renderWorkspace();
+  const target=operation()?$('operations').querySelector('[aria-current]'):document.querySelector('.operations-actions [data-action="add"]');
+  target?.focus({preventScroll:true});
+  notify('Operation deleted from this working copy.');
+});
+$('delete-operation-dialog').addEventListener('close',()=>pendingDeleteId=null);
 $('back').addEventListener('click',()=>{const steps=stepsFor(operation());stage=steps[Math.max(0,steps.indexOf(stage)-1)];renderWorkspace();});
 $('next').addEventListener('click',()=>{const steps=stepsFor(operation());const index=steps.indexOf(stage);if(index===steps.length-1)page('library');else{stage=steps[index+1];renderWorkspace();}});
 $('search').addEventListener('input',()=>{visibleLimit=30;renderLibrary();});

@@ -51,6 +51,36 @@ try{
     assert.equal(await page.locator('[data-step="plug"]').count(),1);
     assert.equal(await page.locator('[data-step="stop"]').count(),1);
     await page.screenshot({path:join(tmpdir(),'pre-alpha-setup-'+engine+(mobile?'-phone':'-desktop')+'.png'),animations:'disabled',fullPage:true});
+    await activate(page.locator('[data-step="pipe"]'));
+    assert.equal(await page.locator('[data-field="bcoPipeOD"]').evaluate(el=>el.tagName),'SELECT');
+    assert.equal(await page.locator('[data-field="bcoSchedule"]').evaluate(el=>el.tagName),'SELECT');
+    assert.equal(await page.locator('[data-field="bcoPipeID"]').inputValue(),'15.5','Opening an old job must preserve its measured ID');
+    for(const size of [22,26,28]){
+      await page.locator('[data-field="bcoPipeOD"]').selectOption(size.toFixed(1));
+      await page.locator('[data-field="bcoSchedule"]').selectOption('STD');
+      assert.equal(Number(await page.locator('[data-field="bcoPipeID"]').inputValue()),size-0.75);
+      await page.locator('[data-field="bcoSchedule"]').selectOption('XS');
+      assert.equal(Number(await page.locator('[data-field="bcoPipeID"]').inputValue()),size-1);
+      for(const schedule of ['40','80']){
+        await page.locator('[data-field="bcoSchedule"]').selectOption(schedule);
+        assert.equal(await page.locator('[data-field="bcoPipeID"]').inputValue(),'');
+      }
+    }
+    await page.locator('[data-field="bcoPipeMaterial"]').selectOption('DuctileIron');
+    assert.equal(await page.locator('[data-field="bcoPipeOD"]').inputValue(),'');
+    for(const size of ['22.0','26.0','28.0'])assert.equal(await page.locator('[data-field="bcoPipeOD"] option[value="'+size+'"]').count(),0);
+    await page.locator('[data-field="bcoPipeOD"]').selectOption('24.0');
+    assert.equal(await page.locator('[data-field="bcoPipeID"]').inputValue(),'24.9');
+    await page.locator('[data-field="bcoPipeMaterial"]').selectOption('CarbonSteel');
+    await page.locator('[data-field="bcoPipeOD"]').selectOption('16.0');
+    await page.locator('[data-field="bcoPipeID"]').fill('15.5');
+    await page.locator('[data-field="bcoSchedule"]').selectOption('custom');
+    await page.reload();
+    await page.waitForSelector('#job-title');
+    await activate(page.locator('[data-step="pipe"]'));
+    assert.equal(await page.locator('[data-field="bcoPipeID"]').inputValue(),'15.5');
+    assert.equal(await page.locator('[data-field="bcoSchedule"]').inputValue(),'custom');
+    await page.screenshot({path:join(tmpdir(),'pre-alpha-pipe-'+engine+(mobile?'-phone':'-desktop')+'.png'),animations:'disabled',fullPage:true});
     await activate(page.locator('[data-step="tap"]'));
     assert.equal(await page.locator('[data-field="md"]').inputValue(),'20');
     await page.locator('[data-field="md"]').fill('21.75');
@@ -80,7 +110,7 @@ try{
     await page.locator('[data-detail="machineType"]').selectOption('1200-M120');
     await activate(page.locator('#details-form [type="submit"]'));
     assert.match(await page.locator('#job-meta').textContent(),/New customer/);
-    await activate(page.locator('[data-action="add"]'));
+    await activate(page.locator('.operations-actions [data-action="add"]'));
     await activate(page.locator('[data-add-type="Tap & Complete"]'));
     assert.equal(await page.locator('#operations button').count(),4);
     await activate(page.locator('#next'));
@@ -94,6 +124,42 @@ try{
     assert.match(await page.locator('.big-value').textContent(),/99.0000/);
     await page.locator('[data-field="cpLiManualToggle"]').selectOption('false');
     assert.match(await page.locator('.big-value').textContent(),/29.0000/);
+    const addedId=await page.locator('#operations [aria-current]').getAttribute('data-operation');
+    await activate(page.locator('#delete-operation'));
+    assert.match(await page.locator('#delete-operation-description').textContent(),/Tap & Complete/);
+    await page.screenshot({path:join(tmpdir(),'pre-alpha-delete-'+engine+(mobile?'-phone':'-desktop')+'.png'),animations:'disabled'});
+    await activate(page.locator('[data-close="delete-operation-dialog"]'));
+    assert.equal(await page.locator('#operations button').count(),4);
+    assert.equal(await page.locator('[data-field="cpStart"]').inputValue(),'20');
+    await activate(page.locator('#delete-operation'));
+    await activate(page.locator('#delete-operation-form [type="submit"]'));
+    assert.equal(await page.locator('#operations button').count(),3);
+    assert.equal(await page.locator('[data-operation="'+addedId+'"]').count(),0);
+    await page.reload();
+    await page.waitForSelector('#job-title');
+    assert.equal(await page.locator('#operations button').count(),3);
+    await activate(page.locator('[data-operation="stop-2"]'));
+    await activate(page.locator('[data-step="tap"]'));
+    assert.equal(await page.locator('[data-field="md"]').inputValue(),'21.75');
+    for(let count=3;count>0;count--){
+      await activate(page.locator('#delete-operation'));
+      await activate(page.locator('#delete-operation-form [type="submit"]'));
+      assert.equal(await page.locator('#operations button').count(),count-1);
+    }
+    assert.ok(await page.locator('#empty-operations').isVisible());
+    await page.reload();
+    await page.waitForSelector('#empty-operations');
+    assert.equal(await page.locator('#operations button').count(),0);
+    assert.equal(await page.locator('#job-title').textContent(),'Three stops');
+    const deleted=await page.evaluate(()=>JSON.parse(localStorage.getItem('tapcalcPreAlpha01Workspace')));
+    assert.equal(deleted.jobs[0].original.record.jobBundle.operations.length,3);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),old);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),'{"keep":"live-draft"}');
+    await activate(page.locator('#empty-operations [data-action="add"]'));
+    await activate(page.locator('[data-add-type="Hot Tap"]'));
+    assert.equal(await page.locator('#operations button').count(),1);
+    await activate(page.locator('[data-step="tap"]'));
+    assert.equal(await page.locator('[data-field="md"]').inputValue(),'');
     assert.deepEqual(writes,[]);
     assert.deepEqual(errors,[]);
     await context.close();

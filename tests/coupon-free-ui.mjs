@@ -30,6 +30,8 @@ try {
     if (await collapsed.count()) await collapsed.tap();
   };
   await page.goto(base + '/dev/measurement-card.html?fixture=success');
+  // Let the saved-job startup callbacks settle before selecting a tool panel.
+  await page.waitForTimeout(2000);
   await openTools();
   await page.locator('#bcoPipeMaterial').selectOption('CarbonSteel');
   await page.waitForTimeout(350);
@@ -64,6 +66,7 @@ try {
     await page.screenshot({path:join(tmpdir(), 'coupon-free-' + engine + '-' + theme + '.png')});
   }
   await page.reload();
+  await page.waitForTimeout(2000);
   await openTools();
   assert.equal(await page.locator('#bcoCutterID').inputValue(), '18.5');
   assert.match(await page.locator('#couponFreeResult').textContent(), /7\.3395 in/);
