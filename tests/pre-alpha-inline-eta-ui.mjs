@@ -108,6 +108,21 @@ export async function runInlineEtaChecks({browser,pw,base,mobile,engine}) {
         const layout=await page.evaluate(()=>({viewport:innerWidth,pageWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth,
           overflow:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&(r.right>innerWidth+1||el.scrollWidth>el.clientWidth+1)&&getComputedStyle(el).position!=='fixed';}).map(el=>({tag:el.tagName,id:el.id,class:el.className,text:el.textContent.trim().slice(0,100),left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,width:el.clientWidth,scrollWidth:el.scrollWidth,display:getComputedStyle(el).display,overflow:getComputedStyle(el).overflowX})).slice(0,40)}));
         if(layout.pageWidth>layout.viewport+1)layout.afterTwoFrames=await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve({viewport:innerWidth,pageWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth})))));
+        if(layout.pageWidth>layout.viewport+1)layout.fields=await page.evaluate(()=>{
+          const describe=el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el),range=document.createRange();range.selectNodeContents(el);const t=range.getBoundingClientRect();return {tag:el.tagName,id:el.id,class:el.className,text:el.textContent.trim().slice(0,80),rect:{left:r.left,right:r.right,width:r.width,height:r.height},client:el.clientWidth,scroll:el.scrollWidth,textBounds:{left:t.left,right:t.right,width:t.width},grid:s.gridTemplateColumns,width:s.width,minWidth:s.minWidth,maxWidth:s.maxWidth,overflow:s.overflowX,fontSize:s.fontSize,appearance:s.appearance};};
+          return [...document.querySelectorAll('#fields .field')].map(el=>({field:describe(el),children:[...el.children].map(describe)}));
+        });
+        // Failure-only probes run in this disposable fixture, then restore the page.
+        // The original dimensions still determine the assertion below.
+        if(layout.pageWidth>layout.viewport+1)layout.probes=await page.evaluate(()=>{
+          const probes=[['#fields .field > select','max-width','100%'],['#fields .field > select','overflow-x','hidden'],['#fields','grid-template-columns','minmax(0,1fr)']];
+          return probes.map(([selector,property,value])=>{
+            const nodes=[...document.querySelectorAll(selector)],before=nodes.map(el=>({value:el.style.getPropertyValue(property),priority:el.style.getPropertyPriority(property)}));let result;
+            try{nodes.forEach(el=>el.style.setProperty(property,value));result={selector,property,value,applied:nodes.map(el=>getComputedStyle(el).getPropertyValue(property)),pageWidth:document.documentElement.scrollWidth,fields:[...document.querySelectorAll('#fields .field')].map(el=>({width:el.clientWidth,scroll:el.scrollWidth,selectWidth:el.querySelector('select')?.getBoundingClientRect().width}))};}
+            finally{nodes.forEach((el,index)=>before[index].value?el.style.setProperty(property,before[index].value,before[index].priority):el.style.removeProperty(property));}
+            return {...result,restoredPageWidth:document.documentElement.scrollWidth};
+          });
+        });
         assert.ok(layout.pageWidth<=layout.viewport+1,'No page overflow at '+width+'px: '+JSON.stringify(layout));
         assert.ok(await summary().evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Summary fits at '+width+'px');
         assert.ok(await page.locator('#fields .field > select').evaluateAll(controls=>controls.every(el=>el.getBoundingClientRect().width<=el.parentElement.clientWidth+1)),'Native selects fit their field grid track at '+width+'px');
