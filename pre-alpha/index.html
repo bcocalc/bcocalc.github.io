@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#f4f2ec">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
-  <title>TapCalc Pre-Alpha 01</title>
-  <link rel="stylesheet" href="./workspace.css?v=pre-alpha01">
-  <script src="./firebase-config.js?v=pre-alpha01" defer></script>
+  <title>TapCalc Pre-Alpha 02</title>
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha02">
+  <script src="./firebase-config.js?v=pre-alpha02" defer></script>
   <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
-  <script type="module" src="./workspace.mjs?v=pre-alpha01"></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha02"></script>
 </head>
 <body>
   <header class="masthead">
-    <a class="wordmark" href="./"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 01</span></a>
+    <a class="wordmark" href="./"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 02</span></a>
     <button id="theme" class="quiet">Dark mode</button>
   </header>
   <div class="experiment-strip"><span class="status-dot"></span>A new workspace, taking shape.<span class="experiment-detail">Experimental jobs save separately on this device.</span></div>
@@ -52,7 +52,7 @@
   </main>
   <nav class="main-nav" aria-label="Main navigation"><button data-page="workspace" aria-current="page"><span aria-hidden="true">&#9638;</span>Workspace</button><button data-page="library"><span aria-hidden="true">&#9776;</span>Job library</button><button data-action="new"><span aria-hidden="true">+</span>New job</button></nav>
   <dialog id="details-dialog"><form id="details-form"><div class="dialog-heading"><h2>Job details</h2><button type="button" data-close="details-dialog" aria-label="Close job details">&times;</button></div><div id="details-fields"></div><button class="primary" type="submit">Save details</button></form></dialog>
-  <dialog id="add-dialog"><div class="dialog-heading"><h2>Add an operation</h2><button data-close="add-dialog" aria-label="Close add operation">&times;</button></div><p>Each operation keeps its own measurements.</p><div class="add-options"><button data-add-type="Hot Tap">Hot Tap <span>Cut into the pipe</span></button><button data-add-type="Line Stop">Line Stop <span>Hot tap, stop, then completion</span></button><button data-add-type="Completion Plug">Completion Plug <span>Plug measurements</span></button></div></dialog>
+  <dialog id="add-dialog"><div class="dialog-heading"><h2>Add an operation</h2><button data-close="add-dialog" aria-label="Close add operation">&times;</button></div><p>Each operation keeps its own measurements.</p><div class="add-options"><button data-add-type="Hot Tap">1. Hot Tap <span>Hot tap only</span></button><button data-add-type="Line Stop">2. Line Stop <span>Hot tap, line stop, then completion plug</span></button><button data-add-type="Tap &amp; Complete">3. Tap &amp; Complete <span>Hot tap, then completion plug</span></button></div></dialog>
   <div id="notice" role="status" hidden></div>
 </body>
 </html>

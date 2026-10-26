@@ -1,4 +1,4 @@
-import {BUILD,STORAGE_KEY,THEME_KEY,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha01';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,chooseOperationType,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha02';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -12,14 +12,14 @@ const stages = {
   review:['Review','All the measurements for this operation, together.']
 };
 const fields = {
-  setup:[['operationLabel','Operation name','text'],['machineType','Machine','text']],
+  setup:[['operationType','Operation','operation'],['machineType','Machine','machine']],
   pipe:[['bcoPipeMaterial','Pipe material','material'],['bcoPipeOD','Nominal pipe size','text'],['preAlphaPipeOD','Actual pipe O.D.','text'],['bcoPipeID','Pipe I.D.','text'],['bcoCutterOD','Cutter O.D.','text'],['bcoCutterID','Cutter I.D.','text','Optional, for coupon free']],
   tap:[['md','Measured distance (MD)','text'],['ld','Lost distance (LD)','text'],['ldSign','LD direction','sign'],['ptc','Pilot to cutter (PTC)','text'],['start','Rod start','text'],['mt','Machine travel','text']],
   stop:[['lsMd','Measured distance (MD)','text'],['lsLd','Lost distance (LD)','text'],['lsLdSign','LD direction','sign'],['lsPod','Pipe O.D. at line stop','text','Blank uses pipe setup'],['lsTravel','Line stop travel','text','Optional check'],['lsMachineTravel','Machine travel','text','Optional check'],['lsLiManualToggle','Lower-in mode','toggle'],['lsLiManual','Manual lower in','text']],
   plug:[['cpStart','Start','text'],['cpJbf','Jack bolt flange (JBF)','text'],['cpLd','Lost distance (LD)','text'],['cpPt','Plug thickness (PT)','text'],['cpLiManualToggle','Lower-in mode','toggle'],['cpLiManual','Manual lower in','text']],
   review:[],saved:[]
 };
-const details = [['jobDescription','Job name'],['jobClient','Customer'],['jobLocation','Location'],['jobNumber','Job number'],['jobDate','Date','date'],['jobTechnician','Technician'],['machineType','Machine'],['jobNotes','Notes','textarea']];
+const details = [['jobDescription','Job name'],['jobClient','Customer'],['jobLocation','Location'],['jobNumber','Job number'],['jobDate','Date','date'],['jobTechnician','Technician'],['machineType','Machine','machine'],['jobNotes','Notes','textarea']];
 let jobs=[],active=null,stage='setup',source='shared',shared=[],visibleLimit=30;
 let connectionBusy=false, noticeTimer;
 function notify(message) {
@@ -52,14 +52,14 @@ function page(name) {
 function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field') {
   const attrs=attribute+'="'+escape(key)+'" id="'+escape(attribute+key)+'"';
   let control;
-  if(type==='material'||type==='sign'||type==='toggle'){
-    const options=type==='material'?[['CarbonSteel','Carbon steel'],['DuctileIron','Ductile iron'],['Other','Other / measured O.D.']]:type==='toggle'?[['false','Calculated'],['true','Manual override']]:[['+','Add (+)'],['-','Subtract (-)']];
-    const current=String(value??'')||(type==='sign'?'+':type==='toggle'?'false':'CarbonSteel');
-    if(!options.some(([v])=>v===current))options.push([current,current]);
+  if(['material','sign','toggle','operation','machine'].includes(type)){
+    const options=type==='machine'?[['','Choose a machine'],...MACHINE_OPTIONS.map(name=>[name,name])]:type==='operation'?OPERATION_CHOICES.map((name,index)=>[name,(index+1)+'. '+name]):type==='material'?[['CarbonSteel','Carbon steel'],['DuctileIron','Ductile iron'],['Other','Other / measured O.D.']]:type==='toggle'?[['false','Calculated'],['true','Manual override']]:[['+','Add (+)'],['-','Subtract (-)']];
+    const current=String(value??'')||(type==='sign'?'+':type==='toggle'?'false':type==='machine'?'':type==='operation'?'Hot Tap':'CarbonSteel');
+    if(!options.some(([v])=>v===current))options.push([current,current+(type==='operation'||type==='machine'?' (saved)':'')]);
     control='<select '+attrs+'>'+options.map(([v,t])=>'<option value="'+escape(v)+'"'+(v===current?' selected':'')+'>'+escape(t)+'</option>').join('')+'</select>';
   }else if(type==='textarea')control='<textarea '+attrs+'>'+escape(value)+'</textarea>';
   else control='<input '+attrs+' type="'+(type==='date'?'date':'text')+'"'+(type==='text'&&!['operationLabel','machineType'].includes(key)?' inputmode="decimal"':'')+' value="'+escape(value)+'" autocomplete="off">';
-  return '<label class="field'+(type==='textarea'?' wide':'')+'">'+escape(label)+control+(hint?'<small>'+escape(hint)+'</small>':'')+'</label>';
+  return '<label class="field'+(type==='textarea'?' wide':'')+(['operation','machine'].includes(type)?' setup-choice':'')+'">'+escape(label)+control+(hint?'<small>'+escape(hint)+'</small>':'')+'</label>';
 }
 function renderOperations() {
   $('operation-count').textContent=active.operations.length;
@@ -87,7 +87,7 @@ function renderWorkspace() {
   $('fields').innerHTML=fields[stage].map(field=>{
     const key=field[0];
     if((key==='lsLiManual'||key==='cpLiManual') && ![true,'true'].includes(op.state[key+'Toggle']))return '';
-    const value=key==='operationLabel'?op.label:key==='machineType'?active.sharedState.machineType:key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):op.state[key];
+    const value=key==='operationType'?operationType(op):key==='machineType'?active.sharedState.machineType:key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):op.state[key];
     return fieldMarkup(field,value);
   }).join('');
   $('back').disabled=steps.indexOf(stage)===0;
@@ -111,9 +111,10 @@ function renderResults() {
     if(stage==='tap'&&number(op.state.mt)>0&&results.find(([key])=>key==='Total travel')?.[1]>number(op.state.mt))$('results').insertAdjacentHTML('beforeend','<p class="warning">Calculated travel exceeds machine travel. Recheck the setup.</p>');
     if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
     if((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle)))$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Manual lower-in override is active. Select Calculated in Lower-in mode to use the setup measurements.</p>');
-    if(stage==='stop'&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are still being connected in Pre-Alpha.</p>'+reviewMarkup(op.state);
+    if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are still being connected in Pre-Alpha.</p>'+reviewMarkup(op.state);
   } else if(stage==='setup') {
-    $('results').innerHTML='<p class="result-hint">'+escape(operationType(op))+' operation / '+active.operations.length+' operation'+(active.operations.length===1?'':'s')+' in this job. Use the operation buttons above to move between them.</p>';
+    const path=operationType(op)==='Line Stop'?'Hot tap, line stop, then completion plug.':operationType(op)==='Tap & Complete'?'Hot tap, then completion plug.':operationType(op)==='Hot Tap'?'Hot tap only.':'Saved '+operationType(op)+' operation.';
+    $('results').innerHTML='<p class="result-hint">'+escape(path)+' '+active.operations.length+' operation'+(active.operations.length===1?'':'s')+' in this job.</p>';
   } else {
     $('results').innerHTML=reviewMarkup(op.state);
     if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are still being connected in this design study.</p>');
@@ -173,18 +174,20 @@ document.addEventListener('click',event=>{
   if(button.dataset.addType) {
     const type=button.dataset.addType,id=crypto.randomUUID();
     active.operations.push({id,label:type+' '+(active.operations.filter(op=>operationType(op)===type).length+1),operationType:type,state:{bcoPipeMaterial:'CarbonSteel'}});
+    chooseOperationType(active,active.operations.at(-1),type);
     active.selectedOperationId=id;stage='setup';$('add-dialog').close();persist();renderWorkspace();
   }
 });
 $('fields').addEventListener('input',event=>{
   const key=event.target.dataset.field;if(!key)return;
-  if(key==='operationLabel'){operation().label=event.target.value;renderOperations();}
+  if(key==='operationType')return;
   else if(key==='machineType')active.sharedState.machineType=event.target.value;
   else operation().state[key]=key.endsWith('Toggle') ? event.target.value==='true' : event.target.value;
   persist();renderResults();
 });
 $('fields').addEventListener('change',event=>{
   const key=event.target.dataset.field;
+  if(key==='operationType'){chooseOperationType(active,operation(),event.target.value);persist();renderWorkspace();return;}
   if(key==='bcoPipeMaterial'||key==='bcoPipeOD'){delete operation().state.preAlphaPipeOD;persist();renderWorkspace();}
   if(key==='lsLiManualToggle'||key==='cpLiManualToggle'){persist();renderWorkspace();}
 });

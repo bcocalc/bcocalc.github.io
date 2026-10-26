@@ -1,6 +1,14 @@
-export const BUILD = 'pre-alpha01';
+export const BUILD = 'pre-alpha02';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
+export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
+// Same machine catalog used in the established dev job setup.
+export const MACHINE_OPTIONS = [
+  '412','360 / 152','660 / 760','1200-M120','IP-100','IP-152','T-101',
+  'HTM 360','HTM 660','HTM 760','HTM 1200','HTM M120','HTM 18 T101',
+  'HTM 24 T101','HTM 28 T101','HTM C1-25','HTM C1-36',
+  'IP 304 / 406 / 508','IP 914XL','IPSCO IP100'
+];
 const copy = value => JSON.parse(JSON.stringify(value));
 export const number = value => {
   const text = String(value ?? '').trim();
@@ -16,13 +24,27 @@ const TRUE_OD = {
 };
 export function operationType(operation) {
   const state = operation.state || {};
-  const type = String(operation.operationType || state.operationType || operation.mode || state.activeMode || 'Hot Tap');
+  const type = String(operation.workflowType || operation.operationType || state.operationType || operation.mode || state.activeMode || 'Hot Tap');
+  if (/^tap\s*(?:&|and)?\s*complete$/i.test(type)) return 'Tap & Complete';
   if (/completion/i.test(type)) return 'Completion Plug';
   if (/hi.?stop/i.test(type)) return 'Hi-Stop';
   if (/htp/i.test(type)) return 'HTP';
   if (/line.?stop/i.test(type)) return 'Line Stop';
   if (/hot.?tap/i.test(type)) return 'Hot Tap';
   return type;
+}
+export function chooseOperationType(job, operation, type) {
+  if (!OPERATION_CHOICES.includes(type)) return;
+  const autoName=/^(Hot Tap|Line Stop|Tap & Complete|Completion Plug) \d+$/.test(operation.label || '');
+  operation.workflowType=type;
+  operation.operationType=type;
+  operation.state.operationType=type;
+  if (autoName || !operation.label) {
+    const labels=new Set(job.operations.filter(item=>item!==operation).map(item=>item.label));
+    let index=1;
+    while(labels.has(type+' '+index))index++;
+    operation.label=type+' '+index;
+  }
 }
 export function normalizeJob(entry) {
   const record = entry.record || entry;
@@ -105,10 +127,11 @@ export function geometry(state) {
 }
 export function stepsFor(operation) {
   const type = operationType(operation);
-  if (operation.state.lineStopVariant && !['standard','lineStop'].includes(operation.state.lineStopVariant))
+  if (!operation.workflowType && operation.state.lineStopVariant && !['standard','lineStop'].includes(operation.state.lineStopVariant))
     return ['setup','saved','review'];
   if (type === 'Completion Plug') return ['setup','pipe','plug','review'];
   if (type === 'Line Stop') return ['setup','pipe','tap','stop','plug','review'];
+  if (type === 'Tap & Complete') return ['setup','pipe','tap','plug','review'];
   if (type === 'Hi-Stop' || type === 'HTP') return ['setup','pipe','saved','review'];
   return type === 'Hot Tap' ? ['setup','pipe','tap','review'] : ['setup','saved','review'];
 }
