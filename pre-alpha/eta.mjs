@@ -1,5 +1,5 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha07';
-import {geometry,number,stepsFor} from './model.mjs?v=pre-alpha07';
+import {DATA} from './reference-data.mjs?v=pre-alpha08';
+import {geometry,number,stepsFor} from './model.mjs?v=pre-alpha08';
 
 export const FEED_RATE=0.004;
 export const ETA_MACHINES={'360':'360 / 152','660':'660 / 760','1200':'1200-M120'};

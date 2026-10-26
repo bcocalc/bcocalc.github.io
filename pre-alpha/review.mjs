@@ -1,5 +1,5 @@
-import {etaFor} from './eta.mjs?v=pre-alpha07';
-import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning} from './model.mjs?v=pre-alpha07';
+import {etaFor} from './eta.mjs?v=pre-alpha08';
+import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning} from './model.mjs?v=pre-alpha08';
 
 export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',saved:'Saved measurements',eta:'Cutting time (ETA)'};
 const INPUTS={

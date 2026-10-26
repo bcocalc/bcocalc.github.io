@@ -1,8 +1,8 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha07';
-import {number,geometry} from './model.mjs?v=pre-alpha07';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha07';
-import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha07';
-import {helperFields,helperReference} from './reference-helpers.mjs?v=pre-alpha07';
+import {DATA} from './reference-data.mjs?v=pre-alpha08';
+import {number,geometry} from './model.mjs?v=pre-alpha08';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha08';
+import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha08';
+import {helperFields,helperReference} from './reference-helpers.mjs?v=pre-alpha08';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 export const REFERENCE_CATEGORIES={glossary:'Glossary',cutters:'Hot Tap / Line Stop cutters',smartstop:'SmartStop',foldinghead:'Folding Head',fieldmanual:'Field manual',bolting:'Bolting',htp:'HTP chart',plant150:'150# Plant',plant600:'600# Plant',torque:'Graphonic torque',papergaskets:'Paper Gaskets',stackups:'Machine Stack-Ups',manuals:'Manual index',pivothead:'Pivot Head Setup',uwire:'U-Wire calculator',fieldcheck:'Field checklists',fractions:'Decimal / fraction',formulas:'Calculation guide'};

@@ -6,6 +6,7 @@ import {PIPE_DATA,TRUE_OD} from '../pre-alpha/pipe-data.mjs';
 import {stageFor,rememberStage,migratePipeSource,pipeSourceWarning} from '../pre-alpha/model.mjs';
 import {operationWarnings,reviewSections} from '../pre-alpha/review.mjs';
 import './pre-alpha-next-model.mjs';
+import './pre-alpha-inline-eta.mjs';
 import './pre-alpha-reference-supplement.mjs';
 import './pre-alpha-reference-helpers.mjs';
 import './pre-alpha-reference-migration.mjs';

@@ -1,7 +1,8 @@
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha07';
-import {initAuxiliary,etaSummary} from './auxiliary.mjs?v=pre-alpha07';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha07';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha07';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha08';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha08';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha08';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha08';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha08';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -150,19 +151,19 @@ function operationReviewMarkup(op) {
     (attention.length?'<ul class="review-warnings">'+attention.map(check=>'<li class="warning" data-warning-code="'+escape(check.code)+'"><strong>'+escape(STAGE_TITLES[check.stage]||check.stage)+'</strong><span>'+escape(check.message)+'</span><button class="quiet" '+(check.stage==='eta'?'data-open-eta':'data-review-edit="'+escape(check.stage)+'"')+'>Review stage</button></li>').join('')+'</ul>':'<p class="result-hint">No automatic warnings found. This is not a field verification.</p>')+
     (notes.length?'<ul class="review-notes">'+notes.map(note=>'<li><strong>'+escape(STAGE_TITLES[note.stage])+':</strong> '+escape(note.message)+'</li>').join('')+'</ul>':'')+'</section>';
   const sections=reviewSections(op).map(section=>{
-    const results='<dl class="review-results">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';
+    const results=section.stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{secondary:section.results.slice(1)}):'<dl class="review-results">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';
     return '<section class="review-stage" data-help-context="'+section.stage+'" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode">'+escape(section.mode)+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+
       '<details class="review-inputs"><summary>'+(section.override?'Retained setup measurements (not used for lower in)':'Setup measurements')+'</summary>'+reviewInputMarkup(section.inputs)+'</details>'+
       (section.retained.length?'<details class="review-inactive"><summary>Inactive saved inputs (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+'</section>';
   }).join('');
-  return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections+(stepsFor(op).includes('tap')?etaSummary(op,active.sharedState.machineType):'');
+  return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections;
 }
 function renderResults() {
   const op=operation(); if(!op)return;
   const results=resultsFor(op,stage);
   if(results.length) {
     const [main,...rest]=results;
-    $('results').innerHTML='<div class="result-panel"><p class="eyebrow">'+escape(main[0])+'</p><strong class="big-value">'+format(main[1])+' <small>in</small></strong><div class="result-subgrid">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+format(value)+' <small>in</small></strong></div>').join('')+'</div></div>';
+    $('results').innerHTML=stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{primary:true,secondary:rest}):'<div class="result-panel"><p class="eyebrow">'+escape(main[0])+'</p><strong class="big-value">'+format(main[1])+' <small>in</small></strong><div class="result-subgrid">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+format(value)+' <small>in</small></strong></div>').join('')+'</div></div>';
     const optional=stage==='pipe'?['Coupon free']:stage==='stop'?['Travel margin']:[];
     const missing=results.some(([label,value])=>!optional.includes(label)&&!Number.isFinite(value));
     if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.</p>');
@@ -179,7 +180,7 @@ function renderResults() {
     $('results').innerHTML=stage==='review'?operationReviewMarkup(op):reviewMarkup(op.state);
     if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are still being connected in this design study.</p>');
   }
-  if(!['setup','review'].includes(stage)&&stepsFor(op).includes('tap'))$('results').insertAdjacentHTML('beforeend','<button class="eta-open" data-open-eta>Hot Tap cutting time (ETA)</button>');
+  if(!['setup','pipe','review'].includes(stage)&&stepsFor(op).includes('tap'))$('results').insertAdjacentHTML('beforeend',etaSummary(op,active.sharedState.machineType));
   if(stage==='stop')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">Pipe O.D.: <strong>'+format(pipeOD(op.state))+' in</strong> from Pipe &amp; cutter. <button class="quiet" data-review-edit="pipe">Edit pipe setup</button></p>');
   if(stage==='saved'&&op.retiredLineStopOD)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Archived Line Stop O.D. '+escape(op.retiredLineStopOD.value)+' is retained, but does not control this working copy.</p>');
   const warnings=hotTapWarnings(op);

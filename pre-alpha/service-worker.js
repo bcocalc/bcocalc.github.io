@@ -1,8 +1,8 @@
-const BUILD = 'pre-alpha07';
+const BUILD = 'pre-alpha08';
 const PREFIX = 'tapcalc-pre-alpha-';
 const CACHE = PREFIX + BUILD;
 const scope = new URL('./', self.location.href);
-const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?v='+BUILD,'./model.mjs?v='+BUILD,'./review.mjs?v='+BUILD,'./help.mjs?v='+BUILD,'./eta.mjs?v='+BUILD,'./auxiliary.mjs?v='+BUILD,'./references.mjs?v='+BUILD,'./reference-data.mjs?v='+BUILD,'./reference-supplement-data.mjs?v='+BUILD,'./reference-helpers.mjs?v='+BUILD,'./pipe-data.mjs?v='+BUILD,'./firebase-config.js?v='+BUILD];
+const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?v='+BUILD,'./model.mjs?v='+BUILD,'./review.mjs?v='+BUILD,'./help.mjs?v='+BUILD,'./eta.mjs?v='+BUILD,'./eta-view.mjs?v='+BUILD,'./auxiliary.mjs?v='+BUILD,'./references.mjs?v='+BUILD,'./reference-data.mjs?v='+BUILD,'./reference-supplement-data.mjs?v='+BUILD,'./reference-helpers.mjs?v='+BUILD,'./pipe-data.mjs?v='+BUILD,'./firebase-config.js?v='+BUILD];
 self.addEventListener('install', event => event.waitUntil(
   caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())
 ));
