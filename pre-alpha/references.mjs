@@ -1,8 +1,11 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha06';
-import {number} from './model.mjs?v=pre-alpha06';
+import {DATA} from './reference-data.mjs?v=pre-alpha07';
+import {number,geometry} from './model.mjs?v=pre-alpha07';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha07';
+import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha07';
+import {helperFields,helperReference} from './reference-helpers.mjs?v=pre-alpha07';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
-export const REFERENCE_CATEGORIES={glossary:'Glossary',cutters:'Hot Tap / Line Stop cutters',smartstop:'SmartStop',foldinghead:'Folding Head',fieldmanual:'Field manual',bolting:'Bolting',htp:'HTP chart',plant150:'150# Plant',plant600:'600# Plant',torque:'Graphonic 600# torque',fractions:'Decimal / fraction',formulas:'Calculation guide'};
+export const REFERENCE_CATEGORIES={glossary:'Glossary',cutters:'Hot Tap / Line Stop cutters',smartstop:'SmartStop',foldinghead:'Folding Head',fieldmanual:'Field manual',bolting:'Bolting',htp:'HTP chart',plant150:'150# Plant',plant600:'600# Plant',torque:'Graphonic torque',papergaskets:'Paper Gaskets',stackups:'Machine Stack-Ups',manuals:'Manual index',pivothead:'Pivot Head Setup',uwire:'U-Wire calculator',fieldcheck:'Field checklists',fractions:'Decimal / fraction',formulas:'Calculation guide'};
 const table=(title,columns,rows)=>({title,columns,rows});
 const objects=(title,rows,columns)=>table(title,columns.map(([,label])=>label),rows.map(row=>columns.map(([key])=>row[key]??'')));
 export function positiveDecimal(value) {
@@ -13,6 +16,7 @@ export function positiveDecimal(value) {
 export function referenceTables(category,filters={}) {
   const note='Reference only. Confirm the applicable equipment, source chart, and approved procedure. These lookups do not change job measurements.';
   const result={note,tables:[],lists:[]};
+  if(category==='pivothead'||category==='uwire')return helperReference(category,filters);
   if(category==='glossary')result.tables=[table('Terms from the existing TapCalc glossary',['Term','Meaning'],DATA.glossary)];
   if(category==='cutters'){
     const key=filters.kind||'hotTap',chart=DATA.cutters[key];
@@ -22,24 +26,29 @@ export function referenceTables(category,filters={}) {
   if(category==='smartstop'){
     const chart=DATA.smartstop.suffixCharts.find(item=>item.size===(filters.size||'4'));
     const wall=positiveDecimal(filters.wall),id=positiveDecimal(filters.id);
-    result.note=note+' '+chart.note+' Inclusive source ranges and overlaps are preserved; multiple matches are not resolved automatically. Printed page '+chart.printedPage+'.';
+    result.note=note+' '+SUPPLEMENT.smartstop.torqueNote+' '+chart.note+' Inclusive source ranges and overlaps are preserved; multiple matches are not resolved automatically. Printed page '+chart.printedPage+'.';
     if(Number.isNaN(wall)||Number.isNaN(id))result.issue='Enter positive decimal wall / I.D. values, or leave filters blank. Fractions and partial numbers are not accepted for this equipment lookup.';
     const rows=result.issue?[]:chart.rows.filter(row=>(wall===null||wall>=row.wallMin&&wall<=row.wallMax)&&(id===null||id>=row.pipeIdMin&&id<=row.pipeIdMax));
     result.tables=[table(chart.label+' - '+rows.length+' matching rows',['Suffix','Pressure','Wall (in)','Pipe I.D. (in)','Foot pad shims','Nose pad shims','Nose ring','Seal','Retaining ring','Foot pad','Nose pad','Source note'],rows.map(row=>[row.sourceLabel,row.pressure,row.wallLabel,row.pipeIdLabel,row.footPadShims,row.nosePadShims,row.noseRing,row.seal,row.retainingRing,row.footPad,row.primaryNosePad||row.secondaryNosePad?'Primary '+row.primaryNosePad+' / Secondary '+row.secondaryNosePad:row.nosePad,row.sourceNote])),objects('Source torque table (blank cells remain unlisted)',DATA.smartstop.torqueRows,[['screwSize','Screw size'],['ftLb','ft-lb'],['inLb','in-lb']])];
   }
+  if(category==='smartstop')result.lists=[{title:'Source and limitations',items:SUPPLEMENT.smartstop.sourceNotes}];
   if(category==='foldinghead'){
-    result.note=note+' Existing Folding Head packet; capacity entries are not a job-specific approval.';
+    if(filters.topic==='helper')return helperReference('foldinghelper',filters);
+    result.note=note+' '+SUPPLEMENT.folding.sourceNote+' '+SUPPLEMENT.folding.capacityNote+' Source maximum temperature: '+SUPPLEMENT.folding.maxTemperature+'.';
     if((filters.topic||'capacity')==='capacity')result.tables=[objects('Capacity',DATA.folding.capacityRows,[['line','Line size (in)'],['tap','Tap size (in)'],['psi','Pressure (psi)'],['bar','Pressure (bar)']])];
     else if(filters.topic==='procedures')result.tables=[table('Source procedure identifiers',['Identifier','Application'],DATA.folding.procedureRows)];
+    else if(filters.topic==='overview')result.lists=[{title:'Source overview',items:SUPPLEMENT.folding.overviewNotes},{title:'Good fit',items:SUPPLEMENT.folding.goodFit},{title:'Watch outs',items:SUPPLEMENT.folding.watchOuts},{title:'DS-803 source details',items:[SUPPLEMENT.folding.ds803Note]}];
+    else if(filters.topic==='assembly')result.lists=[{title:'Head assembly — source reminders',items:SUPPLEMENT.folding.headAssembly}];
     else result.lists=[{title:'Setup checks',items:DATA.folding.setupChecks},{title:'Execution checks',items:DATA.folding.executionChecks},{title:'Concrete cylinder pipe reminders',items:DATA.folding.pccpChecks}];
   }
   if(category==='fieldmanual'){
     const d=DATA.manual,topic=filters.topic||'thread';
+    if(topic==='all'){const topics=['thread','rpm','histop','machines','checks'].map(topic=>referenceTables('fieldmanual',{topic}));result.tables=topics.flatMap(data=>data.tables);result.lists=topics.flatMap(data=>data.lists);result.note=note+' '+SUPPLEMENT.bearingLashNote;}
     if(topic==='thread')result.tables=[objects('Thread make-up - measure actual make-up in the field',d.threadMakeupRows,[['size','Nominal pipe size'],['makeup','Make-up']])];
     if(topic==='rpm')result.tables=[objects('Source cutter RPM table (separate from the estimator range chart)',d.cutterRpmRows,[['machine','Machine'],['cutter','Cutter size'],['rpm','RPM']])];
     if(topic==='histop')result.tables=[objects('Adapter minimum bore',d.hiStopAdapterRows,[['size','Size'],['bore','Minimum I.D. bore']]),objects('600# bolt circles',d.hiStopBoltCircleRows,[['size','Size'],['circle','Bolt circle']]),objects('Torque passes',d.hiStopTorqueRows,[['flange','Flange'],['pattern','Pattern'],['passes','Passes']]),objects('Machine pressure / temperature',d.hiStopPressureRows,[['machine','Machine'],['cold','Low temperature'],['hot','High temperature']]),objects('Flange pressure / temperature',d.flangePressureRows,[['flange','Flange'],['cold','Low temperature'],['hot','High temperature']])];
     if(topic==='machines')result.tables=[objects('Machine operating specifications',d.machineSpecRows,Object.entries({name:'Machine',pressure:'Pressure',temperature:'Temperature',travel:'Travel',feed:'Feed',range:'Range',flange:'Flange',bolts:'Bolts',weight:'Weight',drive:'Drive',bar:'Boring bar'}))];
-    if(topic==='checks'){result.lists=d.checklistGroups;result.tables=[objects('Boring bar tolerance',d.toleranceRows,[['od','Boring bar O.D.'],['length','Length'],['runout','Run-out'],['lash','Feed nut lash'],['travel','Feed screw travel']])];}
+    if(topic==='checks'){result.note=note+' '+SUPPLEMENT.bearingLashNote;result.lists=d.checklistGroups;result.tables=[objects('Boring bar tolerance',d.toleranceRows,[['od','Boring bar O.D.'],['length','Length'],['runout','Run-out'],['lash','Feed nut lash'],['travel','Feed screw travel']])];}
   }
   if(category==='bolting'){
     const key=filters.rating||'150',chart=DATA.bolting[key];
@@ -50,14 +59,32 @@ export function referenceTables(category,filters={}) {
   if(category==='plant150'||category==='plant600'){
     const rating=category==='plant150'?'150':'600';result.tables=[table(rating+'# Plant',['Size','Jack-bolt wrench','Packing nut wrench','Jack-bolt count'],DATA['plant'+rating]),table('Sealtite 1 jack-bolt measurements',['Size','Class','Measurement fully set','Measurement fully retracted','Turns fully set','Turns fully retracted'],DATA.sealtite.filter(row=>row[1]===rating+'#'))];
   }
-  if(category==='torque')result.tables=[objects('Graphonic 600# - supplied Garlock chart',DATA.garlock,[['size','Size (in)'],['bolts','Bolts'],['boltSize','Bolt size (in)'],['minTorque','Minimum per bolt (ft-lb)'],['preferredTorque','Preferred per bolt (ft-lb)']])];
+  if(category==='torque'){
+    const rating=filters.rating||'600';result.note=note+' '+SUPPLEMENT.graphonicNote;
+    result.tables=[objects('Graphonic '+rating+'# - supplied Garlock chart',SUPPLEMENT.graphonic[rating]||[],[['size','Size (in)'],['bolts','Bolts'],['boltSize','Bolt size (in)'],['minTorque','Minimum per bolt (ft-lb, unless source says Contact Engineering)'],['preferredTorque','Preferred per bolt (ft-lb, unless source says Contact Engineering)'],['source','Source']])];
+  }
+  if(category==='papergaskets'){
+    const rating=filters.rating||'150';result.note=note+' '+SUPPLEMENT.paperGasketNote;
+    result.tables=[objects('Paper Gaskets '+rating+'# - compressed sheet / GYLON',SUPPLEMENT.paperGaskets[rating]||[],[['displaySize','Pipe size (in)'],['rfId','RF I.D. (in)'],['rfOd','RF O.D. (in)'],['area','Gasket area (sq in)'],['bolts','Bolts'],['boltSize','Bolt size (in)'],['torque60','Torque at 60,000 psi bolt stress (ft-lb)'],['compForce','Compression force (lb)'],['maxStressAvail','Maximum available gasket stress (psi)'],['internalPressure','Internal pressure (psi; source limit)'],['minGasketStress','Minimum gasket stress (psi)'],['minTorque','Minimum per bolt (ft-lb)'],['maxRecAvailStress','Maximum recommended available stress (psi)'],['preferredTorque','Preferred per bolt (ft-lb)'],['source','Source']])];
+  }
+  if(category==='stackups'){
+    result.note=note+' '+SUPPLEMENT.stackupNote+' Page previews and original PDFs require a connection; extracted reference text is available with the pre-alpha offline assets.';
+    result.lists=[{title:'Source-page reference',items:['Search across equipment, dimensions, weights, notes, source filename and extracted page text. Verify the original drawing: extracted dimensions are not labeled engineering inputs.']}];
+    result.records=SUPPLEMENT.stackups.filter(row=>!filters.source||row.source===filters.source);
+  }
+  if(category==='manuals'){
+    result.note=note+' These five entries are source index placeholders, not complete inline manuals. No missing manual content or file availability is implied.';
+    result.tables=[objects('Manual index — not yet converted',SUPPLEMENT.manuals,[['name','Manual'],['range','Equipment'],['source','Source filename'],['use','Status'],['text','Cross-check note']])];
+  }
+  if(category==='fieldcheck'){result.note=note+' '+SUPPLEMENT.fieldChecklistNote;result.lists=SUPPLEMENT.fieldChecklists;}
+
   if(category==='fractions'){
     const gcd=(a,b)=>b?gcd(b,a%b):a;
     result.tables=[table('Sixteenths and sixty-fourths',['Fraction (in)','Decimal (in)'],Array.from({length:65},(_,n)=>{const d=gcd(n,64);return [n===0?'0':n===64?'1':n/d+'/'+64/d,(n/64).toFixed(6)];}))];
     if(String(filters.decimal??'').trim()){
       const value=number(filters.decimal);
       if(!Number.isFinite(value))result.issue='Enter a valid signed decimal or fraction.';
-      else {const rounded=Math.round(Math.abs(value)*64),whole=Math.floor(rounded/64),part=rounded%64,d=gcd(part,64);result.note='Nearest 1/64 in: '+(value<0?'-':'')+(whole?whole+' ':'')+(part?part/d+'/'+64/d:whole?'':'0')+'. Rounding is not an exact conversion for every decimal. '+note;}
+      else {const denominator=[16,32,64].includes(Number(filters.rounding))?Number(filters.rounding):64,rounded=Math.round(Math.abs(value)*denominator),whole=Math.floor(rounded/denominator),part=rounded%denominator,d=gcd(part,denominator);result.note='Nearest 1/'+denominator+' in: '+(value<0?'-':'')+(whole?whole+' ':'')+(part?part/d+'/'+denominator/d:whole?'':'0')+'. Decimal inches: '+value+'. Rounding is not an exact conversion for every decimal. '+note;}
     }
   }
   if(category==='formulas')result.lists=[
@@ -66,11 +93,12 @@ export function referenceTables(category,filters={}) {
     {title:'Completion Plug',items:['LI = Start + JBF + LD + PT. An active manual override replaces this calculated lower-in output, not the saved inputs.']},
     {title:'Cutting time',items:['ETA to BCO = current BCO / (RPM x 0.004 in/revolution). Setup, approach, and Line Stop / Completion Plug work are excluded.']}
   ];
+  if(category==='formulas'){result.note=note+' '+SUPPLEMENT.stopMathNote;result.lists.push(...SUPPLEMENT.stopMath);}
   return result;
 }
 
-export function createReferences(root) {
-  let category='glossary',query='';const values={};
+export function createReferences(root,{getOperation=()=>null}={}) {
+  let category='glossary',query='',transferNote='';const values={};const previews=new Set();
   const select=(key,label,options)=>'<label class="field">'+escape(label)+'<select data-ref-filter="'+key+'">'+options.map(([value,text])=>'<option value="'+escape(value)+'"'+(String(values[key]??options[0][0])===value?' selected':'')+'>'+escape(text)+'</option>').join('')+'</select></label>';
   const input=(key,label)=>'<label class="field">'+escape(label)+'<input data-ref-filter="'+key+'" inputmode="decimal" value="'+escape(values[key]||'')+'"></label>';
   root.innerHTML='<div class="reference-controls"><label class="field">Reference category<select id="reference-category">'+Object.entries(REFERENCE_CATEGORIES).map(([value,title])=>'<option value="'+value+'">'+escape(title)+'</option>').join('')+'</select></label><label class="field">Search this reference<input id="reference-query" type="search" placeholder="Filter visible rows"></label></div><div id="reference-filters" class="reference-controls"></div><div id="reference-content"></div>';
@@ -78,22 +106,91 @@ export function createReferences(root) {
   function controls(){
     if(category==='cutters')filters.innerHTML=select('kind','Equipment / operation',Object.entries(DATA.cutters).map(([key,chart])=>[key,chart.label]))+select('pipe','Nominal pipe size',[['','All listed sizes'],...[...new Set(Object.values(DATA.cutters).flatMap(chart=>chart.rows.map(row=>row[0])))].sort((a,b)=>Number(a)-Number(b)).map(size=>[size,size+' in']),['unlisted','Other / unlisted']]);
     else if(category==='smartstop')filters.innerHTML=select('size','SmartStop size',DATA.smartstop.suffixCharts.map(chart=>[chart.size,chart.label]))+input('wall','Wall filter (positive decimal inches)')+input('id','Pipe I.D. filter (positive decimal inches)');
-    else if(category==='foldinghead')filters.innerHTML=select('topic','Folding Head topic',[['capacity','Capacity'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
-    else if(category==='fieldmanual')filters.innerHTML=select('topic','Field manual topic',[['thread','Thread make-up'],['rpm','Cutter RPM'],['histop','Hi-Stop setup'],['machines','Machine specifications'],['checks','Post-job checks / tolerances']]);
+    else if(category==='foldinghead')filters.innerHTML=select('topic','Folding Head topic',[['capacity','Capacity'],['helper','Set-point / bar-target helper'],['assembly','Head assembly'],['overview','Source, fit and limitations'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
+    else if(category==='fieldmanual')filters.innerHTML=select('topic','Field manual topic',[['thread','Thread make-up'],['all','All manual topics / search'],['rpm','Cutter RPM'],['histop','Hi-Stop setup'],['machines','Machine specifications'],['checks','Post-job checks / tolerances']]);
     else if(category==='bolting')filters.innerHTML=select('rating','Flange class',Object.keys(DATA.bolting).map(key=>[key,key]));
-    else if(category==='fractions')filters.innerHTML=input('decimal','Quick decimal / fraction conversion');
+    else if(category==='torque')filters.innerHTML=select('rating','Graphonic flange class',[['600','600'],['150','150'],['300','300'],['400','400']]);
+    else if(category==='papergaskets')filters.innerHTML=select('rating','Paper Gasket flange class',Object.keys(SUPPLEMENT.paperGaskets).map(key=>[key,key]));
+    else if(category==='stackups')filters.innerHTML=select('source','Source document',[['','All 15 source documents'],...SUPPLEMENT.stackupSources.map(item=>[item.name,item.name])]);
+    else if(category==='fractions')filters.innerHTML=input('decimal','Decimal or fraction to convert (in)')+select('rounding','Round to nearest',[['64','1/64 in'],['32','1/32 in'],['16','1/16 in']]);
     else filters.innerHTML='';
+    const helper=category==='foldinghead'&&values.topic==='helper'?'foldinghelper':['pivothead','uwire'].includes(category)?category:'';
+    if(helper){
+      const fields=helperFields(helper,values);
+      for(const field of fields){
+        if(field.options&&!field.options.some(([value])=>value===values[field.key]))values[field.key]=field.options[0][0];
+        else if(values[field.key]===undefined&&field.defaultValue!==undefined)values[field.key]=field.defaultValue;
+      }
+      filters.innerHTML+=(fields.map(field=>field.options?select(field.key,field.label,field.options):input(field.key,field.label)).join(''));
+    }
+    if(helper)filters.innerHTML+='<button type="button" data-ref-current-pipe>Use current pipe (reference only)</button>';
+    if(category==='fractions')filters.innerHTML+='<div class="fraction-quick" role="group" aria-label="Quick decimal inserts">'+[['0.0625','1/16'],['0.1250','1/8'],['0.2500','1/4'],['0.3750','3/8'],['0.5000','1/2']].map(([value,label])=>'<button type="button" data-ref-decimal="'+value+'">'+label+'</button>').join('')+'</div>';
+    if(['pivothead','uwire','foldinghead','fractions','smartstop'].includes(category))filters.innerHTML+='<button type="button" data-ref-clear>Clear reference inputs</button>';
   }
   function render(){
+    for(const stop of previews)stop();previews.clear();
     const data=referenceTables(category,values),needle=query.trim().toLowerCase();content.dataset.helpContext=category;
-    content.innerHTML='<p class="result-hint">'+escape(data.note)+'</p>'+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
+    content.innerHTML='<p class="result-hint">'+escape(data.note)+'</p>'+(transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
+      (data.records?stackupCards(data.records,needle):'')+
       data.tables.map(item=>{const rows=item.rows.filter(row=>row.join(' ').toLowerCase().includes(needle));return '<section class="reference-section"><h3>'+escape(item.title)+'</h3><p class="reference-count">'+rows.length+' rows</p><div class="reference-table-wrap" tabindex="0" role="region" aria-label="'+escape(item.title)+' table; scroll horizontally if needed"><table><thead><tr>'+item.columns.map(label=>'<th scope="col">'+escape(label)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+row.map(value=>'<td>'+escape(value===''?'Not listed':value)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'+(rows.length?'':'<p class="result-hint">No listed match. Do not substitute the nearest equipment or cutter size.</p>')+'</section>';}).join('')+
-      data.lists.map(list=>({title:list.title,items:list.items.filter(item=>(list.title+' '+item).toLowerCase().includes(needle))})).filter(list=>list.items.length).map(list=>'<section class="reference-section"><h3>'+escape(list.title)+'</h3><ul>'+list.items.map(item=>'<li>'+escape(item)+'</li>').join('')+'</ul></section>').join('');
+      data.lists.map(list=>({title:list.title,items:list.items.filter(item=>/source|limitation|reliability|backing plate/i.test(list.title)||(list.title+' '+item).toLowerCase().includes(needle))})).filter(list=>list.items.length).map(list=>'<section class="reference-section"><h3>'+escape(list.title)+'</h3><ul>'+list.items.map(item=>'<li>'+escape(item)+'</li>').join('')+'</ul></section>').join('');
   }
   root.addEventListener('change',event=>{
-    if(event.target.id==='reference-category'){category=event.target.value;query='';root.querySelector('#reference-query').value='';for(const key of Object.keys(values))delete values[key];controls();render();}
-    else if(event.target.dataset.refFilter){values[event.target.dataset.refFilter]=event.target.value;render();}
+    if(event.target.id==='reference-category'){category=event.target.value;query='';transferNote='';root.querySelector('#reference-query').value='';for(const key of Object.keys(values))delete values[key];controls();render();}
+    else if(event.target.dataset.refFilter){values[event.target.dataset.refFilter]=event.target.value;const key=event.target.dataset.refFilter;if(key==='topic'||(event.target.tagName==='SELECT'&&['pivothead','uwire'].includes(category)))controls();render();}
   });
   root.addEventListener('input',event=>{if(event.target.id==='reference-query'){query=event.target.value;render();}else if(event.target.dataset.refFilter&&event.target.tagName==='INPUT'){values[event.target.dataset.refFilter]=event.target.value;render();}});
+  root.addEventListener('click',event=>{
+    if(event.target.closest('[data-ref-clear]')){transferNote='';const topic=values.topic;for(const key of Object.keys(values))delete values[key];if(topic)values.topic=topic;controls();render();}
+    if(event.target.closest('[data-ref-current-pipe]')){
+      const helper=category==='foldinghead'?'foldinghelper':category,transfer=currentPipeReferenceValues(helper,getOperation());
+      if(transfer.issue)transferNote=transfer.issue;else{Object.assign(values,transfer.values);transferNote='Copied the current pipe into this reference only. Other helper inputs are unchanged; verify them independently. Job measurements were not changed.';}
+      controls();render();
+    }
+    const quick=event.target.closest('[data-ref-decimal]');if(quick){values.decimal=quick.dataset.refDecimal;controls();render();}
+    const trigger=event.target.closest('[data-stackup-preview]');if(trigger)previewStackup(trigger,previews);
+  });
   controls();render();return {render};
+}
+
+
+function stackupCards(records,needle) {
+  const matches=records.filter(row=>[row.name,row.type,row.range,row.source,row.sourcePage,...row.dimensions,...row.weights,...row.notes,row.text].join(' ').toLowerCase().includes(needle));
+  return '<section class="reference-section"><h3>Machine Stack-Ups</h3><p class="reference-count">'+matches.length+' matching source pages. Showing '+Math.min(50,matches.length)+(matches.length>50?'; narrow the source or search to see other pages.':'.')+'</p>'+matches.slice(0,50).map(row=>{
+    const source=SUPPLEMENT.stackupSources.find(item=>item.name===row.source),url=source.path+'#page='+row.sourcePage;
+    return '<details class="stackup-card"><summary>'+escape(row.name)+'<small>'+escape(row.source)+' — page '+escape(row.sourcePage)+'</small></summary><p>'+escape(row.type)+' · '+escape(row.range)+'</p><p>'+escape(row.use)+'</p><dl><dt>Extracted dimensions (unlabeled)</dt><dd>'+escape(row.dimensions.join(', ')||'Not listed')+'</dd><dt>Weight text</dt><dd>'+escape(row.weights.join('; ')||'Not listed')+'</dd></dl><p>'+escape(row.notes.join(' '))+'</p><details><summary>Extracted source text</summary><p>'+escape(row.text)+'</p></details><p class="stackup-actions"><a href="'+escape(url)+'" target="_blank" rel="noopener">Open source PDF, page '+row.sourcePage+'</a><button type="button" data-stackup-preview="'+escape(row.id)+'" aria-expanded="false">Preview source page</button></p><div class="stackup-preview" hidden></div></details>';
+  }).join('')+(matches.length?'':'<p class="result-hint">No matching source page. Do not substitute another equipment model.</p>')+'</section>';
+}
+
+async function previewStackup(trigger,previews) {
+  const holder=trigger.closest('.stackup-card').querySelector('.stackup-preview');
+  if(trigger.cancelPreview){trigger.cancelPreview();return;}
+  const row=SUPPLEMENT.stackups.find(item=>item.id===trigger.dataset.stackupPreview),source=SUPPLEMENT.stackupSources.find(item=>item.name===row?.source);
+  if(!row||!source)return;
+  let cancelled=false,loadingTask=null,pdf=null,renderTask=null;
+  const stop=()=>{cancelled=true;renderTask?.cancel();loadingTask?.destroy()?.catch(()=>{});holder.hidden=true;holder.replaceChildren();delete holder.dataset.previewState;trigger.setAttribute('aria-expanded','false');trigger.textContent='Preview source page';trigger.cancelPreview=null;previews.delete(stop);};
+  trigger.cancelPreview=stop;previews.add(stop);trigger.setAttribute('aria-expanded','true');trigger.textContent='Hide source page';holder.hidden=false;holder.dataset.previewState='loading';holder.textContent='Loading original source page…';
+  try{
+    const pdfjs=await import('../pdf.mjs');if(cancelled)return;
+    pdfjs.GlobalWorkerOptions.workerSrc=new URL('../pdf.worker.mjs',import.meta.url).href;
+    loadingTask=pdfjs.getDocument({url:new URL(source.path,import.meta.url).href,isEvalSupported:false});pdf=await loadingTask.promise;if(cancelled)return;
+    const page=await pdf.getPage(row.sourcePage);if(cancelled)return;
+    const unit=page.getViewport({scale:1}),width=Math.max(240,holder.clientWidth||600),scale=Math.min(2,width/unit.width),viewport=page.getViewport({scale});
+    const canvas=document.createElement('canvas');canvas.width=Math.ceil(viewport.width);canvas.height=Math.ceil(viewport.height);canvas.setAttribute('role','img');canvas.setAttribute('aria-label',row.source+', page '+row.sourcePage+'. Use Open source PDF for full document access.');holder.replaceChildren(canvas);
+    renderTask=page.render({canvasContext:canvas.getContext('2d'),viewport});await renderTask.promise;if(!cancelled)holder.dataset.previewState='ready';
+  }catch(error){if(!cancelled){holder.dataset.previewState='error';holder.textContent='Preview unavailable. Use Open source PDF to inspect the original page. Source PDFs require a connection.';}}
+}
+
+export function currentPipeReferenceValues(category,operation) {
+  if(!operation?.state)return {issue:'Open a job first, or enter reference measurements manually.'};
+  const state=operation.state,g=geometry(state);
+  if(!Number.isFinite(g.wall))return {issue:'Current pipe dimensions are incomplete or invalid. Nothing was copied.'};
+  if(category==='pivothead'){
+    const material=state.bcoPipeMaterial,size=number(state.bcoPipeOD).toFixed(1),od=TRUE_OD[material]?.[size];
+    if(!Number.isFinite(od)||od!==g.od)return {issue:'Current material/size or custom outside diameter is not represented by the Pivot source catalog. Nothing was copied; verify equipment and enter reference values explicitly.'};
+    return {values:{material,pipeSize:size,wall:String(g.wall),measuredId:String(g.id)}};
+  }
+  if(category==='foldinghelper')return {values:{pod:String(g.od),wall:String(g.wall)}};
+  if(category==='uwire')return {values:{pipeOd:String(g.od),wall:String(g.wall),...(g.cutter>0?{cutterOd:String(g.cutter)}:{})}};
+  return {issue:'No current-pipe transfer is defined for this reference.'};
 }

@@ -18,3 +18,15 @@ dialog{width:min(550px,calc(100% - 28px));max-height:90dvh;border:1px solid var(
 @media(max-width:700px){.reference-controls{grid-template-columns:1fr}.help-icon{width:44px;min-height:44px}abbr[data-help-term]{display:inline-block;min-width:24px;min-height:24px;align-content:center}.field-label{align-items:start}.field-label label{align-self:center}.reference-table-wrap :is(th,td){padding:9px;font-size:12px}}
 @media(max-width:420px){.masthead{padding:14px 16px;gap:6px}.wordmark{min-width:0;flex:1;flex-wrap:wrap;gap:0;font-size:21px}.wordmark .brand-icon{display:none}.wordmark .edition{flex-basis:100%;padding:2px 0 0;border:0;font-size:8px}.masthead #theme{min-width:60px;padding:8px 6px}.masthead .menu-toggle{padding:4px;width:44px;min-width:44px}}
 .term-group{white-space:nowrap}.field-label abbr[data-help-term]{display:inline;min-width:0;min-height:0}.help-icon{position:relative;isolation:isolate;background:transparent;border-color:transparent}.help-icon::before{content:"";position:absolute;left:50%;top:50%;width:23px;height:23px;transform:translate(-50%,-50%);border:1px solid var(--control-line);border-radius:50%;background:var(--tint);z-index:-1}
+
+
+/* Pre-alpha reference migration: document details remain in the reference owner. */
+.stackup-card{border:1px solid var(--line);border-radius:8px;margin:12px 0;padding:14px;overflow-wrap:anywhere}
+.stackup-card summary{cursor:pointer;font-weight:650;min-height:44px;line-height:1.5}
+.stackup-card summary small{display:block;font-weight:400;color:var(--muted)}
+.stackup-card dt{font-weight:650}.stackup-card dd{margin:6px 0 14px}
+.stackup-actions{display:flex;flex-wrap:wrap;gap:14px;align-items:center}.stackup-actions a{color:var(--accent);min-height:44px;display:inline-flex;align-items:center}
+.stackup-preview{border-top:1px solid var(--line);padding-top:14px;margin-top:14px;min-height:80px}.stackup-preview canvas{display:block;max-width:100%;height:auto;margin:auto;background:white}
+#reference-filters button{align-self:end;min-height:44px}
+
+.fraction-quick{display:flex;flex-wrap:wrap;gap:8px;align-items:end}.fraction-quick button{min-width:52px;min-height:44px}

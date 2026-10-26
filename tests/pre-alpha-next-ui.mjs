@@ -4,6 +4,7 @@ import {tmpdir} from 'node:os';
 import {normalizeJob,geometry,STORAGE_KEY} from '../pre-alpha/model.mjs';
 import {formatEta} from '../pre-alpha/eta.mjs';
 import {REFERENCE_CATEGORIES} from '../pre-alpha/references.mjs';
+import {runReferenceMigrationChecks} from './pre-alpha-reference-migration-ui.mjs';
 
 export async function runNextChecks({browser,pw,base,mobile,engine}) {
   const state={bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',bcoPipeID:'6',bcoCutterOD:'4',md:'10',ld:'0',ptc:'1',start:'0',mt:'52',lsMd:'10',lsLd:'0',lsPod:'8',lsTravel:'20',lsMachineTravel:'19',cpStart:'20',cpJbf:'1.25',cpLd:'0.5',cpPt:'2.75',cpLiManual:'99',cpLiManualToggle:false,etaBco:'99'};
@@ -97,6 +98,7 @@ export async function runNextChecks({browser,pw,base,mobile,engine}) {
     const sourceBco=page.locator('#reference-content th abbr[data-help-term="BCO"]');
     await sourceBco.focus();assert.match(await page.locator('#term-tooltip').textContent(),/not verified.*Do not substitute/s);
     await page.keyboard.press('Escape');
+    await runReferenceMigrationChecks(page,activate);
     for(const dark of [false,true]){
       if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
       if(mobile)await page.setViewportSize({width:320,height:700});

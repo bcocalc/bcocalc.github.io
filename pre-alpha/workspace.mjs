@@ -1,7 +1,7 @@
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha06';
-import {initAuxiliary,etaSummary} from './auxiliary.mjs?v=pre-alpha06';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha06';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha06';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha07';
+import {initAuxiliary,etaSummary} from './auxiliary.mjs?v=pre-alpha07';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha07';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha07';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';

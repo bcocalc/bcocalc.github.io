@@ -1,6 +1,6 @@
-import {createReferences} from './references.mjs?v=pre-alpha06';
-import {ETA_MACHINES,etaFor,formatEta} from './eta.mjs?v=pre-alpha06';
-import {number,stepsFor} from './model.mjs?v=pre-alpha06';
+import {createReferences} from './references.mjs?v=pre-alpha07';
+import {ETA_MACHINES,etaFor,formatEta} from './eta.mjs?v=pre-alpha07';
+import {number,stepsFor} from './model.mjs?v=pre-alpha07';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const $=id=>document.getElementById(id);
@@ -10,7 +10,7 @@ export function etaSummary(operation,machineName) {
   return '<section class="review-stage eta-summary" data-help-context="eta"><header><div><h3>Cutting time (ETA)</h3><p class="review-mode">Current BCO distance only; not full job duration</p></div><button data-open-eta>Open ETA</button></header><p class="eta-time">'+escape(time)+'</p>'+(eta.issue?'<p class="result-hint">'+escape(eta.issue)+'</p>':'<p class="review-mode">'+(eta.manual?'Manual RPM':escape(eta.match.basis)+' chart RPM')+'; 0.0040 in/revolution assumption.</p>')+'</section>';
 }
 export function initAuxiliary({getOperation,getMachine,persist,onEtaChanged,notify,setTheme,getTheme}) {
-  createReferences($('reference-browser'));
+  createReferences($('reference-browser'),{getOperation});
   const menu=$('app-menu'),toggle=$('menu-toggle');let etaTrigger=null;
   function closeMenu(restoreFocus=false){menu.hidden=true;toggle.setAttribute('aria-expanded','false');if(restoreFocus)toggle.focus({preventScroll:true});}
   function openMenu(){const r=toggle.getBoundingClientRect();menu.style.top=r.bottom+scrollY+8+'px';menu.style.left=r.left+scrollX+'px';menu.hidden=false;toggle.setAttribute('aria-expanded','true');menu.querySelector('button').focus({preventScroll:true});}
