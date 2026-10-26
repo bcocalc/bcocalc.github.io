@@ -69,7 +69,9 @@ try {
     await page.waitForTimeout(1800);
     await activate('.screen-nav [data-screen="card"]');
     await activate('#workflowStageNav [data-workflow-stage="hotTap"]');
-    await page.waitForTimeout(700);
+    // Deferred job hydration can run 900 ms after navigation and rebuild sections.
+    // Open the accordion only after it settles, rather than racing its restore.
+    await page.waitForTimeout(1500);
     const restoredCollapsed = page.locator('.section.collapsed:has(#htActualPop) > .accordion-heading');
     if (await restoredCollapsed.count()) await (phone ? restoredCollapsed.tap() : restoredCollapsed.click());
     assert.equal(await value('pop'), 18.5, 'Confirmed adjustment survives a reload');

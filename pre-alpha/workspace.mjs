@@ -1,4 +1,4 @@
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha03';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha04';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -69,7 +69,8 @@ function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field
     control='<select '+attrs+'>'+options.map(([v,t])=>'<option value="'+escape(v)+'"'+(v===current?' selected':'')+'>'+escape(t)+'</option>').join('')+'</select>';
   }else if(type==='textarea')control='<textarea '+attrs+'>'+escape(value)+'</textarea>';
   else control='<input '+attrs+' type="'+(type==='date'?'date':'text')+'"'+(type==='text'&&!['operationLabel','machineType'].includes(key)?' inputmode="decimal"':'')+' value="'+escape(value)+'" autocomplete="off">';
-  return '<label class="field'+(type==='textarea'?' wide':'')+(['operation','machine'].includes(type)?' setup-choice':'')+'">'+escape(label)+control+(hint?'<small>'+escape(hint)+'</small>':'')+'</label>';
+  if(key==='lsMd') hint=lineStopMdIsManual(operation().state)?'Manual MD; Hot Tap MD changes are kept separate.':'Follows Hot Tap MD until you edit it.';
+  return '<label class="field'+(type==='textarea'?' wide':'')+(['operation','machine'].includes(type)?' setup-choice':'')+'">'+escape(label)+control+(hint?'<small'+(key==='lsMd'?' id="ls-md-hint"':'')+'>'+escape(hint)+'</small>':'')+(key==='ptc'?'<small id="ptc-warning" class="field-warning" hidden></small>':'')+'</label>';
 }
 function renderOperations() {
   $('operation-count').textContent=active.operations.length;
@@ -95,6 +96,7 @@ function renderWorkspace() {
   if(!op)return;
   const steps=stepsFor(op);
   if(!steps.includes(stage))stage=steps[0];
+  if(stage==='stop'&&initializeLineStopMd(op))persist();
   $('steps').innerHTML=steps.map((key,i)=>'<button data-step="'+key+'"'+(key===stage?' aria-current="step"':'')+'><span class="step-number">'+(i+1)+'</span>'+escape(stages[key][0])+'</button>').join('');
   $('step-title').textContent=stages[stage][0];
   $('step-description').textContent=stages[stage][1];
@@ -125,7 +127,7 @@ function renderResults() {
     if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.</p>');
     if(stage==='pipe')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
     if(stage==='pipe'&&op.state.bcoPipeOD&&!String(op.state.bcoPipeID??'').trim())$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Choose chart dimensions or enter a measured Pipe I.D. Unlisted dimensions are left blank.</p>');
-    if(stage==='tap'&&number(op.state.mt)>0&&results.find(([key])=>key==='Total travel')?.[1]>number(op.state.mt))$('results').insertAdjacentHTML('beforeend','<p class="warning">Calculated travel exceeds machine travel. Recheck the setup.</p>');
+
     if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
     if((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle)))$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Manual lower-in override is active. Select Calculated in Lower-in mode to use the setup measurements.</p>');
     if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are still being connected in Pre-Alpha.</p>'+reviewMarkup(op.state);
@@ -136,6 +138,16 @@ function renderResults() {
     $('results').innerHTML=reviewMarkup(op.state);
     if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are still being connected in this design study.</p>');
   }
+  const warnings=hotTapWarnings(op);
+  if(stage==='tap'||stage==='review')$('results').insertAdjacentHTML('beforeend',warnings.map(warning=>'<p class="warning" role="status">'+escape(warning.message)+'</p>').join(''));
+  const ptcWarning=$('ptc-warning'),ptcInput=$('data-fieldptc');
+  if(ptcWarning&&ptcInput){
+    const warning=warnings.find(item=>item.field==='ptc');
+    ptcWarning.hidden=!warning;ptcWarning.textContent=warning?'PTC exceeds '+warning.limit.toFixed(4)+' in limit.':'';
+    if(warning){ptcInput.setAttribute('aria-invalid','true');ptcInput.setAttribute('aria-describedby','ptc-warning');}
+    else{ptcInput.removeAttribute('aria-invalid');ptcInput.removeAttribute('aria-describedby');}
+  }
+  if($('ls-md-hint'))$('ls-md-hint').textContent=lineStopMdIsManual(op.state)?'Manual MD; Hot Tap MD changes are kept separate.':'Follows Hot Tap MD until you edit it.';
   $('preserved').innerHTML=stage==='review'||stage==='saved'?'':'<details><summary>Other saved inputs</summary>'+reviewMarkup(op.state,true)+'</details>';
 }
 function openJob(job) {
@@ -204,7 +216,7 @@ $('fields').addEventListener('input',event=>{
   const key=event.target.dataset.field;if(!key)return;
   if(['operationType','bcoPipeMaterial','bcoPipeOD','bcoSchedule'].includes(key))return;
   else if(key==='machineType')active.sharedState.machineType=event.target.value;
-  else operation().state[key]=key.endsWith('Toggle') ? event.target.value==='true' : event.target.value;
+  else setOperationMeasurement(operation(),key,key.endsWith('Toggle') ? event.target.value==='true' : event.target.value);
   persist();renderResults();
 });
 $('fields').addEventListener('change',event=>{

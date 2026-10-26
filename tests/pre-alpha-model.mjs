@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
-import {normalizeJob,operationType,chooseOperationType,deleteOperation,MACHINE_OPTIONS,pipeSizes,pipeSchedules,choosePipeSelection,pipeOD,stepsFor,resultsFor,geometry,getDeviceJobs,STORAGE_KEY,number} from '../pre-alpha/model.mjs';
+import {normalizeJob,operationType,chooseOperationType,deleteOperation,MACHINE_OPTIONS,pipeSizes,pipeSchedules,choosePipeSelection,pipeOD,stepsFor,resultsFor,geometry,getDeviceJobs,STORAGE_KEY,number,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings} from '../pre-alpha/model.mjs';
 import {PIPE_DATA,TRUE_OD} from '../pre-alpha/pipe-data.mjs';
 const operations=[1,2,3].map(n=>({id:'ls-'+n,label:'Line Stop '+n,operationType:'Line Stop',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'16.0',bcoPipeID:'15.5',bcoCutterOD:'15.0625',md:String(n*10),ld:'0',ptc:'4',start:'1',lsMd:String(n*12),lsLd:'0',cpStart:String(n),cpJbf:'0',cpLd:'0',cpPt:'0',unknownFutureField:{keep:true}}}));
 const source={id:'old-job',record:{meta:{title:'Three stops'},job:{client:'Customer',location:'Site'},state:{md:'999'},jobBundle:{selectedOperationId:'ls-2',sharedState:{jobDescription:'Three line stops'},operations}}};
@@ -101,4 +101,36 @@ assert.ok(Number.isNaN(pipeOD(pipeState)),'A custom size must not reuse saved PO
 pipeState.bcoPipeID='23.123';
 choosePipeSelection(pipeState,'bcoSchedule','custom');
 assert.equal(pipeState.bcoPipeID,'23.123');
-console.log('PASS Pre-Alpha: legacy/bundled import, original preservation, variants, dimensions and storage boundary');
+const untouchedOperations=JSON.stringify(job.operations);
+const carry={operationType:'Line Stop',state:{md:'10',lsLd:'3',ptc:'1',cpStart:'5'}};
+assert.equal(initializeLineStopMd(carry),true);
+assert.equal(carry.state.lsMd,'10');
+setOperationMeasurement(carry,'md','11');
+assert.equal(carry.state.lsMd,'11');
+assert.equal(carry.state.lsLd,'3');
+setOperationMeasurement(carry,'lsMd','0');
+setOperationMeasurement(carry,'md','12');
+assert.equal(carry.state.lsMd,'0');
+assert.equal(lineStopMdIsManual(JSON.parse(JSON.stringify(carry.state))),true);
+setOperationMeasurement(carry,'lsMd','');
+assert.equal(initializeLineStopMd(carry),false);
+setOperationMeasurement(carry,'md','13');
+assert.equal(carry.state.lsMd,'');
+const legacyMd={state:{md:'10',lsMd:'12'}};
+setOperationMeasurement(legacyMd,'md','20');
+assert.equal(legacyMd.state.lsMd,'12');
+assert.equal(lineStopMdIsManual({md:'10',lsMd:'10.0000'}),false);
+assert.equal(lineStopMdIsManual({md:'',lsMd:'12'}),true);
+assert.equal(JSON.stringify(job.operations),untouchedOperations,'Other operations stay independent');
+const warningOp={operationType:'Hot Tap',state:{preAlphaPipeOD:'4.5',bcoPipeID:'4.026',ptc:'2.5'}};
+assert.equal(hotTapWarnings(warningOp)[0].code,'ptc-length');
+assert.equal(hotTapWarnings(warningOp)[0].limit,2.013);
+for(const ptc of ['2.013','2','','invalid']){
+  warningOp.state.ptc=ptc;
+  assert.equal(hotTapWarnings(warningOp).length,0,'Preserve existing strict-greater comparison');
+}
+warningOp.state.ptc='3';warningOp.state.bcoPipeID='';
+assert.equal(hotTapWarnings(warningOp).length,0,'Missing pipe geometry is not a length warning');
+warningOp.state.bcoPipeID='4.026';warningOp.operationType='Completion Plug';
+assert.equal(hotTapWarnings(warningOp).length,0,'No unused Hot Tap warning in plug-only workflow');
+console.log('PASS Pre-Alpha: imports, preservation, dimensions, independent MD carryover and PTC warning');

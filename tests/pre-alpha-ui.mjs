@@ -90,6 +90,10 @@ try{
     await activate(page.locator('[data-operation="stop-2"]'));
     await activate(page.locator('[data-step="tap"]'));
     assert.equal(await page.locator('[data-field="md"]').inputValue(),'21.75');
+    await activate(page.locator('[data-step="stop"]'));
+    assert.equal(await page.locator('[data-field="lsMd"]').inputValue(),'24','Keep distinct legacy line-stop MD');
+    assert.match(await page.locator('#ls-md-hint').textContent(),/Manual MD/);
+    await activate(page.locator('[data-step="tap"]'));
     for(const dark of [false,true]){
       if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
@@ -160,6 +164,49 @@ try{
     assert.equal(await page.locator('#operations button').count(),1);
     await activate(page.locator('[data-step="tap"]'));
     assert.equal(await page.locator('[data-field="md"]').inputValue(),'');
+    await page.locator('[data-field="md"]').fill('10');
+    await activate(page.locator('[data-step="setup"]'));
+    await page.locator('[data-field="operationType"]').selectOption('Line Stop');
+    await activate(page.locator('[data-step="stop"]'));
+    assert.equal(await page.locator('[data-field="lsMd"]').inputValue(),'10');
+    await activate(page.locator('[data-step="tap"]'));
+    await page.locator('[data-field="md"]').fill('11');
+    await activate(page.locator('[data-step="stop"]'));
+    assert.equal(await page.locator('[data-field="lsMd"]').inputValue(),'11');
+    await page.locator('[data-field="lsMd"]').fill('12');
+    await activate(page.locator('[data-step="tap"]'));
+    await page.locator('[data-field="md"]').fill('13');
+    await activate(page.locator('[data-step="pipe"]'));
+    await page.locator('[data-field="bcoPipeOD"]').selectOption('4.0');
+    await page.locator('[data-field="bcoPipeID"]').fill('4.026');
+    await activate(page.locator('[data-step="tap"]'));
+    await page.locator('[data-field="ptc"]').fill('2.5');
+    assert.match(await page.locator('#ptc-warning').textContent(),/2.0130/);
+    assert.equal(await page.locator('[data-field="ptc"]').getAttribute('aria-invalid'),'true');
+    for(const dark of [false,true]){
+      if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+      await page.screenshot({path:join(tmpdir(),'pre-alpha-warning-'+engine+(mobile?'-phone':'-desktop')+(dark?'-dark':'-light')+'.png'),fullPage:true});
+      const contrast=await page.evaluate(()=>{
+        const rgb=text=>text.match(/[\d.]+/g).slice(0,3).map(Number);
+        const luminance=values=>values.map(v=>v/255).map(v=>v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[0.2126,0.7152,0.0722][i],0);
+        return ['#next','#steps [aria-current]','#ptc-warning','.masthead'].map(selector=>{
+          const style=getComputedStyle(document.querySelector(selector)),fg=luminance(rgb(style.color)),bg=luminance(rgb(style.backgroundColor));
+          return (Math.max(fg,bg)+0.05)/(Math.min(fg,bg)+0.05);
+        });
+      });
+      assert.ok(contrast.every(value=>value>=4.5),'Readable action, selection, warning and header colors: '+contrast);
+    }
+    await activate(page.locator('[data-step="review"]'));
+    assert.match(await page.locator('#results .warning').textContent(),/PTC exceeds/);
+    await page.reload();await page.waitForSelector('#job-title');
+    await activate(page.locator('[data-step="stop"]'));
+    assert.equal(await page.locator('[data-field="lsMd"]').inputValue(),'12');
+    await activate(page.locator('[data-step="tap"]'));
+    assert.ok(await page.locator('#ptc-warning').isVisible());
+    await page.locator('[data-field="ptc"]').fill('2.013');
+    assert.equal(await page.locator('#ptc-warning').isVisible(),false);
+    assert.equal(await page.locator('[data-field="ptc"]').getAttribute('aria-invalid'),null);
     assert.deepEqual(writes,[]);
     assert.deepEqual(errors,[]);
     await context.close();

@@ -1,5 +1,5 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha03';
-export const BUILD = 'pre-alpha03';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha04';
+export const BUILD = 'pre-alpha04';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
@@ -186,6 +186,44 @@ export function resultsFor(operation, stage) {
   }
   if (stage === 'plug') return [['Lower in',s.cpLiManualToggle === true || s.cpLiManualToggle === 'true' ? n('cpLiManual') : n('cpStart')+n('cpJbf')+n('cpLd')+n('cpPt')]];
   return [];
+}
+export function lineStopMdIsManual(state) {
+  if ([true,'true'].includes(state.lineStopMdUserEdited)) return true;
+  if ([false,'false'].includes(state.lineStopMdUserEdited)) return false;
+  // Older saves may predate the marker. Preserve a distinct saved line-stop MD.
+  const stop=String(state.lsMd ?? '').trim(), tap=String(state.md ?? '').trim();
+  return !!stop && (Number.isFinite(number(stop)) && Number.isFinite(number(tap))
+    ? number(stop)!==number(tap) : stop!==tap);
+}
+export function setOperationMeasurement(operation,key,value) {
+  const state=operation.state, manual=lineStopMdIsManual(state);
+  state[key]=value;
+  if(key==='lsMd') state.lineStopMdUserEdited=true;
+  if(key==='md') {
+    state.lineStopMdUserEdited=manual;
+    if(!manual) state.lsMd=value;
+  }
+}
+export function initializeLineStopMd(operation) {
+  const state=operation.state;
+  if(lineStopMdIsManual(state) || String(state.lsMd ?? '').trim() || !String(state.md ?? '').trim()) return false;
+  state.lsMd=state.md;
+  state.lineStopMdUserEdited=false;
+  return true;
+}
+export function hotTapWarnings(operation) {
+  if(!stepsFor(operation).includes('tap')) return [];
+  const state=operation.state, g=geometry(state), warnings=[];
+  const limit=g.od/2-g.wall;
+  if(limit>0 && number(state.ptc)>limit) warnings.push({
+    code:'ptc-length', field:'ptc', limit,
+    message:'PTC exceeds '+limit.toFixed(4)+' in (pipe radius minus wall). Recheck the pilot and cutter setup.'
+  });
+  const travel=resultsFor(operation,'tap').find(([label])=>label==='Total travel')[1];
+  if(number(state.mt)>0 && travel>number(state.mt)) warnings.push({
+    code:'machine-travel', message:'Calculated travel exceeds machine travel. Recheck the setup.'
+  });
+  return warnings;
 }
 export function getDeviceJobs(storage) {
   try {
