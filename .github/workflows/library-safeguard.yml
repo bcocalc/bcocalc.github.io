@@ -56,3 +56,7 @@ jobs:
         run: node tests/pipe-sizes-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check isolated Pre-Alpha job loading and operation switching
+        run: node tests/pre-alpha-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}

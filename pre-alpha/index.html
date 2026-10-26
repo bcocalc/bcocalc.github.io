@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f2ec">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
+  <title>TapCalc Pre-Alpha 01</title>
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha01">
+  <script src="./firebase-config.js?v=pre-alpha01" defer></script>
+  <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha01"></script>
+</head>
+<body>
+  <header class="masthead">
+    <a class="wordmark" href="./"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 01</span></a>
+    <button id="theme" class="quiet">Dark mode</button>
+  </header>
+  <div class="experiment-strip"><span class="status-dot"></span>A new workspace, taking shape.<span class="experiment-detail">Experimental jobs save separately on this device.</span></div>
+  <main>
+    <section id="workspace" aria-label="Job workspace">
+      <div id="welcome">
+        <div class="welcome-top"><p class="eyebrow">MADE FOR THE FIELD</p><span class="release">DESIGN STUDY / 01</span></div>
+        <h1>A clearer view<br>of the job ahead.</h1>
+        <p class="welcome-copy">One job. Each operation in reach.<br>Your measurements, with room to work.</p>
+        <div class="welcome-actions"><button class="primary" data-action="library">Open a saved job <span aria-hidden="true">&rarr;</span></button><button data-action="new">Start a new job</button></div>
+        <div class="welcome-rule"><span>01 / CHOOSE THE JOB</span><span>02 / PICK THE OPERATION</span><span>03 / WORK THE STEPS</span></div>
+        <div id="resume"></div>
+      </div>
+      <div id="job-workspace" hidden>
+        <header class="job-heading"><div><p class="eyebrow" id="job-origin">WORKING COPY</p><h1 id="job-title"></h1><p id="job-meta"></p></div><button data-action="details">Job details <span aria-hidden="true">&nearr;</span></button></header>
+        <div class="operations-heading"><h2>Operations <span id="operation-count"></span></h2><button class="quiet" data-action="add">+ Add operation</button></div>
+        <nav id="operations" aria-label="Job operations"></nav>
+        <div class="work-layout">
+          <aside class="journey"><p class="eyebrow">WORK THROUGH THE JOB</p><nav id="steps" aria-label="Measurement steps"></nav><p class="journey-note">Browse any step.<br>Your measurements stay with this operation.</p></aside>
+          <section class="measurement-area" aria-labelledby="step-title">
+            <div class="step-heading"><div><p class="eyebrow" id="step-count"></p><h2 id="step-title"></h2><p id="step-description"></p></div><span class="unit-label">INCHES</span></div>
+            <div id="fields"></div>
+            <div id="results" aria-live="polite"></div>
+            <div id="preserved"></div>
+            <footer class="step-footer"><button id="back">Back</button><span id="save-state" role="status">Saved on this device</span><button id="next" class="primary">Next step &rarr;</button></footer>
+          </section>
+        </div>
+      </div>
+    </section>
+    <section id="library" aria-labelledby="library-title" hidden>
+      <header class="library-heading"><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h1 id="library-title">Your job library.</h1><p>Open a past job and try it in the new workspace.</p></div><button id="refresh">Refresh shared jobs</button></header>
+      <div class="library-tools"><label class="search-label"><span class="sr-only">Search jobs</span><input id="search" type="search" placeholder="Search job, customer, location or number"></label><span id="connection" role="status">Connecting to shared jobs...</span></div>
+      <div class="library-tabs" role="group" aria-label="Job source"><button data-source="shared" aria-pressed="true">Shared jobs <span id="shared-count">0</span></button><button data-source="device" aria-pressed="false">On this device <span id="device-count">0</span></button><button data-source="experimental" aria-pressed="false">Pre-Alpha saves <span id="experimental-count">0</span></button></div>
+      <p id="library-summary" role="status"></p><div id="job-list"></div><button id="more" hidden>Show more jobs</button>
+    </section>
+  </main>
+  <nav class="main-nav" aria-label="Main navigation"><button data-page="workspace" aria-current="page"><span aria-hidden="true">&#9638;</span>Workspace</button><button data-page="library"><span aria-hidden="true">&#9776;</span>Job library</button><button data-action="new"><span aria-hidden="true">+</span>New job</button></nav>
+  <dialog id="details-dialog"><form id="details-form"><div class="dialog-heading"><h2>Job details</h2><button type="button" data-close="details-dialog" aria-label="Close job details">&times;</button></div><div id="details-fields"></div><button class="primary" type="submit">Save details</button></form></dialog>
+  <dialog id="add-dialog"><div class="dialog-heading"><h2>Add an operation</h2><button data-close="add-dialog" aria-label="Close add operation">&times;</button></div><p>Each operation keeps its own measurements.</p><div class="add-options"><button data-add-type="Hot Tap">Hot Tap <span>Cut into the pipe</span></button><button data-add-type="Line Stop">Line Stop <span>Hot tap, stop, then completion</span></button><button data-add-type="Completion Plug">Completion Plug <span>Plug measurements</span></button></div></dialog>
+  <div id="notice" role="status" hidden></div>
+</body>
+</html>

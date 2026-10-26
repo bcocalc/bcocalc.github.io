@@ -1,0 +1,80 @@
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {createRequire} from 'node:module';
+import {dirname,join} from 'node:path';
+import {tmpdir} from 'node:os';
+const require=createRequire(import.meta.url);
+let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
+const engine=process.env.TAPCALC_BROWSER||'chromium';
+const server=spawn(process.execPath,['tests/sync-preview.mjs'],{stdio:['ignore','pipe','inherit']});
+const operations=[1,2,3].map(n=>({id:'stop-'+n,label:'Line Stop '+n,operationType:'Line Stop',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'16.0',bcoPipeID:'15.5',bcoCutterOD:'15.0625',md:String(10*n),ld:'0',ptc:'4',start:'1',mt:'52',lsMd:String(12*n),lsLd:'0'}}));
+const record={meta:{title:'Three stops',savedAtIso:'2026-10-24'},job:{client:'Fixture Customer',location:'Field site'},state:{md:'999'},jobBundle:{selectedOperationId:'stop-2',sharedState:{jobDescription:'Three stops',jobClient:'Fixture Customer'},operations}};
+const encode=v=>v===null?{nullValue:null}:Array.isArray(v)?{arrayValue:{values:v.map(encode)}}:typeof v==='object'?{mapValue:{fields:Object.fromEntries(Object.entries(v).map(([k,v])=>[k,encode(v)]))}}:typeof v==='boolean'?{booleanValue:v}:typeof v==='number'?{doubleValue:v}:{stringValue:String(v)};
+let browser;
+try{
+  const base=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Preview timeout')),10000);server.stdout.on('data',data=>{const match=String(data).match(/http:\/\/127\.0\.0\.1:\d+/);if(match){clearTimeout(timer);resolve(match[0]);}});});
+  browser=await pw[engine].launch({headless:true,...(engine==='chromium'&&!process.env.CI?{channel:'chrome'}:{})});
+  for(const mobile of [true,false]){
+    const context=await browser.newContext({...mobile?pw.devices['iPhone 13']:{viewport:{width:1360,height:1000}},serviceWorkers:'block'});
+    const page=await context.newPage(),errors=[],writes=[];
+    page.on('pageerror',e=>errors.push(e.message));
+    await page.route('**/v1/**',async route=>{
+      const request=route.request();if(request.method()!=='GET')writes.push(request.method());
+      await route.fulfill({json:{documents:[{name:'projects/demo-tapcalc-test/databases/(default)/documents/tapcalcJobs/three',fields:encode(record).mapValue.fields}]}});
+    });
+    const old=JSON.stringify([{id:'local-three',record}]);
+    await page.addInitScript(old=>{if(!localStorage.getItem('measurementCardHistoryV1')){localStorage.setItem('measurementCardHistoryV1',old);localStorage.setItem('measurementCardStateV1','{"keep":"live-draft"}');}},old);
+    await page.goto(base+'/pre-alpha/');
+    await page.waitForFunction(()=>document.getElementById('connection').textContent.includes('Connected'));
+    await page.screenshot({path:join(tmpdir(),'pre-alpha-'+engine+(mobile?'-phone':'-desktop')+'-welcome.png')});
+    const activate=locator=>mobile?locator.tap():locator.click();
+    await activate(page.locator('[data-page="library"]'));
+    assert.equal(await page.locator('.job-card').count(),1);
+    await activate(page.locator('.job-card'));
+    assert.equal(await page.locator('#operations button').count(),3);
+    assert.equal(await page.locator('#operations [aria-current]').getAttribute('data-operation'),'stop-2');
+    await activate(page.locator('[data-step="tap"]'));
+    assert.equal(await page.locator('[data-field="md"]').inputValue(),'20');
+    await page.locator('[data-field="md"]').fill('21.75');
+    await activate(page.locator('[data-operation="stop-1"]'));
+    await activate(page.locator('[data-step="tap"]'));
+    assert.equal(await page.locator('[data-field="md"]').inputValue(),'10');
+    await activate(page.locator('[data-operation="stop-2"]'));
+    await activate(page.locator('[data-step="tap"]'));
+    assert.equal(await page.locator('[data-field="md"]').inputValue(),'21.75');
+    for(const dark of [false,true]){
+      if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+      await page.screenshot({path:join(tmpdir(),'pre-alpha-'+engine+(mobile?'-phone':'-desktop')+(dark?'-dark':'-light')+'.png'),fullPage:true});
+    }
+    await page.reload();
+    await page.waitForSelector('#job-title');
+    assert.equal(await page.locator('#operations button').count(),3);
+    await activate(page.locator('[data-step="tap"]'));
+    assert.equal(await page.locator('[data-field="md"]').inputValue(),'21.75');
+    assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),old);
+    assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),'{"keep":"live-draft"}');
+    const imported=await page.evaluate(()=>JSON.parse(localStorage.getItem('tapcalcPreAlpha01Workspace')));
+    assert.equal(imported.jobs[0].original.record.jobBundle.operations[1].state.md,'20');
+    await activate(page.locator('[data-action="details"]'));
+    await page.locator('[data-detail="jobClient"]').fill('New customer');
+    await activate(page.locator('#details-form [type="submit"]'));
+    assert.match(await page.locator('#job-meta').textContent(),/New customer/);
+    await activate(page.locator('[data-action="add"]'));
+    await activate(page.locator('[data-add-type="Completion Plug"]'));
+    assert.equal(await page.locator('#operations button').count(),4);
+    await activate(page.locator('#next'));
+    await activate(page.locator('#next'));
+    assert.equal(await page.locator('#step-title').textContent(),'Completion plug');
+    for(const [key,value] of Object.entries({cpStart:'20',cpJbf:'2',cpLd:'3',cpPt:'4'}))await page.locator('[data-field="'+key+'"]').fill(value);
+    await page.locator('[data-field="cpLiManualToggle"]').selectOption('true');
+    await page.locator('[data-field="cpLiManual"]').fill('99');
+    assert.match(await page.locator('.big-value').textContent(),/99.0000/);
+    await page.locator('[data-field="cpLiManualToggle"]').selectOption('false');
+    assert.match(await page.locator('.big-value').textContent(),/29.0000/);
+    assert.deepEqual(writes,[]);
+    assert.deepEqual(errors,[]);
+    await context.close();
+    console.log('PASS Pre-Alpha '+engine+'/'+(mobile?'phone':'desktop')+': Firebase read, 3 operations, separate drafts, original preservation, themes, details and blank steps');
+  }
+}finally{await browser?.close();server.kill();}

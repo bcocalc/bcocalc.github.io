@@ -32,8 +32,14 @@ try {
   await page.goto(base + '/dev/measurement-card.html?fixture=success');
   await openTools();
   await page.locator('#bcoPipeMaterial').selectOption('CarbonSteel');
+  await page.waitForTimeout(350);
+  await openTools();
   await page.locator('#bcoPipeOD').selectOption('20.0');
+  await page.waitForTimeout(350);
+  await openTools();
   await page.locator('#bcoPipeID').fill('19.25');
+  await page.waitForTimeout(350);
+  await openTools();
   await page.locator('#bcoCutterOD').fill('19');
   await page.locator('#bcoCutterOD').press('Tab');
   const original = await page.evaluate(() => localStorage.getItem('bcoData'));
