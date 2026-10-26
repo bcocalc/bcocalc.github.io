@@ -102,13 +102,13 @@ export function referenceTables(category,filters={}) {
 // equipment compatibility, pressure ratings, or unlabeled stack-up dimensions.
 const unique=items=>[...new Set(items.map(String))];
 const sizeOrder=(a,b)=>number(String(a).replaceAll('"','').replace(/(?<=\d)-(?=\d+\/)/g,' '))-number(String(b).replaceAll('"','').replace(/(?<=\d)-(?=\d+\/)/g,' '));
-const choices=(key,label,items,{required=false,all='All listed matches',sort=false}={})=>({key,label,options:[[ '',required?'Choose '+label.toLowerCase():all],...(sort?unique(items).sort(sizeOrder):unique(items)).map(value=>[value,value]),...(required?[['unlisted','Other / unlisted']]:[])]});
+const choices=(key,label,items,{required=false,all='All listed matches',sort=false}={})=>({key,label,options:[[ '',required?'Choose an option':all],...(sort?unique(items).sort(sizeOrder):unique(items)).map(value=>[value,value]),...(required?[['unlisted','Other / unlisted']]:[])]});
 const classRows=category=>category==='papergaskets'?SUPPLEMENT.paperGaskets:category==='torque'?SUPPLEMENT.graphonic:Object.fromEntries(Object.entries(DATA.bolting).map(([key,chart])=>[key,chart.rows]));
 const gasketSize=(category,row)=>category==='papergaskets'?row.displaySize:row.size;
 export function referenceSelectionFields(category,values={}) {
   if(['papergaskets','torque','bolting'].includes(category)){
     const charts=classRows(category),ratings=Object.keys(charts).filter(key=>!values.size||charts[key].some(row=>gasketSize(category,row)===values.size));
-    return [choices('size','Pipe size (in)',Object.values(charts).flatMap(rows=>rows.map(row=>gasketSize(category,row))),{required:true,sort:true}),choices('rating','Flange class',ratings,{all:'All listed classes for this size'})];
+    return [choices('size','Pipe size (in)',Object.values(charts).flatMap(rows=>rows.map(row=>gasketSize(category,row))),{required:true,sort:true}),choices('rating','Flange class',ratings,{all:'All listed classes'})];
   }
   if(category==='cutters')return [{key:'kind',label:'Equipment / operation',options:['hotTap','lineStop','floStopHotTap','floStopLineStop'].map(key=>[key,DATA.cutters[key].label])},choices('pipe','Nominal pipe size (in)',Object.values(DATA.cutters).flatMap(chart=>chart.rows.map(row=>row[0])),{required:true,sort:true})];
   if(category==='htp')return [choices('size','Pipe size (in)',Object.keys(DATA.htp),{required:true,sort:true})];
@@ -129,7 +129,7 @@ export function referenceSelectionFields(category,values={}) {
   }
   if(category==='stackups'){
     const rows=SUPPLEMENT.stackups.filter(row=>!values.type||row.type===values.type);
-    return [choices('type','Equipment family',SUPPLEMENT.stackups.map(row=>row.type),{all:'Choose a family, source, or search'}),choices('source','Source document',rows.map(row=>row.source),{all:'All source documents in this family'})];
+    return [choices('type','Equipment family',SUPPLEMENT.stackups.map(row=>row.type),{all:'Choose family or search'}),choices('source','Source document',rows.map(row=>row.source),{all:'All source documents'})];
   }
   if(category==='fractions')return [choices('fraction','Fraction to look up (in)',referenceTables('fractions').tables[0].rows.map(row=>row[0]),{required:true})];
   return [];

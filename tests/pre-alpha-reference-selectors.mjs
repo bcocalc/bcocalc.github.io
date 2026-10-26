@@ -30,6 +30,10 @@ for(const [category,charts,key,total]of [
   assert.equal(rows(referenceView(category,{size:'unlisted'})).length,0,'No nearest-size substitution');
   assert.ok(referenceView(category,{size:'unlisted'}).tables.length,'Explicit no-match is distinct from choose-a-size');
 }
+for(const category of ['papergaskets','torque','bolting','cutters','htp','plant150','plant600','foldinghead','fieldmanual','fractions'])assert.ok(referenceSelectionFields(category).some(field=>field.options[0][1]==='Choose an option'),'Compact prompts use the adjacent descriptive field label');
+assert.equal(referenceSelectionFields('papergaskets',{size:'4'})[1].options[0][1],'All listed classes','Compact native option text retains class meaning');
+assert.equal(referenceSelectionFields('stackups')[0].options[0][1],'Choose family or search');
+assert.equal(referenceSelectionFields('stackups')[1].options[0][1],'All source documents');
 assert.equal(REFERENCE_CATEGORIES.papergaskets,'Durlon Gaskets','Requested section name is distinct from source material identity');
 for(const filters of [{},{size:'4',rating:'600'},{size:'unlisted'}]){
   const result=referenceView('papergaskets',filters,'does-not-match');

@@ -33,6 +33,11 @@ export async function runReferenceSelectorChecks(page,activate){
   await category('manuals');await category('stackups');assert.match(await text(),/Showing 21–40/);await select('type','HTP Reference');assert.equal(await value('source'),'');assert.match(await text(),/Showing 1–/);
   await clear();const last=SUPPLEMENT.stackups.at(-1);await search(last.name);assert.ok(await page.locator('[data-stackup-preview="'+last.id+'"]').count()>0,'Search reaches records beyond the old 50-card cutoff');await search('no-stackup-match-xyz');assert.match(await text(),/No matching source page/);await clear();
   const originalViewport=page.viewportSize();await page.setViewportSize({width:320,height:700});
+  for(const categoryName of ['papergaskets','torque','bolting','cutters','htp','plant150','plant600','foldinghead','fieldmanual','fractions','stackups']){
+    await category(categoryName);if(categoryName==='foldinghead')await select('topic','capacity');if(categoryName==='fieldmanual')await select('topic','thread');await clear();
+    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),categoryName+' cleared selectors fit320px');
+    assert.ok(await page.locator('.reference-controls .field').evaluateAll(fields=>fields.every(field=>field.scrollWidth<=field.clientWidth+1)),categoryName+' cleared native prompts fit their fields');
+  }
   for(const dark of [false,true]){
     if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
     for(const categoryName of ['papergaskets','bolting','stackups']){await category(categoryName);await clear();if(categoryName==='stackups')await select('source','Hot Tap Stackups.pdf');else await select('size','4');const fits=await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1);
@@ -40,7 +45,8 @@ export async function runReferenceSelectorChecks(page,activate){
         const layout=await page.evaluate(()=>({viewport:innerWidth,page:document.documentElement.scrollWidth,nodes:[...document.querySelectorAll('#reference-browser,#reference-filters,#reference-content,.reference-controls,.reference-controls .field,.reference-controls select,.reference-controls input,#reference-content>p,.reference-section h3,.reference-table-wrap')].map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {tag:el.tagName,id:el.id,filter:el.dataset.refFilter,classes:el.className,left:r.left,right:r.right,width:r.width,client:el.clientWidth,scroll:el.scrollWidth,columns:s.gridTemplateColumns,overflow:s.overflowX,font:s.fontSize,minWidth:s.minWidth,maxWidth:s.maxWidth,appearance:s.appearance,selected:el.selectedOptions?.[0]?.textContent};})}));
         console.log('REFERENCE_LAYOUT_DIAGNOSTIC '+JSON.stringify({categoryName,dark,...layout}));
       }
-      assert.ok(fits,categoryName+' fits 320px in '+(dark?'dark':'light'));}
+      assert.ok(fits,categoryName+' fits 320px in '+(dark?'dark':'light'));
+      assert.ok(await page.locator('.reference-controls .field').evaluateAll(fields=>fields.every(field=>field.scrollWidth<=field.clientWidth+1)),categoryName+' native controls stay inside their fields without clipping');}
   }
   await page.setViewportSize(originalViewport);assert.equal(await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY),before,'Reference selections never edit saved jobs');
   await category('htp');
