@@ -105,7 +105,10 @@ export async function runInlineEtaChecks({browser,pw,base,mobile,engine}) {
       if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
       for(const width of mobile?[320,390]:[1360]){
         await page.setViewportSize({width,height:mobile?740:1000});
-        assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'No page overflow at '+width+'px');
+        const layout=await page.evaluate(()=>({viewport:innerWidth,pageWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth,
+          overflow:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>0&&(r.right>innerWidth+1||el.scrollWidth>el.clientWidth+1)&&getComputedStyle(el).position!=='fixed';}).map(el=>({tag:el.tagName,id:el.id,class:el.className,text:el.textContent.trim().slice(0,100),left:el.getBoundingClientRect().left,right:el.getBoundingClientRect().right,width:el.clientWidth,scrollWidth:el.scrollWidth,display:getComputedStyle(el).display,overflow:getComputedStyle(el).overflowX})).slice(0,40)}));
+        if(layout.pageWidth>layout.viewport+1)layout.afterTwoFrames=await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve({viewport:innerWidth,pageWidth:document.documentElement.scrollWidth,bodyWidth:document.body.scrollWidth})))));
+        assert.ok(layout.pageWidth<=layout.viewport+1,'No page overflow at '+width+'px: '+JSON.stringify(layout));
         assert.ok(await summary().evaluate(el=>el.scrollWidth<=el.clientWidth+1),'Summary fits at '+width+'px');
         assert.ok(await metric('time').isVisible());
       }
