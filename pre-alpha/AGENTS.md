@@ -3,7 +3,7 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha08. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha09. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
 - Firebase uses the existing public shared-job transport for reads only.
   Experimental edits save to tapcalcPreAlpha01Workspace on this device.

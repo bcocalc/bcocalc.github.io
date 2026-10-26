@@ -12,6 +12,7 @@ import './pre-alpha-help-timers.mjs';
 import './pre-alpha-reference-supplement.mjs';
 import './pre-alpha-reference-helpers.mjs';
 import './pre-alpha-reference-migration.mjs';
+import './pre-alpha-reference-selectors.mjs';
 const operations=[1,2,3].map(n=>({id:'ls-'+n,label:'Line Stop '+n,operationType:'Line Stop',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'16.0',bcoPipeID:'15.5',bcoCutterOD:'15.0625',md:String(n*10),ld:'0',ptc:'4',start:'1',lsMd:String(n*12),lsLd:'0',cpStart:String(n),cpJbf:'0',cpLd:'0',cpPt:'0',unknownFutureField:{keep:true}}}));
 const source={id:'old-job',record:{meta:{title:'Three stops'},job:{client:'Customer',location:'Site'},state:{md:'999'},jobBundle:{selectedOperationId:'ls-2',sharedState:{jobDescription:'Three line stops'},operations}}};
 const original=JSON.stringify(source);

@@ -28,11 +28,11 @@ export async function runReferenceMigrationChecks(page,activate){
   const text=()=>page.locator('#reference-content').innerText();
   await category('smartstop');await filter('wall','.235');await page.locator('#reference-query').fill('1480');
   assert.match(await text(),/ASTM A574\/F835/);assert.match(await text(),/Unmarked rows do not receive an inferred pressure rating/,'Searching never hides source/pressure limitations');
-  await category('torque');for(const rating of ['150','300','400','600']){await select('rating',rating);assert.equal(await page.locator('#reference-content tbody tr').count(),19);}
+  await category('torque');await select('size','4');for(const rating of ['150','300','400','600']){await select('rating',rating);assert.equal(await page.locator('#reference-content tbody tr').count(),1);}
   await select('rating','400');assert.match(await text(),/Contact Engineering/);
-  await category('papergaskets');for(const rating of ['150','300','400','600','900']){await select('rating',rating);assert.equal(await page.locator('#reference-content tbody tr').count(),rating==='900'?19:20);assert.match(await text(),/10,000 psi/);}
+  await category('papergaskets');await select('size','4');for(const rating of ['150','300','400','600','900']){await select('rating',rating);assert.equal(await page.locator('#reference-content tbody tr').count(),1);assert.match(await text(),/10,000 psi/);}
   await category('manuals');assert.equal(await page.locator('#reference-content tbody tr').count(),5);assert.match(await text(),/placeholders, not complete inline manuals/);
-  await category('stackups');assert.match(await text(),/450 matching source pages/);assert.equal(await page.locator('.stackup-card').count(),50);
+  await category('stackups');assert.match(await text(),/search all 450 source pages/);assert.equal(await page.locator('.stackup-card').count(),0);
   await select('source','HTP Stackups.pdf');assert.ok(await page.locator('.stackup-card').count()>0);
   await activate(page.locator('.stackup-card > summary').first());assert.match(await page.locator('.stackup-card a').first().getAttribute('href'),/^\.\.\/reference\/stackups\/HTP%20Stackups\.pdf#page=\d+$/);
   const preview=page.locator('.stackup-card').first().locator('[data-stackup-preview]');

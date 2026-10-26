@@ -25,7 +25,7 @@ export async function runPdfWorkerChecks({browser,pw,base,mobile,engine}){
     await ready();await activate(preview());
     await cancelPendingPdf(page,()=>activate(preview()),()=>category('glossary'),holder());assert.equal(await page.locator('.stackup-preview').count(),0);
     await choose();await ready();await activate(preview());
-    assert.ok(workers.every(url=>url===base+'/pre-alpha/vendor/pdf.worker.mjs?v=pre-alpha08'),'Only the isolated versioned pre-alpha worker is used');
+    assert.ok(workers.every(url=>url===base+'/pre-alpha/vendor/pdf.worker.mjs?v=pre-alpha09'),'Only the isolated versioned pre-alpha worker is used');
     await page.reload();await page.waitForSelector('#menu-toggle');
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),'{"keep":"pdf-fixture-draft"}');
     assert.deepEqual(writes,[]);assert.deepEqual(errors,[]);assert.deepEqual(workerErrors,[]);
