@@ -5,6 +5,7 @@ import {dirname,join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {runNextChecks} from './pre-alpha-next-ui.mjs';
 import {runInlineEtaChecks} from './pre-alpha-inline-eta-ui.mjs';
+import {runPdfWorkerChecks} from './pre-alpha-pdf-worker-ui.mjs';
 const require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
 const engine=process.env.TAPCALC_BROWSER||'chromium';
@@ -250,6 +251,7 @@ try{
     await context.close();
     await runNextChecks({browser,pw,base,mobile,engine});
     await runInlineEtaChecks({browser,pw,base,mobile,engine});
+    await runPdfWorkerChecks({browser,pw,base,mobile,engine});
     console.log('PASS Pre-Alpha '+engine+'/'+(mobile?'phone':'desktop')+': Firebase read, 3 operations, separate drafts, original preservation, themes, details and blank steps');
   }
 }finally{await browser?.close();server.kill();}

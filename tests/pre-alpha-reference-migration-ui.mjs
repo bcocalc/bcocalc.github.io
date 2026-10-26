@@ -1,5 +1,24 @@
 import assert from 'node:assert/strict';
 
+export async function cancelPendingPdf(page,open,cancel,holder){
+  // Hold a real fixture PDF request so cancellation definitely precedes load completion.
+  // Releasing the request never suppresses page errors; callers still assert errors=[].
+  let release,started,timer,responseTask;
+  const gate=new Promise(resolve=>{release=resolve;});
+  const seen=new Promise((resolve,reject)=>{started=resolve;timer=setTimeout(()=>reject(new Error('Fixture PDF request was not observed')),10000);});
+  const pattern='**/reference/stackups/*.pdf';
+  const hold=route=>{responseTask=gate.then(()=>route.continue());clearTimeout(timer);started();return responseTask;};
+  await page.route(pattern,hold,{times:1});
+  try{
+    await open();await seen;
+    assert.equal(await holder.getAttribute('data-preview-state'),'loading');
+    await cancel();
+  }finally{
+    clearTimeout(timer);release();
+    try{if(responseTask)await responseTask;}finally{await page.unroute(pattern,hold);}
+  }
+}
+
 // Called by the existing CSP-isolated pre-alpha browser suite for both engines,
 // touch and mouse, using disposable fixture storage only.
 export async function runReferenceMigrationChecks(page,activate){
@@ -17,12 +36,16 @@ export async function runReferenceMigrationChecks(page,activate){
   await select('source','HTP Stackups.pdf');assert.ok(await page.locator('.stackup-card').count()>0);
   await activate(page.locator('.stackup-card > summary').first());assert.match(await page.locator('.stackup-card a').first().getAttribute('href'),/^\.\.\/reference\/stackups\/HTP%20Stackups\.pdf#page=\d+$/);
   const preview=page.locator('.stackup-card').first().locator('[data-stackup-preview]');
+  const cancelLoading=cancel=>cancelPendingPdf(page,()=>activate(preview),cancel,page.locator('.stackup-card').first().locator('.stackup-preview'));
   await activate(preview);await page.locator('.stackup-preview[data-preview-state="ready"] canvas').waitFor({state:'visible',timeout:30000});
   assert.ok(await page.locator('.stackup-preview canvas').evaluate(canvas=>canvas.width>200&&canvas.height>200));
   assert.equal(await preview.getAttribute('aria-expanded'),'true');await activate(preview);assert.equal(await page.locator('.stackup-preview canvas').count(),0);
   // Cancel a repeat load before completion, then interrupt another load by navigation.
   await activate(preview);await activate(preview);assert.equal(await preview.getAttribute('aria-expanded'),'false');
   await activate(preview);await category('glossary');assert.equal(await page.locator('.stackup-preview').count(),0);
+  await category('stackups');await select('source','HTP Stackups.pdf');await activate(page.locator('.stackup-card > summary').first());
+  await cancelLoading(()=>activate(preview));assert.equal(await preview.getAttribute('aria-expanded'),'false');
+  await cancelLoading(()=>category('glossary'));assert.equal(await page.locator('.stackup-preview').count(),0);
   await category('stackups');await select('source','HTP Stackups.pdf');await activate(page.locator('.stackup-card > summary').first());
   await activate(page.locator('.stackup-card').first().locator('[data-stackup-preview]'));await page.locator('.stackup-preview[data-preview-state="ready"] canvas').waitFor({state:'visible',timeout:30000});
   await page.locator('#reference-query').fill('definitely-no-equipment-match');assert.match(await text(),/No matching source page/);

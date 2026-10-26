@@ -44,6 +44,8 @@ export async function runNextChecks({browser,pw,base,mobile,engine}) {
     assert.match(await page.locator('#term-tooltip').textContent(),/Measured distance.*Hot Tap/s);
     await page.keyboard.press('Escape');assert.equal(await page.locator('#term-tooltip').isVisible(),false);
     await page.locator('[data-field="ld"]').focus();await md.focus();assert.equal(await md.getAttribute('aria-describedby'),'term-tooltip');
+    // Let any stale 120ms focus-out callback fire: refocused help must stay open.
+    await page.waitForTimeout(220);assert.equal(await md.getAttribute('aria-describedby'),'term-tooltip');assert.ok(await page.locator('#term-tooltip').isVisible());
     await page.keyboard.press('Escape');
     await activate(page.locator('[data-help-field="ptc"]'));assert.match(await page.locator('#term-tooltip').textContent(),/pilot-to-cutter/i);
     await page.screenshot({path:join(tmpdir(),'pre-alpha-help-'+engine+(mobile?'-phone':'-desktop')+'.png')});

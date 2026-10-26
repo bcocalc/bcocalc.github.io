@@ -172,7 +172,8 @@ async function previewStackup(trigger,previews) {
   trigger.cancelPreview=stop;previews.add(stop);trigger.setAttribute('aria-expanded','true');trigger.textContent='Hide source page';holder.hidden=false;holder.dataset.previewState='loading';holder.textContent='Loading original source page…';
   try{
     const pdfjs=await import('../pdf.mjs');if(cancelled)return;
-    pdfjs.GlobalWorkerOptions.workerSrc=new URL('../pdf.worker.mjs',import.meta.url).href;
+    // Isolate the PDF.js cancellation backport from the shared live/dev worker.
+    pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha08',import.meta.url).href;
     loadingTask=pdfjs.getDocument({url:new URL(source.path,import.meta.url).href,isEvalSupported:false});pdf=await loadingTask.promise;if(cancelled)return;
     const page=await pdf.getPage(row.sourcePage);if(cancelled)return;
     const unit=page.getViewport({scale:1}),width=Math.max(240,holder.clientWidth||600),scale=Math.min(2,width/unit.width),viewport=page.getViewport({scale});

@@ -75,7 +75,9 @@ export function installHelp(root=document.body) {
   const tooltip=document.createElement('div');tooltip.id='term-tooltip';tooltip.role='tooltip';tooltip.className='term-tooltip';tooltip.hidden=true;tooltip.dataset.noTerms='true';document.body.append(tooltip);
   let current=null,pinned=false,timer;
   const target=event=>event.target.closest?.('[data-help-term],[data-help-field],[data-term-tip]');
-  function hide(){tooltip.hidden=true;current?.removeAttribute('aria-describedby');current=null;pinned=false;}
+  function clearHideTimer(){clearTimeout(timer);timer=undefined;}
+  function scheduleHide(callback,delay){clearHideTimer();timer=setTimeout(()=>{timer=undefined;callback();},delay);}
+  function hide(){clearHideTimer();tooltip.hidden=true;current?.removeAttribute('aria-describedby');current=null;pinned=false;}
   function position(){
     if(!current?.isConnected){hide();return;}
     const r=current.getBoundingClientRect(),width=Math.min(330,innerWidth-24);
@@ -84,7 +86,7 @@ export function installHelp(root=document.body) {
     tooltip.style.top=Math.max(8,r.bottom+8+height<innerHeight?r.bottom+8:r.top-height-8)+'px';
   }
   function show(element){
-    clearTimeout(timer);if(current!==element){current?.removeAttribute('aria-describedby');pinned=false;}current=element;
+    clearHideTimer();if(current!==element){current?.removeAttribute('aria-describedby');pinned=false;}current=element;
     const context=element.closest('[data-help-context]')?.dataset.helpContext||'';
     const info=element.dataset.helpField?{full:element.getAttribute('aria-label')||'Measurement help',meaning:FIELD_HELP[element.dataset.helpField]||'Review the selected stage and equipment reference.'}:termHelp(element.dataset.helpTerm||element.dataset.termTip,context);
     tooltip.textContent=info.full+'. '+info.meaning;
@@ -120,10 +122,10 @@ export function installHelp(root=document.body) {
   let queued=false;const observer=new MutationObserver(()=>{if(!queued){queued=true;queueMicrotask(()=>{queued=false;decorate();});}});
   observer.observe(root,{childList:true,subtree:true});decorate();
   document.addEventListener('pointerover',event=>{const el=target(event);if(el)show(el);});
-  document.addEventListener('pointerout',event=>{if(target(event)&&!pinned)timer=setTimeout(()=>{if(!current?.matches(':focus')&&!tooltip.matches(':hover'))hide();},180);});
-  tooltip.addEventListener('pointerover',()=>clearTimeout(timer));tooltip.addEventListener('pointerout',()=>{if(!pinned&&!current?.matches(':focus'))hide();});
+  document.addEventListener('pointerout',event=>{if(target(event)&&!pinned)scheduleHide(()=>{if(!current?.matches(':focus')&&!tooltip.matches(':hover'))hide();},180);});
+  tooltip.addEventListener('pointerover',clearHideTimer);tooltip.addEventListener('pointerout',()=>{if(!pinned&&!current?.matches(':focus'))hide();});
   document.addEventListener('focusin',event=>{const el=target(event);if(el)show(el);});
-  document.addEventListener('focusout',()=>{if(!pinned)timer=setTimeout(hide,120);});
+  document.addEventListener('focusout',()=>{if(!pinned)scheduleHide(hide,120);});
   document.addEventListener('click',event=>{
     const el=target(event);
     if(el?.matches('[data-help-term],[data-help-field]')){event.preventDefault();if(current===el&&pinned)hide();else{show(el);pinned=true;}}

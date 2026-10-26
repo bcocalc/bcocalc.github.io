@@ -22,7 +22,10 @@ const modules = {
 const server = createServer((request, response) => {
   const url = new URL(request.url, 'http://localhost');
   const path = decodeURIComponent(url.pathname);
-  response.setHeader('Content-Security-Policy', "default-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; worker-src 'none'; object-src 'none'");
+  // Additive PDF-worker fixture only: same-origin workers, never external traffic.
+  // All ordinary tests retain worker-src 'none'; browser contexts still block service workers.
+  const workerPolicy=path==='/pre-alpha/'&&url.searchParams.get('fixture')==='pdf-worker'?"'self'":"'none'";
+  response.setHeader('Content-Security-Policy', "default-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; worker-src "+workerPolicy+"; object-src 'none'");
   response.setHeader('Cache-Control', 'no-store');
   if (path.startsWith('/v1/')) {
     response.setHeader('Content-Type', 'application/json');
@@ -85,3 +88,4 @@ const server = createServer((request, response) => {
   } catch { response.writeHead(404); response.end(); }
 });
 server.listen(0, '127.0.0.1', () => console.log('Isolated preview: http://127.0.0.1:' + server.address().port + '/measurement-card.html'));
+

@@ -1,0 +1,14 @@
+{
+  "library": "PDF.js",
+  "version": "4.10.38",
+  "license": "Apache-2.0; original license notice retained in pdf.worker.mjs",
+  "source_repository": "bcocalc/bcocalc.github.io",
+  "source_commit": "43cf9c8f8dea7f39584c72d7255a95bdca15eaf6",
+  "source_path": "pdf.worker.mjs",
+  "source_git_blob_sha": "92eba689bfddc9b642260a0fd2763e4f85f3ab3c",
+  "shared_api_git_blob_sha": "0d201af6b5ffdeaedd0ed5b1b12050e51335e3ee",
+  "upstream_fix": "https://github.com/mozilla/pdf.js/commit/58ac273f1f36b3d01b21f2a07b19f5884eca1b2a",
+  "backport": "Only WorkerMessageHandler.onFailure changes: return when terminated instead of throwing ensureNotTerminated again.",
+  "scope": "Pre-alpha preview worker only. Shared root/live API and worker remain unchanged. Original source-map reference is retained; no source map is bundled.",
+  "offline": "As before, original PDFs and previews require a connection. This worker does not expand the pre-alpha offline cache."
+}

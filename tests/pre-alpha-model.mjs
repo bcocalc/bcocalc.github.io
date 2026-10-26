@@ -7,6 +7,8 @@ import {stageFor,rememberStage,migratePipeSource,pipeSourceWarning} from '../pre
 import {operationWarnings,reviewSections} from '../pre-alpha/review.mjs';
 import './pre-alpha-next-model.mjs';
 import './pre-alpha-inline-eta.mjs';
+import './pre-alpha-pdf-cancellation.mjs';
+import './pre-alpha-help-timers.mjs';
 import './pre-alpha-reference-supplement.mjs';
 import './pre-alpha-reference-helpers.mjs';
 import './pre-alpha-reference-migration.mjs';
