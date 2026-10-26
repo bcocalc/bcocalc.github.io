@@ -77,6 +77,7 @@ try{
     await page.locator('[data-field="bcoSchedule"]').selectOption('custom');
     await page.reload();
     await page.waitForSelector('#job-title');
+    assert.equal(await page.locator('#step-title').textContent(),'Pipe & cutter','Reload resumes the selected step');
     await activate(page.locator('[data-step="pipe"]'));
     assert.equal(await page.locator('[data-field="bcoPipeID"]').inputValue(),'15.5');
     assert.equal(await page.locator('[data-field="bcoSchedule"]').inputValue(),'custom');
@@ -93,6 +94,12 @@ try{
     await activate(page.locator('[data-step="stop"]'));
     assert.equal(await page.locator('[data-field="lsMd"]').inputValue(),'24','Keep distinct legacy line-stop MD');
     assert.match(await page.locator('#ls-md-hint').textContent(),/Manual MD/);
+    await activate(page.locator('[data-operation="stop-1"]'));
+    assert.equal(await page.locator('#step-title').textContent(),'Hot tap');
+    await activate(page.locator('[data-operation="stop-2"]'));
+    assert.equal(await page.locator('#step-title').textContent(),'Line stop','Each operation resumes its own last step');
+    await page.reload();await page.waitForSelector('#job-title');
+    assert.equal(await page.locator('#step-title').textContent(),'Line stop');
     await activate(page.locator('[data-step="tap"]'));
     for(const dark of [false,true]){
       if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
@@ -126,8 +133,36 @@ try{
     await page.locator('[data-field="cpLiManualToggle"]').selectOption('true');
     await page.locator('[data-field="cpLiManual"]').fill('99');
     assert.match(await page.locator('.big-value').textContent(),/99.0000/);
+    await activate(page.locator('[data-step="review"]'));
+    assert.match(await page.locator('[data-review-stage="plug"] .review-results').textContent(),/99.0000/);
+    assert.ok(await page.locator('#review-checks [data-warning-code="manual-override"]').isVisible());
+    await activate(page.locator('[data-review-stage="plug"] header button'));
     await page.locator('[data-field="cpLiManualToggle"]').selectOption('false');
     assert.match(await page.locator('.big-value').textContent(),/29.0000/);
+    await activate(page.locator('[data-step="review"]'));
+    assert.deepEqual(await page.locator('.review-stage').evaluateAll(nodes=>nodes.map(node=>node.dataset.reviewStage)),['pipe','tap','plug']);
+    assert.match(await page.locator('[data-review-stage="plug"] .review-results').textContent(),/29.0000/);
+    assert.doesNotMatch(await page.locator('[data-review-stage="plug"] .review-results').textContent(),/99/);
+    assert.equal(await page.locator('#review-checks [data-warning-code="manual-override"]').count(),0);
+    assert.doesNotMatch(await page.locator('#results').innerText(),/lineStopMdUserEdited|cpLiManualToggle|Lower-in mode false/);
+    assert.equal(await page.locator('.review-inactive[open]').count(),0);
+    await activate(page.locator('.review-inactive summary'));
+    assert.match(await page.locator('.review-inactive').innerText(),/99.0000/);
+    await activate(page.locator('.review-inactive summary'));
+    await page.reload();await page.waitForSelector('#job-title');
+    assert.equal(await page.locator('#step-title').textContent(),'Review');
+    await activate(page.locator('#next'));
+    await activate(page.locator('[data-source="experimental"]'));
+    await activate(page.locator('.job-card').first());
+    assert.equal(await page.locator('#step-title').textContent(),'Review','Library reopening preserves the operation position');
+    for(const dark of [false,true]){
+      if(await page.locator('body').evaluate(el=>el.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
+      if(mobile)await page.setViewportSize({width:320,height:700});
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+      await page.screenshot({path:join(tmpdir(),'pre-alpha-review-'+engine+(mobile?'-phone':'-desktop')+(dark?'-dark':'-light')+'.png'),fullPage:true});
+    }
+    if(mobile)await page.setViewportSize({width:390,height:664});
+    await activate(page.locator('[data-review-stage="plug"] header button'));
     const addedId=await page.locator('#operations [aria-current]').getAttribute('data-operation');
     await activate(page.locator('#delete-operation'));
     assert.match(await page.locator('#delete-operation-description').textContent(),/Tap & Complete/);
@@ -198,7 +233,8 @@ try{
       assert.ok(contrast.every(value=>value>=4.5),'Readable action, selection, warning and header colors: '+contrast);
     }
     await activate(page.locator('[data-step="review"]'));
-    assert.match(await page.locator('#results .warning').textContent(),/PTC exceeds/);
+    assert.match(await page.locator('#results [data-warning-code="ptc-length"]').textContent(),/PTC exceeds/);
+    assert.ok(await page.locator('#review-checks [data-warning-code="missing-inputs"]').count()>0);
     await page.reload();await page.waitForSelector('#job-title');
     await activate(page.locator('[data-step="stop"]'));
     assert.equal(await page.locator('[data-field="lsMd"]').inputValue(),'12');

@@ -3,6 +3,8 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {normalizeJob,operationType,chooseOperationType,deleteOperation,MACHINE_OPTIONS,pipeSizes,pipeSchedules,choosePipeSelection,pipeOD,stepsFor,resultsFor,geometry,getDeviceJobs,STORAGE_KEY,number,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings} from '../pre-alpha/model.mjs';
 import {PIPE_DATA,TRUE_OD} from '../pre-alpha/pipe-data.mjs';
+import {stageFor,rememberStage} from '../pre-alpha/model.mjs';
+import {operationWarnings,reviewSections} from '../pre-alpha/review.mjs';
 const operations=[1,2,3].map(n=>({id:'ls-'+n,label:'Line Stop '+n,operationType:'Line Stop',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'16.0',bcoPipeID:'15.5',bcoCutterOD:'15.0625',md:String(n*10),ld:'0',ptc:'4',start:'1',lsMd:String(n*12),lsLd:'0',cpStart:String(n),cpJbf:'0',cpLd:'0',cpPt:'0',unknownFutureField:{keep:true}}}));
 const source={id:'old-job',record:{meta:{title:'Three stops'},job:{client:'Customer',location:'Site'},state:{md:'999'},jobBundle:{selectedOperationId:'ls-2',sharedState:{jobDescription:'Three line stops'},operations}}};
 const original=JSON.stringify(source);
@@ -133,4 +135,70 @@ warningOp.state.ptc='3';warningOp.state.bcoPipeID='';
 assert.equal(hotTapWarnings(warningOp).length,0,'Missing pipe geometry is not a length warning');
 warningOp.state.bcoPipeID='4.026';warningOp.operationType='Completion Plug';
 assert.equal(hotTapWarnings(warningOp).length,0,'No unused Hot Tap warning in plug-only workflow');
-console.log('PASS Pre-Alpha: imports, preservation, dimensions, independent MD carryover and PTC warning');
+const remembered=normalizeJob(source);
+rememberStage(remembered.operations[0],'stop');
+rememberStage(remembered.operations[1],'plug');
+assert.equal(stageFor(JSON.parse(JSON.stringify(remembered)).operations[0]),'stop');
+assert.equal(stageFor(remembered.operations[1]),'plug');
+assert.equal(stageFor(remembered.operations[2]),'setup');
+assert.equal(rememberStage(remembered.operations[0],'nonsense'),false);
+chooseOperationType(remembered,remembered.operations[0],'Hot Tap');
+assert.equal(stageFor(remembered.operations[0]),'setup','A removed stage falls back safely');
+assert.equal(stageFor(undefined),'setup');
+assert.equal(JSON.stringify(source),original);
+const reviewOp={operationType:'Line Stop',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6',bcoPipeID:'6',bcoCutterOD:'4',bcoCutterID:'3.5',md:'10',ld:'0',ptc:'1',start:'0',mt:'52',lsMd:'10',lsLd:'0',lsPod:'8',lsTravel:'20',lsMachineTravel:'19',cpStart:'20',cpJbf:'1.25',cpLd:'0.5',cpPt:'2.75',cpLiManual:'99',cpLiManualToggle:false,lineStopMdUserEdited:true}};
+const reviewBefore=JSON.stringify(reviewOp);
+const sections=reviewSections(reviewOp);
+assert.deepEqual(sections.map(section=>section.stage),['pipe','tap','stop','plug']);
+assert.equal(sections.find(section=>section.stage==='plug').results[0][1],24.5);
+assert.equal(sections.find(section=>section.stage==='plug').retained[0].value,'99');
+assert.ok(!sections.flatMap(section=>section.inputs).some(input=>input.key==='lineStopMdUserEdited'));
+assert.equal(JSON.stringify(reviewOp),reviewBefore,'Summaries and checks must not change saved inputs');
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.stage==='stop'&&warning.code==='machine-travel'));
+reviewOp.state.lsMachineTravel='20';
+assert.ok(!operationWarnings(reviewOp).some(warning=>warning.stage==='stop'&&warning.code==='machine-travel'),'Travel equality keeps the existing strict comparison');
+reviewOp.state.lsTravel='';reviewOp.state.lsMachineTravel='';
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.stage==='stop'&&warning.kind==='info'));
+assert.ok(!operationWarnings(reviewOp).some(warning=>warning.stage==='stop'&&warning.kind==='missing'),'Optional travel does not become required');
+reviewOp.state.lsPod='invalid';
+assert.ok(Number.isNaN(resultsFor(reviewOp,'stop')[0][1]),'Malformed explicit LS O.D. must not silently use the pipe setup');
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.code==='invalid-lsPod'));
+reviewOp.state.lsPod='';
+assert.equal(resultsFor(reviewOp,'stop')[0][1],16.3125);
+reviewOp.state.cpLiManualToggle=true;
+assert.equal(reviewSections(reviewOp).find(section=>section.stage==='plug').results[0][1],99);
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.stage==='plug'&&warning.code==='manual-override'));
+reviewOp.state.cpStart='';reviewOp.state.cpJbf='invalid';
+assert.ok(!operationWarnings(reviewOp).some(warning=>warning.stage==='plug'&&warning.kind==='missing'),'Manual mode does not require inactive auto inputs');
+assert.ok(!operationWarnings(reviewOp).some(warning=>warning.code==='invalid-cpJbf'));
+reviewOp.state.cpLiManual='-1';
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.stage==='plug'&&warning.code==='negative-lower-in'));
+reviewOp.state.cpLiManual='';
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.stage==='plug'&&warning.kind==='missing'));
+reviewOp.state.bcoPipeID='7';
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.code==='pipe-id'));
+reviewOp.state.bcoPipeID='6';reviewOp.state.bcoCutterOD='7';
+assert.ok(operationWarnings(reviewOp).some(warning=>warning.code==='cutter-od'));
+assert.ok(operationWarnings({operationType:'Hot Tap',state:{}}).some(warning=>warning.stage==='pipe'&&warning.kind==='missing'));
+assert.deepEqual(operationWarnings({operationType:'Re Stop',state:{ptc:'999'}}).map(warning=>warning.code),['unsupported']);
+const blankZero={operationType:'Tap & Complete',state:{...reviewOp.state,cpLiManualToggle:false,cpStart:'0',cpJbf:'0',cpLd:'0',cpPt:'0'}};
+assert.equal(resultsFor(blankZero,'plug')[0][1],0);
+assert.ok(!operationWarnings(blankZero).some(warning=>warning.stage==='plug'&&warning.kind==='missing'));
+const checked=JSON.parse(reviewBefore);
+checked.state.lsMachineTravel='20';
+assert.equal(operationWarnings(checked).length,0,'Complete valid setup has no invented checks or inactive-override warning');
+for(const [stage,patch,code] of [
+  ['tap',{mt:'1'},'machine-travel'],
+  ['tap',{md:'1',ld:'5',ldSign:'-'},'negative-lower-in'],
+  ['stop',{lsMd:'1',lsLd:'30',lsLdSign:'-'},'negative-lower-in'],
+  ['plug',{cpLd:'-40'},'negative-lower-in'],
+  ['stop',{lsTravel:'invalid'},'invalid-lsTravel'],
+  ['tap',{htActualPop:'999'},'actual-pop-retained']
+]){
+  const candidate={...checked,state:{...checked.state,...patch}};
+  assert.ok(operationWarnings(candidate).some(warning=>warning.stage===stage&&warning.code===code),stage+' '+code);
+}
+const manualStop={...checked,state:{...checked.state,lsLiManualToggle:true,lsLiManual:'0',lsPod:'-8',lsMd:'invalid'}};
+assert.equal(resultsFor(manualStop,'stop')[0][1],0);
+assert.ok(!operationWarnings(manualStop).some(warning=>warning.stage==='stop'&&['missing-inputs','invalid-lsMd','invalid-pipe-od','negative-lower-in'].includes(warning.code)),'Unused automatic inputs must not override a valid manual result');
+console.log('PASS Pre-Alpha: imports, preservation, dimensions, MD carryover, step memory, grouped Review and active-stage warnings');

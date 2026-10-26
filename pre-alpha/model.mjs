@@ -1,5 +1,5 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha04';
-export const BUILD = 'pre-alpha04';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha05';
+export const BUILD = 'pre-alpha05';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
@@ -178,7 +178,7 @@ export function resultsFor(operation, stage) {
     return [['Pilot on pipe',pop],['Cutter on pipe',cop],['Rod BCO',cop+g.bco],['Total travel',li+n('ptc')+g.bco],['Lower in',li]];
   }
   if (stage === 'stop') {
-    const pod=Number.isFinite(n('lsPod')) ? n('lsPod') : g.od;
+    const pod=String(s.lsPod ?? '').trim() ? n('lsPod') : g.od;
     const li = s.lsLiManualToggle === true || s.lsLiManualToggle === 'true'
       ? n('lsLiManual') : n('lsMd') + signed('lsLd','lsLdSign') + pod - g.wall;
     const travel = n('lsTravel'), machine = n('lsMachineTravel');
@@ -186,6 +186,16 @@ export function resultsFor(operation, stage) {
   }
   if (stage === 'plug') return [['Lower in',s.cpLiManualToggle === true || s.cpLiManualToggle === 'true' ? n('cpLiManual') : n('cpStart')+n('cpJbf')+n('cpLd')+n('cpPt')]];
   return [];
+}
+export function stageFor(operation) {
+  if(!operation)return 'setup';
+  const steps=stepsFor(operation);
+  return steps.includes(operation.workspaceStage) ? operation.workspaceStage : steps[0];
+}
+export function rememberStage(operation,stage) {
+  if(!operation || !stepsFor(operation).includes(stage)) return false;
+  operation.workspaceStage=stage;
+  return true;
 }
 export function lineStopMdIsManual(state) {
   if ([true,'true'].includes(state.lineStopMdUserEdited)) return true;

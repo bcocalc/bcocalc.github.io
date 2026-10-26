@@ -1,4 +1,5 @@
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha04';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha05';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha05';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -9,7 +10,7 @@ const stages = {
   stop:['Line stop','Use the line stop measurements for this operation.'],
   plug:['Completion plug','Enter the plug measurements when you are ready.'],
   saved:['Saved measurements','This equipment-specific setup is available for review.'],
-  review:['Review','All the measurements for this operation, together.']
+  review:['Review','Active results and checks for this operation. Open a stage to review its setup.']
 };
 const fields = {
   setup:[['operationType','Operation','operation'],['machineType','Machine','machine']],
@@ -95,7 +96,8 @@ function renderWorkspace() {
   $('measurement-workspace').hidden=!op;
   if(!op)return;
   const steps=stepsFor(op);
-  if(!steps.includes(stage))stage=steps[0];
+  stage=stageFor(op);
+  if(op.workspaceStage!==stage){rememberStage(op,stage);persist();}
   if(stage==='stop'&&initializeLineStopMd(op))persist();
   $('steps').innerHTML=steps.map((key,i)=>'<button data-step="'+key+'"'+(key===stage?' aria-current="step"':'')+'><span class="step-number">'+(i+1)+'</span>'+escape(stages[key][0])+'</button>').join('');
   $('step-title').textContent=stages[stage][0];
@@ -113,12 +115,40 @@ function renderWorkspace() {
 }
 function reviewMarkup(state,onlyOther=false) {
   const labels=Object.fromEntries(Object.values(fields).flat().map(([key,label])=>[key,label]));
-  const rows=Object.entries(state).filter(([key,value])=>value!==''&&value!=null&&typeof value!=='object'&&(!onlyOther||!(key in labels)));
+  const internal=new Set(['lineStopMdUserEdited','htFieldBasis','activeMode','operationType','workflowType']);
+  const rows=Object.entries(state).filter(([key,value])=>!internal.has(key)&&value!==''&&value!=null&&typeof value!=='object'&&(!onlyOther||!(key in labels)));
   return '<dl class="review-list">'+rows.map(([key,value])=>'<div><dt>'+escape(labels[key]||key)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>';
+}
+function goToStage(next) {
+  if(!rememberStage(operation(),next))return;
+  stage=next;persist();renderWorkspace();
+}
+function warningMarkup(warnings) {
+  return warnings.map(warning=>'<p class="warning" data-warning-code="'+escape(warning.code)+'">'+escape(warning.message)+'</p>').join('');
+}
+function reviewInputMarkup(rows) {
+  return '<dl class="review-list">'+rows.map(({label,value,note})=>{
+    const numeric=number(value);
+    const display=Number.isFinite(numeric)?format(numeric)+' in':Number.isNaN(value)||value==null||value===''?'Not entered':String(value)+' (invalid)';
+    return '<div><dt>'+escape(label)+(note?'<small>'+escape(note)+'</small>':'')+'</dt><dd>'+escape(display)+'</dd></div>';
+  }).join('')+'</dl>';
+}
+function operationReviewMarkup(op) {
+  const checks=operationWarnings(op),attention=checks.filter(check=>check.kind!=='info'),notes=checks.filter(check=>check.kind==='info');
+  const checklist='<section id="review-checks" aria-labelledby="review-checks-title"><h3 id="review-checks-title">'+(attention.length?attention.length+' check'+(attention.length===1?'':'s')+' to review':'Automatic checks')+'</h3>'+
+    (attention.length?'<ul class="review-warnings">'+attention.map(check=>'<li class="warning" data-warning-code="'+escape(check.code)+'"><strong>'+escape(STAGE_TITLES[check.stage]||check.stage)+'</strong><span>'+escape(check.message)+'</span><button class="quiet" data-review-edit="'+escape(check.stage)+'">Review stage</button></li>').join('')+'</ul>':'<p class="result-hint">No automatic warnings found. This is not a field verification.</p>')+
+    (notes.length?'<ul class="review-notes">'+notes.map(note=>'<li><strong>'+escape(STAGE_TITLES[note.stage])+':</strong> '+escape(note.message)+'</li>').join('')+'</ul>':'')+'</section>';
+  const sections=reviewSections(op).map(section=>{
+    const results='<dl class="review-results">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';
+    return '<section class="review-stage" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode">'+escape(section.mode)+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+
+      '<details class="review-inputs"><summary>'+(section.override?'Retained setup measurements (not used for lower in)':'Setup measurements')+'</summary>'+reviewInputMarkup(section.inputs)+'</details>'+
+      (section.retained.length?'<details class="review-inactive"><summary>Inactive saved override (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+'</section>';
+  }).join('');
+  return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections;
 }
 function renderResults() {
   const op=operation(); if(!op)return;
-  const results=resultsFor(op,stage),g=geometry(op.state);
+  const results=resultsFor(op,stage);
   if(results.length) {
     const [main,...rest]=results;
     $('results').innerHTML='<div class="result-panel"><p class="eyebrow">'+escape(main[0])+'</p><strong class="big-value">'+format(main[1])+' <small>in</small></strong><div class="result-subgrid">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+format(value)+' <small>in</small></strong></div>').join('')+'</div></div>';
@@ -129,17 +159,17 @@ function renderResults() {
     if(stage==='pipe'&&op.state.bcoPipeOD&&!String(op.state.bcoPipeID??'').trim())$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Choose chart dimensions or enter a measured Pipe I.D. Unlisted dimensions are left blank.</p>');
 
     if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
-    if((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle)))$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Manual lower-in override is active. Select Calculated in Lower-in mode to use the setup measurements.</p>');
+
     if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are still being connected in Pre-Alpha.</p>'+reviewMarkup(op.state);
   } else if(stage==='setup') {
     const path=operationType(op)==='Line Stop'?'Hot tap, line stop, then completion plug.':operationType(op)==='Tap & Complete'?'Hot tap, then completion plug.':operationType(op)==='Hot Tap'?'Hot tap only.':'Saved '+operationType(op)+' operation.';
     $('results').innerHTML='<p class="result-hint">'+escape(path)+' '+active.operations.length+' operation'+(active.operations.length===1?'':'s')+' in this job.</p>';
   } else {
-    $('results').innerHTML=reviewMarkup(op.state);
+    $('results').innerHTML=stage==='review'?operationReviewMarkup(op):reviewMarkup(op.state);
     if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are still being connected in this design study.</p>');
   }
   const warnings=hotTapWarnings(op);
-  if(stage==='tap'||stage==='review')$('results').insertAdjacentHTML('beforeend',warnings.map(warning=>'<p class="warning" role="status">'+escape(warning.message)+'</p>').join(''));
+  if(stage!=='review')$('results').insertAdjacentHTML('beforeend',warningMarkup(operationWarnings(op).filter(warning=>warning.stage===stage&&!['info','missing'].includes(warning.kind))));
   const ptcWarning=$('ptc-warning'),ptcInput=$('data-fieldptc');
   if(ptcWarning&&ptcInput){
     const warning=warnings.find(item=>item.field==='ptc');
@@ -152,7 +182,7 @@ function renderResults() {
 }
 function openJob(job) {
   const existing=jobs.find(item=>item.sourceId===job.sourceId&&item.source===job.source);
-  active=existing||structuredClone(job);stage='setup';
+  active=existing||structuredClone(job);stage=stageFor(operation());
   if(!existing&&jobs.some(item=>item.id===active.id))active.id=crypto.randomUUID();
   persist();renderWorkspace();page('workspace');
 }
@@ -203,8 +233,8 @@ document.addEventListener('click',event=>{
     $('delete-operation-dialog').showModal();
   }
   if(button.dataset.close)$(button.dataset.close).close();
-  if(button.dataset.operation){active.selectedOperationId=button.dataset.operation;stage='setup';persist();renderWorkspace();}
-  if(button.dataset.step){stage=button.dataset.step;renderWorkspace();}
+  if(button.dataset.operation){active.selectedOperationId=button.dataset.operation;persist();renderWorkspace();}
+  if(button.dataset.step||button.dataset.reviewEdit)goToStage(button.dataset.step||button.dataset.reviewEdit);
   if(button.dataset.addType) {
     const type=button.dataset.addType,id=crypto.randomUUID();
     active.operations.push({id,label:type+' '+(active.operations.filter(op=>operationType(op)===type).length+1),operationType:type,state:{bcoPipeMaterial:'CarbonSteel'}});
@@ -243,8 +273,8 @@ $('delete-operation-form').addEventListener('submit',event=>{
   notify('Operation deleted from this working copy.');
 });
 $('delete-operation-dialog').addEventListener('close',()=>pendingDeleteId=null);
-$('back').addEventListener('click',()=>{const steps=stepsFor(operation());stage=steps[Math.max(0,steps.indexOf(stage)-1)];renderWorkspace();});
-$('next').addEventListener('click',()=>{const steps=stepsFor(operation());const index=steps.indexOf(stage);if(index===steps.length-1)page('library');else{stage=steps[index+1];renderWorkspace();}});
+$('back').addEventListener('click',()=>{const steps=stepsFor(operation());goToStage(steps[Math.max(0,steps.indexOf(stage)-1)]);});
+$('next').addEventListener('click',()=>{const steps=stepsFor(operation());const index=steps.indexOf(stage);if(index===steps.length-1)page('library');else goToStage(steps[index+1]);});
 $('search').addEventListener('input',()=>{visibleLimit=30;renderLibrary();});
 $('more').addEventListener('click',()=>{visibleLimit+=30;renderLibrary();});
 $('refresh').addEventListener('click',refreshShared);
