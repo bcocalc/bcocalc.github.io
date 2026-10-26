@@ -3,6 +3,7 @@ import {spawn} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {dirname,join} from 'node:path';
 import {tmpdir} from 'node:os';
+import {runNextChecks} from './pre-alpha-next-ui.mjs';
 const require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
 const engine=process.env.TAPCALC_BROWSER||'chromium';
@@ -28,7 +29,7 @@ try{
     await page.waitForFunction(()=>document.getElementById('connection').textContent.includes('Connected'));
     await page.screenshot({path:join(tmpdir(),'pre-alpha-'+engine+(mobile?'-phone':'-desktop')+'-welcome.png')});
     const activate=locator=>mobile?locator.tap():locator.click();
-    await activate(page.locator('[data-page="library"]'));
+    await activate(page.locator('.main-nav [data-page="library"]'));
     assert.equal(await page.locator('.job-card').count(),1);
     await activate(page.locator('.job-card'));
     assert.equal(await page.locator('#operations button').count(),3);
@@ -140,7 +141,7 @@ try{
     await page.locator('[data-field="cpLiManualToggle"]').selectOption('false');
     assert.match(await page.locator('.big-value').textContent(),/29.0000/);
     await activate(page.locator('[data-step="review"]'));
-    assert.deepEqual(await page.locator('.review-stage').evaluateAll(nodes=>nodes.map(node=>node.dataset.reviewStage)),['pipe','tap','plug']);
+    assert.deepEqual(await page.locator('.review-stage[data-review-stage]').evaluateAll(nodes=>nodes.map(node=>node.dataset.reviewStage)),['pipe','tap','plug']);
     assert.match(await page.locator('[data-review-stage="plug"] .review-results').textContent(),/29.0000/);
     assert.doesNotMatch(await page.locator('[data-review-stage="plug"] .review-results').textContent(),/99/);
     assert.equal(await page.locator('#review-checks [data-warning-code="manual-override"]').count(),0);
@@ -246,6 +247,7 @@ try{
     assert.deepEqual(writes,[]);
     assert.deepEqual(errors,[]);
     await context.close();
+    await runNextChecks({browser,pw,base,mobile,engine});
     console.log('PASS Pre-Alpha '+engine+'/'+(mobile?'phone':'desktop')+': Firebase read, 3 operations, separate drafts, original preservation, themes, details and blank steps');
   }
 }finally{await browser?.close();server.kill();}

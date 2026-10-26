@@ -1,5 +1,5 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha05';
-export const BUILD = 'pre-alpha05';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha06';
+export const BUILD = 'pre-alpha06';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
@@ -178,7 +178,7 @@ export function resultsFor(operation, stage) {
     return [['Pilot on pipe',pop],['Cutter on pipe',cop],['Rod BCO',cop+g.bco],['Total travel',li+n('ptc')+g.bco],['Lower in',li]];
   }
   if (stage === 'stop') {
-    const pod=String(s.lsPod ?? '').trim() ? n('lsPod') : g.od;
+    const pod=g.od;
     const li = s.lsLiManualToggle === true || s.lsLiManualToggle === 'true'
       ? n('lsLiManual') : n('lsMd') + signed('lsLd','lsLdSign') + pod - g.wall;
     const travel = n('lsTravel'), machine = n('lsMachineTravel');
@@ -186,6 +186,30 @@ export function resultsFor(operation, stage) {
   }
   if (stage === 'plug') return [['Lower in',s.cpLiManualToggle === true || s.cpLiManualToggle === 'true' ? n('cpLiManual') : n('cpStart')+n('cpJbf')+n('cpLd')+n('cpPt')]];
   return [];
+}
+export function migratePipeSource(operation) {
+  const state=operation.state;
+  if(!Object.hasOwn(state,'lsPod'))return false;
+  const value=state.lsPod;
+  if(String(value ?? '').trim()) {
+    const g=geometry(state),old=number(value);
+    const prior=number(state.lsMd)+number(state.lsLd)*(state.lsLdSign==='-'?-1:1)+old-g.wall;
+    const current=number(state.lsMd)+number(state.lsLd)*(state.lsLdSign==='-'?-1:1)+g.od-g.wall;
+    operation.retiredLineStopOD={value,pipeODAtMigration:Number.isFinite(g.od)?g.od:null,
+      previousAutomaticLI:Number.isFinite(prior)?prior:null,newAutomaticLI:Number.isFinite(current)?current:null,
+      requiresReview:!Number.isFinite(old)||!Number.isFinite(g.od)||old!==g.od};
+  }
+  // Only the experimental working copy changes; job.original stays untouched.
+  delete state.lsPod;
+  return true;
+}
+export function pipeSourceWarning(operation) {
+  const old=operation.retiredLineStopOD;
+  if(!old?.requiresReview)return null;
+  const od=pipeOD(operation.state),display=value=>Number.isFinite(value)?value.toFixed(4)+' in':'not available';
+  const comparison=old.previousAutomaticLI!=null&&old.newAutomaticLI!=null&&old.previousAutomaticLI!==old.newAutomaticLI
+    ? ' At migration, automatic lower in changed from '+display(old.previousAutomaticLI)+' to '+display(old.newAutomaticLI)+'.' : '';
+  return {stage:'stop',code:'pipe-source-change',kind:'warning',message:'Saved Line Stop O.D. '+String(old.value)+' is archived and no longer used. Pipe & cutter O.D. is '+display(od)+'.'+comparison+' The original saved record is unchanged.'};
 }
 export function stageFor(operation) {
   if(!operation)return 'setup';

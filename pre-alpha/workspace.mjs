@@ -1,5 +1,7 @@
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha05';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha05';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha06';
+import {initAuxiliary,etaSummary} from './auxiliary.mjs?v=pre-alpha06';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha06';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha06';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -16,14 +18,16 @@ const fields = {
   setup:[['operationType','Operation','operation'],['machineType','Machine','machine']],
   pipe:[['bcoPipeMaterial','Pipe material','material'],['bcoPipeOD','Nominal pipe size','pipe-size'],['bcoSchedule','Schedule','schedule'],['preAlphaPipeOD','Actual pipe O.D.','text','Filled from size; editable'],['bcoPipeID','Pipe I.D.','text','Editable for measured dimensions'],['bcoCutterOD','Cutter O.D.','text'],['bcoCutterID','Cutter I.D.','text','Optional, for coupon free']],
   tap:[['md','Measured distance (MD)','text'],['ld','Lost distance (LD)','text'],['ldSign','LD direction','sign'],['ptc','Pilot to cutter (PTC)','text'],['start','Rod start','text'],['mt','Machine travel','text']],
-  stop:[['lsMd','Measured distance (MD)','text'],['lsLd','Lost distance (LD)','text'],['lsLdSign','LD direction','sign'],['lsPod','Pipe O.D. at line stop','text','Blank uses pipe setup'],['lsTravel','Line stop travel','text','Optional check'],['lsMachineTravel','Machine travel','text','Optional check'],['lsLiManualToggle','Lower-in mode','toggle'],['lsLiManual','Manual lower in','text']],
-  plug:[['cpStart','Start','text'],['cpJbf','Jack bolt flange (JBF)','text'],['cpLd','Lost distance (LD)','text'],['cpPt','Plug thickness (PT)','text'],['cpLiManualToggle','Lower-in mode','toggle'],['cpLiManual','Manual lower in','text']],
+  stop:[['lsMd','Measured distance (MD)','text'],['lsLd','Lost distance (LD)','text'],['lsLdSign','LD direction','sign'],['lsTravel','Line stop travel','text','Optional check'],['lsMachineTravel','Machine travel','text','Optional check'],['lsLiManualToggle','Lower-in mode','toggle'],['lsLiManual','Manual lower in','text']],
+  plug:[['cpStart','Start','text'],['cpJbf','Jack bolt to flange (JBF)','text'],['cpLd','Lost distance (LD)','text'],['cpPt','Plug thickness (PT)','text'],['cpLiManualToggle','Lower-in mode','toggle'],['cpLiManual','Manual lower in','text']],
   review:[],saved:[]
 };
 const details = [['jobDescription','Job name'],['jobClient','Customer'],['jobLocation','Location'],['jobNumber','Job number'],['jobDate','Date','date'],['jobTechnician','Technician'],['machineType','Machine','machine'],['jobNotes','Notes','textarea']];
 let jobs=[],active=null,stage='setup',source='shared',shared=[],visibleLimit=30;
 let connectionBusy=false, noticeTimer;
 let pendingDeleteId=null;
+let auxiliary,currentPage='workspace';
+const scrollPositions={};
 function notify(message) {
   $('notice').textContent=message; $('notice').hidden=false;
   clearTimeout(noticeTimer); noticeTimer=setTimeout(() => $('notice').hidden=true,4500);
@@ -42,14 +46,18 @@ function persist() {
   try {localStorage.setItem(STORAGE_KEY,JSON.stringify({build:BUILD,activeId:active.id,jobs}));$('save-state').textContent='Saved on this device';}
   catch {$('save-state').textContent='Could not save on this device';notify('Device storage is full or unavailable. Keep this page open to retain your changes.');}
 }
-function page(name) {
-  const changed=$(name).hidden;
-  $('workspace').hidden=name!=='workspace';$('library').hidden=name!=='library';
+function page(name,{recordHistory=true}={}) {
+  const names=['workspace','library','references','settings'];if(!names.includes(name))return;
+  const changed=currentPage!==name;
+  if(changed)scrollPositions[currentPage]=window.scrollY;
+  for(const key of names)$(key).hidden=key!==name;
   document.querySelectorAll('[data-page]').forEach(button=>{
     if(button.dataset.page===name)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   });
   if(name==='library')renderLibrary();
-  if(changed)window.scrollTo({top:0,behavior:'instant'});
+  auxiliary?.closeMenu(false);currentPage=name;
+  if(changed)window.scrollTo({top:scrollPositions[name]||0,behavior:'instant'});
+  if(recordHistory&&history.state?.preAlphaPage!==name)history.pushState({preAlphaPage:name},'','#'+name);
 }
 function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field') {
   const attrs=attribute+'="'+escape(key)+'" id="'+escape(attribute+key)+'"';
@@ -71,7 +79,7 @@ function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field
   }else if(type==='textarea')control='<textarea '+attrs+'>'+escape(value)+'</textarea>';
   else control='<input '+attrs+' type="'+(type==='date'?'date':'text')+'"'+(type==='text'&&!['operationLabel','machineType'].includes(key)?' inputmode="decimal"':'')+' value="'+escape(value)+'" autocomplete="off">';
   if(key==='lsMd') hint=lineStopMdIsManual(operation().state)?'Manual MD; Hot Tap MD changes are kept separate.':'Follows Hot Tap MD until you edit it.';
-  return '<label class="field'+(type==='textarea'?' wide':'')+(['operation','machine'].includes(type)?' setup-choice':'')+'">'+escape(label)+control+(hint?'<small'+(key==='lsMd'?' id="ls-md-hint"':'')+'>'+escape(hint)+'</small>':'')+(key==='ptc'?'<small id="ptc-warning" class="field-warning" hidden></small>':'')+'</label>';
+  return '<div class="field'+(type==='textarea'?' wide':'')+(['operation','machine'].includes(type)?' setup-choice':'')+'"><div class="field-label"><label for="'+escape(attribute+key)+'">'+escape(label)+'</label>'+(FIELD_HELP[key]?'<button type="button" class="help-icon" data-help-field="'+key+'" aria-label="Help for '+escape(label)+'">?</button>':'')+'</div>'+control+(hint?'<small'+(key==='lsMd'?' id="ls-md-hint"':'')+'>'+escape(hint)+'</small>':'')+(key==='ptc'?'<small id="ptc-warning" class="field-warning" hidden></small>':'')+'</div>';
 }
 function renderOperations() {
   $('operation-count').textContent=active.operations.length;
@@ -86,6 +94,8 @@ function renderOperations() {
 function renderWorkspace() {
   $('welcome').hidden=!!active;$('job-workspace').hidden=!active;
   if(!active)return;
+  let migrated=false;for(const item of active.operations)if(migratePipeSource(item))migrated=true;
+  if(migrated)persist();
   $('job-title').textContent=active.title;
   $('job-origin').textContent=active.source==='shared'?'SHARED JOB / PRE-ALPHA WORKING COPY':active.source==='device'?'DEVICE JOB / PRE-ALPHA WORKING COPY':'PRE-ALPHA JOB';
   $('job-meta').textContent=[active.sharedState.jobClient,active.sharedState.jobLocation,active.sharedState.jobNumber,active.sharedState.jobDate].filter(Boolean).join(' / ')||'Add the customer and location in Job details.';
@@ -97,6 +107,7 @@ function renderWorkspace() {
   if(!op)return;
   const steps=stepsFor(op);
   stage=stageFor(op);
+  $('measurement-workspace').dataset.helpContext=stage;
   if(op.workspaceStage!==stage){rememberStage(op,stage);persist();}
   if(stage==='stop'&&initializeLineStopMd(op))persist();
   $('steps').innerHTML=steps.map((key,i)=>'<button data-step="'+key+'"'+(key===stage?' aria-current="step"':'')+'><span class="step-number">'+(i+1)+'</span>'+escape(stages[key][0])+'</button>').join('');
@@ -134,17 +145,17 @@ function reviewInputMarkup(rows) {
   }).join('')+'</dl>';
 }
 function operationReviewMarkup(op) {
-  const checks=operationWarnings(op),attention=checks.filter(check=>check.kind!=='info'),notes=checks.filter(check=>check.kind==='info');
+  const checks=operationWarnings(op,active.sharedState.machineType),attention=checks.filter(check=>check.kind!=='info'),notes=checks.filter(check=>check.kind==='info');
   const checklist='<section id="review-checks" aria-labelledby="review-checks-title"><h3 id="review-checks-title">'+(attention.length?attention.length+' check'+(attention.length===1?'':'s')+' to review':'Automatic checks')+'</h3>'+
-    (attention.length?'<ul class="review-warnings">'+attention.map(check=>'<li class="warning" data-warning-code="'+escape(check.code)+'"><strong>'+escape(STAGE_TITLES[check.stage]||check.stage)+'</strong><span>'+escape(check.message)+'</span><button class="quiet" data-review-edit="'+escape(check.stage)+'">Review stage</button></li>').join('')+'</ul>':'<p class="result-hint">No automatic warnings found. This is not a field verification.</p>')+
+    (attention.length?'<ul class="review-warnings">'+attention.map(check=>'<li class="warning" data-warning-code="'+escape(check.code)+'"><strong>'+escape(STAGE_TITLES[check.stage]||check.stage)+'</strong><span>'+escape(check.message)+'</span><button class="quiet" '+(check.stage==='eta'?'data-open-eta':'data-review-edit="'+escape(check.stage)+'"')+'>Review stage</button></li>').join('')+'</ul>':'<p class="result-hint">No automatic warnings found. This is not a field verification.</p>')+
     (notes.length?'<ul class="review-notes">'+notes.map(note=>'<li><strong>'+escape(STAGE_TITLES[note.stage])+':</strong> '+escape(note.message)+'</li>').join('')+'</ul>':'')+'</section>';
   const sections=reviewSections(op).map(section=>{
     const results='<dl class="review-results">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';
-    return '<section class="review-stage" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode">'+escape(section.mode)+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+
+    return '<section class="review-stage" data-help-context="'+section.stage+'" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode">'+escape(section.mode)+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+
       '<details class="review-inputs"><summary>'+(section.override?'Retained setup measurements (not used for lower in)':'Setup measurements')+'</summary>'+reviewInputMarkup(section.inputs)+'</details>'+
-      (section.retained.length?'<details class="review-inactive"><summary>Inactive saved override (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+'</section>';
+      (section.retained.length?'<details class="review-inactive"><summary>Inactive saved inputs (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+'</section>';
   }).join('');
-  return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections;
+  return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections+(stepsFor(op).includes('tap')?etaSummary(op,active.sharedState.machineType):'');
 }
 function renderResults() {
   const op=operation(); if(!op)return;
@@ -168,8 +179,11 @@ function renderResults() {
     $('results').innerHTML=stage==='review'?operationReviewMarkup(op):reviewMarkup(op.state);
     if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are still being connected in this design study.</p>');
   }
+  if(!['setup','review'].includes(stage)&&stepsFor(op).includes('tap'))$('results').insertAdjacentHTML('beforeend','<button class="eta-open" data-open-eta>Hot Tap cutting time (ETA)</button>');
+  if(stage==='stop')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">Pipe O.D.: <strong>'+format(pipeOD(op.state))+' in</strong> from Pipe &amp; cutter. <button class="quiet" data-review-edit="pipe">Edit pipe setup</button></p>');
+  if(stage==='saved'&&op.retiredLineStopOD)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Archived Line Stop O.D. '+escape(op.retiredLineStopOD.value)+' is retained, but does not control this working copy.</p>');
   const warnings=hotTapWarnings(op);
-  if(stage!=='review')$('results').insertAdjacentHTML('beforeend',warningMarkup(operationWarnings(op).filter(warning=>warning.stage===stage&&!['info','missing'].includes(warning.kind))));
+  if(stage!=='review')$('results').insertAdjacentHTML('beforeend',warningMarkup(operationWarnings(op,active.sharedState.machineType).filter(warning=>warning.stage===stage&&!['info','missing'].includes(warning.kind))));
   const ptcWarning=$('ptc-warning'),ptcInput=$('data-fieldptc');
   if(ptcWarning&&ptcInput){
     const warning=warnings.find(item=>item.field==='ptc');
@@ -278,12 +292,17 @@ $('next').addEventListener('click',()=>{const steps=stepsFor(operation());const 
 $('search').addEventListener('input',()=>{visibleLimit=30;renderLibrary();});
 $('more').addEventListener('click',()=>{visibleLimit+=30;renderLibrary();});
 $('refresh').addEventListener('click',refreshShared);
-function theme(dark){document.body.classList.toggle('dark',dark);$('theme').textContent=dark?'Light mode':'Dark mode';}
+function theme(dark){document.body.classList.toggle('dark',dark);$('theme').textContent=dark?'Light':'Dark';$('theme').setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');$('settings-theme').value=dark?'dark':'light';}
 try {theme(localStorage.getItem(THEME_KEY)==='dark');}catch{}
 $('theme').addEventListener('click',()=>{const dark=!document.body.classList.contains('dark');theme(dark);try{localStorage.setItem(THEME_KEY,dark?'dark':'light');}catch{}});
 if(!active&&jobs.length)$('resume').innerHTML='<button data-resume>Resume '+escape(jobs[0].title)+' \u2192</button>';
 $('resume').addEventListener('click',()=>{if(jobs[0])openJob(jobs[0]);});
 renderWorkspace();
+auxiliary=initAuxiliary({getOperation:operation,getMachine:()=>active?.sharedState.machineType||'',persist,onEtaChanged:renderResults,notify,setTheme:dark=>{theme(dark);try{localStorage.setItem(THEME_KEY,dark?'dark':'light');}catch{}},getTheme:()=>document.body.classList.contains('dark')?'dark':'light'});
+installHelp();
+const initialPage=['workspace','library','references','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'workspace';
+history.replaceState({preAlphaPage:initialPage},'',location.href);page(initialPage,{recordHistory:false});
+window.addEventListener('popstate',event=>{document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());page(event.state?.preAlphaPage||'workspace',{recordHistory:false});});
 refreshShared();
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js?v='+BUILD,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{});

@@ -1,10 +1,11 @@
-import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings} from './model.mjs?v=pre-alpha05';
+import {etaFor} from './eta.mjs?v=pre-alpha06';
+import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning} from './model.mjs?v=pre-alpha06';
 
-export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',saved:'Saved measurements'};
+export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',saved:'Saved measurements',eta:'Cutting time (ETA)'};
 const INPUTS={
   pipe:[['preAlphaPipeOD','Actual pipe O.D.'],['bcoPipeID','Pipe I.D.'],['bcoCutterOD','Cutter O.D.'],['bcoCutterID','Cutter I.D.']],
   tap:[['md','Measured distance (MD)'],['ld','Lost distance (LD)'],['ptc','Pilot to cutter (PTC)'],['start','Rod start'],['mt','Machine travel']],
-  stop:[['lsMd','Measured distance (MD)'],['lsLd','Lost distance (LD)'],['lsPod','Line stop pipe O.D.'],['lsTravel','Line stop travel'],['lsMachineTravel','Machine travel']],
+  stop:[['lsMd','Measured distance (MD)'],['lsLd','Lost distance (LD)'],['lsTravel','Line stop travel'],['lsMachineTravel','Machine travel']],
   plug:[['cpStart','Start'],['cpJbf','Jack bolt flange (JBF)'],['cpLd','Lost distance (LD)'],['cpPt','Plug thickness (PT)']]
 };
 const has=value=>String(value ?? '').trim()!=='';
@@ -12,7 +13,7 @@ const manual=(state,stage)=>[true,'true'].includes(state[stage==='stop'?'lsLiMan
 const valueFor=(state,key)=>key==='preAlphaPipeOD'?pipeOD(state):state[key];
 const finite=value=>Number.isFinite(number(value));
 
-export function operationWarnings(operation) {
+export function operationWarnings(operation,machineName='') {
   const state=operation.state, steps=stepsFor(operation), warnings=[];
   const add=(stage,code,message,kind='warning')=>warnings.push({stage,code,message,kind});
   if(steps.includes('saved')) {
@@ -66,7 +67,14 @@ export function operationWarnings(operation) {
     if(!has(state.lsTravel)||!has(state.lsMachineTravel)) add('stop','travel-unchecked','Optional Line Stop travel check is incomplete; travel margin has not been checked.','info');
     if(travel<0) add('stop','negative-travel','Line Stop travel cannot be negative.');
     if(has(state.lsMachineTravel)&&Number.isFinite(machine)&&machine<=0) add('stop','invalid-machine-travel','Machine travel must be greater than zero to check the travel limit.');
-    if(!manual(state,'stop')&&has(state.lsPod)&&finite(state.lsPod)&&number(state.lsPod)<=0) add('stop','invalid-pipe-od','Line Stop pipe O.D. must be greater than zero.');
+    const change=pipeSourceWarning(operation);if(change)warnings.push(change);
+  }
+  if(steps.includes('tap')){
+    const eta=etaFor(operation,machineName),configured=['etaMachine','etaCutterSize','etaRpmOverride'].some(key=>has(state[key]));
+    if(configured&&eta.issue)add('eta','eta-input',eta.issue);
+    else if(!eta.issue&&eta.manual)add('eta','eta-manual','Manual RPM override is active for ETA. Verify the speed and cutting conditions.');
+    else if(!eta.issue&&eta.match.basis==='nearest')add('eta','eta-nearest','ETA uses the nearest charted cutter size because this size is outside the selected RPM chart. Confirm the equipment speed chart.');
+    if(has(state.etaBco)&&number(state.etaBco)!==eta.distance)add('eta','eta-distance-source','Saved ETA distance '+String(state.etaBco)+' is retained but not used. The estimate follows current Pipe & cutter BCO.','info');
   }
   return warnings;
 }
@@ -78,12 +86,13 @@ export function reviewSections(operation) {
     const manualKey=stage==='stop'?'lsLiManual':'cpLiManual';
     const inputs=INPUTS[stage].map(([key,label])=>{
       let value=valueFor(state,key), note='';
-      if(key==='lsPod'&&!has(value)){value=pipeOD(state);note='From pipe setup';}
       if(key==='ld'||key==='lsLd')note=state[key==='ld'?'ldSign':'lsLdSign']==='-'?'Subtract (-)':'Add (+)';
       return {key,label,value,note};
     });
+    if(stage==='stop')inputs.push({key:'pipe-source-od',label:'Pipe O.D.',value:pipeOD(state),note:'From Pipe & cutter; not a separate input'});
     const retained=!override&&['stop','plug'].includes(stage)&&has(state[manualKey])
       ? [{key:manualKey,label:'Inactive saved manual lower in',value:state[manualKey]}] : [];
+    if(stage==='stop'&&operation.retiredLineStopOD)retained.push({key:'previous-pipe-od',label:'Archived Line Stop O.D. (not used)',value:operation.retiredLineStopOD.value});
     return {stage,title:STAGE_TITLES[stage],mode:override?'Manual override':'Calculated from setup',
       results:resultsFor(operation,stage),inputs,retained,override};
   });
