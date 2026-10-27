@@ -1,4 +1,4 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha11';
+import {DATA} from './reference-data.mjs?v=pre-alpha12';
 
 export const TERMS=Object.fromEntries(DATA.glossary.filter(([key])=>/^[A-Z]{2,5}$/.test(key)).map(([key,full])=>[key,{full,meaning:full+'. Term from the existing TapCalc glossary.'}]));
 Object.assign(TERMS,{
@@ -50,7 +50,7 @@ export const FIELD_HELP={
   bcoCutterOD:'Cutter outside diameter, used for book cut out.',bcoCutterID:'Cutter inside diameter, used for Coupon free. It must be smaller than cutter outside diameter.',
   md:'Hot Tap measured distance. Only this measurement may feed Line Stop MD, until Line Stop MD is edited.',
   lsMd:'Line Stop measured distance. Follows Hot Tap MD until you edit it; other Line Stop measurements stay independent.',
-  ld:'Hot Tap lost distance, independent of Line Stop and Completion Plug.',lsLd:'Line Stop lost distance, independent of Hot Tap lost distance.',
+  ld:'Hot Tap lost distance, independent of Line Stop and Completion Plug. Blank uses 0 for calculations without recording an entered measurement. Invalid nonblank entries must be corrected.',lsLd:'Line Stop lost distance, independent of Hot Tap lost distance.',
   ldSign:'Choose whether Hot Tap lost distance is added or subtracted.',lsLdSign:'Choose whether Line Stop lost distance is added or subtracted.',
   ptc:TERMS.PTC.meaning,start:'Hot Tap starting rod-scale reading. It shifts the rod positions, not cutter geometry.',mt:TERMS.MT.meaning,
   lsTravel:'Optional measured Line Stop travel check. Leaving it blank does not block browsing.',lsMachineTravel:'Available Line Stop machine travel, independent of Hot Tap machine travel.',

@@ -5,4 +5,4 @@ window.TAPCALC_FIREBASE_CONFIG = {
 };
 window.TAPCALC_FIRESTORE_DATABASE = '(default)';
 window.TAPCALC_FIREBASE_COLLECTION = 'tapcalcJobs';
-window.TAPCALC_PRE_ALPHA_BUILD = 'pre-alpha11';
+window.TAPCALC_PRE_ALPHA_BUILD = 'pre-alpha12';

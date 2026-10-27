@@ -1,5 +1,5 @@
-import {etaFor} from './eta.mjs?v=pre-alpha11';
-import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning} from './model.mjs?v=pre-alpha11';
+import {etaFor} from './eta.mjs?v=pre-alpha12';
+import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance} from './model.mjs?v=pre-alpha12';
 
 export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',saved:'Saved measurements',eta:'Cutting time (ETA)'};
 const INPUTS={
@@ -10,7 +10,7 @@ const INPUTS={
 };
 const has=value=>String(value ?? '').trim()!=='';
 const manual=(state,stage)=>[true,'true'].includes(state[stage==='stop'?'lsLiManualToggle':'cpLiManualToggle']);
-const valueFor=(state,key)=>key==='preAlphaPipeOD'?pipeOD(state):state[key];
+const valueFor=(state,key)=>key==='preAlphaPipeOD'?pipeOD(state):key==='ld'&&!has(state.ld)?hotTapLostDistance(state):state[key];
 const finite=value=>Number.isFinite(number(value));
 
 export function operationWarnings(operation,machineName='') {
@@ -24,7 +24,7 @@ export function operationWarnings(operation,machineName='') {
   for(const stage of steps.filter(key=>INPUTS[key])) {
     const override=(stage==='stop'||stage==='plug')&&manual(state,stage);
     const manualKey=stage==='stop'?'lsLiManual':'cpLiManual';
-    let required=stage==='pipe'?(steps.includes('tap')?['preAlphaPipeOD','bcoPipeID','bcoCutterOD']:[]):stage==='tap'?['md','ld','ptc','start']:stage==='stop'?['lsMd','lsLd']:['cpStart','cpJbf','cpLd','cpPt'];
+    let required=stage==='pipe'?(steps.includes('tap')?['preAlphaPipeOD','bcoPipeID','bcoCutterOD']:[]):stage==='tap'?['md','ptc','start']:stage==='stop'?['lsMd','lsLd']:['cpStart','cpJbf','cpLd','cpPt'];
     if(override) required=[manualKey];
     const definitions=override?[[manualKey,'Manual lower in'],...INPUTS[stage].filter(([key])=>['lsTravel','lsMachineTravel'].includes(key))]:INPUTS[stage];
     const missing=definitions.filter(([key])=>required.includes(key)&&(key==='preAlphaPipeOD'?!Number.isFinite(g.od)&&!has(state.preAlphaPipeOD):!has(state[key])));

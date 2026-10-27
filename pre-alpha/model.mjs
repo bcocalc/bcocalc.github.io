@@ -1,5 +1,5 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha11';
-export const BUILD = 'pre-alpha11';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha12';
+export const BUILD = 'pre-alpha12';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
@@ -19,6 +19,8 @@ export const number = value => {
   if (!match || Number(match[4]) === 0) return NaN;
   return (match[1] === '-' ? -1 : 1) * (Number(match[2] || 0) + Number(match[3]) / Number(match[4]));
 };
+// A blank Hot Tap LD is an effective zero, not an entered or migrated measurement.
+export const hotTapLostDistance = state => String(state.ld ?? '').trim() === '' ? 0 : number(state.ld);
 export function pipeMaterialKey(value) {
   return /ductile/i.test(value) ? 'DuctileIron' : /carbon|steel/i.test(value) ? 'CarbonSteel' : 'Other';
 }
@@ -172,7 +174,7 @@ export function resultsFor(operation, stage) {
   const signed = (key,sign) => n(key) * (s[sign] === '-' ? -1 : 1);
   if (stage === 'pipe') return [['BCO',g.bco],['Coupon free',g.coupon],['Wall thickness',g.wall]];
   if (stage === 'tap') {
-    const li = n('md') + signed('ld','ldSign');
+    const li = n('md') + hotTapLostDistance(s) * (s.ldSign === '-' ? -1 : 1);
     const pop = n('start') + li;
     const cop = pop + n('ptc');
     return [['Pilot on pipe',pop],['Cutter on pipe',cop],['Rod BCO',cop+g.bco],['Total travel',li+n('ptc')+g.bco],['Lower in',li]];

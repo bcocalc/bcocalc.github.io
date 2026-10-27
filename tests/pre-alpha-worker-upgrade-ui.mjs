@@ -11,7 +11,10 @@ import {BUILD,STORAGE_KEY,normalizeJob} from '../pre-alpha/model.mjs';
 import {WORKSPACE_KEY} from '../pre-alpha/workspace-store.mjs';
 
 // Disposable localhost origin only. The baseline comes from Git, not production.
-const BASELINE='21bf9b289196c25912f38424573b295209e49e03';
+const BASELINES=[
+  {commit:'21bf9b289196c25912f38424573b295209e49e03',build:'pre-alpha10',transactional:false},
+  {commit:'54aec7b984cec1c37ddeea4c5e17c46376473a24',build:'pre-alpha11',transactional:true}
+];
 const root=fileURLToPath(new URL('../',import.meta.url));
 const require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
@@ -20,15 +23,16 @@ const args=process.argv.slice(2);
 if(args.length>1||args.some(arg=>arg!=='--origin-unavailable'))throw new Error('Usage: node tests/pre-alpha-worker-upgrade-ui.mjs [--origin-unavailable]');
 const originFailure=args.includes('--origin-unavailable');
 const baseline=new Map(),writes=[];
-let phase='old',originUnavailable=false;
+let phase='old',originUnavailable=false,currentBaseline=BASELINES[0];
 function source(path){
   if(phase==='old'&&path.startsWith('pre-alpha/')){
-    if(!baseline.has(path)){
-      const result=spawnSync('git',['show',BASELINE+':'+path],{cwd:root,maxBuffer:20*1024*1024});
-      if(result.status!==0)throw new Error('Missing baseline asset: '+path);
-      baseline.set(path,result.stdout);
+    const key=currentBaseline.commit+':'+path;
+    if(!baseline.has(key)){
+      const result=spawnSync('git',['show',key],{cwd:root,maxBuffer:20*1024*1024});
+      if(result.status!==0)throw new Error('Missing baseline asset: '+key);
+      baseline.set(key,result.stdout);
     }
-    return baseline.get(path);
+    return baseline.get(key);
   }
   const file=resolve(root,path);
   if(!file.startsWith(resolve(root)+sep))throw new Error('Outside test root');
@@ -62,7 +66,9 @@ const server=createServer((request,response)=>{
 try{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
   const base='http://127.0.0.1:'+server.address().port;
-  for(const mobile of [true,false]){
+  const cases=BASELINES.flatMap(baselineCase=>[true,false].map(mobile=>({baselineCase,mobile})));
+  for(const {baselineCase,mobile} of cases){
+    currentBaseline=baselineCase;
     phase='old';
     // PWA durability uses a fresh disk-backed profile, never a user's profile.
     // Ephemeral WebKit CacheStorage can vanish on reload even without an app.
@@ -73,15 +79,27 @@ try{
     const observe=()=>page.on('pageerror',error=>errors.push(error.message));observe();
     try{
     const activate=locator=>mobile?locator.tap():locator.click();
-    const fixture=normalizeJob({id:'worker-fixture',source:'experimental',record:{jobBundle:{selectedOperationId:'one',sharedState:{jobDescription:'Worker preservation fixture'},operations:[{id:'one',label:'First stop',operationType:'Line Stop',state:{cpStart:'20',cpJbf:'1.25',cpLd:'0.5',cpPt:'2.75',cpLiManualToggle:true,cpLiManual:'99',unknownFuture:{keep:true}}},{id:'two',label:'Second stop',operationType:'Line Stop',state:{lsMd:'47'}}]}}});
+    const tapState={bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',preAlphaPipeOD:'6.625',bcoPipeID:'6',bcoCutterOD:'4',md:'10',ptc:'1',start:'2',mt:'52',unknownFuture:{keep:['all',3]}};
+    const fixture=normalizeJob({id:'worker-fixture',source:'experimental',record:{jobBundle:{selectedOperationId:'one',sharedState:{jobDescription:'Worker preservation fixture'},operations:[{id:'one',label:'First stop',operationType:'Line Stop',state:{cpStart:'20',cpJbf:'1.25',cpLd:'0.5',cpPt:'2.75',cpLiManualToggle:true,cpLiManual:'99',unknownFuture:{keep:true}}},{id:'two',label:'Second stop',operationType:'Line Stop',state:{lsMd:'47'}},{id:'missing',label:'Missing LD',operationType:'Hot Tap',state:tapState},{id:'empty',label:'Empty LD',operationType:'Hot Tap',state:{...tapState,ld:''}}]}}});
     fixture.operations[0].workspaceStage='plug';fixture.operations[1].workspaceStage='stop';
+    for(const op of fixture.operations.slice(2))op.workspaceStage='tap';
+    const assertBundle=job=>{
+      assert.deepEqual(job.operations.map(op=>op.id),fixture.operations.map(op=>op.id),'Every operation survives the installed-worker transition');
+      assert.deepEqual(job.original,fixture.original);
+      assert.deepEqual(job.operations[0].state.unknownFuture,{keep:true});
+      assert.deepEqual(job.operations[1].state,fixture.operations[1].state);
+      for(const id of ['missing','empty'])assert.deepEqual(job.operations.find(op=>op.id===id).state,fixture.operations.find(op=>op.id===id).state,'Blank LD defaults never fabricate or normalize saved inputs');
+      assert.equal(Object.hasOwn(job.operations.find(op=>op.id==='missing').state,'ld'),false);
+      assert.equal(job.operations.find(op=>op.id==='empty').state.ld,'');
+    };
+    assertBundle(fixture);
     await page.goto(base+'/__seed');
-    await page.evaluate(async({fixture,key})=>{
-      localStorage.setItem(key,JSON.stringify({build:'pre-alpha10',activeId:fixture.id,jobs:[fixture]}));
+    await page.evaluate(async({fixture,key,build})=>{
+      localStorage.setItem(key,JSON.stringify({build,activeId:fixture.id,jobs:[fixture]}));
       localStorage.setItem('measurementCardStateV1','live-sentinel');localStorage.setItem('measurementCardHistoryV1','[]');
       await (await caches.open('tapcalc-live-sentinel')).put('/__live-sentinel',new Response('live cache'));
       await (await caches.open('tapcalc-dev-sentinel')).put('/__dev-sentinel',new Response('dev cache'));
-    },{fixture,key:STORAGE_KEY});
+    },{fixture,key:STORAGE_KEY,build:baselineCase.build});
     const preservedCaches=()=>page.evaluate(async()=>Promise.all(['tapcalc-live-sentinel','tapcalc-dev-sentinel'].map(async(key,index)=>{
       const cache=await caches.open(key),response=await cache.match(index?'/__dev-sentinel':'/__live-sentinel');
       if(!response)throw new Error('Missing sentinel response: '+key+' keys '+JSON.stringify((await cache.keys()).map(request=>request.url)));
@@ -106,18 +124,38 @@ try{
       const response=await page.goto(base+'/pre-alpha/#workspace');
       if(!response)await page.reload();
       await page.waitForSelector('[data-field="cpLiManual"]');await controlled(build);
-      assert.equal(await page.locator('.edition').textContent(),'PRE-ALPHA '+build.slice(-2));
+      assert.equal(await page.locator('.edition').textContent(),'PRE-ALPHA '+build.replace('pre-alpha',''));
     }
-      await load('pre-alpha10');assert.equal(await value(),'99');
+    const durableSnapshot=()=>readDurableWorkspace(page);
+    const durableJob=raw=>JSON.parse(raw).entries.find(entry=>entry.job.id===fixture.id).job;
+    async function checkBlankLd(){
+      for(const id of ['missing','empty']){
+        await activate(page.locator('[data-operation="'+id+'"]'));
+        await activate(page.locator('[data-step="tap"]'));await waitSaved();
+        assert.equal(await page.locator('[data-field="ld"]').inputValue(),'');
+        assert.equal(await page.locator('[data-value-origin="ld"]').textContent(),'Default 0 - not entered');
+        assert.equal(await page.locator('#results .result-panel:not(.bco-eta-panel) .big-value').textContent(),'12.0000 in');
+        assertBundle(durableJob(await durableSnapshot()));
+      }
+      await activate(page.locator('[data-operation="one"]'));await waitSaved();
+      await page.locator('[data-field="cpLiManual"]').waitFor({state:'visible'});
+    }
+      await load(baselineCase.build);assert.equal(await value(),'99');
       await page.locator('[data-field="cpLiManual"]').fill('100.125');await waitSaved();
       const oldBytes=await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY);
-      assert.equal(JSON.parse(oldBytes).jobs[0].operations[0].state.cpLiManual,'100.125');
+      const oldCompanionBytes=await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY);
+      const oldDurableBytes=baselineCase.transactional?await durableSnapshot():null;
+      const oldJob=baselineCase.transactional?durableJob(oldDurableBytes):JSON.parse(oldBytes).jobs[0];
+      assert.equal(oldJob.operations[0].state.cpLiManual,'100.125');assertBundle(oldJob);
       phase='new';await load(BUILD);assert.equal(await value(),'100.125');
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY),oldBytes,'Upgrade must not rewrite legacy saves');
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),oldCompanionBytes);
+      if(baselineCase.transactional)assert.equal(await durableSnapshot(),oldDurableBytes,'Opening the new build must not rewrite the published11 transactional record');
+      await checkBlankLd();
       await page.locator('[data-field="cpLiManual"]').fill('101.125');await waitSaved();
       const cacheKeys=await page.evaluate(()=>caches.keys());
       assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD));
-      assert.ok(!cacheKeys.includes('tapcalc-pre-alpha-pre-alpha10'),'Old experiment cache is retired: '+JSON.stringify(cacheKeys));
+      assert.ok(!cacheKeys.includes('tapcalc-pre-alpha-'+baselineCase.build),'Old experiment cache is retired: '+JSON.stringify(cacheKeys));
       assert.ok(cacheKeys.includes('tapcalc-live-sentinel')&&cacheKeys.includes('tapcalc-dev-sentinel'));
       assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));
       assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));
@@ -132,15 +170,15 @@ try{
         finally{await probe.close();}
       }
       await page.locator('[data-field="cpLiManual"]').fill('102.125');await waitSaved();
+      await checkBlankLd();assert.equal(await value(),'102.125');
       await activate(page.locator('.main-nav [data-page="home"]'));assert.ok(await page.locator('#resume-job').isVisible());
       await activate(page.locator('#menu-toggle'));await activate(page.locator('#app-menu [data-page="references"]'));
       await page.locator('#reference-category').selectOption('glossary');assert.ok(await page.locator('#reference-content table').count()>0);
       await activate(page.locator('#references [data-page="workspace"]'));assert.equal(await value(),'102.125');
       const upgradedBytes=await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY);
-      const durableSnapshot=()=>readDurableWorkspace(page);
       const durableBytes=await durableSnapshot();
-      const upgraded=JSON.parse(durableBytes).entries.find(entry=>entry.job.id===fixture.id).job;
-      assert.equal(upgraded.operations.length,2);assert.equal(upgraded.selectedOperationId,'one');
+      const upgraded=durableJob(durableBytes);assertBundle(upgraded);
+      assert.equal(upgraded.operations.length,4);assert.equal(upgraded.selectedOperationId,'one');
       assert.equal(upgraded.operations[0].workspaceStage,'plug');assert.deepEqual(upgraded.operations[0].state.unknownFuture,{keep:true});
       assert.deepEqual(upgraded.original,fixture.original);
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY),oldBytes);
@@ -154,18 +192,22 @@ try{
       assert.equal(await value(),'102.125','Saved measurements survive an offline browser restart');
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),upgradedBytes);
       assert.equal(await durableSnapshot(),durableBytes);
-      originUnavailable=false;await context.setOffline(false);phase='old';await load('pre-alpha10');
-      assert.equal(await value(),'100.125','Rollback shows the older version; it cannot read companion saves');
+      originUnavailable=false;await context.setOffline(false);phase='old';await load(baselineCase.build);
+      assert.equal(await value(),baselineCase.transactional?'102.125':'100.125',baselineCase.transactional?'Published11 rollback reads the same transactional saves':'Published10 rollback shows older legacy data; upgraded edits remain preserved separately');
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),upgradedBytes,'Rollback does not delete upgraded saves');
       // Read directly without modifying or importing code into the old app.
       assert.equal(await durableSnapshot(),durableBytes,'Rollback leaves transactional saves byte-identical');
       phase='new';await load(BUILD);assert.equal(await value(),'102.125','Upgrading again restores companion-only edits');
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),upgradedBytes);
       assert.equal(await durableSnapshot(),durableBytes);
+      assertBundle(durableJob(await durableSnapshot()));
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY),oldBytes);
+      assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),oldCompanionBytes);
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),'live-sentinel');
+      assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),'[]');
       assert.deepEqual(await preservedCaches(),['live cache','dev cache']);
       assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
-      console.log('PASS installed worker '+engine+'/'+(mobile?'phone':'desktop')+': 10 upgrade, '+(originFailure?'origin-unavailable':'browser-offline')+' edit/reload/restart, Home/References, cache isolation, rollback and re-upgrade preserve complete saves; synthetic profile '+profile);
+      console.log('PASS installed worker '+engine+'/'+(mobile?'phone':'desktop')+': '+baselineCase.build+' to '+BUILD+', '+(originFailure?'origin-unavailable':'browser-offline')+' edit/reload/restart, missing/empty LD without fabrication, complete4-operation bundles, old bytes/cache isolation, rollback and re-upgrade; synthetic profile '+profile);
     }finally{originUnavailable=false;await context.close();}
   }
 }finally{await new Promise(resolve=>server.close(resolve));}

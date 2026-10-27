@@ -12,9 +12,12 @@ const checks = [
   ['cutter-reference.mjs', {}],
   ['coupon-free.mjs', {}],
   ['tools-mode-unit.mjs', {}],
+  ['browser-evidence-unit.mjs', {}],
   ['pre-alpha-model.mjs', {}],
+  ['pre-alpha-release-identity.mjs', {}],
   ['pre-alpha-home.mjs', {}],
   ['pre-alpha-presentation.mjs', {}],
+  ['pre-alpha-hot-tap-ld.mjs', {}],
   ['pre-alpha-workspace-store.mjs', {}],
   ['pre-alpha-workspace-controller.mjs', {}],
   ['smartstop-reference.mjs', {}],
@@ -31,6 +34,7 @@ if (!args.includes('--unit-only')) {
     checks.push(['coupon-free-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-presentation-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-hot-tap-ld-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-workspace-store-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-offline-control.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-cache-context-control.mjs', { TAPCALC_BROWSER: browser }]);
@@ -51,6 +55,11 @@ for (const [file, environment] of checks) {
     cwd: root, env: { ...process.env, ...environment }, stdio: 'inherit', timeout
   });
   if (result.error || result.status !== 0) {
+    console.error('RELEASE_CHILD_FAILURE', JSON.stringify({
+      file, browser: environment.TAPCALC_BROWSER || null, device: environment.TAPCALC_DEVICE || null,
+      timeoutMs: timeout, status: result.status, signal: result.signal,
+      error: result.error ? { name: result.error.name, code: result.error.code, message: result.error.message } : null
+    }));
     console.error('RELEASE CHECK FAILED. Do not promote or publish this build.', result.error?.message || '');
     process.exit(1);
   }

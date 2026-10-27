@@ -8,6 +8,7 @@ import {runNextChecks} from './pre-alpha-next-ui.mjs';
 import {runInlineEtaChecks} from './pre-alpha-inline-eta-ui.mjs';
 import {runPdfWorkerChecks} from './pre-alpha-pdf-worker-ui.mjs';
 import {runHomeChecks} from './pre-alpha-home-ui.mjs';
+import {installBrowserEvidence} from './browser-evidence.mjs';
 const require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
 const engine=process.env.TAPCALC_BROWSER||'chromium';
@@ -15,10 +16,11 @@ const server=spawn(process.execPath,['tests/sync-preview.mjs'],{stdio:['ignore',
 const operations=[1,2,3].map(n=>({id:'stop-'+n,label:'Line Stop '+n,operationType:'Line Stop',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'16.0',bcoPipeID:'15.5',bcoCutterOD:'15.0625',md:String(10*n),ld:'0',ptc:'4',start:'1',mt:'52',lsMd:String(12*n),lsLd:'0'}}));
 const record={meta:{title:'Three stops',savedAtIso:'2026-10-24'},job:{client:'Fixture Customer',location:'Field site'},state:{md:'999'},jobBundle:{selectedOperationId:'stop-2',sharedState:{jobDescription:'Three stops',jobClient:'Fixture Customer',machineType:'Legacy custom machine'},operations}};
 const encode=v=>v===null?{nullValue:null}:Array.isArray(v)?{arrayValue:{values:v.map(encode)}}:typeof v==='object'?{mapValue:{fields:Object.fromEntries(Object.entries(v).map(([k,v])=>[k,encode(v)]))}}:typeof v==='boolean'?{booleanValue:v}:typeof v==='number'?{doubleValue:v}:{stringValue:String(v)};
-let browser;
+let browser,evidence;
 try{
   const base=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Preview timeout')),10000);server.stdout.on('data',data=>{const match=String(data).match(/http:\/\/127\.0\.0\.1:\d+/);if(match){clearTimeout(timer);resolve(match[0]);}});});
   browser=await pw[engine].launch({headless:true,...(engine==='chromium'&&!process.env.CI?{channel:'chrome'}:{})});
+  evidence=installBrowserEvidence(browser,{test:'pre-alpha-ui',engine});
   for(const mobile of [true,false]){
     const context=await browser.newContext({...mobile?pw.devices['iPhone 13']:{viewport:{width:1360,height:1000}},serviceWorkers:'block'});
     const page=await context.newPage(),errors=[],writes=[];
@@ -255,11 +257,16 @@ try{
     // Fail on the first mismatch; never retry an assertion or modify app behavior.
     for(let focusRun=0;focusRun<5;focusRun++){
       console.log('REFERENCE_FRESH_CONTEXT '+engine+'/'+(mobile?'phone':'desktop')+' '+(focusRun+1)+'/5');
+      evidence.mark('reference fresh context',{device:mobile?'phone':'desktop',trial:focusRun+1});
       await runNextChecks({browser,pw,base,mobile,engine});
     }
+    evidence.mark('inline ETA',{device:mobile?'phone':'desktop'});
     await runInlineEtaChecks({browser,pw,base,mobile,engine});
+    evidence.mark('PDF worker',{device:mobile?'phone':'desktop'});
     await runPdfWorkerChecks({browser,pw,base,mobile,engine});
+    evidence.mark('Home',{device:mobile?'phone':'desktop'});
     await runHomeChecks({browser,pw,base,mobile,engine});
     console.log('PASS Pre-Alpha '+engine+'/'+(mobile?'phone':'desktop')+': Firebase read, 3 operations, separate drafts, original preservation, themes, details and blank steps');
   }
-}finally{await browser?.close();server.kill();}
+}catch(error){evidence?.failure(error);throw error;}
+finally{evidence?.closing();await browser?.close();server.kill();}

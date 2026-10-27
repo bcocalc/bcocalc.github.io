@@ -1,10 +1,10 @@
-import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha11';
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha11';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha11';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha11';
-import {createOriginTracker,worksheetMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha11';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha11';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha11';
+import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha12';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha12';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha12';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha12';
+import {createOriginTracker,worksheetMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha12';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha12';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha12';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -21,7 +21,7 @@ const stages = {
 const fields = {
   setup:[['operationType','Operation','operation'],['machineType','Machine','machine']],
   pipe:[['bcoPipeMaterial','Pipe material','material'],['bcoPipeOD','Nominal pipe size','pipe-size'],['bcoSchedule','Schedule','schedule'],['preAlphaPipeOD','Actual pipe O.D.','text','Filled from size; editable'],['bcoPipeID','Pipe I.D.','text','Editable for measured dimensions'],['bcoCutterOD','Cutter O.D.','text'],['bcoCutterID','Cutter I.D.','text','Optional, for coupon free']],
-  tap:[['md','Measured distance (MD)','text'],['ld','Lost distance (LD)','text'],['ldSign','LD direction','sign'],['ptc','Pilot to cutter (PTC)','text'],['start','Rod start','text'],['mt','Machine travel','text']],
+  tap:[['md','Measured distance (MD)','text'],['ld','Lost distance (LD)','text','Optional; blank uses 0'],['ldSign','LD direction','sign'],['ptc','Pilot to cutter (PTC)','text'],['start','Rod start','text'],['mt','Machine travel','text']],
   stop:[['lsMd','Measured distance (MD)','text'],['lsLd','Lost distance (LD)','text'],['lsLdSign','LD direction','sign'],['lsTravel','Line stop travel','text','Optional check'],['lsMachineTravel','Machine travel','text','Optional check'],['lsLiManualToggle','Lower-in mode','toggle'],['lsLiManual','Manual lower in','text']],
   plug:[['cpStart','Start','text'],['cpJbf','Jack bolt to flange (JBF)','text'],['cpLd','Lost distance (LD)','text'],['cpPt','Plug thickness (PT)','text'],['cpLiManualToggle','Lower-in mode','toggle'],['cpLiManual','Manual lower in','text']],
   review:[],saved:[]
@@ -282,7 +282,7 @@ function renderResults() {
     const optional=stage==='pipe'?['Coupon free']:stage==='stop'?['Travel margin']:[];
     $('results').insertAdjacentHTML('beforeend','<p class="value-origin" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':'Calculated from setup - not field verified')+'</p>');
     const missing=results.some(([label,value])=>!optional.includes(label)&&!Number.isFinite(value));
-    if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.</p>');
+    if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">'+(stage==='tap'?'Enter the required measurements for a result. Blank Hot Tap LD uses 0; other empty inputs are not assumed to be zero.':'Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.')+'</p>');
     if(stage==='pipe')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
     if(stage==='pipe'&&op.state.bcoPipeOD&&!String(op.state.bcoPipeID??'').trim())$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Choose chart dimensions or enter a measured Pipe I.D. Unlisted dimensions are left blank.</p>');
 

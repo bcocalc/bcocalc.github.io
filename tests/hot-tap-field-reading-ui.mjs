@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
+import { installBrowserEvidence,browserCheckpoint } from './browser-evidence.mjs';
+import { installUndoEvidence } from './undo-evidence.mjs';
 const require = createRequire(import.meta.url);
 let pw;
 try { pw = require('playwright'); } catch { pw = require(join(dirname(dirname(process.execPath)), 'node_modules/playwright')); }
 const engine = process.env.TAPCALC_BROWSER || 'chromium';
 const server = spawn(process.execPath, ['tests/sync-preview.mjs'], { stdio: ['ignore', 'pipe', 'inherit'] });
-let browser;
+let browser,evidence;
 try {
   const base = await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error('Preview startup timeout')), 10000);
@@ -16,9 +18,11 @@ try {
     server.once('error', reject);
   });
   browser = await pw[engine].launch({ headless: true, ...(engine === 'chromium' && !process.env.CI ? { channel: 'chrome' } : {}) });
+  evidence=installBrowserEvidence(browser,{test:'hot-tap-field-reading-ui',engine});
   for (const phone of [true, false]) {
     const context = await browser.newContext({ ...(phone ? pw.devices['iPhone 13'] : { viewport: { width: 1280, height: 900 } }), serviceWorkers: 'block' });
     const page = await context.newPage();
+    await page.addInitScript(installUndoEvidence);
     await page.addInitScript(() => {
       if (!localStorage.getItem('measurementCardStateV1')) {
         sessionStorage.setItem('bcoCalculated', 'true');
@@ -78,8 +82,14 @@ try {
     const restoredCollapsed = page.locator('.section.collapsed:has(#htActualPop) > .accordion-heading');
     if (await restoredCollapsed.count()) await (phone ? restoredCollapsed.tap() : restoredCollapsed.click());
     assert.equal(await value('pop'), 18.5, 'Confirmed adjustment survives a reload');
+    browserCheckpoint(page,'actual POP before Undo');
+    await page.evaluate(()=>window.__tapcalcUndoEvidence.mark('before native Undo'));
     await activate('#htFieldUndo');
-    assert.equal(await value('pop'), 17);
+    try { assert.equal(await value('pop'), 17); }
+    finally {
+      try { console.log('ACTUAL_POP_UNDO_EVIDENCE',JSON.stringify({engine,device:phone?'phone':'desktop',trace:await page.evaluate(()=>window.__tapcalcUndoEvidence.read())})); }
+      catch(diagnosticError){ console.error('ACTUAL_POP_UNDO_DIAGNOSTIC_FAILURE',diagnosticError.message); }
+    }
     assert.equal(await page.locator('#htActualPop').inputValue(), '18.5');
     await page.evaluate(state => applyFieldFixture(state), selected.state);
     assert.equal(await value('pop'), 18.5, 'Restoring the same operation retains confirmed adjustment');
@@ -116,4 +126,5 @@ try {
     await context.close();
     console.log('PASS actual POP ' + engine + '/' + (phone ? 'phone' : 'desktop') + ': preview, apply, undo, persisted state, legacy isolation, stale setup, invalid reading and themes');
   }
-} finally { await browser?.close(); server.kill(); }
+} catch(error) { evidence?.failure(error); throw error; }
+finally { evidence?.closing(); await browser?.close(); server.kill(); }

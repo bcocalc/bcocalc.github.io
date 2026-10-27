@@ -4,6 +4,7 @@ import {WORKSPACE_KEY} from '../pre-alpha/workspace-store.mjs';
 import assert from 'node:assert/strict';
 import {SUPPLEMENT} from '../pre-alpha/reference-supplement-data.mjs';
 import {STORAGE_KEY} from '../pre-alpha/model.mjs';
+import {browserCheckpoint} from './browser-evidence.mjs';
 
 // Installed before page navigation so the original first-interaction path gets no
 // extra setup roundtrip. This exists only in the disposable synthetic CI page.
@@ -32,8 +33,10 @@ export async function runReferenceSelectorChecks(page,activate){
   const clear=()=>activate(page.locator('[data-ref-clear]'));
   const stable=async(key,action)=>{const element=await page.locator('[data-ref-filter="'+key+'"]').elementHandle();await action();assert.ok(await element.evaluate(el=>el.isConnected&&el===document.querySelector('[data-ref-filter="'+el.dataset.refFilter+'"]')),'Stable native control: '+key);await element.dispose();};
   await waitForWorkspaceSave(page);
+  browserCheckpoint(page,'selectors: before durable workspace snapshot');
   const rawSnapshot=async()=>JSON.stringify([await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[STORAGE_KEY,WORKSPACE_KEY]),await readDurableWorkspace(page)]);
   const before=await rawSnapshot();
+  browserCheckpoint(page,'selectors: before gasket selection and native first Tab');
   await category('papergaskets');await clear();assert.match(await page.locator('#reference-category option:checked').innerText(),/Durlon Gaskets/);assert.ok(await page.locator('[data-reference-qualification]').isVisible());assert.match(await page.locator('[data-reference-qualification]').innerText(),/section name only.*Garlock\/GYLON.*not verified for your Durlon grade/);assert.equal(await count(),0);assert.match(await text(),/Garlock.*GYLON/s);assert.match(await text(),/Multi-Swell 3760.*10,000 psi/s);assert.match(await text(),/non-metallic/);
   await page.locator('[data-ref-filter="size"]').focus();await select('size','4');assert.equal(await count(),5);assert.equal(await page.evaluate(()=>document.activeElement.dataset.refFilter),'size','Selection keeps the native control focused');
   await page.keyboard.press('Tab');const immediateTabFocus=await page.evaluate(()=>document.activeElement.dataset.refFilter);
@@ -44,6 +47,7 @@ export async function runReferenceSelectorChecks(page,activate){
   assert.ok(changed?.target.connected,'Selected native control stays connected through change');
   assert.equal(changed.target.node,changed.active.node,'The same native element stays focused; it is not replaced/refocused');
   console.log('PASS first Tab and native control identity '+page.viewportSize().width+'px');
+  browserCheckpoint(page,'selectors: native first Tab assertions passed');
   await select('rating','900');assert.equal(await count(),1);
   await select('size','3-1/2');assert.equal(await value('rating'),'');assert.equal(await count(),4);assert.equal(await page.locator('[data-ref-filter="rating"] option[value="900"]').count(),0);
   await select('size','unlisted');assert.equal(await count(),0);assert.match(await text(),/No listed match/);assert.match(await text(),/10,000 psi/);

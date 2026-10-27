@@ -1,5 +1,5 @@
-import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual} from './model.mjs?v=pre-alpha11';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha11';
+import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance} from './model.mjs?v=pre-alpha12';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha12';
 
 export const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const has=value=>String(value??'').trim()!=='';
@@ -19,6 +19,7 @@ export function createOriginTracker() {
       const state=operation.state, value=key==='preAlphaPipeOD'&&!has(state.preAlphaPipeOD)?pipeOD(state):state[key];
       if(key==='pipe-source-od')return 'From Pipe & cutter';
       if(key==='previous-pipe-od'&&operation.retiredLineStopOD)return 'Archived - not used';
+      if(key==='ld'&&!has(state.ld))return 'Default 0 - not entered';
       if(!has(value)||typeof value==='number'&&!Number.isFinite(value))return 'Not entered';
       if(key==='lsMd'&&!lineStopMdIsManual(state))return 'Follows Hot Tap MD';
       if(key==='lsLiManual'||key==='cpLiManual')return manual(state,key+'Toggle')?'Active manual override':'Inactive override - not used';
@@ -44,7 +45,7 @@ export function worksheetFor(operation,stage) {
     row('Wall thickness',[term('Pipe O.D.','preAlphaPipeOD',g.od),term('Pipe I.D.','bcoPipeID')],'(Pipe O.D. - Pipe I.D.) / 2')
   ];
   if(stage==='tap')return [
-    row('Lower in',[term('Hot Tap MD','md'),term('Hot Tap LD','ld',state.ld,state.ldSign==='-'?'-':'+')]),
+    row('Lower in',[term('Hot Tap MD','md'),term('Hot Tap LD','ld',has(state.ld)?state.ld:hotTapLostDistance(state),state.ldSign==='-'?'-':'+')]),
     row('Pilot on pipe',[term('Rod start','start'),term('Hot Tap lower in','',out('Lower in'))]),
     row('Cutter on pipe',[term('Pilot on pipe','',out('Pilot on pipe')),term('PTC','ptc')]),
     row('Rod BCO',[term('Cutter on pipe','',out('Cutter on pipe')),term('BCO','',g.bco)]),
