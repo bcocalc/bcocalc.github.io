@@ -101,8 +101,14 @@ export async function runNextChecks({browser,pw,base,mobile,engine}) {
     assert.equal(await page.locator('#reference-content tbody tr').count(),0,'No fabricated 42-inch Line Stop cutter');
     await page.locator('#reference-category').selectOption('glossary');await page.locator('#reference-query').fill('nothing-matches');assert.equal(await page.locator('#reference-content tbody tr').count(),0);
     await page.locator('#reference-category').selectOption('htp');assert.equal(await page.locator('#reference-content tbody tr').count(),0,'Size-first sections do not show a full table');await page.locator('[data-ref-filter="size"]').selectOption('3');assert.equal(await page.locator('#reference-content tbody tr').count(),1,'An explicit size shows its source row');
-    const sourceBco=page.locator('#reference-content th abbr[data-help-term="BCO"]');
-    await sourceBco.focus();assert.match(await page.locator('#term-tooltip').textContent(),/not verified.*Do not substitute/s);
+    // Mobile cards and the desktop table expose the same source-qualified term.
+    // Focus only the visible label; focusing the hidden table leaves stale help open.
+    const sourceBco=page.locator('#reference-content abbr[data-help-term="BCO"]:visible').first();
+    assert.ok(await sourceBco.isVisible(),'Source BCO help is visible in the active responsive layout');
+    await sourceBco.focus();
+    assert.equal(await sourceBco.evaluate(el=>el===document.activeElement),true,'Visible source BCO receives keyboard focus');
+    assert.ok(await page.locator('#term-tooltip').isVisible());
+    assert.match(await page.locator('#term-tooltip').textContent(),/not verified.*Do not substitute/s);
     await page.keyboard.press('Escape');
     browserCheckpoint(page,'reference migration start');
     await runReferenceMigrationChecks(page,activate);
