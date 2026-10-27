@@ -112,3 +112,21 @@ category('stackups');assert.doesNotMatch(content.innerHTML,/class="stackup-card"
 category('glossary');search('');assert.match(content.innerHTML,/Page 1 of 2/);click('[data-ref-table-page]',{tableIndex:'0',refTablePage:'1'});assert.match(content.innerHTML,/showing 21–37/);search('MD');assert.doesNotMatch(content.innerHTML,/Page 2/);assert.ok(focus.length,'Pagination result focus is set by controller');
 for(const file of ['pre-alpha/references.mjs'])assert.doesNotMatch(readFileSync(new URL('../'+file,import.meta.url),'utf8'),/localStorage\.(?:setItem|removeItem|clear)|sessionStorage\.|uploadJob|commitJob|deleteJob|addDoc\(/);
 console.log(`PASS ${checks} reference selector/source cases plus controller memory, dependent reset, pagination, source safety and read-only boundaries`);
+
+// Responsive cards must retain every source label/value, not just the columns
+// that happened to fit in the old phone table. This checks markup, not layout.
+category('papergaskets');click('[data-ref-clear]');choose('size','12');choose('rating','150');
+function checkCardParity(){
+  const cards=[...content.innerHTML.matchAll(/<dl class="reference-row-card">([\s\S]*?)<\/dl>/g)].map(match=>[...match[1].matchAll(/<div><dt>([\s\S]*?)<\/dt><dd>([\s\S]*?)<\/dd><\/div>/g)].map(pair=>[decode(pair[1]),decode(pair[2])]));
+  const desktop=[...content.innerHTML.matchAll(/<table><thead><tr>([\s\S]*?)<\/tr><\/thead><tbody>([\s\S]*?)<\/tbody><\/table>/g)].flatMap(match=>{
+    const columns=[...match[1].matchAll(/<th scope="col">([\s\S]*?)<\/th>/g)].map(x=>decode(x[1]));
+    return [...match[2].matchAll(/<tr>([\s\S]*?)<\/tr>/g)].map(row=>[...row[1].matchAll(/<td>([\s\S]*?)<\/td>/g)].map((cell,index)=>[columns[index],decode(cell[1])]));
+  });
+  assert.deepEqual(cards,desktop,'Every mobile field matches the existing desktop source table');
+  return cards;
+}
+assert.equal(checkCardParity()[0].length,15,'All fifteen gasket fields, including torque and source');
+click('[data-ref-clear]');search('Paper Gaskets');assert.equal(checkCardParity().length,99);
+category('glossary');search('');assert.equal(checkCardParity().length,20);
+click('[data-ref-table-page]',{tableIndex:'0',refTablePage:'1'});assert.equal(checkCardParity().length,17);
+console.log('PASS responsive card markup parity: 15-field gasket, all 99 source rows, pagination; layout still requires browser checks.');

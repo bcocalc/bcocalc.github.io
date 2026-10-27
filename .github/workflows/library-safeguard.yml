@@ -85,6 +85,18 @@ jobs:
         run: node tests/pre-alpha-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check responsive reference cards without horizontal scrolling
+        run: node tests/pre-alpha-reference-cards-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Retain synthetic responsive reference screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reference-cards-${{ matrix.browser }}
+          path: evidence/reference-cards-390.png
+          if-no-files-found: ignore
+          retention-days: 7
       - name: Check Pre-Alpha concurrent saves and conflict recovery
         run: node tests/pre-alpha-workspace-store-ui.mjs
         env:
@@ -167,3 +179,4 @@ jobs:
           path: /tmp/pre-alpha-*.png
           if-no-files-found: ignore
           retention-days: 7
+

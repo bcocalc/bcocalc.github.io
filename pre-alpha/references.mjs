@@ -237,6 +237,12 @@ export function reconcileReferenceControls(container,markup){
   }
 }
 
+// Both layouts use the same filtered/paginated rows and exact source labels.
+// CSS exposes only one representation; hidden desktop headers cannot trap focus.
+function referenceCards(item,rows){
+  return '<div class="reference-cards">'+rows.map(row=>'<dl class="reference-row-card">'+row.map((value,column)=>'<div><dt>'+escape(item.columns[column])+'</dt><dd>'+escape(value===''?'Not listed':value)+'</dd></div>').join('')+'</dl>').join('')+'</div>';
+}
+
 export function createReferences(root,{getOperation=()=>null}={}) {
   let category='glossary',query='',transferNote='',page=0;const values={},states=new Map(),tablePages=new Map();const previews=new Set();
   const select=(key,label,options)=>'<label class="field" data-ref-control="'+key+'" data-ref-label="'+escape(label)+'">'+escape(label)+'<select data-ref-filter="'+key+'">'+options.map(([value,text])=>'<option value="'+escape(value)+'"'+(String(values[key]??options[0][0])===value?' selected':'')+'>'+escape(text)+'</option>').join('')+'</select></label>';
@@ -275,7 +281,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
     content.innerHTML=(data.qualification?'<p class="warning" data-reference-qualification role="note">'+escape(data.qualification)+'</p>':'')+provenanceMarkup(category,values)+'<p class="result-hint">'+escape(data.note)+'</p>'+(transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
       (data.prompt?'<p class="reference-prompt" role="status">'+escape(data.prompt)+'</p>':'')+
       (data.records&&!data.prompt?stackupCards(data.records,page):'')+
-      data.tables.map((item,index)=>{const rows=item.rows,current=Math.min(tablePages.get(index)||0,Math.max(0,Math.ceil(rows.length/20)-1)),visible=rows.slice(current*20,current*20+20);return '<section class="reference-section"><h3>'+escape(item.title)+'</h3><p class="reference-count" role="status" tabindex="-1">'+rows.length+' matching rows'+(rows.length>20?'; showing '+(current*20+1)+'–'+(current*20+visible.length):'')+'</p>'+pagination(current,rows.length,'data-ref-table-page',index)+'<div class="reference-table-wrap" tabindex="0" role="region" aria-label="'+escape(item.title)+' table; scroll horizontally if needed"><table><thead><tr>'+item.columns.map(label=>'<th scope="col">'+escape(label)+'</th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map(value=>'<td>'+escape(value===''?'Not listed':value)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'+(rows.length?'':'<p class="result-hint">No listed match. Do not substitute a different size, class or equipment.</p>')+'</section>';}).join('')+
+      data.tables.map((item,index)=>{const rows=item.rows,current=Math.min(tablePages.get(index)||0,Math.max(0,Math.ceil(rows.length/20)-1)),visible=rows.slice(current*20,current*20+20);return '<section class="reference-section"><h3>'+escape(item.title)+'</h3><p class="reference-count" role="status" tabindex="-1">'+rows.length+' matching rows'+(rows.length>20?'; showing '+(current*20+1)+'–'+(current*20+visible.length):'')+'</p>'+pagination(current,rows.length,'data-ref-table-page',index)+'<div class="reference-table-wrap" tabindex="0" role="region" aria-label="'+escape(item.title)+' table; scroll horizontally if needed"><table><thead><tr>'+item.columns.map(label=>'<th scope="col">'+escape(label)+'</th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map(value=>'<td>'+escape(value===''?'Not listed':value)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'+referenceCards(item,visible)+(rows.length?'':'<p class="result-hint">No listed match. Do not substitute a different size, class or equipment.</p>')+'</section>';}).join('')+
       data.lists.map(list=>'<section class="reference-section"><h3>'+escape(list.title)+'</h3><ul>'+list.items.map(item=>'<li>'+escape(item)+'</li>').join('')+'</ul></section>').join('');
   }
   root.addEventListener('change',event=>{
