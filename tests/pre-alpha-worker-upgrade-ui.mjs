@@ -8,12 +8,14 @@ import {dirname,extname,join,resolve,sep} from 'node:path';
 import {tmpdir} from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {BUILD,STORAGE_KEY,normalizeJob} from '../pre-alpha/model.mjs';
+import {referenceView} from '../pre-alpha/references.mjs';
 import {WORKSPACE_KEY} from '../pre-alpha/workspace-store.mjs';
 
 // Disposable localhost origin only. The baseline comes from Git, not production.
 const BASELINES=[
   {commit:'21bf9b289196c25912f38424573b295209e49e03',build:'pre-alpha10',transactional:false},
-  {commit:'54aec7b984cec1c37ddeea4c5e17c46376473a24',build:'pre-alpha11',transactional:true}
+  {commit:'54aec7b984cec1c37ddeea4c5e17c46376473a24',build:'pre-alpha11',transactional:true},
+  {commit:'e4e6389988e3f3767108b5b12a900d33e727a5ad',build:'pre-alpha12',transactional:true}
 ];
 const root=fileURLToPath(new URL('../',import.meta.url));
 const require=createRequire(import.meta.url);
@@ -147,14 +149,24 @@ try{
       const oldDurableBytes=baselineCase.transactional?await durableSnapshot():null;
       const oldJob=baselineCase.transactional?durableJob(oldDurableBytes):JSON.parse(oldBytes).jobs[0];
       assert.equal(oldJob.operations[0].state.cpLiManual,'100.125');assertBundle(oldJob);
+      // A stale cache name is not a substitute for the unavailable private13 source.
+      // Seed after the old worker activates so only the new worker retires it.
+      await page.evaluate(async()=>{
+        const cache=await caches.open('tapcalc-pre-alpha-pre-alpha13');
+        await cache.put('/pre-alpha/__synthetic-stale13',new Response('synthetic stale cache, not private source'));
+      });
       phase='new';await load(BUILD);assert.equal(await value(),'100.125');
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY),oldBytes,'Upgrade must not rewrite legacy saves');
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),oldCompanionBytes);
-      if(baselineCase.transactional)assert.equal(await durableSnapshot(),oldDurableBytes,'Opening the new build must not rewrite the published11 transactional record');
+      if(baselineCase.transactional)assert.equal(await durableSnapshot(),oldDurableBytes,'Opening the new build must not rewrite the transactional baseline record');
       await checkBlankLd();
       await page.locator('[data-field="cpLiManual"]').fill('101.125');await waitSaved();
       const cacheKeys=await page.evaluate(()=>caches.keys());
       assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD));
+      assert.ok(!cacheKeys.includes('tapcalc-pre-alpha-pre-alpha13'),'Stale13 cache is retired without reusing its identity');
+      for(const asset of ['references.mjs','workspace.css'])assert.ok(await page.evaluate(async({build,asset})=>
+        !!await (await caches.open('tapcalc-pre-alpha-'+build)).match(new URL('./'+asset+'?v='+build,location.href).href),
+        {build:BUILD,asset}),'Current reference asset is cached: '+asset);
       assert.ok(!cacheKeys.includes('tapcalc-pre-alpha-'+baselineCase.build),'Old experiment cache is retired: '+JSON.stringify(cacheKeys));
       assert.ok(cacheKeys.includes('tapcalc-live-sentinel')&&cacheKeys.includes('tapcalc-dev-sentinel'));
       assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));
@@ -174,6 +186,22 @@ try{
       await activate(page.locator('.main-nav [data-page="home"]'));assert.ok(await page.locator('#resume-job').isVisible());
       await activate(page.locator('#menu-toggle'));await activate(page.locator('#app-menu [data-page="references"]'));
       await page.locator('#reference-category').selectOption('glossary');assert.ok(await page.locator('#reference-content table').count()>0);
+      await page.locator('#reference-category').selectOption('papergaskets');
+      await page.locator('[data-ref-filter="size"]').selectOption('12');
+      await page.locator('[data-ref-filter="rating"]').selectOption('150');
+      const expected=referenceView('papergaskets',{size:'12',rating:'150'}).tables[0];
+      const card=page.locator('.reference-row-card').first();
+      assert.deepEqual(await card.locator('dt').allTextContents(),expected.columns);
+      assert.deepEqual(await card.locator('dd').allTextContents(),expected.rows[0].map(v=>String(v===''?'Not listed':v)));
+      assert.equal(await card.isVisible(),mobile,'Offline reference layout matches device width');
+      assert.equal(await page.locator('.reference-table-wrap').first().isVisible(),!mobile);
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Offline reference page does not widen');
+      assert.match(await page.locator('[data-reference-qualification]').innerText(),/not verified for your Durlon grade/);
+      if(mobile){
+        await page.evaluate(()=>scrollTo(0,document.documentElement.scrollHeight));
+        const source=await card.locator('div').last().boundingBox(),nav=await page.locator('.main-nav').boundingBox();
+        assert.ok(source&&nav&&source.y>=0&&source.y+source.height<=nav.y,'Offline source row clears fixed navigation');
+      }
       await activate(page.locator('#references [data-page="workspace"]'));assert.equal(await value(),'102.125');
       const upgradedBytes=await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY);
       const durableBytes=await durableSnapshot();
@@ -193,7 +221,7 @@ try{
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),upgradedBytes);
       assert.equal(await durableSnapshot(),durableBytes);
       originUnavailable=false;await context.setOffline(false);phase='old';await load(baselineCase.build);
-      assert.equal(await value(),baselineCase.transactional?'102.125':'100.125',baselineCase.transactional?'Published11 rollback reads the same transactional saves':'Published10 rollback shows older legacy data; upgraded edits remain preserved separately');
+      assert.equal(await value(),baselineCase.transactional?'102.125':'100.125',baselineCase.transactional?'Transactional baseline rollback reads the same saves':'Published10 rollback shows older legacy data; upgraded edits remain preserved separately');
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),upgradedBytes,'Rollback does not delete upgraded saves');
       // Read directly without modifying or importing code into the old app.
       assert.equal(await durableSnapshot(),durableBytes,'Rollback leaves transactional saves byte-identical');
@@ -207,7 +235,7 @@ try{
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),'[]');
       assert.deepEqual(await preservedCaches(),['live cache','dev cache']);
       assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
-      console.log('PASS installed worker '+engine+'/'+(mobile?'phone':'desktop')+': '+baselineCase.build+' to '+BUILD+', '+(originFailure?'origin-unavailable':'browser-offline')+' edit/reload/restart, missing/empty LD without fabrication, complete4-operation bundles, old bytes/cache isolation, rollback and re-upgrade; synthetic profile '+profile);
+      console.log('PASS installed worker '+engine+'/'+(mobile?'phone':'desktop')+': '+baselineCase.build+' to '+BUILD+', '+(originFailure?'origin-unavailable':'browser-offline')+' edit/reload/restart, missing/empty LD without fabrication, complete4-operation bundles, offline reference cards, synthetic stale13 cache retirement, old bytes/cache isolation, rollback and re-upgrade; synthetic profile '+profile);
     }finally{originUnavailable=false;await context.close();}
   }
 }finally{await new Promise(resolve=>server.close(resolve));}
