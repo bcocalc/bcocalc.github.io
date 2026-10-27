@@ -1,8 +1,8 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha09';
-import {number,geometry} from './model.mjs?v=pre-alpha09';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha09';
-import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha09';
-import {helperFields,helperReference} from './reference-helpers.mjs?v=pre-alpha09';
+import {DATA} from './reference-data.mjs?v=pre-alpha10';
+import {number,geometry} from './model.mjs?v=pre-alpha10';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha10';
+import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha10';
+import {helperFields,helperReference} from './reference-helpers.mjs?v=pre-alpha10';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 export const REFERENCE_CATEGORIES={glossary:'Glossary',cutters:'Hot Tap / Line Stop cutters',smartstop:'SmartStop',foldinghead:'Folding Head',fieldmanual:'Field manual',bolting:'Bolting',htp:'HTP chart',plant150:'150# Plant',plant600:'600# Plant',torque:'Graphonic torque',papergaskets:'Durlon Gaskets',stackups:'Machine Stack-Ups',manuals:'Manual index',pivothead:'Pivot Head Setup',uwire:'U-Wire calculator',fieldcheck:'Field checklists',fractions:'Decimal / fraction',formulas:'Calculation guide'};
@@ -178,22 +178,56 @@ export function referenceView(category,values={},query='') {
   return data;
 }
 
+// Keep native controls connected while their selected value changes. Replacing a
+// focused select and forcing focus again discards native interaction state.
+// Only changed dependent options/fields need DOM updates.
+export function reconcileReferenceControls(container,markup){
+  const template=container.ownerDocument.createElement('template');template.innerHTML=markup;
+  const existing=new Map([...container.children].map(node=>[node.dataset.refControl,node]));
+  const nodes=[];
+  for(const incoming of [...template.content.children]){
+    const old=existing.get(incoming.dataset.refControl);let node=incoming;
+    if(old&&old.tagName===incoming.tagName&&old.dataset.refLabel===incoming.dataset.refLabel){
+      const current=old.querySelector('[data-ref-filter]'),next=incoming.querySelector('[data-ref-filter]');
+      if(current&&next&&current.tagName===next.tagName){
+        const value=next.value;
+        if(current.tagName==='SELECT'){
+          const a=[...current.options],b=[...next.options];
+          if(a.length!==b.length||a.some((option,i)=>option.value!==b[i].value||option.textContent!==b[i].textContent||option.disabled!==b[i].disabled))current.replaceChildren(...b);
+        }
+        if(current.value!==value)current.value=value;
+        node=old;
+      }else if(!current&&!next&&old.outerHTML===incoming.outerHTML)node=old;
+    }
+    nodes.push(node);
+  }
+  const keep=new Set(nodes);
+  for(const node of [...container.children])if(!keep.has(node))node.remove();
+  let previous=null;
+  for(const node of nodes){
+    const position=previous?previous.nextElementSibling:container.firstElementChild;
+    if(node!==position)container.insertBefore(node,position);
+    previous=node;
+  }
+}
+
 export function createReferences(root,{getOperation=()=>null}={}) {
   let category='glossary',query='',transferNote='',page=0;const values={},states=new Map(),tablePages=new Map();const previews=new Set();
-  const select=(key,label,options)=>'<label class="field">'+escape(label)+'<select data-ref-filter="'+key+'">'+options.map(([value,text])=>'<option value="'+escape(value)+'"'+(String(values[key]??options[0][0])===value?' selected':'')+'>'+escape(text)+'</option>').join('')+'</select></label>';
-  const input=(key,label)=>'<label class="field">'+escape(label)+'<input data-ref-filter="'+key+'" inputmode="decimal" value="'+escape(values[key]||'')+'"></label>';
+  const select=(key,label,options)=>'<label class="field" data-ref-control="'+key+'" data-ref-label="'+escape(label)+'">'+escape(label)+'<select data-ref-filter="'+key+'">'+options.map(([value,text])=>'<option value="'+escape(value)+'"'+(String(values[key]??options[0][0])===value?' selected':'')+'>'+escape(text)+'</option>').join('')+'</select></label>';
+  const input=(key,label)=>'<label class="field" data-ref-control="'+key+'" data-ref-label="'+escape(label)+'">'+escape(label)+'<input data-ref-filter="'+key+'" inputmode="decimal" value="'+escape(values[key]||'')+'"></label>';
   root.innerHTML='<div class="reference-controls"><label class="field">Reference category<select id="reference-category">'+Object.entries(REFERENCE_CATEGORIES).map(([value,title])=>'<option value="'+value+'">'+escape(title)+'</option>').join('')+'</select></label><label class="field">Search this reference<input id="reference-query" type="search" placeholder="Search selected filters; clear to search all"></label></div><div id="reference-filters" class="reference-controls"></div><div id="reference-content"></div>';
   const filters=root.querySelector('#reference-filters'),content=root.querySelector('#reference-content');
   function controls(){
-    if(category==='cutters')filters.innerHTML='';
-    else if(category==='smartstop')filters.innerHTML=select('size','SmartStop size',DATA.smartstop.suffixCharts.map(chart=>[chart.size,chart.label]))+input('wall','Wall filter (positive decimal inches)')+input('id','Pipe I.D. filter (positive decimal inches)');
-    else if(category==='foldinghead')filters.innerHTML=select('topic','Folding Head topic',[['capacity','Capacity'],['helper','Set-point / bar-target helper'],['assembly','Head assembly'],['overview','Source, fit and limitations'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
-    else if(category==='fieldmanual')filters.innerHTML=select('topic','Field manual topic',[['thread','Thread make-up'],['all','All manual topics / search'],['rpm','Cutter RPM'],['histop','Hi-Stop setup'],['machines','Machine specifications'],['checks','Post-job checks / tolerances']]);
-    else if(category==='fractions')filters.innerHTML=input('decimal','Decimal or fraction to convert (in)')+select('rounding','Round to nearest',[['64','1/64 in'],['32','1/32 in'],['16','1/16 in']]);
-    else filters.innerHTML='';
+    let markup;
+    if(category==='cutters')markup='';
+    else if(category==='smartstop')markup=select('size','SmartStop size',DATA.smartstop.suffixCharts.map(chart=>[chart.size,chart.label]))+input('wall','Wall filter (positive decimal inches)')+input('id','Pipe I.D. filter (positive decimal inches)');
+    else if(category==='foldinghead')markup=select('topic','Folding Head topic',[['capacity','Capacity'],['helper','Set-point / bar-target helper'],['assembly','Head assembly'],['overview','Source, fit and limitations'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
+    else if(category==='fieldmanual')markup=select('topic','Field manual topic',[['thread','Thread make-up'],['all','All manual topics / search'],['rpm','Cutter RPM'],['histop','Hi-Stop setup'],['machines','Machine specifications'],['checks','Post-job checks / tolerances']]);
+    else if(category==='fractions')markup=input('decimal','Decimal or fraction to convert (in)')+select('rounding','Round to nearest',[['64','1/64 in'],['32','1/32 in'],['16','1/16 in']]);
+    else markup='';
     for(const field of referenceSelectionFields(category,values)){
       if(!field.options.some(([value])=>value===values[field.key]))values[field.key]=field.options[0][0];
-      filters.innerHTML+=select(field.key,field.label,field.options);
+      markup+=select(field.key,field.label,field.options);
     }
     const helper=category==='foldinghead'&&values.topic==='helper'?'foldinghelper':['pivothead','uwire'].includes(category)?category:'';
     if(helper){
@@ -202,11 +236,12 @@ export function createReferences(root,{getOperation=()=>null}={}) {
         if(field.options&&!field.options.some(([value])=>value===values[field.key]))values[field.key]=field.options[0][0];
         else if(values[field.key]===undefined&&field.defaultValue!==undefined)values[field.key]=field.defaultValue;
       }
-      filters.innerHTML+=(fields.map(field=>field.options?select(field.key,field.label,field.options):input(field.key,field.label)).join(''));
+      markup+=(fields.map(field=>field.options?select(field.key,field.label,field.options):input(field.key,field.label)).join(''));
     }
-    if(helper)filters.innerHTML+='<button type="button" data-ref-current-pipe>Use current pipe (reference only)</button>';
-    if(category==='fractions')filters.innerHTML+='<div class="fraction-quick" role="group" aria-label="Quick decimal inserts">'+[['0.0625','1/16'],['0.1250','1/8'],['0.2500','1/4'],['0.3750','3/8'],['0.5000','1/2']].map(([value,label])=>'<button type="button" data-ref-decimal="'+value+'">'+label+'</button>').join('')+'</div>';
-    if(referenceSelectionFields(category,values).length||['pivothead','uwire','foldinghead','fractions','smartstop'].includes(category))filters.innerHTML+='<button type="button" data-ref-clear>Clear reference inputs</button>';
+    if(helper)markup+='<button type="button" data-ref-current-pipe data-ref-control="$current-pipe">Use current pipe (reference only)</button>';
+    if(category==='fractions')markup+='<div data-ref-control="$fractions" class="fraction-quick" role="group" aria-label="Quick decimal inserts">'+[['0.0625','1/16'],['0.1250','1/8'],['0.2500','1/4'],['0.3750','3/8'],['0.5000','1/2']].map(([value,label])=>'<button type="button" data-ref-decimal="'+value+'">'+label+'</button>').join('')+'</div>';
+    if(referenceSelectionFields(category,values).length||['pivothead','uwire','foldinghead','fractions','smartstop'].includes(category))markup+='<button type="button" data-ref-clear data-ref-control="$clear">Clear reference inputs</button>';
+    reconcileReferenceControls(filters,markup);
   }
   function render(){
     for(const stop of previews)stop();previews.clear();
@@ -226,7 +261,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
       const key=event.target.dataset.refFilter;values[key]=event.target.value;page=0;tablePages.clear();
       if(key==='topic'){for(const name of ['size','machine','cutter','manualPart','item','boringOd'])delete values[name];}
       if(key==='manualPart')delete values.item;
-      if(event.target.tagName==='SELECT'){controls();filters.querySelector('[data-ref-filter="'+key+'"]')?.focus();}render();
+      if(event.target.tagName==='SELECT')controls();render();
     }
   });
   root.addEventListener('input',event=>{if(event.target.id==='reference-query'){query=event.target.value;page=0;tablePages.clear();render();}else if(event.target.dataset.refFilter&&event.target.tagName==='INPUT'){values[event.target.dataset.refFilter]=event.target.value;render();}});
@@ -269,7 +304,7 @@ async function previewStackup(trigger,previews) {
   try{
     const pdfjs=await import('../pdf.mjs');if(cancelled)return;
     // Isolate the PDF.js cancellation backport from the shared live/dev worker.
-    pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha09',import.meta.url).href;
+    pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha10',import.meta.url).href;
     loadingTask=pdfjs.getDocument({url:new URL(source.path,import.meta.url).href,isEvalSupported:false});pdf=await loadingTask.promise;if(cancelled)return;
     const page=await pdf.getPage(row.sourcePage);if(cancelled)return;
     const unit=page.getViewport({scale:1}),width=Math.max(240,holder.clientWidth||600),scale=Math.min(2,width/unit.width),viewport=page.getViewport({scale});

@@ -5,7 +5,7 @@ import {normalizeJob,geometry,STORAGE_KEY} from '../pre-alpha/model.mjs';
 import {formatEta} from '../pre-alpha/eta.mjs';
 import {REFERENCE_CATEGORIES} from '../pre-alpha/references.mjs';
 import {runReferenceMigrationChecks} from './pre-alpha-reference-migration-ui.mjs';
-import {runReferenceSelectorChecks} from './pre-alpha-reference-selectors-ui.mjs';
+import {runReferenceSelectorChecks,installReferenceFocusTrace} from './pre-alpha-reference-selectors-ui.mjs';
 
 export async function runNextChecks({browser,pw,base,mobile,engine}) {
   const state={bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',bcoPipeID:'6',bcoCutterOD:'4',md:'10',ld:'0',ptc:'1',start:'0',mt:'52',lsMd:'10',lsLd:'0',lsPod:'8',lsTravel:'20',lsMachineTravel:'19',cpStart:'20',cpJbf:'1.25',cpLd:'0.5',cpPt:'2.75',cpLiManual:'99',cpLiManualToggle:false,etaBco:'99'};
@@ -15,6 +15,7 @@ export async function runNextChecks({browser,pw,base,mobile,engine}) {
   const original=JSON.stringify(job.original);
   const context=await browser.newContext({...mobile?pw.devices['iPhone 13']:{viewport:{width:1360,height:1000}},serviceWorkers:'block'});
   const page=await context.newPage(),errors=[],writes=[];
+  await page.addInitScript(installReferenceFocusTrace);
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('**/v1/**',route=>{if(route.request().method()!=='GET')writes.push(route.request().method());return route.fulfill({json:{documents:[]}});});
   await page.addInitScript(({job,key})=>{

@@ -249,7 +249,12 @@ try{
     assert.deepEqual(writes,[]);
     assert.deepEqual(errors,[]);
     await context.close();
-    await runNextChecks({browser,pw,base,mobile,engine});
+    // Finite diagnostic experiment: five fresh original-path contexts per viewport.
+    // Fail on the first mismatch; never retry an assertion or modify app behavior.
+    for(let focusRun=0;focusRun<5;focusRun++){
+      console.log('REFERENCE_FRESH_CONTEXT '+engine+'/'+(mobile?'phone':'desktop')+' '+(focusRun+1)+'/5');
+      await runNextChecks({browser,pw,base,mobile,engine});
+    }
     await runInlineEtaChecks({browser,pw,base,mobile,engine});
     await runPdfWorkerChecks({browser,pw,base,mobile,engine});
     console.log('PASS Pre-Alpha '+engine+'/'+(mobile?'phone':'desktop')+': Firebase read, 3 operations, separate drafts, original preservation, themes, details and blank steps');

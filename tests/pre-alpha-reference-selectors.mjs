@@ -71,22 +71,44 @@ assert.equal(JSON.stringify({DATA,SUPPLEMENT}),before,'Selectors never mutate so
 // this is native browser/layout coverage. Browser tests cover those separately.
 const listeners={},query={value:''},focus=[];
 const content={innerHTML:'',dataset:{},querySelector:()=>({focus(){focus.push('count');}}),querySelectorAll:()=>Array.from({length:20},()=>({focus(){focus.push('count');}}))};
-const filters={innerHTML:'',querySelector:selector=>({focus(){focus.push(selector);}})};
+// Minimal keyed-element model for controller/reconciliation checks. It models
+// identity, ordering and option/value updates, not native browser focus behavior.
+const decode=value=>value.replaceAll('&quot;','"').replaceAll('&#39;',"'").replaceAll('&lt;','<').replaceAll('&gt;','>').replaceAll('&amp;','&');
+const encode=value=>String(value).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+let relocations=0,optionUpdates=0;
+function parseControls(markup){
+  return [...markup.matchAll(/<(label|button|div)\b[^>]*data-ref-control="([^"]*)"[^>]*>[\s\S]*?<\/\1>/g)].map(match=>{
+    const raw=match[0],field=raw.match(/<(select|input) data-ref-filter="([^"]*)"[^>]*>/),label=raw.match(/data-ref-label="([^"]*)"/);
+    let control=null;
+    if(field){
+      const options=[...raw.matchAll(/<option value="([^"]*)"([^>]*)>([\s\S]*?)<\/option>/g)].map(option=>({value:decode(option[1]),textContent:decode(option[3]),disabled:false,selected:option[2].includes('selected')}));
+      control={tagName:field[1].toUpperCase(),dataset:{refFilter:field[2]},options,value:field[1]==='select'?(options.find(x=>x.selected)||options[0])?.value||'':decode(field[0].match(/ value="([^"]*)"/)?.[1]||''),replaceChildren(...items){optionUpdates++;this.options=items;this.value=(items.find(x=>x.selected)||items[0])?.value||'';}};
+      Object.defineProperty(control,'outerHTML',{get(){return this.tagName==='SELECT'?'<select data-ref-filter="'+this.dataset.refFilter+'">'+this.options.map(x=>'<option value="'+encode(x.value)+'"'+(this.value===x.value?' selected':'')+'>'+encode(x.textContent)+'</option>').join('')+'</select>':'<input data-ref-filter="'+this.dataset.refFilter+'" value="'+encode(this.value)+'">';}});
+    }
+    const node={tagName:match[1].toUpperCase(),dataset:{refControl:decode(match[2]),...label?{refLabel:decode(label[1])}:{}},parent:null,querySelector:()=>control,remove(){if(this.parent){const siblings=this.parent.children;siblings.splice(siblings.indexOf(this),1);this.parent=null;}}};
+    Object.defineProperty(node,'nextElementSibling',{get(){return this.parent?.children[this.parent.children.indexOf(this)+1]||null;}});
+    Object.defineProperty(node,'outerHTML',{get(){return control?raw.slice(0,raw.indexOf(field[0]))+control.outerHTML+'</label>':raw;}});
+    return node;
+  });
+}
+const filters={children:[],ownerDocument:{createElement(){return {content:{children:[]},set innerHTML(markup){this.content.children=parseControls(markup);}};}},get firstElementChild(){return this.children[0]||null;},get innerHTML(){return this.children.map(x=>x.outerHTML).join('');},insertBefore(node,position){if(node.parent){relocations++;node.remove();}const index=position?this.children.indexOf(position):this.children.length;this.children.splice(index,0,node);node.parent=this;},querySelector(selector){const key=selector.match(/data-ref-filter="([^"]*)"/)?.[1];return this.children.map(x=>x.querySelector()).find(x=>x?.dataset.refFilter===key);}};
 const root={innerHTML:'',querySelector:selector=>({'#reference-filters':filters,'#reference-content':content,'#reference-query':query}[selector]),addEventListener:(type,fn)=>listeners[type]=fn};
 createReferences(root);
 const category=value=>listeners.change({target:{id:'reference-category',value,dataset:{}}});
-const choose=(key,value)=>listeners.change({target:{dataset:{refFilter:key},value,tagName:'SELECT'}});
+const choose=(key,value)=>{const target=filters.querySelector('[data-ref-filter="'+key+'"]');assert.ok(target,'Control exists: '+key);target.value=value;listeners.change({target});};
 const search=value=>{query.value=value;listeners.input({target:{id:'reference-query',value}});};
 const click=(selector,dataset={})=>listeners.click({target:{closest:s=>s===selector?{dataset}:null}});
-const selected=key=>{const html=filters.innerHTML.match(new RegExp('<select data-ref-filter="'+key+'">([\\s\\S]*?)</select>'))?.[1];return html?.match(/<option value="([^"]*)" selected>/)?.[1];};
+const selected=key=>filters.querySelector('[data-ref-filter="'+key+'"]')?.value;
 category('papergaskets');assert.match(root.innerHTML,/Durlon Gaskets/);assert.match(content.innerHTML,/<p class="warning" data-reference-qualification role="note">Durlon Gaskets is the section name only/);assert.match(content.innerHTML,/Choose a pipe size/);assert.doesNotMatch(content.innerHTML,/<table>/);
-choose('size','4');choose('rating','900');search('4');category('glossary');category('papergaskets');assert.equal(selected('size'),'4');assert.equal(selected('rating'),'900');assert.equal(query.value,'4');assert.match(content.innerHTML,/Paper Gaskets 900#/);
-choose('size','3-1/2');assert.equal(selected('rating'),'','Dependent unavailable class resets, not silently retained');search('');assert.doesNotMatch(filters.innerHTML,/<option value="900"/);assert.doesNotMatch(content.innerHTML,/Paper Gaskets 900#/);
+const sizeControl=filters.querySelector('[data-ref-filter="size"]'),ratingControl=filters.querySelector('[data-ref-filter="rating"]');
+const beforeRelocations=relocations,beforeOptionUpdates=optionUpdates;
+choose('size','4');choose('rating','900');assert.equal(filters.querySelector('[data-ref-filter="size"]'),sizeControl);assert.equal(filters.querySelector('[data-ref-filter="rating"]'),ratingControl);assert.equal(relocations,beforeRelocations,'Unchanged controls are never detached/reinserted');assert.equal(optionUpdates,beforeOptionUpdates,'Unchanged option lists are not rebuilt');search('4');category('glossary');category('papergaskets');assert.equal(selected('size'),'4');assert.equal(selected('rating'),'900');assert.equal(query.value,'4');assert.match(content.innerHTML,/Paper Gaskets 900#/);
+const resetRating=filters.querySelector('[data-ref-filter="rating"]');choose('size','3-1/2');assert.equal(filters.querySelector('[data-ref-filter="rating"]'),resetRating,'Dependent options update within the same control');assert.equal(selected('rating'),'','Dependent unavailable class resets, not silently retained');search('');assert.doesNotMatch(filters.innerHTML,/<option value="900"/);assert.doesNotMatch(content.innerHTML,/Paper Gaskets 900#/);
 search('no-gasket-match');assert.match(content.innerHTML,/not verified for your Durlon grade/);assert.match(content.innerHTML,/Multi-Swell 3760/);assert.match(content.innerHTML,/No listed match/);
 click('[data-ref-clear]');assert.equal(selected('size'),'');assert.equal(query.value,'');assert.doesNotMatch(content.innerHTML,/<table>/);
 category('fieldmanual');choose('topic','rpm');choose('machine','1200');choose('cutter','40"');choose('machine','T101');assert.equal(selected('cutter'),'','Machine change resets unsupported cutter');assert.match(content.innerHTML,/T101/);assert.doesNotMatch(content.innerHTML,/<td>1200<\/td>/);
 choose('topic','histop');choose('manualPart','torque');choose('item','2" 600# (360TM)');choose('manualPart','machinePressure');assert.equal(selected('item'),'','Different Hi-Stop subtopics never reuse unlike selections');
 category('stackups');assert.doesNotMatch(content.innerHTML,/class="stackup-card"/);choose('source','Hot Tap Stackups.pdf');assert.equal((content.innerHTML.match(/class="stackup-card"/g)||[]).length,20);const first=content.innerHTML;click('[data-ref-page]',{refPage:'1'});assert.match(content.innerHTML,/Showing 21–40/);assert.notEqual(content.innerHTML,first);category('glossary');category('stackups');assert.match(content.innerHTML,/Showing 21–40/);choose('type','HTP Reference');assert.equal(selected('source'),'');assert.match(content.innerHTML,/HTP/);search('no-source-match-xyz');assert.match(content.innerHTML,/No matching source page/);search('');assert.match(content.innerHTML,/Showing 1–/);
-category('glossary');search('');assert.match(content.innerHTML,/Page 1 of 2/);click('[data-ref-table-page]',{tableIndex:'0',refTablePage:'1'});assert.match(content.innerHTML,/showing 21–37/);search('MD');assert.doesNotMatch(content.innerHTML,/Page 2/);assert.ok(focus.length,'Selection and pagination focus are restored by controller');
+category('glossary');search('');assert.match(content.innerHTML,/Page 1 of 2/);click('[data-ref-table-page]',{tableIndex:'0',refTablePage:'1'});assert.match(content.innerHTML,/showing 21–37/);search('MD');assert.doesNotMatch(content.innerHTML,/Page 2/);assert.ok(focus.length,'Pagination result focus is set by controller');
 for(const file of ['pre-alpha/references.mjs'])assert.doesNotMatch(readFileSync(new URL('../'+file,import.meta.url),'utf8'),/localStorage\.(?:setItem|removeItem|clear)|sessionStorage\.|uploadJob|commitJob|deleteJob|addDoc\(/);
 console.log(`PASS ${checks} reference selector/source cases plus controller memory, dependent reset, pagination, source safety and read-only boundaries`);

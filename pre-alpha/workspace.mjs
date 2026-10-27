@@ -1,8 +1,8 @@
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha09';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha09';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha09';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha09';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha09';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha10';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha10';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha10';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha10';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha10';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
