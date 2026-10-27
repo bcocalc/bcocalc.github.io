@@ -22,6 +22,13 @@ try{
   await page.locator('[data-ref-filter="size"]').selectOption('12');
   await page.locator('[data-ref-filter="rating"]').selectOption('150');
   const expected=referenceView('papergaskets',{size:'12',rating:'150'}).tables[0];
+  const sourceReachable=async()=>{
+    await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+    const source=page.locator('.reference-row-card').last().locator('div').last();
+    const rect=await source.boundingBox(),nav=await page.locator('.main-nav').boundingBox();
+    assert.ok(rect&&nav&&rect.y>=0&&rect.y+rect.height<=nav.y,'Final source row is reachable above fixed navigation');
+    assert.match(await source.innerText(),/Source/);
+  };
   const audit=async()=>{
     const layout=await page.evaluate(()=>({viewport:innerWidth,width:document.documentElement.scrollWidth,zoom:document.body.style.zoom,theme:document.body.className,nodes:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width&&(r.right>innerWidth+1||el.scrollWidth>el.clientWidth+1);}).map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {tag:el.tagName,id:el.id,classes:el.className,left:r.left,right:r.right,width:r.width,client:el.clientWidth,scroll:el.scrollWidth,font:s.fontSize,position:s.position,overflow:s.overflowX};}).slice(0,80)}));
     if(layout.width>layout.viewport)console.log('REFERENCE_CARD_OVERFLOW '+JSON.stringify({engine,...layout}));
@@ -43,7 +50,9 @@ try{
       // 200% layout zoom and text enlargement exercise wrapping independently.
       await page.evaluate(()=>document.body.style.zoom='2');await audit();
       await page.evaluate(()=>{document.body.style.zoom='';document.querySelectorAll('.reference-row-card *').forEach(el=>el.style.fontSize='26px');});await audit();
+      await sourceReachable();
       await page.evaluate(()=>document.querySelectorAll('.reference-row-card *').forEach(el=>el.style.fontSize=''));
+      await sourceReachable();
     }
   }
   await page.setViewportSize({width:390,height:844});
@@ -53,6 +62,9 @@ try{
   const card=page.locator('.reference-row-card').first();
   const term=card.locator('[data-help-term]').first();
   await term.tap();await page.locator('.term-tooltip').waitFor({state:'visible'});
+  const helpBounds=await page.locator('.term-tooltip').boundingBox();
+  assert.ok(helpBounds&&helpBounds.x>=0&&helpBounds.y>=0&&helpBounds.x+helpBounds.width<=390&&helpBounds.y+helpBounds.height<=844,'Touch popover stays within the viewport');
+  assert.ok(await page.locator('.term-tooltip').evaluate(el=>{const r=el.getBoundingClientRect();return el.contains(document.elementFromPoint(r.left+r.width/2,r.top+r.height-1));}),'Popover content is not covered by fixed navigation');
   await page.keyboard.press('Escape');assert.equal(await page.locator('.term-tooltip:visible').count(),0);
   await page.locator('[data-ref-clear]').tap();
   assert.equal(await page.locator('.reference-row-card').count(),0);

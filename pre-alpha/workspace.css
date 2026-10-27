@@ -60,3 +60,10 @@ dialog{width:min(550px,calc(100% - 28px));max-height:90dvh;border:1px solid var(
   .reference-row-card dd{margin:0;min-width:0}
   .reference-row-card .term-group{white-space:normal}
 }
+
+/* Let the phone shell reflow at enlarged layout/text scales too. */
+@media(max-width:700px){
+  .masthead{flex-wrap:wrap}
+  .wordmark{min-width:0;flex-wrap:wrap;overflow-wrap:anywhere}
+  .main-nav button{min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere;padding-inline:4px}
+}
