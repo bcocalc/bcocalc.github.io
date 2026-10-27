@@ -11,6 +11,7 @@ const checks = [
   ['pipe-size-data.mjs', {}],
   ['cutter-reference.mjs', {}],
   ['coupon-free.mjs', {}],
+  ['tools-mode-unit.mjs', {}],
   ['pre-alpha-model.mjs', {}],
   ['pre-alpha-home.mjs', {}],
   ['pre-alpha-presentation.mjs', {}],
@@ -26,6 +27,7 @@ if (!args.includes('--unit-only')) {
   for (const browser of ['chromium', 'webkit']) {
     checks.push(['library-touch.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pipe-sizes-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['tools-mode-reload-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['coupon-free-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-presentation-ui.mjs', { TAPCALC_BROWSER: browser }]);

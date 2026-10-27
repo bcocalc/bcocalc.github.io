@@ -330,8 +330,10 @@ function setMode(mode) {
   if (!panels[nextMode]) return;
   if (CALC_SCREEN_MODES.has(nextMode)) syncCalcModeButtons(nextMode);
   if (WORKFLOW_SCREEN_MODES.has(nextMode)) syncWorkflowModeButtons(nextMode);
+  // Background workflow refreshes must not deactivate the selected calculator.
+  const isCalculatorMode = CALC_SCREEN_MODES.has(nextMode);
   Object.entries(panels).forEach(([key, panel]) => {
-    if (!panel) return;
+    if (!panel || CALC_SCREEN_MODES.has(key) !== isCalculatorMode) return;
     panel.classList.toggle('active', key === nextMode);
   });
   if (nextMode === 'eta') {
