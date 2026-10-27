@@ -1,11 +1,14 @@
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha10';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha10';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha10';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha10';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha10';
+import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha11';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha11';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha11';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha11';
+import {createOriginTracker,worksheetMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha11';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha11';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha11';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
+const origins=createOriginTracker();
 const stages = {
   setup:['Job & operation','Make sure you are working on the right operation.'],
   pipe:['Pipe & cutter','Check the actual dimensions. BCO and coupon free update below.'],
@@ -27,31 +30,139 @@ const details = [['jobDescription','Job name'],['jobClient','Customer'],['jobLoc
 let jobs=[],active=null,stage='setup',source='shared',shared=[],visibleLimit=30;
 let connectionBusy=false, noticeTimer;
 let pendingDeleteId=null;
-let auxiliary,currentPage='workspace';
+let auxiliary,currentPage='home';
 const scrollPositions={};
 function notify(message) {
   $('notice').textContent=message; $('notice').hidden=false;
-  clearTimeout(noticeTimer); noticeTimer=setTimeout(() => $('notice').hidden=true,4500);
+  clearTimeout(noticeTimer); noticeTimer=setTimeout(() => {if(!workspaceStartupError)$('notice').hidden=true;},4500);
 }
-try {
-  const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
-  jobs=Array.isArray(saved.jobs)?saved.jobs:[];
-  active=jobs.find(job=>job.id===saved.activeId)||null;
-} catch {}
+const workspaceStore=createWorkspaceStore({storage:{getItem:key=>localStorage.getItem(key)},locks:navigator.locks,onCommit:()=>workspaceChannel?.postMessage('committed')});
+let workspaceChannel=null;
+try{if(typeof BroadcastChannel!=='undefined')workspaceChannel=new BroadcastChannel('tapcalc-pre-alpha-workspace');}catch{}
+let workspaceStartupError=null;
+try{await workspaceStore.ready;}catch(error){workspaceStartupError=error;}
+const drafts=new Map();
+let savedView={jobs:[],activeId:null,versions:new Map(),conflicts:new Map()},saveQueue=Promise.resolve(),recoveryBusy=false,pendingSelections=0;
+function refreshSaved(){
+  try{savedView=workspaceStore.read();}
+  catch(error){$('save-state').textContent=error.message;notify(error.message);return false;}
+  jobs=savedView.jobs.map(job=>drafts.get(job.id)?.job||job);
+  for(const draft of drafts.values())if(!jobs.some(job=>job.id===draft.job.id))jobs.unshift(draft.job);
+  return true;
+}
+function draftFor(job){
+  if(!drafts.has(job.id))drafts.set(job.id,{job:structuredClone(job),base:savedView.versions.get(job.id)??null,sequence:0,saved:0,error:null});
+  return drafts.get(job.id);
+}
+function saveStatus(){
+  const draft=active&&drafts.get(active.id);
+  if(draft&&!draft.error&&draft.sequence===draft.saved&&(savedView.versions.get(active.id)??null)!==draft.base)draft.error=Object.assign(new Error('This job changed in another tab. Your draft has not been replaced.'),{code:'conflict'});
+  if(draft&&!draft.error&&savedView.conflicts.has(active.id))draft.error=Object.assign(new Error('An older tab saved a different version. Both saved versions are retained.'),{code:'legacy-conflict'});
+  const error=draft?.error||workspaceStartupError;
+  $('save-state').textContent=error?error.message:pendingSelections||draft&&draft.sequence!==draft.saved?'Saving on this device…':'Saved on this device';
+  $('save-recovery').hidden=!error;
+  $('save-recovery-message').textContent=error?error.message+' Your changes remain in this tab. Saving a separate copy preserves the other saved version.':'';
+  $('save-copy').disabled=recoveryBusy||!draft||draft.sequence!==draft.saved&&!error;
+  $('load-saved').disabled=recoveryBusy;
+  $('load-saved').textContent=savedView.conflicts.has(active?.id)?'Open older-tab version as a copy':'Load saved version';
+}
+if(refreshSaved()){
+  const resumed=jobs.find(job=>job.id===savedView.activeId);
+  if(resumed)active=draftFor(resumed).job;
+}
 function operation() {return active?.operations.find(op=>op.id===active.selectedOperationId)||active?.operations[0];}
 function persist() {
-  if(!active)return;
-  active.updatedAt=new Date().toISOString();
-  const index=jobs.findIndex(job=>job.id===active.id);
-  if(index<0)jobs.unshift(active);else jobs[index]=active;
-  try {localStorage.setItem(STORAGE_KEY,JSON.stringify({build:BUILD,activeId:active.id,jobs}));$('save-state').textContent='Saved on this device';}
-  catch {$('save-state').textContent='Could not save on this device';notify('Device storage is full or unavailable. Keep this page open to retain your changes.');}
+  if(!active)return Promise.resolve(false);
+  const draft=draftFor(active);draft.job=active;
+  const snapshot=structuredClone(active),sequence=++draft.sequence;
+  refreshSaved();saveStatus();
+  const task=saveQueue.then(async()=>{
+    if(drafts.get(snapshot.id)!==draft)return false;
+    if(draft.error?.code==='conflict'||draft.error?.code==='legacy-conflict')return false;
+    try{
+      const result=await workspaceStore.save(snapshot,draft.base,{isCurrent:()=>drafts.get(snapshot.id)===draft});
+      draft.base=result.version;draft.saved=sequence;draft.error=null;
+      if(sequence===draft.sequence)draft.job.updatedAt=result.job.updatedAt;
+      refreshSaved();return true;
+    }catch(error){
+      if(error.code==='cancelled')return false;
+      draft.error=error.code?error:Object.assign(new Error('Could not save on this device. Keep this page open to retain your changes.'),{code:'storage-failure'});
+      notify(draft.error.message);return false;
+    }finally{saveStatus();}
+  });
+  saveQueue=task.then(()=>{});return task;
 }
-function page(name,{recordHistory=true}={}) {
-  const names=['workspace','library','references','settings'];if(!names.includes(name))return;
+async function saveSeparateCopy(job=active){
+  if(!job||recoveryBusy)return;
+  recoveryBusy=true;saveStatus();
+  const original=active,draft=drafts.get(original.id),sequence=draft?.sequence,snapshot=structuredClone(job);
+  $('save-copy').disabled=true;
+  try{
+    await saveQueue;
+    const result=await workspaceStore.save(snapshot,null,{copy:true});
+    // Do not discard edits typed while the lock/copy was pending.
+    if(active===original&&draft?.sequence===sequence){
+      if(job===original)drafts.delete(original.id);
+      refreshSaved();active=draftFor(result.job).job;renderWorkspace();
+    }else refreshSaved();
+    notify('A separate complete working copy was saved. Other saved versions were not changed.');
+  }catch(error){notify(error.message||'The separate copy could not be saved. Keep this page open.');}
+  finally{recoveryBusy=false;saveStatus();if(currentPage==='home')renderHome();}
+}
+$('save-copy').addEventListener('click',()=>saveSeparateCopy());
+$('load-saved').addEventListener('click',()=>{
+  if(recoveryBusy)return;
+  if(!active||!refreshSaved())return;
+  const older=savedView.conflicts.get(active.id);
+  if(older){saveSeparateCopy(older);return;}
+  const saved=savedView.jobs.find(job=>job.id===active.id);
+  if(!saved||!window.confirm('Discard this tab’s unsaved changes and load the saved version?'))return;
+  drafts.delete(active.id);active=draftFor(saved).job;saveStatus();renderWorkspace();
+});
+function savedElsewhere(){
+  if(!refreshSaved())return;
+  const draft=active&&drafts.get(active.id);
+  if(draft&&(savedView.versions.get(active.id)??null)!==draft.base){
+    draft.error=Object.assign(new Error('This job changed in another tab. Your draft has not been replaced.'),{code:'conflict'});
+    saveStatus();
+  }
+  if(currentPage==='library')renderLibrary();
+  if(currentPage==='home')renderHome();
+}
+function pullSavedChanges(){
+  return workspaceStore.refresh().then(savedElsewhere).catch(error=>{ $('save-state').textContent=error.message;notify(error.message); });
+}
+window.addEventListener('storage',event=>{
+  if(event.key!==STORAGE_KEY&&event.key!==WORKSPACE_KEY&&event.key!==null)return;
+  savedElsewhere();return pullSavedChanges();
+});
+workspaceChannel?.addEventListener('message',event=>{if(event.data==='committed')pullSavedChanges();});
+window.addEventListener('focus',pullSavedChanges);
+window.addEventListener('beforeunload',event=>{
+  if(pendingSelections||recoveryBusy||[...drafts.values()].some(draft=>draft.sequence!==draft.saved||draft.error)){
+    event.preventDefault();event.returnValue='';
+  }
+});
+const pageNames=['home','workspace','library','references','settings'];
+function routeFromLocation() {return pageNames.includes(location.hash.slice(1))?location.hash.slice(1):'home';}
+function renderHome() {
+  const job=active||jobs[0];
+  $('resume').hidden=!job;$('resume-job').hidden=!job;
+  $('home-new-job').classList.toggle('primary',!job);
+  if(!job)return;
+  const op=job.operations.find(item=>item.id===job.selectedOperationId)||job.operations[0];
+  $('resume-title').textContent=job.title;
+  $('resume-position').textContent=op?[op.label,stages[stageFor(op)]?.[0]].filter(Boolean).join(' / '):'No operations yet';
+}
+function page(name,{recordHistory=true,moveFocus=true}={}) {
+  if(!pageNames.includes(name))return;
+  // A workspace link never creates a job. Empty workspaces return to Home.
+  if(name==='workspace'&&!active)name='home';
   const changed=currentPage!==name;
   if(changed)scrollPositions[currentPage]=window.scrollY;
-  for(const key of names)$(key).hidden=key!==name;
+  if(name==='home')renderHome();
+  if(name==='workspace'&&$('job-workspace').hidden)renderWorkspace();
+  for(const key of pageNames)$(key).hidden=key!==name;
   document.querySelectorAll('[data-page]').forEach(button=>{
     if(button.dataset.page===name)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   });
@@ -59,6 +170,8 @@ function page(name,{recordHistory=true}={}) {
   auxiliary?.closeMenu(false);currentPage=name;
   if(changed)window.scrollTo({top:scrollPositions[name]||0,behavior:'instant'});
   if(recordHistory&&history.state?.preAlphaPage!==name)history.pushState({preAlphaPage:name},'','#'+name);
+  // Do not leave keyboard/screen-reader focus inside the now-hidden page or menu.
+  if(moveFocus&&(changed||document.activeElement?.closest('[hidden]')))$(name).querySelector('h1')?.focus({preventScroll:true});
 }
 function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field') {
   const attrs=attribute+'="'+escape(key)+'" id="'+escape(attribute+key)+'"';
@@ -80,7 +193,8 @@ function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field
   }else if(type==='textarea')control='<textarea '+attrs+'>'+escape(value)+'</textarea>';
   else control='<input '+attrs+' type="'+(type==='date'?'date':'text')+'"'+(type==='text'&&!['operationLabel','machineType'].includes(key)?' inputmode="decimal"':'')+' value="'+escape(value)+'" autocomplete="off">';
   if(key==='lsMd') hint=lineStopMdIsManual(operation().state)?'Manual MD; Hot Tap MD changes are kept separate.':'Follows Hot Tap MD until you edit it.';
-  return '<div class="field'+(type==='textarea'?' wide':'')+(['operation','machine'].includes(type)?' setup-choice':'')+'"><div class="field-label"><label for="'+escape(attribute+key)+'">'+escape(label)+'</label>'+(FIELD_HELP[key]?'<button type="button" class="help-icon" data-help-field="'+key+'" aria-label="Help for '+escape(label)+'">?</button>':'')+'</div>'+control+(hint?'<small'+(key==='lsMd'?' id="ls-md-hint"':'')+'>'+escape(hint)+'</small>':'')+(key==='ptc'?'<small id="ptc-warning" class="field-warning" hidden></small>':'')+'</div>';
+  const origin=attribute==='data-field'&&type==='text'?'<small class="value-origin" data-value-origin="'+escape(key)+'">'+escape(origins.label(operation(),key))+'</small>':'';
+  return '<div class="field'+(type==='textarea'?' wide':'')+(['operation','machine'].includes(type)?' setup-choice':'')+'"><div class="field-label"><label for="'+escape(attribute+key)+'">'+escape(label)+'</label>'+(FIELD_HELP[key]?'<button type="button" class="help-icon" data-help-field="'+key+'" aria-label="Help for '+escape(label)+'">?</button>':'')+'</div>'+control+origin+(hint?'<small'+(key==='lsMd'?' id="ls-md-hint"':'')+'>'+escape(hint)+'</small>':'')+(key==='ptc'?'<small id="ptc-warning" class="field-warning" hidden></small>':'')+'</div>';
 }
 function renderOperations() {
   $('operation-count').textContent=active.operations.length;
@@ -93,8 +207,9 @@ function renderOperations() {
   }
 }
 function renderWorkspace() {
-  $('welcome').hidden=!!active;$('job-workspace').hidden=!active;
+  $('job-workspace').hidden=!active;
   if(!active)return;
+  saveStatus();
   let migrated=false;for(const item of active.operations)if(migratePipeSource(item))migrated=true;
   if(migrated)persist();
   $('job-title').textContent=active.title;
@@ -138,11 +253,11 @@ function goToStage(next) {
 function warningMarkup(warnings) {
   return warnings.map(warning=>'<p class="warning" data-warning-code="'+escape(warning.code)+'">'+escape(warning.message)+'</p>').join('');
 }
-function reviewInputMarkup(rows) {
-  return '<dl class="review-list">'+rows.map(({label,value,note})=>{
+function reviewInputMarkup(rows,op=operation()) {
+  return '<dl class="review-list">'+rows.map(({key,label,value,note})=>{
     const numeric=number(value);
     const display=Number.isFinite(numeric)?format(numeric)+' in':Number.isNaN(value)||value==null||value===''?'Not entered':String(value)+' (invalid)';
-    return '<div><dt>'+escape(label)+(note?'<small>'+escape(note)+'</small>':'')+'</dt><dd>'+escape(display)+'</dd></div>';
+    return '<div><dt>'+escape(label)+(note?'<small>'+escape(note)+'</small>':'')+'<small class="value-origin">'+escape(origins.label(op,key))+'</small></dt><dd>'+escape(display)+'</dd></div>';
   }).join('')+'</dl>';
 }
 function operationReviewMarkup(op) {
@@ -152,7 +267,7 @@ function operationReviewMarkup(op) {
     (notes.length?'<ul class="review-notes">'+notes.map(note=>'<li><strong>'+escape(STAGE_TITLES[note.stage])+':</strong> '+escape(note.message)+'</li>').join('')+'</ul>':'')+'</section>';
   const sections=reviewSections(op).map(section=>{
     const results=section.stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{secondary:section.results.slice(1)}):'<dl class="review-results">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';
-    return '<section class="review-stage" data-help-context="'+section.stage+'" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode">'+escape(section.mode)+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+
+    return '<section class="review-stage" data-help-context="'+section.stage+'" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode value-origin" data-result-origin>'+escape(section.mode+(section.override?'':' - not field verified'))+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+worksheetMarkup(op,section.stage,origins)+
       '<details class="review-inputs"><summary>'+(section.override?'Retained setup measurements (not used for lower in)':'Setup measurements')+'</summary>'+reviewInputMarkup(section.inputs)+'</details>'+
       (section.retained.length?'<details class="review-inactive"><summary>Inactive saved inputs (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+'</section>';
   }).join('');
@@ -165,6 +280,7 @@ function renderResults() {
     const [main,...rest]=results;
     $('results').innerHTML=stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{primary:true,secondary:rest}):'<div class="result-panel"><p class="eyebrow">'+escape(main[0])+'</p><strong class="big-value">'+format(main[1])+' <small>in</small></strong><div class="result-subgrid">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+format(value)+' <small>in</small></strong></div>').join('')+'</div></div>';
     const optional=stage==='pipe'?['Coupon free']:stage==='stop'?['Travel margin']:[];
+    $('results').insertAdjacentHTML('beforeend','<p class="value-origin" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':'Calculated from setup - not field verified')+'</p>');
     const missing=results.some(([label,value])=>!optional.includes(label)&&!Number.isFinite(value));
     if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.</p>');
     if(stage==='pipe')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
@@ -193,24 +309,29 @@ function renderResults() {
     else{ptcInput.removeAttribute('aria-invalid');ptcInput.removeAttribute('aria-describedby');}
   }
   if($('ls-md-hint'))$('ls-md-hint').textContent=lineStopMdIsManual(op.state)?'Manual MD; Hot Tap MD changes are kept separate.':'Follows Hot Tap MD until you edit it.';
+  $('fields').querySelectorAll('[data-value-origin]').forEach(node=>node.textContent=origins.label(op,node.dataset.valueOrigin));
   $('preserved').innerHTML=stage==='review'||stage==='saved'?'':'<details><summary>Other saved inputs</summary>'+reviewMarkup(op.state,true)+'</details>';
 }
 function openJob(job) {
+  if(!job)return;
+  refreshSaved();
   const existing=jobs.find(item=>item.sourceId===job.sourceId&&item.source===job.source);
-  active=existing||structuredClone(job);stage=stageFor(operation());
-  if(!existing&&jobs.some(item=>item.id===active.id))active.id=crypto.randomUUID();
-  persist();renderWorkspace();page('workspace');
+  const selected=existing||structuredClone(job);
+  if(!existing&&jobs.some(item=>item.id===selected.id))selected.id=crypto.randomUUID();
+  active=draftFor(selected).job;stage=stageFor(operation());
+  if(!existing)persist();
+  else {const id=active.id;pendingSelections++;saveQueue=saveQueue.then(()=>workspaceStore.select(id)).catch(error=>notify('Could not remember the selected job. '+error.message)).finally(()=>{pendingSelections--;saveStatus();});}
+  saveStatus();renderWorkspace();page('workspace');
 }
 function renderLibrary() {
+  refreshSaved();
   const device=getDeviceJobs(localStorage);
   $('shared-count').textContent=shared.length;$('device-count').textContent=device.length;$('experimental-count').textContent=jobs.length;
   document.querySelectorAll('[data-source]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.source===source)));
   const query=$('search').value.trim().toLowerCase();
-  const entries=(source==='shared'?shared:source==='device'?device:jobs).filter(job=>
-    [job.title,job.sharedState.jobClient,job.sharedState.jobLocation,job.sharedState.jobNumber,...job.operations.map(op=>op.label)].join(' ').toLowerCase().includes(query)
-  ).sort((a,b)=>String(b.updatedAt||b.savedAt).localeCompare(String(a.updatedAt||a.savedAt)));
+  const entries=matchingJobs(source==='shared'?shared:source==='device'?device:jobs,query);
   $('library-summary').textContent=entries.length+' job'+(entries.length===1?'':'s')+' found';
-  $('job-list').innerHTML=entries.slice(0,visibleLimit).map(job=>'<button class="job-card" data-job="'+escape(job.id)+'"><p class="eyebrow">'+escape(source==='shared'?'SHARED LIBRARY':source==='device'?'SAVED ON THIS DEVICE':'PRE-ALPHA WORKING COPY')+'</p><h2>'+escape(job.title)+'</h2><p>'+escape([job.sharedState.jobClient,job.sharedState.jobLocation].filter(Boolean).join(' / ')||'Customer and location not recorded')+'</p><p>'+escape(job.operations.map(op=>op.label).join(' / '))+'</p><footer><span>'+job.operations.length+' operation'+(job.operations.length===1?'':'s')+' / '+escape(job.sharedState.jobDate||job.savedAt.slice(0,10)||'No date')+'</span><strong aria-hidden="true">\u2192</strong></footer></button>').join('')||'<p class="empty-state">'+(query?'No matching jobs. Try another search.':source==='shared'?'No shared jobs loaded. Use Refresh shared jobs to connect.':source==='device'?'There are no live/dev local saves in this browser. Shared jobs are available in the Shared jobs tab.':'Your experimental working copies will appear here.')+'</p>';
+  $('job-list').innerHTML=jobRowsMarkup(entries.slice(0,visibleLimit),source)||'<p class="empty-state">'+(query?'No matching jobs. Try another search.':source==='shared'?'No shared jobs loaded. Use Refresh shared jobs to connect.':source==='device'?'There are no live/dev local saves in this browser. Shared jobs are available in the Shared jobs tab.':'Your experimental working copies will appear here.')+'</p>';
   $('more').hidden=entries.length<=visibleLimit;
   $('job-list').querySelectorAll('[data-job]').forEach(button=>button.addEventListener('click',()=>openJob(entries.find(job=>job.id===button.dataset.job))));
 }
@@ -235,8 +356,16 @@ function editDetails() {
   $('details-dialog').showModal();
 }
 document.addEventListener('click',event=>{
+  const link=event.target.closest('a[data-page]');
+  if(link){
+    if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+    event.preventDefault();page(link.dataset.page);return;
+  }
   const button=event.target.closest('button');if(!button)return;
   if(button.dataset.page)page(button.dataset.page);
+  if(button.dataset.action==='resume'){
+    if(active)page('workspace');else if(jobs[0])openJob(jobs[0]);
+  }
   if(button.dataset.source){source=button.dataset.source;visibleLimit=30;renderLibrary();}
   if(button.dataset.action==='library')page('library');
   if(button.dataset.action==='new'){active=newJob();stage='setup';persist();renderWorkspace();page('workspace');editDetails();}
@@ -261,13 +390,13 @@ $('fields').addEventListener('input',event=>{
   const key=event.target.dataset.field;if(!key)return;
   if(['operationType','bcoPipeMaterial','bcoPipeOD','bcoSchedule'].includes(key))return;
   else if(key==='machineType')active.sharedState.machineType=event.target.value;
-  else setOperationMeasurement(operation(),key,key.endsWith('Toggle') ? event.target.value==='true' : event.target.value);
+  else {setOperationMeasurement(operation(),key,key.endsWith('Toggle') ? event.target.value==='true' : event.target.value);origins.record(operation(),key);}
   persist();renderResults();
 });
 $('fields').addEventListener('change',event=>{
   const key=event.target.dataset.field;
   if(key==='operationType'){chooseOperationType(active,operation(),event.target.value);persist();renderWorkspace();return;}
-  if(['bcoPipeMaterial','bcoPipeOD','bcoSchedule'].includes(key)){choosePipeSelection(operation().state,key,event.target.value);persist();renderWorkspace();}
+  if(['bcoPipeMaterial','bcoPipeOD','bcoSchedule'].includes(key)){choosePipeSelection(operation().state,key,event.target.value);if(operation().state.bcoSchedule!=='custom')origins.record(operation(),'bcoPipeID','table');persist();renderWorkspace();}
   if(key==='lsLiManualToggle'||key==='cpLiManualToggle'){persist();renderWorkspace();}
 });
 $('details-form').addEventListener('submit',event=>{
@@ -285,7 +414,7 @@ $('delete-operation-form').addEventListener('submit',event=>{
   stage='setup';persist();renderWorkspace();
   const target=operation()?$('operations').querySelector('[aria-current]'):document.querySelector('.operations-actions [data-action="add"]');
   target?.focus({preventScroll:true});
-  notify('Operation deleted from this working copy.');
+  notify('Operation removed from this tab’s working copy. Check the save status.');
 });
 $('delete-operation-dialog').addEventListener('close',()=>pendingDeleteId=null);
 $('back').addEventListener('click',()=>{const steps=stepsFor(operation());goToStage(steps[Math.max(0,steps.indexOf(stage)-1)]);});
@@ -296,14 +425,17 @@ $('refresh').addEventListener('click',refreshShared);
 function theme(dark){document.body.classList.toggle('dark',dark);$('theme').textContent=dark?'Light':'Dark';$('theme').setAttribute('aria-label',dark?'Switch to light mode':'Switch to dark mode');$('settings-theme').value=dark?'dark':'light';}
 try {theme(localStorage.getItem(THEME_KEY)==='dark');}catch{}
 $('theme').addEventListener('click',()=>{const dark=!document.body.classList.contains('dark');theme(dark);try{localStorage.setItem(THEME_KEY,dark?'dark':'light');}catch{}});
-if(!active&&jobs.length)$('resume').innerHTML='<button data-resume>Resume '+escape(jobs[0].title)+' \u2192</button>';
-$('resume').addEventListener('click',()=>{if(jobs[0])openJob(jobs[0]);});
-renderWorkspace();
+renderHome();saveStatus();
 auxiliary=initAuxiliary({getOperation:operation,getMachine:()=>active?.sharedState.machineType||'',persist,onEtaChanged:renderResults,notify,setTheme:dark=>{theme(dark);try{localStorage.setItem(THEME_KEY,dark?'dark':'light');}catch{}},getTheme:()=>document.body.classList.contains('dark')?'dark':'light'});
 installHelp();
-const initialPage=['workspace','library','references','settings'].includes(location.hash.slice(1))?location.hash.slice(1):'workspace';
-history.replaceState({preAlphaPage:initialPage},'',location.href);page(initialPage,{recordHistory:false});
-window.addEventListener('popstate',event=>{document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());page(event.state?.preAlphaPage||'workspace',{recordHistory:false});});
+const initialPage=routeFromLocation()==='workspace'&&!active?'home':routeFromLocation();
+history.replaceState({preAlphaPage:initialPage},'','#'+initialPage);page(initialPage,{recordHistory:false,moveFocus:false});
+function restorePage(){
+  document.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
+  page(routeFromLocation(),{recordHistory:false});
+}
+window.addEventListener('popstate',restorePage);
+window.addEventListener('hashchange',restorePage);
 refreshShared();
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./service-worker.js?v='+BUILD,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{});

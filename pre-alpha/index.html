@@ -5,35 +5,38 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1727">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
-  <title>TapCalc Pre-Alpha 10</title>
-  <link rel="stylesheet" href="./workspace.css?v=pre-alpha10">
-  <script src="./firebase-config.js?v=pre-alpha10" defer></script>
+  <title>TapCalc Pre-Alpha 11</title>
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha11">
+  <script src="./firebase-config.js?v=pre-alpha11" defer></script>
   <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
-  <script type="module" src="./workspace.mjs?v=pre-alpha10"></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha11"></script>
 </head>
 <body>
   <header class="masthead">
     <button id="menu-toggle" class="quiet menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="app-menu"><span aria-hidden="true">&#9776;</span></button>
-    <a class="wordmark" href="./"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 10</span></a>
+    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 11</span></a>
     <button id="theme" class="quiet">Dark mode</button>
   </header>
-  <nav id="app-menu" class="app-menu" aria-label="Workspace menu" hidden><button data-page="references">References</button><button data-page="library">Job Library</button><button data-page="settings">Settings</button><button id="menu-close" class="quiet">Close menu</button></nav>
+  <nav id="app-menu" class="app-menu" aria-label="Workspace menu" hidden><button data-page="home">Home</button><button data-page="workspace">Workspace</button><button data-page="references">References</button><button data-page="library">Job Library</button><button data-page="settings">Settings</button><button id="menu-close" class="quiet">Close menu</button></nav>
   <div class="experiment-strip"><span class="status-dot"></span>A new workspace, taking shape.<span class="experiment-detail">Experimental jobs save separately on this device.</span></div>
   <main>
-    <section id="workspace" aria-label="Job workspace">
+    <section id="home" aria-labelledby="home-title">
       <div id="welcome">
         <div class="welcome-top"><p class="eyebrow">MADE FOR THE FIELD</p><span class="release">DESIGN STUDY / 01</span></div>
-        <h1>A clearer view<br>of the job ahead.</h1>
+        <h1 id="home-title" tabindex="-1">A clearer view<br>of the job ahead.</h1>
         <p class="welcome-copy">One job. Each operation in reach.<br>Your measurements, with room to work.</p>
-        <div class="welcome-actions"><button class="primary" data-action="library">Open a saved job <span aria-hidden="true">&rarr;</span></button><button data-action="new">Start a new job</button></div>
+        <div id="resume" hidden><p class="eyebrow">CURRENT JOB</p><h2 id="resume-title"></h2><p id="resume-position"></p><p class="resume-note">Your working copy stays here when you leave the workspace.</p></div>
+        <div class="welcome-actions"><button id="resume-job" class="primary" data-action="resume" hidden>Resume current job <span aria-hidden="true">&rarr;</span></button><button id="home-new-job" class="primary" data-action="new">New job</button><button data-page="library">Saved jobs</button><button data-page="references">References</button></div>
         <div class="welcome-rule"><span>01 / CHOOSE THE JOB</span><span>02 / PICK THE OPERATION</span><span>03 / WORK THE STEPS</span></div>
-        <div id="resume"></div>
       </div>
+    </section>
+    <section id="workspace" aria-label="Job workspace" hidden>
       <div id="job-workspace" hidden>
-        <header class="job-heading"><div><p class="eyebrow" id="job-origin">WORKING COPY</p><h1 id="job-title"></h1><p id="job-meta"></p></div><button data-action="details">Job details <span aria-hidden="true">&nearr;</span></button></header>
+        <header class="job-heading"><div><p class="eyebrow" id="job-origin">WORKING COPY</p><h1 id="job-title" tabindex="-1"></h1><p id="job-meta"></p></div><button data-action="details">Job details <span aria-hidden="true">&nearr;</span></button></header>
+        <div id="save-recovery" class="warning" hidden><p id="save-recovery-message" role="status">Your changes remain in this tab. Saving a separate copy preserves the other saved version.</p><button id="save-copy" type="button">Save my changes as a separate copy</button> <button id="load-saved" type="button">Load saved version</button></div>
         <div class="operations-heading"><h2>Operations <span id="operation-count"></span></h2><div class="operations-actions"><button class="quiet" data-action="add">+ Add operation</button><button id="delete-operation" class="quiet danger-text" data-action="delete">Delete operation</button></div></div>
         <nav id="operations" aria-label="Job operations"></nav>
-        <section id="empty-operations" class="empty-state" hidden><h2>No operations yet.</h2><p>Your job details are saved. Add an operation to start entering measurements.</p><button class="primary" data-action="add">+ Add operation</button></section>
+        <section id="empty-operations" class="empty-state" hidden><h2>No operations yet.</h2><p>Your job details remain in this working copy. Add an operation to start entering measurements.</p><button class="primary" data-action="add">+ Add operation</button></section>
         <div id="measurement-workspace" class="work-layout">
           <aside class="journey"><p class="eyebrow">WORK THROUGH THE JOB</p><nav id="steps" aria-label="Measurement steps"></nav><p class="journey-note">Browse any step.<br>Your measurements stay with this operation.</p></aside>
           <section class="measurement-area" aria-labelledby="step-title">
@@ -41,21 +44,21 @@
             <div id="fields"></div>
             <div id="results" aria-live="polite"></div>
             <div id="preserved"></div>
-            <footer class="step-footer"><button id="back">Back</button><span id="save-state" role="status">Saved on this device</span><button id="next" class="primary">Next step &rarr;</button></footer>
+            <footer class="step-footer"><button id="back">Back</button><span id="save-state" role="status">Opening device storage...</span><button id="next" class="primary">Next step &rarr;</button></footer>
           </section>
         </div>
       </div>
     </section>
     <section id="library" aria-labelledby="library-title" hidden>
-      <header class="library-heading"><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h1 id="library-title">Your job library.</h1><p>Open a past job and try it in the new workspace.</p></div><button id="refresh">Refresh shared jobs</button></header>
+      <header class="library-heading"><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h1 id="library-title" tabindex="-1">Your job library.</h1><p>Open a past job and try it in the new workspace.</p></div><button id="refresh">Refresh shared jobs</button></header>
       <div class="library-tools"><label class="search-label"><span class="sr-only">Search jobs</span><input id="search" type="search" placeholder="Search job, customer, location or number"></label><span id="connection" role="status">Connecting to shared jobs...</span></div>
       <div class="library-tabs" role="group" aria-label="Job source"><button data-source="shared" aria-pressed="true">Shared jobs <span id="shared-count">0</span></button><button data-source="device" aria-pressed="false">On this device <span id="device-count">0</span></button><button data-source="experimental" aria-pressed="false">Pre-Alpha saves <span id="experimental-count">0</span></button></div>
       <p id="library-summary" role="status"></p><div id="job-list"></div><button id="more" hidden>Show more jobs</button>
     </section>
-    <section id="references" aria-labelledby="references-title" hidden><header class="library-heading"><div><p class="eyebrow">READ-ONLY FIELD TOOLS</p><h1 id="references-title">References</h1><p>One topic at a time. Your job and current step stay in place.</p></div><button data-page="workspace">Back to workspace</button></header><div id="reference-browser"></div></section>
-    <section id="settings" aria-labelledby="settings-title" hidden><header class="library-heading"><div><p class="eyebrow">THIS WORKSPACE</p><h1 id="settings-title">Settings</h1></div><button data-page="workspace">Back to workspace</button></header><label class="field settings-theme">Appearance<select id="settings-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="result-hint">Pre-Alpha working copies save separately on this device. Shared jobs are read-only here. No live/dev saves or cloud records are deleted or migrated.</p><p>Use the underlined abbreviations with a mouse, keyboard focus, or a tap. Measurement help buttons offer a larger phone target. Escape closes help.</p></section>
+    <section id="references" aria-labelledby="references-title" hidden><header class="library-heading"><div><p class="eyebrow">READ-ONLY FIELD TOOLS</p><h1 id="references-title" tabindex="-1">References</h1><p>One topic at a time. Your job and current step stay in place.</p></div><button data-page="workspace">Back to workspace</button></header><div id="reference-browser"></div></section>
+    <section id="settings" aria-labelledby="settings-title" hidden><header class="library-heading"><div><p class="eyebrow">THIS WORKSPACE</p><h1 id="settings-title" tabindex="-1">Settings</h1></div><button data-page="workspace">Back to workspace</button></header><label class="field settings-theme">Appearance<select id="settings-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="result-hint">Pre-Alpha working copies save separately on this device. Shared jobs are read-only here. No live/dev saves or cloud records are deleted or migrated.</p><p>Use the underlined abbreviations with a mouse, keyboard focus, or a tap. Measurement help buttons offer a larger phone target. Escape closes help.</p></section>
   </main>
-  <nav class="main-nav" aria-label="Main navigation"><button data-page="workspace" aria-current="page"><span aria-hidden="true">&#9638;</span>Workspace</button><button data-page="library"><span aria-hidden="true">&#9776;</span>Job library</button><button data-action="new"><span aria-hidden="true">+</span>New job</button></nav>
+  <nav class="main-nav" aria-label="Main navigation"><button data-page="home" aria-current="page"><span aria-hidden="true">&#8962;</span>Home</button><button data-page="workspace"><span aria-hidden="true">&#9638;</span>Workspace</button><button data-page="library"><span aria-hidden="true">&#9776;</span>Saved jobs</button></nav>
   <dialog id="details-dialog"><form id="details-form"><div class="dialog-heading"><h2>Job details</h2><button type="button" data-close="details-dialog" aria-label="Close job details">&times;</button></div><div id="details-fields"></div><button class="primary" type="submit">Save details</button></form></dialog>
   <dialog id="add-dialog"><div class="dialog-heading"><h2>Add an operation</h2><button data-close="add-dialog" aria-label="Close add operation">&times;</button></div><p>Each operation keeps its own measurements.</p><div class="add-options"><button data-add-type="Hot Tap">1. Hot Tap <span>Hot tap only</span></button><button data-add-type="Line Stop">2. Line Stop <span>Hot tap, line stop, then completion plug</span></button><button data-add-type="Tap &amp; Complete">3. Tap &amp; Complete <span>Hot tap, then completion plug</span></button></div></dialog>
   <div id="notice" role="status" hidden></div>

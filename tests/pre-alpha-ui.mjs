@@ -1,3 +1,4 @@
+import {readWorkspaceSnapshot,waitForWorkspaceSave} from './pre-alpha-workspace-test-helpers.mjs';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {createRequire} from 'node:module';
@@ -6,6 +7,7 @@ import {tmpdir} from 'node:os';
 import {runNextChecks} from './pre-alpha-next-ui.mjs';
 import {runInlineEtaChecks} from './pre-alpha-inline-eta-ui.mjs';
 import {runPdfWorkerChecks} from './pre-alpha-pdf-worker-ui.mjs';
+import {runHomeChecks} from './pre-alpha-home-ui.mjs';
 const require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
 const engine=process.env.TAPCALC_BROWSER||'chromium';
@@ -44,7 +46,7 @@ try{
     await page.locator('[data-field="machineType"]').selectOption('360 / 152');
     await page.locator('[data-field="operationType"]').selectOption('Tap & Complete');
     assert.deepEqual(await page.locator('#steps [data-step]').evaluateAll(nodes=>nodes.map(el=>el.dataset.step)),['setup','pipe','tap','plug','review']);
-    await page.reload();
+    await waitForWorkspaceSave(page);await page.reload();
     await page.waitForSelector('[data-field="operationType"]');
     assert.equal(await page.locator('[data-field="operationType"]').inputValue(),'Tap & Complete');
     assert.equal(await page.locator('[data-field="machineType"]').inputValue(),'360 / 152');
@@ -78,7 +80,7 @@ try{
     await page.locator('[data-field="bcoPipeOD"]').selectOption('16.0');
     await page.locator('[data-field="bcoPipeID"]').fill('15.5');
     await page.locator('[data-field="bcoSchedule"]').selectOption('custom');
-    await page.reload();
+    await waitForWorkspaceSave(page);await page.reload();
     await page.waitForSelector('#job-title');
     assert.equal(await page.locator('#step-title').textContent(),'Pipe & cutter','Reload resumes the selected step');
     await activate(page.locator('[data-step="pipe"]'));
@@ -101,7 +103,7 @@ try{
     assert.equal(await page.locator('#step-title').textContent(),'Hot tap');
     await activate(page.locator('[data-operation="stop-2"]'));
     assert.equal(await page.locator('#step-title').textContent(),'Line stop','Each operation resumes its own last step');
-    await page.reload();await page.waitForSelector('#job-title');
+    await waitForWorkspaceSave(page);await page.reload();await page.waitForSelector('#job-title');
     assert.equal(await page.locator('#step-title').textContent(),'Line stop');
     await activate(page.locator('[data-step="tap"]'));
     for(const dark of [false,true]){
@@ -109,14 +111,14 @@ try{
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
       await page.screenshot({path:join(tmpdir(),'pre-alpha-'+engine+(mobile?'-phone':'-desktop')+(dark?'-dark':'-light')+'.png'),fullPage:true});
     }
-    await page.reload();
+    await waitForWorkspaceSave(page);await page.reload();
     await page.waitForSelector('#job-title');
     assert.equal(await page.locator('#operations button').count(),3);
     await activate(page.locator('[data-step="tap"]'));
     assert.equal(await page.locator('[data-field="md"]').inputValue(),'21.75');
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),old);
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),'{"keep":"live-draft"}');
-    const imported=await page.evaluate(()=>JSON.parse(localStorage.getItem('tapcalcPreAlpha01Workspace')));
+    const imported=await readWorkspaceSnapshot(page);
     assert.equal(imported.jobs[0].original.record.jobBundle.operations[1].state.md,'20');
     await activate(page.locator('[data-action="details"]'));
     await page.locator('[data-detail="jobClient"]').fill('New customer');
@@ -152,7 +154,7 @@ try{
     await activate(page.locator('.review-inactive summary'));
     assert.match(await page.locator('.review-inactive').innerText(),/99.0000/);
     await activate(page.locator('.review-inactive summary'));
-    await page.reload();await page.waitForSelector('#job-title');
+    await waitForWorkspaceSave(page);await page.reload();await page.waitForSelector('#job-title');
     assert.equal(await page.locator('#step-title').textContent(),'Review');
     await activate(page.locator('#next'));
     await activate(page.locator('[data-source="experimental"]'));
@@ -177,7 +179,7 @@ try{
     await activate(page.locator('#delete-operation-form [type="submit"]'));
     assert.equal(await page.locator('#operations button').count(),3);
     assert.equal(await page.locator('[data-operation="'+addedId+'"]').count(),0);
-    await page.reload();
+    await waitForWorkspaceSave(page);await page.reload();
     await page.waitForSelector('#job-title');
     assert.equal(await page.locator('#operations button').count(),3);
     await activate(page.locator('[data-operation="stop-2"]'));
@@ -189,11 +191,11 @@ try{
       assert.equal(await page.locator('#operations button').count(),count-1);
     }
     assert.ok(await page.locator('#empty-operations').isVisible());
-    await page.reload();
+    await waitForWorkspaceSave(page);await page.reload();
     await page.waitForSelector('#empty-operations');
     assert.equal(await page.locator('#operations button').count(),0);
     assert.equal(await page.locator('#job-title').textContent(),'Three stops');
-    const deleted=await page.evaluate(()=>JSON.parse(localStorage.getItem('tapcalcPreAlpha01Workspace')));
+    const deleted=await readWorkspaceSnapshot(page);
     assert.equal(deleted.jobs[0].original.record.jobBundle.operations.length,3);
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),old);
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),'{"keep":"live-draft"}');
@@ -238,7 +240,7 @@ try{
     await activate(page.locator('[data-step="review"]'));
     assert.match(await page.locator('#results [data-warning-code="ptc-length"]').textContent(),/PTC exceeds/);
     assert.ok(await page.locator('#review-checks [data-warning-code="missing-inputs"]').count()>0);
-    await page.reload();await page.waitForSelector('#job-title');
+    await waitForWorkspaceSave(page);await page.reload();await page.waitForSelector('#job-title');
     await activate(page.locator('[data-step="stop"]'));
     assert.equal(await page.locator('[data-field="lsMd"]').inputValue(),'12');
     await activate(page.locator('[data-step="tap"]'));
@@ -257,6 +259,7 @@ try{
     }
     await runInlineEtaChecks({browser,pw,base,mobile,engine});
     await runPdfWorkerChecks({browser,pw,base,mobile,engine});
+    await runHomeChecks({browser,pw,base,mobile,engine});
     console.log('PASS Pre-Alpha '+engine+'/'+(mobile?'phone':'desktop')+': Firebase read, 3 operations, separate drafts, original preservation, themes, details and blank steps');
   }
 }finally{await browser?.close();server.kill();}

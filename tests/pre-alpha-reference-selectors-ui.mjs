@@ -1,3 +1,6 @@
+import {readDurableWorkspace} from './pre-alpha-workspace-test-helpers.mjs';
+import {waitForWorkspaceSave} from './pre-alpha-workspace-test-helpers.mjs';
+import {WORKSPACE_KEY} from '../pre-alpha/workspace-store.mjs';
 import assert from 'node:assert/strict';
 import {SUPPLEMENT} from '../pre-alpha/reference-supplement-data.mjs';
 import {STORAGE_KEY} from '../pre-alpha/model.mjs';
@@ -28,7 +31,9 @@ export async function runReferenceSelectorChecks(page,activate){
   const count=()=>page.locator('#reference-content tbody tr').count();
   const clear=()=>activate(page.locator('[data-ref-clear]'));
   const stable=async(key,action)=>{const element=await page.locator('[data-ref-filter="'+key+'"]').elementHandle();await action();assert.ok(await element.evaluate(el=>el.isConnected&&el===document.querySelector('[data-ref-filter="'+el.dataset.refFilter+'"]')),'Stable native control: '+key);await element.dispose();};
-  const before=await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY);
+  await waitForWorkspaceSave(page);
+  const rawSnapshot=async()=>JSON.stringify([await page.evaluate(keys=>keys.map(key=>localStorage.getItem(key)),[STORAGE_KEY,WORKSPACE_KEY]),await readDurableWorkspace(page)]);
+  const before=await rawSnapshot();
   await category('papergaskets');await clear();assert.match(await page.locator('#reference-category option:checked').innerText(),/Durlon Gaskets/);assert.ok(await page.locator('[data-reference-qualification]').isVisible());assert.match(await page.locator('[data-reference-qualification]').innerText(),/section name only.*Garlock\/GYLON.*not verified for your Durlon grade/);assert.equal(await count(),0);assert.match(await text(),/Garlock.*GYLON/s);assert.match(await text(),/Multi-Swell 3760.*10,000 psi/s);assert.match(await text(),/non-metallic/);
   await page.locator('[data-ref-filter="size"]').focus();await select('size','4');assert.equal(await count(),5);assert.equal(await page.evaluate(()=>document.activeElement.dataset.refFilter),'size','Selection keeps the native control focused');
   await page.keyboard.press('Tab');const immediateTabFocus=await page.evaluate(()=>document.activeElement.dataset.refFilter);
@@ -72,7 +77,7 @@ export async function runReferenceSelectorChecks(page,activate){
       assert.ok(fits,categoryName+' fits 320px in '+(dark?'dark':'light'));
       assert.ok(await page.locator('.reference-controls .field').evaluateAll(fields=>fields.every(field=>field.scrollWidth<=field.clientWidth+1)),categoryName+' native controls stay inside their fields without clipping');}
   }
-  await page.setViewportSize(originalViewport);assert.equal(await page.evaluate(key=>localStorage.getItem(key),STORAGE_KEY),before,'Reference selections never edit saved jobs');
+  await page.setViewportSize(originalViewport);assert.equal(await rawSnapshot(),before,'Reference selections never edit saved jobs');
   await category('htp');
   console.log('PASS reference selectors: choice-first, keyboard focus, touch clear, Back/memory, all-class search, unsupported choices, dependent reset, pagination and 320px themes');
 }

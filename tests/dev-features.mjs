@@ -45,6 +45,7 @@ try {
     page.setDefaultTimeout(12000);
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
+    page.on('crash', () => console.error('DEV_FEATURE_PAGE_CRASH', JSON.stringify({ label, step })));
     const activate = locator => mobile ? locator.tap() : locator.click();
     const screen = async name => {
       await page.evaluate(() => window.scrollTo(0, 0));
@@ -365,37 +366,42 @@ try {
   }
 } catch (error) {
   console.error('FAILED: ' + step);
+  console.error('DEV_FEATURE_ORIGINAL_FAILURE', JSON.stringify({ step, name: error.name, message: error.message, stack: error.stack }));
   if (page && !page.isClosed()) {
-    console.error(await page.evaluate(failedStep => ({
-      screen: document.body.dataset.activeScreen,
-      selectedReference: document.getElementById('referenceViewSelect')?.value,
-      visibleViews: [...document.querySelectorAll('.reference-view')].filter(node => getComputedStyle(node).display !== 'none').map(node => node.dataset.referenceView),
-      visibilityRules: (() => {
-        const target = document.querySelector(failedStep.includes('operation') ? '#workflowJobOperationSelect' : '.smartstop-lookup-section');
-        const matches = [];
-        const scan = rules => {
-          for (const rule of rules) {
-            if (rule.cssRules) scan(rule.cssRules);
-            if (rule.selectorText && rule.style?.visibility && target?.matches(rule.selectorText)) matches.push(rule.cssText);
+    try {
+      console.error(await page.evaluate(failedStep => ({
+        screen: document.body.dataset.activeScreen,
+        selectedReference: document.getElementById('referenceViewSelect')?.value,
+        visibleViews: [...document.querySelectorAll('.reference-view')].filter(node => getComputedStyle(node).display !== 'none').map(node => node.dataset.referenceView),
+        visibilityRules: (() => {
+          const target = document.querySelector(failedStep.includes('operation') ? '#workflowJobOperationSelect' : '.smartstop-lookup-section');
+          const matches = [];
+          const scan = rules => {
+            for (const rule of rules) {
+              if (rule.cssRules) scan(rule.cssRules);
+              if (rule.selectorText && rule.style?.visibility && target?.matches(rule.selectorText)) matches.push(rule.cssText);
+            }
+          };
+          for (const sheet of document.styleSheets) scan(sheet.cssRules || []);
+          return matches;
+        })(),
+        controlAncestors: (() => {
+          const parents = [];
+          for (let node = document.getElementById(failedStep.includes('operation') ? 'workflowJobOperationSelect' : 'smartStopSizeSelect'); node; node = node.parentElement) {
+            const style = getComputedStyle(node);
+            const rect = node.getBoundingClientRect();
+            parents.push({ tag: node.tagName, id: node.id, className: node.className, inline: node.getAttribute('style'), hidden: node.hidden,
+              display: style.display, visibility: style.visibility, width: rect.width, height: rect.height });
           }
-        };
-        for (const sheet of document.styleSheets) scan(sheet.cssRules || []);
-        return matches;
-      })(),
-      controlAncestors: (() => {
-        const parents = [];
-        for (let node = document.getElementById(failedStep.includes('operation') ? 'workflowJobOperationSelect' : 'smartStopSizeSelect'); node; node = node.parentElement) {
-          const style = getComputedStyle(node);
-          const rect = node.getBoundingClientRect();
-          parents.push({ tag: node.tagName, id: node.id, className: node.className, inline: node.getAttribute('style'), hidden: node.hidden,
-            display: style.display, visibility: style.visibility, width: rect.width, height: rect.height });
-        }
-        return parents;
-      })()
-    }), step));
-    const screenshot = join(tmpdir(), 'tapcalc-dev-feature-' + Date.now() + '.png');
-    await page.screenshot({ path: screenshot });
-    console.error('Screenshot: ' + screenshot);
+          return parents;
+        })()
+      }), step));
+      const screenshot = join(tmpdir(), 'tapcalc-dev-feature-' + Date.now() + '.png');
+      await page.screenshot({ path: screenshot });
+      console.error('Screenshot: ' + screenshot);
+    } catch (diagnosticError) {
+      console.error('DEV_FEATURE_DIAGNOSTIC_FAILURE', JSON.stringify({ name: diagnosticError.name, message: diagnosticError.message }));
+    }
   }
   throw error;
 } finally {

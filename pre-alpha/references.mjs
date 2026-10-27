@@ -1,13 +1,39 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha10';
-import {number,geometry} from './model.mjs?v=pre-alpha10';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha10';
-import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha10';
-import {helperFields,helperReference} from './reference-helpers.mjs?v=pre-alpha10';
+import {DATA} from './reference-data.mjs?v=pre-alpha11';
+import {number,geometry} from './model.mjs?v=pre-alpha11';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha11';
+import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha11';
+import {helperFields,helperReference,PIVOT_NOTES,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha11';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 export const REFERENCE_CATEGORIES={glossary:'Glossary',cutters:'Hot Tap / Line Stop cutters',smartstop:'SmartStop',foldinghead:'Folding Head',fieldmanual:'Field manual',bolting:'Bolting',htp:'HTP chart',plant150:'150# Plant',plant600:'600# Plant',torque:'Graphonic torque',papergaskets:'Durlon Gaskets',stackups:'Machine Stack-Ups',manuals:'Manual index',pivothead:'Pivot Head Setup',uwire:'U-Wire calculator',fieldcheck:'Field checklists',fractions:'Decimal / fraction',formulas:'Calculation guide'};
 const table=(title,columns,rows)=>({title,columns,rows});
 const objects=(title,rows,columns)=>table(title,columns.map(([,label])=>label),rows.map(row=>columns.map(([key])=>row[key]??'')));
+export function referenceProvenance(category,values={}) {
+  const info={source:'Source document not recorded in imported metadata.',revision:'Not recorded in imported metadata.',applicability:'Reference only. Confirm the exact equipment, source and approved procedure.'};
+  if(category==='glossary')info.source='Existing TapCalc glossary.';
+  if(category==='cutters'){
+    const flo=String(values.kind||'hotTap').startsWith('floStop');
+    info.source=flo?'Furmanite/IPSCO catalog, pages 33-34.':'TEAM cutter chart; Furmanite/IPSCO IP-914 supplement, page 25, for 22/26/28 entries.';
+    info.applicability=flo?'FloStop II / IP-412 only; not the standard cutter chart.':'Standard chart with separately identified catalog supplements; confirm cutter/fitting compatibility.';
+  }
+  if(category==='smartstop'){info.source=SUPPLEMENT.smartstop.sourceNotes[0];info.applicability=SUPPLEMENT.smartstop.torqueNote+' Multiple matching ranges require review.';}
+  if(category==='foldinghead'){info.source=values.topic==='helper'?FOLDING_NOTES[0]:SUPPLEMENT.folding.sourceNote;info.applicability=SUPPLEMENT.folding.capacityNote;}
+  if(category==='fieldmanual')info.source='Existing TapCalc field-manual tables; individual source revision not recorded.';
+  if(category==='torque'){info.source=SUPPLEMENT.graphonicNote;info.applicability='Graphonic starred style and named flange class only; Contact Engineering is not a numeric value.';}
+  if(category==='papergaskets'){info.source=SUPPLEMENT.paperGasketNote;info.applicability='Garlock/GYLON source data; applicability to a Durlon grade is not verified.';}
+  if(category==='stackups'){info.source=values.source||'Multiple supplied source documents; each page record names its source.';info.applicability=SUPPLEMENT.stackupNote;}
+  if(category==='manuals'){info.source=SUPPLEMENT.manuals.map(item=>item.source).join('; ');info.applicability='All five entries are index placeholders, not complete inline manuals. No missing contents or availability are implied.';}
+  if(category==='pivothead'){info.source=PIVOT_NOTES[0];info.revision='Section 7 Line Stop Dims: Rev.1. Setup guide revision not recorded.';info.applicability=PIVOT_NOTES[1];}
+  if(category==='uwire'){info.source=UWIRE_NOTES[0];info.revision='Form HTS-5400.1.20 Rev.3.';}
+  if(category==='fieldcheck'){info.source='Existing TapCalc workflow reminders.';info.applicability=SUPPLEMENT.fieldChecklistNote;}
+  if(category==='formulas'){info.source='Current TapCalc calculation guide and retained equipment-specific training formulas.';info.applicability=SUPPLEMENT.stopMathNote;}
+  if(category==='fractions'){info.source='Arithmetic conversion, not an equipment dimension table.';info.applicability='Selected rounding is approximate, not an exact conversion for every decimal.';}
+  return info;
+}
+function provenanceMarkup(category,values) {
+  const info=referenceProvenance(category,values);
+  return '<details class="reference-provenance" data-reference-provenance><summary>Source, revision &amp; applicability</summary><dl>'+[['Source / basis',info.source],['Revision',info.revision],['Applicability',info.applicability]].map(([label,value])=>'<div><dt>'+label+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl></details>';
+}
 export function positiveDecimal(value) {
   if(!String(value??'').trim())return null;
   if(!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(String(value).trim()))return NaN;
@@ -246,7 +272,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
   function render(){
     for(const stop of previews)stop();previews.clear();
     const data=referenceView(category,values,query);content.dataset.helpContext=category;
-    content.innerHTML=(data.qualification?'<p class="warning" data-reference-qualification role="note">'+escape(data.qualification)+'</p>':'')+'<p class="result-hint">'+escape(data.note)+'</p>'+(transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
+    content.innerHTML=(data.qualification?'<p class="warning" data-reference-qualification role="note">'+escape(data.qualification)+'</p>':'')+provenanceMarkup(category,values)+'<p class="result-hint">'+escape(data.note)+'</p>'+(transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
       (data.prompt?'<p class="reference-prompt" role="status">'+escape(data.prompt)+'</p>':'')+
       (data.records&&!data.prompt?stackupCards(data.records,page):'')+
       data.tables.map((item,index)=>{const rows=item.rows,current=Math.min(tablePages.get(index)||0,Math.max(0,Math.ceil(rows.length/20)-1)),visible=rows.slice(current*20,current*20+20);return '<section class="reference-section"><h3>'+escape(item.title)+'</h3><p class="reference-count" role="status" tabindex="-1">'+rows.length+' matching rows'+(rows.length>20?'; showing '+(current*20+1)+'–'+(current*20+visible.length):'')+'</p>'+pagination(current,rows.length,'data-ref-table-page',index)+'<div class="reference-table-wrap" tabindex="0" role="region" aria-label="'+escape(item.title)+' table; scroll horizontally if needed"><table><thead><tr>'+item.columns.map(label=>'<th scope="col">'+escape(label)+'</th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map(value=>'<td>'+escape(value===''?'Not listed':value)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'+(rows.length?'':'<p class="result-hint">No listed match. Do not substitute a different size, class or equipment.</p>')+'</section>';}).join('')+
@@ -304,7 +330,7 @@ async function previewStackup(trigger,previews) {
   try{
     const pdfjs=await import('../pdf.mjs');if(cancelled)return;
     // Isolate the PDF.js cancellation backport from the shared live/dev worker.
-    pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha10',import.meta.url).href;
+    pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha11',import.meta.url).href;
     loadingTask=pdfjs.getDocument({url:new URL(source.path,import.meta.url).href,isEvalSupported:false});pdf=await loadingTask.promise;if(cancelled)return;
     const page=await pdf.getPage(row.sourcePage);if(cancelled)return;
     const unit=page.getViewport({scale:1}),width=Math.max(240,holder.clientWidth||600),scale=Math.min(2,width/unit.width),viewport=page.getViewport({scale});

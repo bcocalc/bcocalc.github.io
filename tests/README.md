@@ -37,7 +37,7 @@ lookup, unsupported sizes, type switching, and collapsed mobile-friendly chart.
 Use Node 24. For a standard checkout, install the pinned test-only dependency:
 
 ```powershell
-npm install --no-save --package-lock=false --ignore-scripts playwright@1.62.1
+npm install --no-save --package-lock=false --ignore-scripts playwright@1.64.0
 npx --no-install playwright install webkit
 ```
 
@@ -148,3 +148,44 @@ It checks the alpha248 label and
 visible Load buttons for the retrieved jobs, but does not click Load or test real
 cloud saves, updates, or deletion. It uses the app's anonymous sign-in in a fresh
 browser context, not the user's browser profile.
+
+## Pre-Alpha Home navigation
+
+`node tests/pre-alpha-home.mjs` executes the real workspace owner in a synthetic,
+network-free DOM/history/storage harness. It covers Home as the bare-URL default,
+explicit `#workspace` resume, Home/Resume preservation, saved/reference navigation,
+Back/Forward, Home refresh, missing active IDs and explicit New without replacing
+the prior draft. It runs in the unit release aggregate.
+
+`tests/pre-alpha-home-ui.mjs` runs through `tests/pre-alpha-ui.mjs` in both browser
+engines and both viewports. It adds real keyboard/touch navigation, light/dark
+320px layout, menu/wordmark Home, saved-job reopening, manual override preservation,
+refresh/deep-link and native history checks in disposable localhost fixtures.
+The existing calculator-focused seeded tests now request `#workspace` explicitly;
+Home is independently tested with both fresh and returning storage.
+
+`node tests/pre-alpha-worker-upgrade-ui.mjs` uses installed service workers on a
+disposable localhost origin and new persistent synthetic profiles. It tests the published 10 Git baseline, upgrade to
+the candidate, browser-offline edits/reloads/process restarts, cache ownership, rollback and
+re-upgrade. Run with `TAPCALC_BROWSER=webkit` as well as Chromium. The full release
+runner and CI retain this gate; a failing engine must not be skipped.
+
+The optional `--origin-unavailable` mode separately tests a server outage, not
+browser offline mode. `tests/pre-alpha-offline-control.mjs` is a minimal runner
+diagnostic containing no TapCalc code. Neither alternative waives a failure of
+the default installed-worker release check. Playwright 1.64.0 fixes the upstream
+offline-emulation defect reproduced by 1.62.1 (microsoft/playwright#42775/#42894).
+Ephemeral WebKit CacheStorage can separately lose data on navigation; persistent
+PWA tests therefore use fresh retained profiles, not the user's browser. All
+cache and save-preservation assertions remain, plus offline restart and an
+uncached-navigation negative control. Physical Safari is a separate device check.
+
+`node tests/pre-alpha-cache-context-control.mjs` separately verifies fetched and
+synthetic Cache API entries across reload and process restart without TapCalc or
+service workers. Default persistent controls run in the full release aggregate.
+Its optional `--ephemeral` mode is diagnostic, fails if cache entries disappear,
+and does not waive the durable PWA checks. Keep the old failing evidence.
+
+The expanded Pre-Alpha UI collection has a 360-second process cap because it
+includes five fresh reference contexts per viewport plus ETA/PDF/Home checks.
+Other scripts keep 180 seconds; locator timeouts and assertions are unchanged.

@@ -3,7 +3,8 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 
-const source=readFileSync(new URL('../pre-alpha/vendor/pdf.worker.mjs',import.meta.url),'utf8');
+// Git's source blob uses LF; Windows checkouts may convert those newlines.
+const source=readFileSync(new URL('../pre-alpha/vendor/pdf.worker.mjs',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const provenance=JSON.parse(readFileSync(new URL('../pre-alpha/vendor/pdf-worker-provenance.json',import.meta.url),'utf8'));
 const guarded='function onFailure(ex) {\n        if (terminated) {\n          return;\n        }';
 const legacy='function onFailure(ex) {\n        ensureNotTerminated();';
@@ -14,7 +15,7 @@ assert.equal(originalSha,provenance.source_git_blob_sha,'Apart from the guard, p
 assert.equal(originalSha,'92eba689bfddc9b642260a0fd2763e4f85f3ab3c');
 assert.ok(source.includes('4.10.38')&&source.includes('Apache License, Version 2.0'));
 const owner=readFileSync(new URL('../pre-alpha/references.mjs',import.meta.url),'utf8');
-assert.match(owner,/new URL\('\.\/vendor\/pdf\.worker\.mjs\?v=pre-alpha10',import\.meta\.url\)/);
+assert.match(owner,/new URL\('\.\/vendor\/pdf\.worker\.mjs\?v=pre-alpha11',import\.meta\.url\)/);
 assert.match(owner,/await import\('\.\.\/pdf\.mjs'\)/,'Keep the compatible shared API unchanged');
 
 function failureHandler(text,terminated){

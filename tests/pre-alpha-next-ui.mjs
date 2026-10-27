@@ -1,3 +1,4 @@
+import {readWorkspaceSnapshot,waitForWorkspaceSave} from './pre-alpha-workspace-test-helpers.mjs';
 import assert from 'node:assert/strict';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
@@ -24,9 +25,9 @@ export async function runNextChecks({browser,pw,base,mobile,engine}) {
   },{job,key:STORAGE_KEY});
   const activate=locator=>mobile?locator.tap():locator.click();
   const step=key=>activate(page.locator('#steps [data-step="'+key+'"]'));
-  const snapshot=()=>page.evaluate(key=>JSON.parse(localStorage.getItem(key)).jobs[0],STORAGE_KEY);
+  const snapshot=async()=>(await readWorkspaceSnapshot(page)).jobs[0];
   try{
-    await page.goto(base+'/pre-alpha/');await page.waitForSelector('#job-title');
+    await page.goto(base+'/pre-alpha/#workspace');await page.waitForSelector('#job-title');
     assert.equal(await page.locator('#step-title').textContent(),'Line stop');
     assert.equal(await page.locator('[data-field="lsPod"]').count(),0);
     assert.match(await page.locator('.big-value').textContent(),/16.3125/);
@@ -117,7 +118,7 @@ export async function runNextChecks({browser,pw,base,mobile,engine}) {
     await activate(page.locator('#menu-toggle'));await activate(page.locator('#app-menu [data-page="settings"]'));
     await page.locator('#settings-theme').selectOption('dark');assert.ok(await page.locator('body').evaluate(el=>el.classList.contains('dark')));
     await activate(page.locator('#settings [data-page="workspace"]'));assert.equal(await page.locator('#step-title').textContent(),'Line stop');
-    await page.reload();await page.waitForSelector('#job-title');assert.equal(await page.locator('#step-title').textContent(),'Line stop');
+    await waitForWorkspaceSave(page);await page.reload();await page.waitForSelector('#job-title');assert.equal(await page.locator('#step-title').textContent(),'Line stop');
     assert.equal((await snapshot()).operations[0].retiredLineStopOD.previousAutomaticLI,17.6875);
     assert.equal(JSON.stringify((await snapshot()).original),original);
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),'[]');

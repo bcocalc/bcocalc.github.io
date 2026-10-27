@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: '24'
       - name: Install pinned test-only dependency
-        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.62.1
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.64.0
       - name: Install browser
         run: npx --no-install playwright install --with-deps ${{ matrix.browser }}
       - name: Check local-job opening and syncing by touch
@@ -64,3 +64,63 @@ jobs:
         run: node tests/pre-alpha-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check Pre-Alpha concurrent saves and conflict recovery
+        run: node tests/pre-alpha-workspace-store-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check Pre-Alpha presentation, accessible details and save preservation
+        run: node tests/pre-alpha-presentation-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Fetch immutable published baseline for installed-worker tests
+        run: git fetch --no-tags --depth=1 origin 21bf9b289196c25912f38424573b295209e49e03
+      - name: Verify independent offline and persistent-cache controls
+        run: |
+          node tests/pre-alpha-offline-control.mjs
+          node tests/pre-alpha-cache-context-control.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check Pre-Alpha installed-worker upgrade, offline and rollback
+        run: node tests/pre-alpha-worker-upgrade-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Diagnose minimal offline runner after a failure
+        if: failure()
+        run: node tests/pre-alpha-offline-control.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Retain synthetic browser screenshots after a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pre-alpha-diagnostics-${{ matrix.browser }}
+          path: /tmp/pre-alpha-*.png
+          if-no-files-found: ignore
+          retention-days: 7
+
+  full-release:
+    needs: mobile-library
+    runs-on: ubuntu-24.04
+    # Dependency installation can consume 16 minutes before the release checks start.
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned test-only dependency
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.64.0
+      - name: Install both browser engines
+        run: npx --no-install playwright install --with-deps chromium webkit
+      - name: Fetch immutable published baseline for installed-worker tests
+        run: git fetch --no-tags --depth=1 origin 21bf9b289196c25912f38424573b295209e49e03
+      - name: Run the complete release command without retries
+        run: node tests/release-check.mjs
+      - name: Retain synthetic screenshots after a failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-release-diagnostics
+          path: /tmp/pre-alpha-*.png
+          if-no-files-found: ignore
+          retention-days: 7

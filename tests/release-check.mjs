@@ -12,6 +12,10 @@ const checks = [
   ['cutter-reference.mjs', {}],
   ['coupon-free.mjs', {}],
   ['pre-alpha-model.mjs', {}],
+  ['pre-alpha-home.mjs', {}],
+  ['pre-alpha-presentation.mjs', {}],
+  ['pre-alpha-workspace-store.mjs', {}],
+  ['pre-alpha-workspace-controller.mjs', {}],
   ['smartstop-reference.mjs', {}],
   ['hot-tap-field-reading.mjs', {}],
   ['library-tap-unit.mjs', {}],
@@ -24,6 +28,11 @@ if (!args.includes('--unit-only')) {
     checks.push(['pipe-sizes-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['coupon-free-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-presentation-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-workspace-store-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-offline-control.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-cache-context-control.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-worker-upgrade-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['hot-tap-field-reading-ui.mjs', { TAPCALC_BROWSER: browser }]);
     // Bound each device separately as the application-switching coverage grows.
     for (const device of ['phone', 'desktop']) {
@@ -33,8 +42,11 @@ if (!args.includes('--unit-only')) {
 }
 for (const [file, environment] of checks) {
   console.log('\nChecking ' + file + (environment.TAPCALC_BROWSER ? ' (' + environment.TAPCALC_BROWSER + (environment.TAPCALC_DEVICE ? ' / ' + environment.TAPCALC_DEVICE : '') + ')' : ''));
+  // This suite now includes five fresh reference contexts per viewport, Home,
+  // ETA and real PDF workers. Keep every assertion and allow the full collection.
+  const timeout = file === 'pre-alpha-ui.mjs' ? 360000 : 180000;
   const result = spawnSync(process.execPath, ['tests/' + file], {
-    cwd: root, env: { ...process.env, ...environment }, stdio: 'inherit', timeout: 180000
+    cwd: root, env: { ...process.env, ...environment }, stdio: 'inherit', timeout
   });
   if (result.error || result.status !== 0) {
     console.error('RELEASE CHECK FAILED. Do not promote or publish this build.', result.error?.message || '');

@@ -3,10 +3,15 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha10. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha11. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
 - Firebase uses the existing public shared-job transport for reads only.
-  Experimental edits save to tapcalcPreAlpha01Workspace on this device.
+  Experimental edits use the IndexedDB database tapcalc-pre-alpha-workspace-v1
+  on this device. Revision comparison and mutation share a readwrite transaction.
+  Both tapcalcPreAlpha01Workspace and tapcalcPreAlpha01WorkspaceConcurrentV1
+  are read-only legacy inputs. Never mirror saves to either older key.
+  Web Locks alone do not guarantee fresh localStorage reads in the observed
+  WebKit race. See docs/pre-alpha-concurrent-workspace.md for limits.
 - Do not call upload, commit or delete against the shared collection. Any future
   experimental cloud writes require a distinct collection and explicit scope.
 - Existing live/dev history may be read for import. Never write, clear, rename

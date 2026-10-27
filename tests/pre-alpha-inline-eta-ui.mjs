@@ -1,8 +1,10 @@
+import {readWorkspaceSnapshot,waitForWorkspaceSave} from './pre-alpha-workspace-test-helpers.mjs';
 import assert from 'node:assert/strict';
 import {join} from 'node:path';
 import {tmpdir} from 'node:os';
 import {BUILD,normalizeJob,STORAGE_KEY} from '../pre-alpha/model.mjs';
 import {etaFor,formatEta} from '../pre-alpha/eta.mjs';
+import {installEtaTooltipDiagnostics,waitForEtaTooltipHidden} from './pre-alpha-eta-tooltip-diagnostics.mjs';
 
 // Disposable contexts and fake reads only: never use production or personal jobs.
 export async function runInlineEtaChecks({browser,pw,base,mobile,engine}) {
@@ -24,22 +26,41 @@ export async function runInlineEtaChecks({browser,pw,base,mobile,engine}) {
     if(!localStorage.getItem('measurementCardHistoryV1'))localStorage.setItem('measurementCardHistoryV1','[{"id":"keep-history"}]');
     if(!localStorage.getItem('measurementCardStateV1'))localStorage.setItem('measurementCardStateV1','{"keep":"live-draft"}');
   },{job,key:STORAGE_KEY,build:BUILD});
+  await page.addInitScript(()=>{
+    window.__etaFocusEvents=[];
+    for(const type of ['focusin','focusout'])document.addEventListener(type,event=>{
+      window.__etaFocusEvents.push({type,target:event.target.outerHTML?.slice(0,260),related:event.relatedTarget?.outerHTML?.slice(0,260),time:performance.now()});
+      if(window.__etaFocusEvents.length>40)window.__etaFocusEvents.shift();
+    },true);
+  });
   const activate=locator=>mobile?locator.tap():locator.click();
   const step=key=>activate(page.locator('#steps [data-step="'+key+'"]'));
   const selectOperation=id=>activate(page.locator('#operations [data-operation="'+id+'"]'));
-  const snapshot=()=>page.evaluate(key=>JSON.parse(localStorage.getItem(key)).jobs[0],STORAGE_KEY);
+  const snapshot=async()=>(await readWorkspaceSnapshot(page)).jobs[0];
   const summary=()=>page.locator('#results .bco-eta-summary');
   const metric=key=>summary().locator('[data-eta-value="'+key+'"]');
   const openEta=()=>activate(summary().locator('[data-eta-settings]'));
+  let escapeCloseAttempt=0;
   async function closeEta(escape=false) {
+    // Native open/focus state changes before the queued close event. Await the
+    // event owner before reopening the dialog or asserting its restored focus.
+    await page.evaluate(()=>{
+      window.__etaCloseDone=new Promise(resolve=>document.getElementById('eta-dialog').addEventListener('close',()=>resolve(true),{once:true}));
+    });
     if(escape){
       // Contextual term help owns Escape while it is open; close only the dialog here.
+      if(!mobile)await page.mouse.move(0,0);
       await page.locator('[data-eta-field="etaRpmOverride"]').focus();
-      await page.waitForFunction(()=>document.getElementById('term-tooltip')?.hidden!==false);
+      await waitForEtaTooltipHidden(page,{engine,device:mobile?'phone':'desktop',escapeCloseAttempt:++escapeCloseAttempt,stage:'before Escape / dialog close / restored-focus assertion'});
       await page.keyboard.press('Escape');
     }else await activate(page.locator('[data-close="eta-dialog"]'));
+    await page.evaluate(()=>window.__etaCloseDone);
     await page.waitForFunction(()=>!document.getElementById('eta-dialog').open);
-    await page.waitForFunction(()=>document.activeElement?.matches('#results [data-eta-settings]'));
+    try{await page.waitForFunction(()=>document.activeElement?.matches('#results [data-eta-settings]'));}
+    catch(error){
+      console.error('ETA_FOCUS_DIAGNOSTIC',JSON.stringify(await page.evaluate(()=>({dialogOpen:document.getElementById('eta-dialog').open,active:document.activeElement?.outerHTML?.slice(0,400),events:window.__etaFocusEvents,targets:[...document.querySelectorAll('#results [data-eta-settings]')].map(el=>({connected:el.isConnected,html:el.outerHTML}))}))));
+      throw error;
+    }
   }
   async function assertSummary() {
     const saved=await snapshot(),op=saved.operations.find(item=>item.id===saved.selectedOperationId),eta=etaFor(op,saved.sharedState.machineType);
@@ -55,7 +76,8 @@ export async function runInlineEtaChecks({browser,pw,base,mobile,engine}) {
     return {saved,op,eta};
   }
   try {
-    await page.goto(base+'/pre-alpha/');await page.waitForSelector('#results .bco-eta-summary');
+    await page.goto(base+'/pre-alpha/#workspace');await page.waitForSelector('#results .bco-eta-summary');
+    await page.evaluate(installEtaTooltipDiagnostics);
     assert.equal(await page.locator('#eta-dialog').evaluate(el=>el.open),false,'No extra click to see RPM / ETA');
     await assertSummary();assert.match(await summary().locator('[data-eta-basis]').textContent(),/Exact chart size.*follows cutter O\.D\./);
     const originalTime=await metric('time').textContent();
@@ -98,7 +120,7 @@ export async function runInlineEtaChecks({browser,pw,base,mobile,engine}) {
     assert.match(await summary().textContent(),/Saved ETA distance 99 is retained but not used/);
     const secondTime=await metric('time').textContent();await page.locator('[data-field="bcoCutterOD"]').fill('4');await assertSummary();
     assert.equal((await metric('chart-rpm').textContent()).trim(),'22 / 23 / 24');assert.notEqual(await metric('time').textContent(),secondTime,'Lookup override does not freeze current BCO distance');
-    await page.reload();await page.waitForSelector('#results .bco-eta-summary');await assertSummary();
+    await waitForWorkspaceSave(page);await page.reload();await page.waitForSelector('#results .bco-eta-summary');await assertSummary();
     assert.equal(await page.locator('#operations [aria-current]').getAttribute('data-operation'),'second');assert.equal(await page.locator('#step-title').textContent(),'Pipe & cutter');
 
     for(const dark of [false,true]){

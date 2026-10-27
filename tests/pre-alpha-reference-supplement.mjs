@@ -5,7 +5,7 @@ import {SUPPLEMENT as data} from '../pre-alpha/reference-supplement-data.mjs';
 
 // Network-free source parity checks. These establish migration fidelity, not
 // engineering approval of the supplied charts or extracted PDF text.
-const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
+const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const source=read('measurement.js'),html=read('measurement-card.html');
 const smart=read('dev/overlays/tapcalc-smartstop-reference.js');
 const folding=read('dev/overlays/tapcalc-folding-head-reference.js');
