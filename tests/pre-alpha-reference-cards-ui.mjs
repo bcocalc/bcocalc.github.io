@@ -23,7 +23,9 @@ try{
   await page.locator('[data-ref-filter="rating"]').selectOption('150');
   const expected=referenceView('papergaskets',{size:'12',rating:'150'}).tables[0];
   const audit=async()=>{
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'No page overflow');
+    const layout=await page.evaluate(()=>({viewport:innerWidth,width:document.documentElement.scrollWidth,zoom:document.body.style.zoom,theme:document.body.className,nodes:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width&&(r.right>innerWidth+1||el.scrollWidth>el.clientWidth+1);}).map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {tag:el.tagName,id:el.id,classes:el.className,left:r.left,right:r.right,width:r.width,client:el.clientWidth,scroll:el.scrollWidth,font:s.fontSize,position:s.position,overflow:s.overflowX};}).slice(0,80)}));
+    if(layout.width>layout.viewport)console.log('REFERENCE_CARD_OVERFLOW '+JSON.stringify({engine,...layout}));
+    assert.equal(layout.width<=layout.viewport,true,'No page overflow');
     const overflows=await page.locator('.reference-cards,.reference-row-card,.reference-row-card>div').evaluateAll(nodes=>nodes.filter(el=>el.getBoundingClientRect().width&&el.scrollWidth>el.clientWidth+1).map(el=>el.className));
     assert.deepEqual(overflows,[],'No card/field overflow');
     assert.equal(await page.locator('.reference-table-wrap').first().isVisible(),false);
@@ -57,8 +59,16 @@ try{
   await page.locator('#reference-query').fill('Paper Gaskets');
   assert.equal(await page.locator('.reference-row-card').count(),99);
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+  // Each gasket class has at most 20 rows; use the 37-row glossary to
+  // exercise the same table/card pagination renderer with a genuine second page.
+  await page.locator('#reference-category').selectOption('glossary');
+  await page.locator('#reference-query').fill('');
+  const glossary=referenceView('glossary').tables[0];
+  assert.ok(glossary.rows.length>20);
   await page.locator('[data-ref-table-page="1"]').first().tap();
   assert.match(await page.locator('.reference-count').first().innerText(),/showing 21/);
+  assert.deepEqual(await page.locator('.reference-row-card').first().locator('dd').allTextContents(),glossary.rows[20].map(String));
+  await page.locator('#reference-category').selectOption('papergaskets');
   await page.locator('#reference-query').fill('does-not-match-source');
   assert.equal(await page.locator('.reference-row-card').count(),0);
   await page.locator('[data-ref-clear]').tap();
