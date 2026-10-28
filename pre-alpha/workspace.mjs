@@ -1,13 +1,14 @@
-import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha20';
-import {installExports} from './exports.mjs?v=pre-alpha20';
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha20';
-import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha20';
-import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha20';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha20';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha20';
-import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha20';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha20';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha20';
+import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha21';
+import {installExports} from './exports.mjs?v=pre-alpha21';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha21';
+import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha21';
+import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha21';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha21';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha21';
+import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,historicalFamilyMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha21';
+import {HTP_CHART,HTP_INPUTS,HISTOP_INPUTS,htpChartRow} from './families.mjs?v=pre-alpha21';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha21';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha21';
 const $ = id => document.getElementById(id);
 installMeasurementFigures(document);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -19,6 +20,8 @@ const stages = {
   tap:['Hot tap','Enter the setup measurements for this hot tap.'],
   stop:['Line stop','Use the line stop measurements for this operation.'],
   plug:['Completion plug','Enter the plug measurements when you are ready.'],
+  htp:['HTP','Use the exact HTP host-size chart row and its own measurements. Equipment applicability is not verified.'],
+  hiStop:['Hi-Stop','Use the distinct Hi-Stop training formulas. POD comes from actual O.D. in Pipe & cutter; equipment applicability is not verified.'],
   saved:['Saved measurements','This equipment-specific setup is available for review.'],
   review:['Review','Active results and checks for this operation. Open a stage to review its setup.']
 };
@@ -28,6 +31,8 @@ const fields = {
   tap:[['md','Measured distance (MD)','text'],['ld','Lost distance (LD)','text','Optional; blank uses 0'],['ldSign','LD direction','sign'],['ptc','Pilot to cutter (PTC)','text'],['start','Rod start','text'],['mt','Machine travel','text']],
   stop:[['lsMd','Measured distance (MD)','text'],['lsLd','Lost distance (LD)','text'],['lsLdSign','LD direction','sign'],['lsTravel','Line stop travel','text','Optional check'],['lsMachineTravel','Machine travel','text','Optional check'],['lsLiManualToggle','Lower-in mode','toggle'],['lsLiManual','Manual lower in','text']],
   plug:[['cpStart','Start','text'],['cpJbf','Jack bolt to flange (JBF)','text'],['cpLd','Lost distance (LD)','text'],['cpPt','Plug thickness (PT)','text'],['cpLiManualToggle','Lower-in mode','toggle'],['cpLiManual','Manual lower in','text']],
+  htp:[['htpPipeSize','HTP host nominal pipe size','htp-size'],...HTP_INPUTS.slice(0,2).map(([key,label])=>[key,label,'text']),['htpLdSign','HTP LD direction','sign'],['htpPtc','HTP pilot to cutter (PTC)','text'],['htpMachine','HTP RPM chart profile','htp-machine','Separate from the job machine; legacy default 360 if not entered']],
+  hiStop:[...HISTOP_INPUTS.slice(0,2).map(([key,label])=>[key,label,'text']),['hsLdSign','Hi-Stop LD direction','sign'],...HISTOP_INPUTS.slice(2).map(([key,label])=>[key,label,'text'])],
   review:[],saved:[]
 };
 const details = [['jobDescription','Job name'],['jobClient','Customer'],['jobLocation','Location'],['jobNumber','Job number'],['jobDate','Date','date'],['jobTechnician','Technician'],['machineType','Machine','machine'],['jobNotes','Notes','textarea']];
@@ -180,7 +185,11 @@ function page(name,{recordHistory=true,moveFocus=true}={}) {
 function fieldMarkup([key,label,type='text',hint=''],value,attribute='data-field') {
   const attrs=attribute+'="'+escape(key)+'" id="'+escape(attribute+key)+'"';
   let control;
-  if(type==='pipe-size'||type==='schedule'){
+  if(type==='htp-size'||type==='htp-machine'){
+    const options=type==='htp-size'?[['','Choose an exact chart row'],...Object.keys(HTP_CHART).map(size=>[size,size+' in host size'])]:[['','No chart selected'],['360','360 / 152'],['660','660 / 760'],['1200','1200-M120']];
+    const current=String(value??'');if(current&&!options.some(([key])=>key===current))options.push([current,current+' (saved; no matching chart)']);
+    control='<select '+attrs+'>'+options.map(([key,label])=>'<option value="'+escape(key)+'"'+(key===current?' selected':'')+'>'+escape(label)+'</option>').join('')+'</select>';
+  }else if(type==='pipe-size'||type==='schedule'){
     const state=operation().state;
     const options=type==='pipe-size'
       ? [['','Choose a size'],...pipeSizes(state).map(([size,od])=>[size,Number(size)+' in ('+od+' O.D.)']),['custom','Other size']]
@@ -234,10 +243,11 @@ function renderWorkspace() {
   $('step-title').textContent=stages[stage][0];
   $('step-description').textContent=stages[stage][1];
   $('step-count').textContent='STEP '+(steps.indexOf(stage)+1)+' OF '+steps.length+' / '+op.label;
-  $('fields').innerHTML=fields[stage].map(field=>{
+  document.querySelector('.unit-label').textContent=stage==='hiStop'?'INCHES, EXCEPT TAPER':'INCHES';
+  $('fields').innerHTML=fields[stage].filter(([key])=>!(stage==='pipe'&&familyStage(op)==='hiStop'&&['bcoCutterOD','bcoCutterID'].includes(key))).map(field=>{
     const key=field[0];
     if((key==='lsLiManual'||key==='cpLiManual') && ![true,'true'].includes(op.state[key+'Toggle']))return '';
-    const value=key==='operationType'?operationType(op):key==='machineType'?active.sharedState.machineType:key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):key==='bcoSchedule'?(op.state.bcoSchedule || (String(op.state.bcoPipeID??'').trim()?'custom':'')):op.state[key];
+    const value=key==='operationType'?operationType(op):key==='machineType'?active.sharedState.machineType:key==='htpMachine'?op.state.htpMachine??'360':key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):key==='bcoSchedule'?(op.state.bcoSchedule || (String(op.state.bcoPipeID??'').trim()?'custom':'')):op.state[key];
     return fieldMarkup(field,value);
   }).join('')+measurementHelpMarkup(op,stage);
   $('back').disabled=steps.indexOf(stage)===0;
@@ -246,8 +256,10 @@ function renderWorkspace() {
 }
 function reviewMarkup(state,onlyOther=false) {
   const labels=Object.fromEntries(Object.values(fields).flat().map(([key,label])=>[key,label]));
+  labels.hsPod='Saved Hi-Stop POD (not used)';
+  const activeKeys=new Set((operation()?stepsFor(operation()):[]).flatMap(key=>(fields[key]||[]).map(([field])=>field)));
   const internal=new Set(['lineStopMdUserEdited','htFieldBasis','activeMode','operationType','workflowType']);
-  const rows=Object.entries(state).filter(([key,value])=>!internal.has(key)&&value!==''&&value!=null&&typeof value!=='object'&&(!onlyOther||!(key in labels)));
+  const rows=Object.entries(state).filter(([key,value])=>!internal.has(key)&&value!==''&&value!=null&&typeof value!=='object'&&(!onlyOther||!activeKeys.has(key)));
   return '<dl class="review-list">'+rows.map(([key,value])=>'<div><dt>'+escape(labels[key]||key)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl>';
 }
 function goToStage(next) {
@@ -257,10 +269,19 @@ function goToStage(next) {
 function warningMarkup(warnings) {
   return warnings.map(warning=>'<p class="warning" data-warning-code="'+escape(warning.code)+'">'+escape(warning.message)+'</p>').join('');
 }
+function familyContextMarkup(op,family){
+  if(family==='htp'){
+    const chart=htpChartRow(op.state);
+    return (chart?'<dl class="review-list" data-htp-chart><div><dt>Host nominal size</dt><dd>'+escape(op.state.htpPipeSize)+' in</dd></div><div><dt>Branch</dt><dd>'+escape(chart.branch)+'</dd></div><div><dt>Head</dt><dd>'+escape(chart.head)+'</dd></div><div><dt>Chart cutter</dt><dd>'+Number(chart.cutter).toFixed(3)+' in</dd></div></dl>':'<p class="result-hint">No exact HTP chart row is selected. Pipe geometry is not substituted for this chart.</p>')+
+      '<p class="result-hint">TCO = HTP MD + signed HTP LD + HTP PTC + chart BCO. HTP blank inputs are not assumed to be zero. Chart BCO is separate from standard Hot Tap cutter-shell BCO. No HTP plug-set formula or Rod MCO is inferred. Equipment applicability and ratings are not verified.</p>'+historicalFamilyMarkup(active,op,'htp');
+  }
+  if(family==='hiStop')return '<p class="result-hint">Hi-Stop POD: <strong>'+format(pipeOD(op.state))+' in</strong>, actual O.D. from Pipe &amp; cutter, matching the disabled legacy POD field. Saved per-stage POD stays inactive. <button class="quiet" data-review-edit="pipe">Edit pipe setup</button></p><p class="result-hint">Distinct Hi-Stop LI, TCO, PSD and Plug Set formulas only. Plug taper is a source value and must be nonzero; no taper unit is inferred. Blank inputs are not assumed to be zero. No Hi-Stop cutting ETA or Rod MCO is connected. Equipment applicability and ratings are not verified.</p>'+historicalFamilyMarkup(active,op,'hiStop');
+  return '';
+}
 function reviewInputMarkup(rows,op=operation()) {
   return '<dl class="review-list">'+rows.map(({key,label,value,note})=>{
     const numeric=number(value);
-    const display=Number.isFinite(numeric)?format(numeric)+' in':Number.isNaN(value)||value==null||value===''?'Not entered':String(value)+' (invalid)';
+    const display=Number.isFinite(numeric)?format(numeric)+(key==='hsPtp'?'':' in'):Number.isNaN(value)||value==null||value===''?'Not entered':String(value)+' (invalid)';
     return '<div><dt>'+escape(label)+(note?'<small>'+escape(note)+'</small>':'')+'<small class="value-origin">'+escape(origins.label(op,key))+'</small></dt><dd>'+escape(display)+'</dd></div>';
   }).join('')+'</dl>';
 }
@@ -273,12 +294,15 @@ function operationReviewMarkup(op) {
     const results=section.stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{secondary:section.results.slice(1)}):'<dl class="review-results">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';
     return '<section class="review-stage" data-help-context="'+section.stage+'" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode value-origin" data-result-origin>'+escape(section.mode+(section.override?'':' - not field verified'))+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+worksheetMarkup(op,section.stage,origins)+
       '<details class="review-inputs"><summary>'+(section.override?'Retained setup measurements (not used for lower in)':'Setup measurements')+'</summary>'+reviewInputMarkup(section.inputs)+'</details>'+
-      (section.retained.length?'<details class="review-inactive"><summary>Inactive saved inputs (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+(section.stage==='tap'?'<p class="result-hint">MCO is a cutout distance; Rod MCO is the rod reading at maximum cut out (Pilot on pipe + MCO).</p>'+historicalMcoMarkup(active,op)+historicalRodMcoMarkup(active,op):'')+'</section>';
+      (section.retained.length?'<details class="review-inactive"><summary>Inactive saved inputs (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+(section.stage==='tap'?'<p class="result-hint">MCO is a cutout distance; Rod MCO is the rod reading at maximum cut out (Pilot on pipe + MCO).</p>'+historicalMcoMarkup(active,op)+historicalRodMcoMarkup(active,op):'')+familyContextMarkup(op,section.stage)+(section.stage==='htp'?etaSummary(op,active.sharedState.machineType):'')+'</section>';
   }).join('');
   return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections;
 }
 function renderResults() {
   const op=operation(); if(!op)return;
+  if(stage==='htp'){
+    const profile=$('data-fieldhtpMachine');if(profile)profile.value=String(op.state.htpMachine??'360');
+  }
   const results=resultsFor(op,stage);
   if(results.length) {
     const [main,...rest]=results;
@@ -287,21 +311,23 @@ function renderResults() {
     $('results').insertAdjacentHTML('beforeend','<p class="value-origin" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':'Calculated from setup - not field verified')+'</p>');
     const missing=results.some(([label,value])=>!optional.includes(label)&&!Number.isFinite(value));
     if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">'+(stage==='tap'?'Enter the required measurements for a result. Blank Hot Tap LD uses 0; other empty inputs are not assumed to be zero.':'Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.')+'</p>');
-    if(stage==='pipe')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
+    if(stage==='pipe'&&familyStage(op)!=='hiStop')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
     if(stage==='pipe'&&op.state.bcoPipeOD&&!String(op.state.bcoPipeID??'').trim())$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Choose chart dimensions or enter a measured Pipe I.D. Unlisted dimensions are left blank.</p>');
 
     if(stage==='tap')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">MCO uses actual pipe O.D. / 2 + PTC. It is not a rod position. Rod MCO is the rod reading at maximum cut out: Pilot on pipe + MCO.</p>'+historicalMcoMarkup(active,op)+historicalRodMcoMarkup(active,op));
     if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
+    if(stage==='htp'||stage==='hiStop')$('results').insertAdjacentHTML('beforeend',familyContextMarkup(op,stage)+worksheetMarkup(op,stage,origins));
 
     if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are still being connected in Pre-Alpha.</p>'+reviewMarkup(op.state);
   } else if(stage==='setup') {
-    const path=operationType(op)==='Line Stop'?'Hot tap, line stop, then completion plug.':operationType(op)==='Tap & Complete'?'Hot tap, then completion plug.':operationType(op)==='Hot Tap'?'Hot tap only.':'Saved '+operationType(op)+' operation.';
+    const path=familyStage(op)==='htp'?'Exact HTP chart and distinct HTP measurements.':familyStage(op)==='hiStop'?'Pipe setup, then distinct Hi-Stop measurements.':operationType(op)==='Line Stop'?'Hot tap, line stop, then completion plug.':operationType(op)==='Tap & Complete'?'Hot tap, then completion plug.':operationType(op)==='Hot Tap'?'Hot tap only.':'Saved '+operationType(op)+' operation.';
     $('results').innerHTML='<p class="result-hint">'+escape(path)+' '+active.operations.length+' operation'+(active.operations.length===1?'':'s')+' in this job.</p>';
   } else {
     $('results').innerHTML=stage==='review'?operationReviewMarkup(op):reviewMarkup(op.state);
     if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are still being connected in this design study.</p>');
   }
   if(!['setup','pipe','review'].includes(stage)&&stepsFor(op).includes('tap'))$('results').insertAdjacentHTML('beforeend',etaSummary(op,active.sharedState.machineType));
+  if(stage==='htp')$('results').insertAdjacentHTML('beforeend',etaSummary(op,active.sharedState.machineType));
   if(stage==='stop')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">Pipe O.D.: <strong>'+format(pipeOD(op.state))+' in</strong> from Pipe &amp; cutter. <button class="quiet" data-review-edit="pipe">Edit pipe setup</button></p>');
   if(stage==='saved'&&op.retiredLineStopOD)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Archived Line Stop O.D. '+escape(op.retiredLineStopOD.value)+' is retained, but does not control this working copy.</p>');
   const warnings=hotTapWarnings(op);

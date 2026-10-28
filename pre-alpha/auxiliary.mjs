@@ -1,7 +1,7 @@
-import {createReferences} from './references.mjs?v=pre-alpha20';
-import {ETA_MACHINES,etaFor} from './eta.mjs?v=pre-alpha20';
-import {etaPresentation} from './eta-view.mjs?v=pre-alpha20';
-import {stepsFor} from './model.mjs?v=pre-alpha20';
+import {createReferences} from './references.mjs?v=pre-alpha21';
+import {ETA_MACHINES,etaFor} from './eta.mjs?v=pre-alpha21';
+import {etaPresentation} from './eta-view.mjs?v=pre-alpha21';
+import {stepsFor} from './model.mjs?v=pre-alpha21';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const $=id=>document.getElementById(id);
@@ -25,12 +25,14 @@ export function initAuxiliary({getOperation,getMachine,persist,onEtaChanged,noti
       '<p class="result-hint">Feed assumption: 0.0040 in/revolution, copied from the existing estimator. Confirm actual cutting conditions and applicable equipment instructions. This is not a verified speed or job-duration guarantee.</p>'+saved;
   }
   function openEta(trigger){
-    const op=getOperation();if(!op||!stepsFor(op).includes('tap')){notify('ETA is connected only for standard Hot Tap stages in this workspace.');return;}
+    const op=getOperation(),htp=op&&stepsFor(op).includes('htp');if(!op||!stepsFor(op).includes('tap')&&!htp){notify('ETA is connected only for standard Hot Tap or exact-chart HTP stages in this workspace.');return;}
     const eta=etaFor(op,getMachine()),options=[['','No chart selected'],...Object.entries(ETA_MACHINES)];
     if(eta.profile&&!Object.hasOwn(ETA_MACHINES,eta.profile))options.push([eta.profile,eta.profile+' (saved; no matching chart)']);
     const help=(key,label)=>'<button type="button" class="help-icon" data-help-field="'+key+'" aria-label="Help for '+escape(label)+'">?</button>';
-    $('eta-fields').innerHTML='<div class="field wide"><div class="field-label"><label for="eta-machine">RPM chart profile</label>'+help('etaMachine','RPM chart profile')+'</div><select id="eta-machine" data-eta-field="etaMachine">'+options.map(([value,label])=>'<option value="'+escape(value)+'"'+(value===eta.profile?' selected':'')+'>'+escape(label)+'</option>').join('')+'</select></div>'+
-      [['etaCutterSize','RPM lookup cutter size (in)',eta.size],['etaRpmOverride','Manual RPM (optional)',op.state.etaRpmOverride]].map(([key,label,value])=>'<div class="field"><div class="field-label"><label for="eta-'+key+'">'+escape(label)+'</label>'+help(key,label)+'</div><input id="eta-'+key+'" data-eta-field="'+key+'" inputmode="decimal" value="'+escape(value)+'"></div>').join('');
+    $('eta-title').textContent=htp?'HTP cutting time (ETA)':'Cutting time (ETA)';
+    document.querySelector('#eta-dialog > .result-hint').textContent=htp?'HTP estimate uses its exact chart cutter and chart BCO. Not TCO travel or complete job duration.':'Estimated cutting motion from cutter on pipe to BCO only. Not complete Hot Tap, Line Stop, Completion Plug, or job duration.';
+    $('eta-fields').innerHTML='<div class="field wide"><div class="field-label"><label for="eta-machine">RPM chart profile</label>'+help(htp?'htpMachine':'etaMachine','RPM chart profile')+'</div><select id="eta-machine" data-eta-field="'+(htp?'htpMachine':'etaMachine')+'">'+options.map(([value,label])=>'<option value="'+escape(value)+'"'+(value===String(eta.profile)?' selected':'')+'>'+escape(label)+'</option>').join('')+'</select></div>'+
+      (htp?'<p class="result-hint">Cutter and BCO come only from the selected HTP row. Change the row in the HTP stage.</p>':[['etaCutterSize','RPM lookup cutter size (in)',eta.size],['etaRpmOverride','Manual RPM (optional)',op.state.etaRpmOverride]].map(([key,label,value])=>'<div class="field"><div class="field-label"><label for="eta-'+key+'">'+escape(label)+'</label>'+help(key,label)+'</div><input id="eta-'+key+'" data-eta-field="'+key+'" inputmode="decimal" value="'+escape(value)+'"></div>').join(''));
     etaTrigger=trigger;renderEta();$('eta-dialog').showModal();
   }
   document.addEventListener('click',event=>{const trigger=event.target.closest('[data-open-eta]');if(trigger)openEta(trigger);});

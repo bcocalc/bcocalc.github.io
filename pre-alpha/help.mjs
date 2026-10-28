@@ -1,4 +1,4 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha20';
+import {DATA} from './reference-data.mjs?v=pre-alpha21';
 
 export const TERMS=Object.fromEntries(DATA.glossary.filter(([key])=>/^[A-Z]{2,5}$/.test(key)).map(([key,full])=>[key,{full,meaning:full+'. Term from the existing TapCalc glossary.'}]));
 Object.assign(TERMS,{
@@ -63,11 +63,21 @@ export const FIELD_HELP={
   cpLiManual:'Explicit Completion Plug lower-in override. Inactive saved overrides are retained but not used.',
   etaMachine:'Supported RPM chart profile for this estimate only. Changing it does not rename the job machine.',
   etaCutterSize:'Blank follows current Cutter O.D. A saved or entered size changes the RPM lookup only. Between chart sizes, RPM is interpolated; outside the chart, the nearest entry is clearly labeled.',
-  etaRpmOverride:'Optional verified manual rotational speed. Invalid or zero input does not fall back silently to chart speed.'
+  etaRpmOverride:'Optional verified manual rotational speed. Invalid or zero input does not fall back silently to chart speed.',
+  htpPipeSize:'Select one of the eight existing HTP host nominal sizes. Its branch, head, cutter and BCO are exact chart values; no unlisted sizes are inferred.',
+  htpMd:'HTP measured distance, independent of standard Hot Tap MD. Blank or invalid HTP inputs are not assumed to be zero.',
+  htpLd:'HTP lost distance, independent of other stages. Apply the selected Add/Subtract direction, including an entered signed fraction.',
+  htpLdSign:'Choose the direction for this HTP lost-distance value only.',htpPtc:'HTP PTC is used only in its existing TCO formula; it does not change HTP chart BCO or cutting ETA.',
+  htpMachine:'Separate HTP RPM chart profile. The legacy initial choice is 360 / 152 when not entered. Explicit empty or unknown profiles do not fall back to another machine.',
+  hsMd:'Hi-Stop measured distance for LI and Plug Set. It does not carry from standard Hot Tap or Line Stop.',hsLd:'Hi-Stop lost distance for LI and Plug Set only; blanks remain unentered.',hsLdSign:'Apply Add/Subtract to the Hi-Stop lost-distance value only.',
+  hsRl:'Reamer length used as RL / 2 in the existing Hi-Stop TCO formula.',hsCl:'Cutter length used in the existing Hi-Stop TCO formula; not cutter diameter.',hsPtc:'Hi-Stop PTC used in its TCO formula only. It is independent of standard Hot Tap PTC.',
+  hsRcd:'RCD as named in the existing Hi-Stop formula. Its expansion is not verified here; do not substitute another diameter.',hsPb:'Plug bottom value used with RCD in the existing Hi-Stop PSD formula.',hsPtp:'Source taper value used in the divisor 2 × taper. It must be nonzero; no unit or equipment applicability is inferred.'
 };
 export function termHelp(key,context='') {
   const raw=key.replace(/[.]/g,'').toUpperCase(),normalized=/^FT[-/]LBS?$/.test(raw)?'FT-LB':/^IN[-/]LBS?$/.test(raw)?'IN-LB':raw==='LBS'?'LB':raw,term=TERMS[normalized];
   if(context==='htp'&&normalized==='BCO')return {full:'BCO (HTP source-chart label)',meaning:'The exact expansion and measurement basis are not verified by this table. Do not substitute this equipment-specific source value for standard Hot Tap book cut out.'};
+  if(context==='htp'&&['MD','LD','PTC','TCO'].includes(normalized))return {full:term?.full||key,meaning:'HTP uses its own MD, signed LD, PTC and exact chart BCO for TCO. Other stages and standard Hot Tap cutter-shell geometry are not substituted. Equipment applicability is not verified.'};
+  if(context==='hiStop'&&['MD','LD','LI','TCO','PSD','POD','RCD','PTC'].includes(normalized))return {full:term?.full||key,meaning:'Hi-Stop uses its distinct legacy formulas and independent stage inputs. POD comes from actual O.D. in Pipe & cutter, matching the disabled legacy POD field; saved per-stage overrides stay inactive. No standard Hot Tap or HTP result is substituted.'};
   if(!term)return {full:key,meaning:'No verified expansion is available for this source term.'};
   const stage=context==='tap'?'Hot Tap':context==='stop'?'Line Stop':context==='plug'?'Completion Plug':'';
   return {...term,meaning:stage&&['MD','LD','MT','LI'].includes(normalized)?stage+': '+term.meaning:term.meaning};

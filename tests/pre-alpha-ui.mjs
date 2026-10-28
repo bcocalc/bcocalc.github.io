@@ -42,7 +42,8 @@ try{
     assert.equal(await page.locator('#operations [aria-current]').getAttribute('data-operation'),'stop-2');
     assert.equal(await page.locator('[data-field="operationType"]').evaluate(el=>el.tagName),'SELECT');
     assert.equal(await page.locator('[data-field="operationType"]').inputValue(),'Line Stop');
-    assert.equal(await page.locator('[data-field="operationType"] option').count(),3);
+    assert.equal(await page.locator('[data-field="operationType"] option').count(),5);
+    assert.deepEqual(await page.locator('[data-field="operationType"] option').evaluateAll(nodes=>nodes.map(node=>node.value)),['Hot Tap','Line Stop','Tap & Complete','HTP','Hi-Stop']);
     assert.equal(await page.locator('[data-field="machineType"]').evaluate(el=>el.tagName),'SELECT');
     assert.equal(await page.locator('[data-field="machineType"]').inputValue(),'Legacy custom machine');
     await page.locator('[data-field="machineType"]').selectOption('360 / 152');

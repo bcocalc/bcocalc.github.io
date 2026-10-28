@@ -59,9 +59,9 @@ try{
       else await activate(page.locator('[data-job-export="pdf"]'));
       const popup=await popupPromise;await popup.waitForFunction(()=>window.__printed===1);
       const text=await popup.locator('pre').textContent();
-      for(const expected of ['Pressure: 250 psi','Temperature: 80 F','Product: Water','Operation 1 of 3: First tap','Operation 2 of 3: Second stop','Operation 3 of 3: Saved HTP','Rod MCO: 16.5625 in','Saved htp tco: 47.25','Historical Rod MCO (original snapshot; not used): 89','Historical Rod MCO (original snapshot; not used): 111','<script>bad()</script>','α ¾'])assert.ok(text.includes(expected),expected);
+      for(const expected of ['Pressure: 250 psi','Temperature: 80 F','Product: Water','Operation 1 of 3: First tap','Operation 2 of 3: Second stop','Operation 3 of 3: Saved HTP','Rod MCO: 16.5625 in','Historical HTP tco (original snapshot; not used): 47.25','Historical Rod MCO (original snapshot; not used): 89','Historical Rod MCO (original snapshot; not used): 111','<script>bad()</script>','α ¾'])assert.ok(text.includes(expected),expected);
       assert.equal(await popup.locator('script,img,iframe').count(),0);assert.equal(await popup.evaluate(()=>typeof window.bad),'undefined');
-      const savedSection=text.split('Operation 3 of 3:')[1];assert.match(savedSection,/BCO: Not recalculated for this operation/);assert.doesNotMatch(savedSection,/Rod MCO:|BCO: [\d.-]+ in/);
+      const savedSection=text.split('Operation 3 of 3:')[1];assert.match(savedSection,/BCO: Not calculated \(HTP chart; not cutter-shell geometry\)/);assert.doesNotMatch(savedSection,/Rod MCO:|BCO: [\d.-]+ in/);
       if(dark)await popup.screenshot({path:join(profile,'print-view.png'),fullPage:true});
       await popup.close();
     }
@@ -74,7 +74,7 @@ try{
     const width=png.readUInt32BE(16),height=png.readUInt32BE(20);assert.equal(width,1400);assert.ok(height>=900&&height<=6000);
     const decoded=await page.evaluate(async url=>{const img=new Image();img.src=url;await img.decode();return [img.naturalWidth,img.naturalHeight];},'data:image/png;base64,'+png.toString('base64'));
     assert.deepEqual(decoded,[width,height]);
-    const drawn=await page.evaluate(()=>window.__exportDraw);assert.ok(drawn.some(row=>row.text.includes('Operation 3 of 3')));assert.ok(drawn.some(row=>row.text.includes('Saved htp tco: 47.25')));
+    const drawn=await page.evaluate(()=>window.__exportDraw);assert.ok(drawn.some(row=>row.text.includes('Operation 3 of 3')));assert.ok(drawn.some(row=>row.text.includes('Historical HTP tco (original snapshot; not used): 47.25')));
     assert.ok(drawn.every(row=>row.x+row.width<=width-49&&row.y<height),'Every wrapped PNG line fits');
     const open=await page.evaluate(()=>{window.__realOpen=window.open;window.open=()=>null;return true;});assert.equal(open,true);
     await activate(page.locator('[data-job-export="pdf"]'));await page.waitForFunction(()=>document.getElementById('notice').textContent.includes('Print window blocked'));

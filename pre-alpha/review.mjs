@@ -1,20 +1,27 @@
-import {etaFor} from './eta.mjs?v=pre-alpha20';
-import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance} from './model.mjs?v=pre-alpha20';
+import {etaFor} from './eta.mjs?v=pre-alpha21';
+import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance,familyStage} from './model.mjs?v=pre-alpha21';
+import {HTP_INPUTS,HISTOP_INPUTS,familyWarnings,hiStopPipeOD,htpChartRow} from './families.mjs?v=pre-alpha21';
 
-export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',saved:'Saved measurements',eta:'Cutting time (ETA)'};
+export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',htp:'HTP',hiStop:'Hi-Stop',saved:'Saved measurements',eta:'Cutting time (ETA)'};
 const INPUTS={
   pipe:[['preAlphaPipeOD','Actual pipe O.D.'],['bcoPipeID','Pipe I.D.'],['bcoCutterOD','Cutter O.D.'],['bcoCutterID','Cutter I.D.']],
   tap:[['md','Measured distance (MD)'],['ld','Lost distance (LD)'],['ptc','Pilot to cutter (PTC)'],['start','Rod start'],['mt','Machine travel']],
   stop:[['lsMd','Measured distance (MD)'],['lsLd','Lost distance (LD)'],['lsTravel','Line stop travel'],['lsMachineTravel','Machine travel']],
-  plug:[['cpStart','Start'],['cpJbf','Jack bolt flange (JBF)'],['cpLd','Lost distance (LD)'],['cpPt','Plug thickness (PT)']]
+  plug:[['cpStart','Start'],['cpJbf','Jack bolt flange (JBF)'],['cpLd','Lost distance (LD)'],['cpPt','Plug thickness (PT)']],htp:HTP_INPUTS,hiStop:HISTOP_INPUTS
 };
 const has=value=>String(value ?? '').trim()!=='';
 const manual=(state,stage)=>[true,'true'].includes(state[stage==='stop'?'lsLiManualToggle':'cpLiManualToggle']);
-const valueFor=(state,key)=>key==='preAlphaPipeOD'?pipeOD(state):key==='ld'&&!has(state.ld)?hotTapLostDistance(state):state[key];
+const valueFor=(state,key)=>key==='preAlphaPipeOD'?pipeOD(state):key==='hsPod'?hiStopPipeOD(state,number,pipeOD(state)):key==='ld'&&!has(state.ld)?hotTapLostDistance(state):state[key];
 const finite=value=>Number.isFinite(number(value));
 
 export function operationWarnings(operation,machineName='') {
   const state=operation.state, steps=stepsFor(operation), warnings=[];
+  const family=familyStage(operation);
+  if(family){
+    const checks=familyWarnings(operation,family,number,geometry(state));
+    if(family==='htp'&&htpChartRow(state)){const eta=etaFor(operation,machineName);if(eta.issue)checks.push({stage:'htp',code:'htp-eta',message:eta.issue,kind:'warning'});}
+    return checks;
+  }
   const add=(stage,code,message,kind='warning')=>warnings.push({stage,code,message,kind});
   if(steps.includes('saved')) {
     add('saved','unsupported','Equipment-specific calculations are not connected in Pre-Alpha. Saved values are for review only.');
@@ -84,15 +91,18 @@ export function reviewSections(operation) {
   return stepsFor(operation).filter(stage=>INPUTS[stage]).map(stage=>{
     const override=(stage==='stop'||stage==='plug')&&manual(state,stage);
     const manualKey=stage==='stop'?'lsLiManual':'cpLiManual';
-    const inputs=INPUTS[stage].map(([key,label])=>{
+    const inputs=INPUTS[stage].filter(([key])=>!(stage==='pipe'&&familyStage(operation)==='hiStop'&&['bcoCutterOD','bcoCutterID'].includes(key))).map(([key,label])=>{
       let value=valueFor(state,key), note='';
       if(key==='ld'||key==='lsLd')note=state[key==='ld'?'ldSign':'lsLdSign']==='-'?'Subtract (-)':'Add (+)';
+      if(key==='htpLd'||key==='hsLd')note=state[key==='htpLd'?'htpLdSign':'hsLdSign']==='-'?'Subtract (-)':'Add (+)';
       return {key,label,value,note};
     });
     if(stage==='stop')inputs.push({key:'pipe-source-od',label:'Pipe O.D.',value:pipeOD(state),note:'From Pipe & cutter; not a separate input'});
+    if(stage==='hiStop')inputs.push({key:'pipe-source-od',label:'Hi-Stop POD',value:pipeOD(state),note:'Actual O.D. from Pipe & cutter, matching the disabled legacy POD field'});
     const retained=!override&&['stop','plug'].includes(stage)&&has(state[manualKey])
       ? [{key:manualKey,label:'Inactive saved manual lower in',value:state[manualKey]}] : [];
     if(stage==='stop'&&operation.retiredLineStopOD)retained.push({key:'previous-pipe-od',label:'Archived Line Stop O.D. (not used)',value:operation.retiredLineStopOD.value});
+    if(stage==='hiStop'&&has(state.hsPod))retained.push({key:'hsPod',label:'Saved Hi-Stop POD (not used)',value:state.hsPod});
     return {stage,title:STAGE_TITLES[stage],mode:override?'Manual override':'Calculated from setup',
       results:resultsFor(operation,stage),inputs,retained,override};
   });

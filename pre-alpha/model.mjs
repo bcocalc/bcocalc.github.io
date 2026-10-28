@@ -1,8 +1,9 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha20';
-export const BUILD = 'pre-alpha20';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha21';
+import {familyFor,familyResults} from './families.mjs?v=pre-alpha21';
+export const BUILD = 'pre-alpha21';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
-export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
+export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete','HTP','Hi-Stop'];
 // Same machine catalog used in the established dev job setup.
 export const MACHINE_OPTIONS = [
   '412','360 / 152','660 / 760','1200-M120','IP-100','IP-152','T-101',
@@ -52,13 +53,17 @@ export function operationType(operation) {
   if (/completion/i.test(type)) return 'Completion Plug';
   if (/hi.?stop/i.test(type)) return 'Hi-Stop';
   if (/htp/i.test(type)) return 'HTP';
-  if (/line.?stop/i.test(type)) return 'Line Stop';
+  if (/line.?stop/i.test(type)) {
+    if(!operation.workflowType&&state.lineStopVariant==='htp')return 'HTP';
+    if(!operation.workflowType&&state.lineStopVariant==='hiStop')return 'Hi-Stop';
+    return 'Line Stop';
+  }
   if (/hot.?tap/i.test(type)) return 'Hot Tap';
   return type;
 }
 export function chooseOperationType(job, operation, type) {
   if (!OPERATION_CHOICES.includes(type)) return;
-  const autoName=/^(Hot Tap|Line Stop|Tap & Complete|Completion Plug) \d+$/.test(operation.label || '');
+  const autoName=/^(Hot Tap|Line Stop|Tap & Complete|Completion Plug|HTP|Hi-Stop) \d+$/.test(operation.label || '');
   operation.workflowType=type;
   operation.operationType=type;
   operation.state.operationType=type;
@@ -94,6 +99,12 @@ export function normalizeJob(entry) {
   };
   delete shared.operations; delete shared.jobBundle;
   const legacy = {...saved};
+  // Root records may retain the HTP select's display label without state.
+  // Map only its three exact existing options; keep unknown labels unchanged.
+  if(!Object.hasOwn(legacy,'htpMachine')&&record.machine?.htpMachine!=null){
+    const raw=String(record.machine.htpMachine),key=raw.replace(/\s/g,'').toUpperCase();
+    legacy.htpMachine=({'360':'360','360/152':'360','660':'660','660/760':'660','1200':'1200','1200-M120':'1200'})[key]??raw;
+  }
   const defaults = {
     bcoPipeMaterial:record.pipe?.material, bcoPipeOD:record.pipe?.nominalSize,
     bcoPipeID:record.pipe?.pipeId, bcoCutterOD:record.machine?.cutterOd,
@@ -157,8 +168,12 @@ export function geometry(state) {
   const coupon = validPipe && cid > 0 && cid < cutter && cid <= id ? od / 2 - Math.sqrt((id / 2) ** 2 - (cid / 2) ** 2) : NaN;
   return {od,id,cutter,wall:validPipe ? (od-id)/2 : NaN,bco,coupon};
 }
+export const familyStage=operation=>familyFor(operation,operationType(operation));
 export function stepsFor(operation) {
   const type = operationType(operation);
+  const family=familyStage(operation);
+  if(family==='htp')return ['setup','htp','review'];
+  if(family==='hiStop')return ['setup','pipe','hiStop','review'];
   if (!operation.workflowType && operation.state.lineStopVariant && !['standard','lineStop'].includes(operation.state.lineStopVariant))
     return ['setup','saved','review'];
   if (type === 'Completion Plug') return ['setup','pipe','plug','review'];
@@ -168,8 +183,15 @@ export function stepsFor(operation) {
   return type === 'Hot Tap' ? ['setup','pipe','tap','review'] : ['setup','saved','review'];
 }
 export function resultsFor(operation, stage) {
+  if(stepsFor(operation).includes('saved'))return [];
   const s = operation.state;
   const g = geometry(s);
+  const family=familyStage(operation);
+  if(family){
+    if(stage===family)return familyResults(s,family,number,g.od);
+    if(stage==='pipe'&&family==='hiStop')return [['Wall thickness',g.wall]];
+    return [];
+  }
   const n = key => number(s[key]);
   const signed = (key,sign) => n(key) * (s[sign] === '-' ? -1 : 1);
   if (stage === 'pipe') return [['BCO',g.bco],['Coupon free',g.coupon],['Wall thickness',g.wall]];

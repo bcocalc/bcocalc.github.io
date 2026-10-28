@@ -1,6 +1,8 @@
-import {geometry,number,operationType,stepsFor,resultsFor} from './model.mjs?v=pre-alpha20';
-import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha20';
-import {historicalMcoFor,historicalRodMcoFor} from './presentation.mjs?v=pre-alpha20';
+import {geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha21';
+import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha21';
+import {historicalMcoFor,historicalRodMcoFor,historicalFamilyFor} from './presentation.mjs?v=pre-alpha21';
+import {htpChartRow} from './families.mjs?v=pre-alpha21';
+import {etaPresentation} from './eta-view.mjs?v=pre-alpha21';
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const display=value=>Number.isFinite(value)?value.toFixed(4)+' in':'Not calculated';
@@ -27,11 +29,19 @@ export function buildExportText(job){
   if(String(info.machineType??'').trim())lines.push('Machine: '+info.machineType);
   for(const [index,operation]of job.operations.entries()){
     const g=geometry(operation.state),steps=stepsFor(operation),tap=Object.fromEntries(resultsFor(operation,'tap'));
+    const family=familyStage(operation),chart=family==='htp'?htpChartRow(operation.state):null;
     lines.push('','Operation '+(index+1)+' of '+job.operations.length+': '+String(operation.label||operation.id)+' ('+operationType(operation)+')');
-    lines.push('Pipe: OD '+display(g.od)+' | Wall '+display(g.wall),'Cutter: '+display(g.cutter),'BCO: '+(steps.includes('tap')?display(g.bco):'Not recalculated for this operation'));
+    lines.push('Pipe: '+(family==='htp'?'Saved setup (not used for HTP) - ':'')+'OD '+display(g.od)+' | Wall '+display(g.wall),'Cutter: '+(family==='htp'?display(chart?.cutter)+' (HTP chart)':family==='hiStop'?display(g.cutter)+' (saved O.D.; not used for Hi-Stop)':display(g.cutter)),'BCO: '+(family==='htp'?display(chart?.bco)+' (HTP chart; not cutter-shell geometry)':family==='hiStop'?'Not applicable to Hi-Stop formulas':steps.includes('tap')?display(g.bco):'Not recalculated for this operation'));
     lines.push('Hot Tap: '+(steps.includes('tap')?'MD '+display(number(operation.state.md))+' | LI '+display(tap['Lower in'])+' | TTD '+display(tap['Total travel']):'Not applicable to this operation'));
     lines.push('Line Stop LI: '+(steps.includes('stop')?display(resultsFor(operation,'stop')[0][1]):'Not applicable to this operation'));
     lines.push('Completion Plug LI: '+(steps.includes('plug')?display(resultsFor(operation,'plug')[0][1]):'Not applicable to this operation'));
+    if(family==='htp'){
+      const values=Object.fromEntries(resultsFor(operation,'htp')),view=etaPresentation(operation,info.machineType);
+      lines.push('HTP TCO: '+display(values['Total cut out (TCO)']),'HTP chart: Host '+String(operation.state.htpPipeSize??'')+' in | Branch '+String(chart?.branch??'Unlisted')+' | Head '+String(chart?.head??'Unlisted'),
+        'HTP cutting ETA to chart BCO: '+view.time+' | Profile '+view.profile+' | RPM '+view.chartRpm+' | '+view.chartBasis,'HTP feed assumption: 0.0040 in/revolution; not TCO travel or job duration. Equipment applicability is not verified.');
+      if(view.savedNote)lines.push(view.savedNote);
+    }
+    if(family==='hiStop')lines.push('Hi-Stop Plug Set: '+display(Object.fromEntries(resultsFor(operation,'hiStop'))['Plug Set']),'Hi-Stop POD: '+display(g.od)+' from actual Pipe & cutter O.D.; saved per-stage POD is not used.','Hi-Stop cutting ETA: Not connected. Equipment applicability is not verified.');
     if(steps.includes('saved')){
       lines.push('Saved values only - equipment-specific calculations are not connected; not recalculated.');
       for(const [group,values]of Object.entries(originalMeasurements(job,operation)))for(const [key,value]of Object.entries(values||{}))
@@ -43,6 +53,7 @@ export function buildExportText(job){
     }
     if(steps.includes('tap'))for(const [label,value]of [['MCO',historicalMcoFor(job,operation)],['Rod MCO',historicalRodMcoFor(job,operation)]])
       if(value!=null)lines.push('Historical '+label+' (original snapshot; not used): '+savedText(value));
+    if(family)for(const [key,value]of Object.entries(historicalFamilyFor(job,operation,family)||{}))lines.push('Historical '+(family==='htp'?'HTP':'Hi-Stop')+' '+key+' (original snapshot; not used): '+savedText(value));
     const warnings=operationWarnings(operation,info.machineType);
     lines.push('Warnings: '+(warnings.length?warnings.map(w=>(STAGE_TITLES[w.stage]||w.stage)+': '+w.message).join(' | '):'None'));
   }

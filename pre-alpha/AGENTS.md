@@ -3,10 +3,18 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha20. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha21. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- This20 injected shared-snapshot adapter slice is LOCAL ONLY; parent review is required before
+- This21 distinct HTP/Hi-Stop recalculation slice is LOCAL ONLY; parent review is required before
   any upload or publication. Published17, root/live/dev and storage stay intact.
+- Use only the existing eight exact HTP rows and legacy calcHtp/calcHiStop
+  formulas. HTP ETA uses chart cutter/chart BCO and existing0.004feed, not
+  standard geometry BCO. Hi-Stop POD comes from actual Pipe & cutter O.D.,
+  matching its disabled/synchronized legacy input; retain saved hsPod inactive
+  and disclose source differences. Do not infer taper units, PSD/HTP expansions,
+  equipment ratings or family applicability. No standard Hot Tap/Rod MCO/ETA
+  fallback for Hi-Stop. Family blanks remain invalid under strict Pre-Alpha
+  parsing; only standard Hot Tap blank LD has the existing zero default.
 - Shared saves are tested only with injected synthetic REST and isolated jobs.
   No production binding, collection change or public-write enablement. Preserve
   the existing create-only transport, capture raw bundles before upload, and keep

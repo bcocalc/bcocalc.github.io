@@ -1,5 +1,5 @@
-import {ETA_MACHINES,etaFor,formatEta} from './eta.mjs?v=pre-alpha20';
-import {number} from './model.mjs?v=pre-alpha20';
+import {ETA_MACHINES,etaFor,formatEta} from './eta.mjs?v=pre-alpha21';
+import {number} from './model.mjs?v=pre-alpha21';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
@@ -8,6 +8,8 @@ export function etaPresentation(operation,machineName='') {
   const eta=etaFor(operation,machineName);
   const speeds=eta.rpm.filter(value=>Number.isFinite(value)&&value>0).map(value=>value*eta.feedRate);
   const chartBasis=eta.match.basis==='interpolated'?'Interpolated between chart sizes '+eta.match.sizes.join(' and '):eta.match.basis==='nearest'?'Outside chart range: nearest chart size '+eta.match.sizes[0]:eta.match.basis==='exact'?'Exact chart size':'No matching RPM chart';
+  const retainedStandard=['etaBco','etaMachine','etaCutterSize','etaRpmOverride'].some(key=>String(operation.state[key]??'').trim());
+  const savedNote=eta.family==='htp'?retainedStandard?'Standard Hot Tap ETA overrides are retained but not used for HTP. HTP uses its exact chart cutter, chart BCO and separate RPM profile.':'':eta.family==='hiStop'?retainedStandard?'Standard Hot Tap ETA settings are retained but not used for Hi-Stop.':'':String(operation.state.etaBco??'').trim()&&number(operation.state.etaBco)!==eta.distance?'Saved ETA distance '+operation.state.etaBco+' is retained but not used. This estimate follows current Pipe & cutter BCO.':'';
   return {eta,
     time:eta.issue?'Not calculated':formatEta(eta.lowMinutes)+(eta.lowMinutes===eta.highMinutes?'':' to '+formatEta(eta.highMinutes)),
     distance:Number.isFinite(eta.distance)?eta.distance.toFixed(4)+' in':'Not calculated',
@@ -16,12 +18,19 @@ export function etaPresentation(operation,machineName='') {
     profile:ETA_MACHINES[eta.profile]||'No supported chart',
     chartBasis,
     feed:speeds.length?Math.min(...speeds).toFixed(3)+(Math.min(...speeds)===Math.max(...speeds)?'':' - '+Math.max(...speeds).toFixed(3))+' in/min':'Not calculated',
-    savedNote:String(operation.state.etaBco??'').trim()&&number(operation.state.etaBco)!==eta.distance?'Saved ETA distance '+operation.state.etaBco+' is retained but not used. This estimate follows current Pipe & cutter BCO.':''
+    savedNote
   };
 }
 
 export function etaResultPanel(operation,machineName='',{primary=false,secondary=[]}={}) {
   const view=etaPresentation(operation,machineName),{eta}=view;
+  if(eta.family==='hiStop')return '<section class="eta-scope"><p class="result-hint">'+escape(eta.issue)+'</p></section>';
+  if(eta.family==='htp')return '<section class="bco-eta-summary" aria-label="HTP chart cutting estimate" data-help-context="htp"><div class="result-panel bco-eta-panel"><h3>HTP cutting estimate</h3><dl class="review-results">'+
+    [['Chart BCO',view.distance],['Chart cutter',Number.isFinite(number(eta.size))?number(eta.size).toFixed(3)+' in':'Not calculated'],['Chart RPM',view.chartRpm],['Feed speed',view.feed],['Cutting ETA to chart BCO',view.time]].map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+escape(value)+'</dd></div>').join('')+'</dl></div>'+
+    '<p class="result-hint"><strong>HTP RPM profile:</strong> '+escape(view.profile)+' ('+(operation.state.htpMachine==null?'legacy HTP default 360; not entered':'separate HTP profile selection')+'). <strong>RPM lookup:</strong> '+escape(view.chartBasis)+'.</p>'+
+    '<p class="result-hint">Uses only the exact HTP row cutter and chart BCO, with the existing 0.0040 in/revolution feed assumption. This is cutting-only ETA, not TCO travel or complete job duration. Equipment applicability is not verified.</p>'+
+    (eta.issue?'<p class="warning">'+escape(eta.issue)+'</p>':'')+(eta.match.basis==='nearest'?'<p class="warning">Nearest charted RPM size is used outside the profile range. Confirm the equipment speed chart.</p>':'')+
+    (view.savedNote?'<p class="result-hint">'+escape(view.savedNote)+'</p>':'')+'<button class="eta-settings" data-open-eta>Edit HTP RPM profile</button></section>';
   const lookupOverride=String(operation.state.etaCutterSize??'').trim()!=='';
   const profileSource=operation.state.etaMachine==null?'follows job machine':'saved profile selection';
   const metric=(label,value,key,className='')=>'<div><dt class="eyebrow">'+label+'</dt><dd data-eta-value="'+key+'" class="'+className+'">'+value+'</dd></div>';
@@ -43,5 +52,5 @@ export function etaResultPanel(operation,machineName='',{primary=false,secondary
 }
 
 export function etaSummary(operation,machineName) {
-  return '<section class="review-stage eta-summary"><h3>Hot Tap cutting estimate</h3>'+etaResultPanel(operation,machineName)+'</section>';
+  return '<section class="review-stage eta-summary"><h3>'+ (etaFor(operation,machineName).family==='htp'?'HTP':'Hot Tap')+' cutting estimate</h3>'+etaResultPanel(operation,machineName)+'</section>';
 }

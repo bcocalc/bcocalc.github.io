@@ -7,8 +7,9 @@ import {referenceTables,REFERENCE_CATEGORIES,positiveDecimal} from '../pre-alpha
 import {termHelp,TERMS,FIELD_HELP} from '../pre-alpha/help.mjs';
 import {normalizeJob,migratePipeSource,pipeSourceWarning,resultsFor,BUILD} from '../pre-alpha/model.mjs';
 import {operationWarnings} from '../pre-alpha/review.mjs';
+import {HTP_INPUTS,HISTOP_INPUTS} from '../pre-alpha/families.mjs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-function constant(source,name){const match=source.match(new RegExp('const '+name+' = ([\\s\\S]*?);(?:\\r?\\n|$)'));assert.ok(match,name);return JSON.parse(vm.runInNewContext('JSON.stringify(('+match[1]+'))'));}
+function constant(source,name,context={}){const match=source.match(new RegExp('const '+name+' = ([\\s\\S]*?);(?:\\r?\\n|$)'));assert.ok(match,name);return JSON.parse(vm.runInNewContext('JSON.stringify(('+match[1]+'))',context));}
 const core=read('dev/measurement.js');
 for(const [key,name]of Object.entries({glossary:'glossaryRowsData',rpm:'etaRpmChart',bolting:'boltingChartData',htp:'htpChartData',plant150:'plant150Data',plant600:'plant600Data',sealtite:'sealtite1JackboltData',garlock:'garlock600Data'}))assert.deepEqual(DATA[key],constant(core,name),name+' source parity');
 assert.deepEqual(DATA.cutters,constant(read('dev/reference/cutter-sizes.js'),'CHARTS'));
@@ -53,7 +54,7 @@ assert.equal(migratePipeSource(working),false);assert.equal(JSON.stringify(sourc
 const same={state:{...working.state,preAlphaPipeOD:'',lsPod:'6.625'}};migratePipeSource(same);assert.equal(pipeSourceWarning(same),null,'Equal legacy value is archived without a false result-change warning');
 assert.equal(JSON.stringify(DATA),dataBefore,'Read-only reference lookups preserve every source table');
 assert.doesNotMatch(resultsFor.toString(),/lsPod/,'Retired O.D. cannot re-enter calculations');
-const fields=constant(read('pre-alpha/workspace.mjs'),'fields');
+const fields=constant(read('pre-alpha/workspace.mjs'),'fields',{HTP_INPUTS,HISTOP_INPUTS});
 assert.ok(!Object.values(fields).flat().some(([key])=>key==='lsPod'),'No duplicate editable Line Stop O.D.');
 for(const [key]of Object.values(fields).flat())assert.ok(FIELD_HELP[key],key+' has contextual help');
 const assets=JSON.parse(vm.runInNewContext(read('pre-alpha/service-worker.js')+';JSON.stringify(ASSETS)',{URL,self:{location:{href:'https://example.test/pre-alpha/service-worker.js'},addEventListener(){}}}));

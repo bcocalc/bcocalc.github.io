@@ -89,11 +89,11 @@ try{
       if(geometry.scroll>geometry.width+1){await pan.focus();await pan.press('ArrowRight');await page.waitForFunction(()=>document.getElementById('original-figure-pan').scrollLeft>0);}
       if(geometry.scrollHeight>geometry.height+1){await pan.focus();await pan.press('ArrowDown');await page.waitForFunction(()=>document.getElementById('original-figure-pan').scrollTop>0);}
       const theme=await page.locator('body').evaluate(n=>n.classList.contains('dark')?'dark':'light');
-      await dialog.screenshot({path:join(tmpdir(),'pre-alpha20-viewer-native-'+engine+'-'+device+'-'+key+'-'+theme+'.png')});
+      await dialog.screenshot({path:join(tmpdir(),'pre-alpha21-viewer-native-'+engine+'-'+device+'-'+key+'-'+theme+'.png')});
       await activate(dialog.locator('#original-figure-fit'));assert.equal(await dialog.locator('#original-figure-fit').getAttribute('aria-pressed'),'true');
       assert.ok((await img.boundingBox()).width<=await pan.evaluate(n=>n.clientWidth)+1);
       assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
-      await dialog.screenshot({path:join(tmpdir(),'pre-alpha20-viewer-'+engine+'-'+device+'-'+key+'-'+theme+'.png')});
+      await dialog.screenshot({path:join(tmpdir(),'pre-alpha21-viewer-'+engine+'-'+device+'-'+key+'-'+theme+'.png')});
       await activate(dialog.locator('#original-figure-fit'));assert.equal(await dialog.locator('#original-figure-fit').getAttribute('aria-pressed'),'false');
       assert.ok(Math.abs((await img.boundingBox()).width-f.width)<1,'Actual-size toggle restores native label size');
       if(key==='plant-pt'){
@@ -153,7 +153,7 @@ try{
         }
         if(mobile)await page.setViewportSize({width:320,height:780});
         await viewer('plant-pt');await viewer('pipeline-pt');
-        await page.screenshot({path:join(tmpdir(),'pre-alpha20-originals-'+engine+'-'+device+'-'+(dark?'dark':'light')+'.png'),fullPage:true});
+        await page.screenshot({path:join(tmpdir(),'pre-alpha21-originals-'+engine+'-'+device+'-'+(dark?'dark':'light')+'.png'),fullPage:true});
       }
       assert.equal(hits.length-start,5,'Repeated large views use runtime cache instead of downloading again');
       assert.equal(hits.slice(start).reduce((n,item)=>n+item.bytes,0),87242);
@@ -175,7 +175,7 @@ try{
       console.log('PASS original figures '+engine+'/'+device+': initial0 bitmaps; intent3 Hot Tap then2 plug/87242 bytes; qualified Line Stop MD; complete aspect ratios, signed captions/source/copyright/alt, native actual-size pan/fit/keyboard/Escape/focus,320-430px light/dark, cold-offline text fallback, cache-only repeat views, offline save/reload/browser restart and complete original/bundle/live-key preservation');
     }catch(error){try{
       console.error('ORIGINAL_FIGURES_DIAGNOSTICS',JSON.stringify(await page.evaluate(()=>({trace:window.__figureTrace,focus:document.activeElement?.outerHTML,dialog:document.getElementById('measurement-figure-dialog')?.outerHTML,viewport:{width:innerWidth,height:innerHeight,zoom:document.body.style.zoom}}))));
-      const path=join(tmpdir(),'pre-alpha20-originals-failure-'+engine+'-'+device+'-'+Date.now()+'.png');await page.screenshot({path,fullPage:true});console.error('Screenshot: '+path);
+      const path=join(tmpdir(),'pre-alpha21-originals-failure-'+engine+'-'+device+'-'+Date.now()+'.png');await page.screenshot({path,fullPage:true});console.error('Screenshot: '+path);
     }catch{}throw error;}
     finally{await context?.close();}
   }

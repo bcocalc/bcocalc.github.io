@@ -1,5 +1,5 @@
-import {stepsFor} from './model.mjs?v=pre-alpha20';
-import {measurementFigureMarkup} from './measurement-figures.mjs?v=pre-alpha20';
+import {stepsFor} from './model.mjs?v=pre-alpha21';
+import {measurementFigureMarkup} from './measurement-figures.mjs?v=pre-alpha21';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const source=(title,pages)=>'TEAM training: '+title+', '+pages+'. Revision not recorded in this copy.';

@@ -1,5 +1,6 @@
-import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance} from './model.mjs?v=pre-alpha20';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha20';
+import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance,stepsFor,familyStage} from './model.mjs?v=pre-alpha21';
+import {htpChartRow,hiStopPipeOD} from './families.mjs?v=pre-alpha21';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha21';
 
 export const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const has=value=>String(value??'').trim()!=='';
@@ -18,6 +19,8 @@ export function createOriginTracker() {
     label(operation,key) {
       const state=operation.state, value=key==='preAlphaPipeOD'&&!has(state.preAlphaPipeOD)?pipeOD(state):state[key];
       if(key==='pipe-source-od')return 'From Pipe & cutter';
+      if(key==='hsPod'&&has(state.hsPod))return 'Archived - not used';
+      if(key==='htp-chart-bco'||key==='htp-chart-cutter')return 'From exact HTP chart row';
       if(key==='previous-pipe-od'&&operation.retiredLineStopOD)return 'Archived - not used';
       if(key==='ld'&&!has(state.ld))return 'Default 0 - not entered';
       if(!has(value)||typeof value==='number'&&!Number.isFinite(value))return 'Not entered';
@@ -35,10 +38,23 @@ export function createOriginTracker() {
 }
 
 export function worksheetFor(operation,stage) {
+  if(!stepsFor(operation).includes(stage))return [];
   const state=operation.state,g=geometry(state),results=resultsFor(operation,stage);
   const out=label=>results.find(row=>row[0]===label)?.[1];
   const term=(label,key,value=state[key],operator='+')=>({label,key,value,operator});
   const row=(label,terms,formula='')=>({label,terms,result:out(label),formula});
+  if(stage==='htp')return [
+    row('Total cut out (TCO)',[term('HTP MD','htpMd'),term('HTP LD ('+(state.htpLdSign==='-'?'Subtract':'Add')+')','htpLd'),term('HTP PTC','htpPtc'),term('Chart BCO','htp-chart-bco',htpChartRow(state)?.bco)],'HTP MD + signed HTP LD + HTP PTC + chart BCO'),
+    row('Chart BCO',[term('Chart BCO for selected HTP host size','htp-chart-bco',htpChartRow(state)?.bco)],'Exact HTP chart row; not cutter-shell geometry')
+  ];
+  if(stage==='hiStop'){
+    const pod=hiStopPipeOD(state,number,g.od),ld=term('Hi-Stop LD ('+(state.hsLdSign==='-'?'Subtract':'Add')+')','hsLd');
+    return [row('Lower in',[term('Hi-Stop MD','hsMd'),term('Hi-Stop LD','hsLd',state.hsLd,state.hsLdSign==='-'?'-':'+')]),
+      row('Total cut out (TCO)',[term('Reamer length','hsRl'),term('Actual Hi-Stop POD','pipe-source-od',pod),term('Cutter length','hsCl'),term('Hi-Stop PTC','hsPtc')],'RL / 2 + POD / 2 + CL + PTC'),
+      row('PSD',[term('RCD','hsRcd'),term('Plug bottom','hsPb'),term('Plug taper (source value)','hsPtp'),term('Existing formula constant','',0.25)],'(RCD - PB) / (2 × taper) + 0.25; taper must be nonzero'),
+      row('Plug Set',[term('PSD','',out('PSD')),term('Hi-Stop MD','hsMd'),ld,term('Actual Hi-Stop POD','pipe-source-od',pod)],'PSD + MD + signed LD + POD / 2')];
+  }
+  if(stage==='pipe'&&familyStage(operation)==='hiStop')return [row('Wall thickness',[term('Pipe O.D.','preAlphaPipeOD',g.od),term('Pipe I.D.','bcoPipeID')],'(Pipe O.D. - Pipe I.D.) / 2')];
   if(stage==='pipe')return [
     row('BCO',[term('Pipe O.D.','preAlphaPipeOD',g.od),term('Pipe I.D.','bcoPipeID'),term('Cutter O.D.','bcoCutterOD')],'O.D./2 - sqrt((I.D./2)^2 - (cutter O.D./2)^2)'),
     row('Coupon free',[term('Pipe O.D.','preAlphaPipeOD',g.od),term('Pipe I.D.','bcoPipeID'),term('Cutter I.D.','bcoCutterID')],'O.D./2 - sqrt((I.D./2)^2 - (cutter I.D./2)^2)'),
@@ -71,7 +87,7 @@ export function worksheetMarkup(operation,stage,origins) {
     (stage==='plug'?'<p class="result-hint">General plug calculation only. Pipeline and side-outlet reference methods are separate; plug-family applicability is not verified here.</p>':'')+
     rows.map(row=>'<section class="worksheet-result"><h4>'+escape(row.label)+'</h4>'+
       (row.formula?'<p class="worksheet-formula">'+escape(row.formula)+'</p>':'')+
-      '<ol>'+row.terms.map((term,index)=>'<li><span class="worksheet-operator" aria-label="'+(row.formula?'Input':index===0?'Starting value':term.operator==='-'?'Subtract':'Add')+'">'+(row.formula?'':index?escape(term.operator):'=')+'</span><span>'+escape(term.label)+'<small class="value-origin">'+escape(term.key?origins.label(operation,term.key):'Calculated from setup')+'</small></span><strong>'+escape(displayMeasurement(term.value))+'</strong></li>').join('')+'</ol>'+
+      '<ol>'+row.terms.map((term,index)=>'<li><span class="worksheet-operator" aria-label="'+(row.formula?'Input':index===0?'Starting value':term.operator==='-'?'Subtract':'Add')+'">'+(row.formula?'':index?escape(term.operator):'=')+'</span><span>'+escape(term.label)+'<small class="value-origin">'+escape(term.key?origins.label(operation,term.key):'Calculated from setup')+'</small></span><strong>'+escape(term.key==='hsPtp'&&Number.isFinite(number(term.value))?number(term.value).toFixed(4):displayMeasurement(term.value))+'</strong></li>').join('')+'</ol>'+
       '<p class="worksheet-total"><span>'+escape(row.label)+'</span><strong>'+escape(Number.isFinite(row.result)?row.result.toFixed(4)+' in':'Not calculated')+'</strong></p></section>').join('')+'</details>';
 }
 
@@ -93,6 +109,20 @@ function historicalHotTapValue(job,operation,key) {
 
 export const historicalMcoFor=(job,operation)=>historicalHotTapValue(job,operation,'mco');
 export const historicalRodMcoFor=(job,operation)=>historicalHotTapValue(job,operation,'rodMco');
+export function historicalFamilyFor(job,operation,family){
+  const original=job.original;if(!original)return undefined;
+  const record=original.record||original,saved=original.state||record.state||{};
+  const bundle=[record.jobBundle,saved.jobBundle,original.jobBundle,record.state,saved,record].find(value=>Array.isArray(value?.operations)&&value.operations.length);
+  const operations=bundle?.operations||[],matches=operations.filter((item,index)=>String(item.id||'operation-'+index)===operation.id);
+  const own=matches.length===1?matches[0].measurements?.[family]:undefined;if(own!=null)return own;
+  if(operations.length>1&&(bundle.selectedOperationId!==operation.id||matches.length!==1)||operations.length===1&&matches.length!==1||!operations.length&&operation.id!=='operation-0')return undefined;
+  return record.measurements?.[family];
+}
+export function historicalFamilyMarkup(job,operation,family){
+  const values=historicalFamilyFor(job,operation,family);if(!values||typeof values!=='object')return '';
+  const label=family==='htp'?'HTP':'Hi-Stop';
+  return '<details class="review-inactive" data-historical-family="'+family+'"><summary>Historical '+label+' values (not used)</summary><p class="result-hint">Original imported snapshot, retained unchanged and separate from current recalculation. Source units and raw text are preserved.</p><dl class="review-list">'+Object.entries(values).map(([key,value])=>'<div><dt>'+escape(key)+'</dt><dd>'+escape(typeof value==='object'?JSON.stringify(value):String(value??''))+'</dd></div>').join('')+'</dl></details>';
+}
 
 export function historicalMcoMarkup(job,operation) {
   const value=historicalMcoFor(job,operation);

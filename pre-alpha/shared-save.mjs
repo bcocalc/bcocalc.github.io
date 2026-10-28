@@ -1,5 +1,7 @@
-import {geometry,resultsFor,stepsFor,operationType} from './model.mjs?v=pre-alpha20';
-import {operationWarnings} from './review.mjs?v=pre-alpha20';
+import {geometry,resultsFor,stepsFor,operationType,familyStage} from './model.mjs?v=pre-alpha21';
+import {operationWarnings} from './review.mjs?v=pre-alpha21';
+import {htpChartRow} from './families.mjs?v=pre-alpha21';
+import {etaPresentation} from './eta-view.mjs?v=pre-alpha21';
 const clone=value=>structuredClone(value);
 const format=value=>Number.isFinite(value)?value.toFixed(4):'';
 const canonical=value=>JSON.stringify(value,(_,child)=>child&&typeof child==='object'&&!Array.isArray(child)?Object.fromEntries(Object.entries(child).sort(([a],[b])=>a.localeCompare(b))):child);
@@ -19,6 +21,11 @@ export function buildSharedSnapshot(job){
   const matches=(oldBundle?.operations||[]).filter((op,index)=>String(op.id||'operation-'+index)===selected.id);
   const originalSelected=oldBundle?.operations?.length>1?oldBundle.selectedOperationId===selected.id&&matches.length===1:oldBundle?.operations?.length===1?matches.length===1:selected.id==='operation-0';
   const measurements=clone(selected.measurements||(originalSelected?original.measurements:{})||{}),calculations=clone(originalSelected?original.calculations||{}:{});
+  const family=familyStage(selected);
+  if(family){
+    for(const group of ['hotTap','lineStop','completionPlug','htp','hiStop'])if(group!==family)delete measurements[group];
+    for(const key of ['bco','hotTapLi','hotTapTtd','lineStopLi','completionPlugLi','htpTco','hiStopTco','hiStopPlugSet'])delete calculations[key];
+  }
   if(steps.includes('tap')){
     measurements.hotTap={...measurements.hotTap,md:selected.state.md??'',ld:selected.state.ld??'',ldSign:selected.state.ldSign??'+',ptc:selected.state.ptc??'',pod:format(g.od),rodStart:selected.state.start??'',mt:selected.state.mt??'',
       li:format(tap['Lower in']),pop:format(tap['Pilot on pipe']),cop:format(tap['Cutter on pipe']),rodBco:format(tap['Rod BCO']),ttd:format(tap['Total travel']),mco:format(tap['Maximum cut out (MCO)']),rodMco:format(tap['Rod MCO'])};
@@ -26,12 +33,22 @@ export function buildSharedSnapshot(job){
   }
   if(steps.includes('stop')){measurements.lineStop={...measurements.lineStop,variant:'standard',md:selected.state.lsMd??'',ld:selected.state.lsLd??'',ldSign:selected.state.lsLdSign??'+',pod:format(g.od),li:format(resultsFor(selected,'stop')[0][1]),travel:selected.state.lsTravel??'',machineTravel:selected.state.lsMachineTravel??'',liManual:selected.state.lsLiManual??'',liManualToggle:selected.state.lsLiManualToggle??false};calculations.lineStopLi=measurements.lineStop.li;}
   if(steps.includes('plug')){measurements.completionPlug={...measurements.completionPlug,start:selected.state.cpStart??'',jbf:selected.state.cpJbf??'',ld:selected.state.cpLd??'',pt:selected.state.cpPt??'',li:format(resultsFor(selected,'plug')[0][1]),liManual:selected.state.cpLiManual??'',liManualToggle:selected.state.cpLiManualToggle??false};calculations.completionPlugLi=measurements.completionPlug.li;}
-  const record={...clone(original),meta:{...clone(original.meta||{}),title:snapshot.title,operationType:snapshot.operations.length===1?operationType(selected):snapshot.operations.length+' operations',operationCount:snapshot.operations.length,app:'TapCalc',version:'pre-alpha20',savedAtIso:snapshot.updatedAt||snapshot.savedAt||''},
+  if(family==='htp'){
+    const chart=htpChartRow(selected.state),values=Object.fromEntries(resultsFor(selected,'htp')),eta=etaPresentation(selected,shared.machineType);
+    measurements.htp={...measurements.htp,pipeSize:selected.state.htpPipeSize??'',branchSize:chart?.branch??'',head:chart?.head??'',cutterSize:Number.isFinite(chart?.cutter)?chart.cutter.toFixed(3):'',bco:format(chart?.bco),md:selected.state.htpMd??'',ld:selected.state.htpLd??'',ldSign:selected.state.htpLdSign??'+',ptc:selected.state.htpPtc??'',tco:format(values['Total cut out (TCO)']),eta:eta.time};
+    calculations.htpTco=measurements.htp.tco;
+  }
+  if(family==='hiStop'){
+    const values=Object.fromEntries(resultsFor(selected,'hiStop'));
+    measurements.hiStop={...measurements.hiStop,md:selected.state.hsMd??'',ld:selected.state.hsLd??'',ldSign:selected.state.hsLdSign??'+',rl:selected.state.hsRl??'',pod:format(g.od),cl:selected.state.hsCl??'',ptc:selected.state.hsPtc??'',rcd:selected.state.hsRcd??'',pb:selected.state.hsPb??'',ptp:selected.state.hsPtp??'',li:format(values['Lower in']),tco:format(values['Total cut out (TCO)']),psd:format(values.PSD),plugSet:format(values['Plug Set'])};
+    calculations.hiStopTco=measurements.hiStop.tco;calculations.hiStopPlugSet=measurements.hiStop.plugSet;
+  }
+  const record={...clone(original),meta:{...clone(original.meta||{}),title:snapshot.title,operationType:snapshot.operations.length===1?operationType(selected):snapshot.operations.length+' operations',operationCount:snapshot.operations.length,app:'TapCalc',version:'pre-alpha21',savedAtIso:snapshot.updatedAt||snapshot.savedAt||''},
     job:{...clone(original.job||{}),...Object.fromEntries(metadata.map(([key,field])=>[key,Object.hasOwn(shared,field)?shared[field]:original.job?.[key]??'']))},
     jobBundle:bundle,state,measurements,calculations,
     pipe:{...clone(original.pipe||{}),material:selected.state.bcoPipeMaterial??'',nominalSize:selected.state.bcoPipeOD??'',trueOd:format(g.od),pipeId:format(g.id),wallThickness:format(g.wall),schedule:selected.state.bcoSchedule??''},
     machine:{...clone(original.machine||{}),machine:shared.machineType??'',cutterOd:selected.state.bcoCutterOD??''},
-    preAlphaCapture:{job:snapshot,operations:snapshot.operations.map(operation=>({id:operation.id,supported:!stepsFor(operation).includes('saved'),results:Object.fromEntries(stepsFor(operation).filter(stage=>['tap','stop','plug'].includes(stage)||stage==='pipe'&&stepsFor(operation).includes('tap')).map(stage=>[stage,resultsFor(operation,stage).map(([label,value])=>({label,value:format(value)}))])),warnings:operationWarnings(operation,shared.machineType)}))}};
+    preAlphaCapture:{job:snapshot,operations:snapshot.operations.map(operation=>({id:operation.id,supported:!stepsFor(operation).includes('saved'),results:Object.fromEntries(stepsFor(operation).filter(stage=>['tap','stop','plug','htp','hiStop'].includes(stage)||stage==='pipe'&&(stepsFor(operation).includes('tap')||stepsFor(operation).includes('hiStop'))).map(stage=>[stage,resultsFor(operation,stage).map(([label,value])=>({label,value:format(value)}))])),warnings:operationWarnings(operation,shared.machineType)}))}};
   return {id:snapshot.id,state:clone(state),record};
 }
 

@@ -1,5 +1,6 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha20';
-import {geometry,number,stepsFor} from './model.mjs?v=pre-alpha20';
+import {DATA} from './reference-data.mjs?v=pre-alpha21';
+import {geometry,number,stepsFor} from './model.mjs?v=pre-alpha21';
+import {htpChartRow} from './families.mjs?v=pre-alpha21';
 
 export const FEED_RATE=0.004;
 export const ETA_MACHINES={'360':'360 / 152','660':'660 / 760','1200':'1200-M120'};
@@ -28,6 +29,12 @@ export function rpmMatch(machine,sizeValue) {
   return {values,basis:'interpolated',sizes:[lower,upper]};
 }
 export function etaFor(operation,machineName='') {
+  if(stepsFor(operation).includes('htp')){
+    const state=operation.state,chart=htpChartRow(state),profile=state.htpMachine??'360',size=chart?.cutter??'',match=rpmMatch(profile,size),rpm=match.values,distance=chart?.bco??NaN;
+    const issue=!chart?'Choose an exact HTP chart row for its cutter and BCO.':!rpm.length?'Choose a supported HTP RPM profile; saved unknown or empty profiles have no ETA.':'';
+    return {family:'htp',profile,size,match,manual:false,distance,feedRate:FEED_RATE,rpm,issue,lowMinutes:issue?NaN:distance/(Math.max(...rpm)*FEED_RATE),highMinutes:issue?NaN:distance/(Math.min(...rpm)*FEED_RATE)};
+  }
+  if(stepsFor(operation).includes('hiStop'))return {family:'hiStop',profile:'',size:'',match:{values:[],basis:'unavailable',sizes:[]},manual:false,distance:NaN,feedRate:NaN,rpm:[],issue:'Cutting-time ETA is not connected for Hi-Stop. No standard Hot Tap or HTP estimate is substituted.',lowMinutes:NaN,highMinutes:NaN};
   const state=operation.state,profile=state.etaMachine??machineProfile(machineName);
   const size=String(state.etaCutterSize??'').trim()?state.etaCutterSize:state.bcoCutterOD;
   const match=rpmMatch(profile,size),manual=String(state.etaRpmOverride??'').trim()!=='';
