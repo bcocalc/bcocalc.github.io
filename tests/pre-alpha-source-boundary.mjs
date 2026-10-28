@@ -9,6 +9,7 @@ const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replac
 const identity=body=>body.replaceAll('pre-alpha18','pre-alpha19').replaceAll('Pre-Alpha 18','Pre-Alpha 19').replaceAll('PRE-ALPHA 18','PRE-ALPHA 19').replaceAll('Pre-Alpha18','Pre-Alpha19');
 const hash=body=>createHash('sha256').update(body).digest('hex');
 const functional={
+ 'tests/pre-alpha-original-figures-ui.mjs':'290e5a49ce4f111444b8a68362cf205e3df539959a9be3302791ada372165f9d',
  'pre-alpha/AGENTS.md':'7140482acb35c63f5551877a41dcc2cc2b6440405a78b4abdfe4ce00be7f8cb1',
  'pre-alpha/index.html':'40b954d9f2fbfc84495e58ab2d443bc14760d65df51a7673dfec84a0c03adb19',
  'pre-alpha/workspace.mjs':'25f9fa9663da90c28d176a5c1ce6bd3959cdf3c51e231a1db790554bffe9b563',

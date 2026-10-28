@@ -10,11 +10,12 @@ import {BUILD} from '../pre-alpha/model.mjs';
 import {readDurableWorkspace,waitForWorkspaceSave} from './pre-alpha-workspace-test-helpers.mjs';
 const root=fileURLToPath(new URL('../',import.meta.url)),require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
-const engine=process.env.TAPCALC_BROWSER||'chromium',hits=[],writes=[];
+const engine=process.env.TAPCALC_BROWSER||'chromium',hits=[],writes=[],offlineProbes=[];
 const mime={'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.webp':'image/webp'};
 const server=createServer((request,response)=>{
   if(request.method!=='GET'){writes.push(request.method);response.writeHead(405);response.end();return;}
   const url=new URL(request.url,'http://127.0.0.1');
+  if(url.pathname==='/offline-probe'){offlineProbes.push(url.pathname);response.end('Uncached network probe');return;}
   if(url.pathname.startsWith('/v1/')){response.writeHead(200,{'Content-Type':'application/json'});response.end('{"documents":[]}');return;}
   try{
     const path=url.pathname.endsWith('/')?url.pathname+'index.html':url.pathname,file=resolve(root,'.'+decodeURIComponent(path));
@@ -56,6 +57,20 @@ try{
       page=await context.newPage();page.setDefaultTimeout(15000);page.on('pageerror',error=>errors.push(error.message));
     }
     const guide=()=>page.locator('[data-measurement-guidance]');
+    async function verifyOffline(){
+      // Service-worker navigation can reset Chromium's renderer online flag.
+      // Repeated context.setOffline(true) is a Playwright same-state no-op.
+      // Apply real network emulation to the new page session; never spoof DOM state.
+      if(engine==='chromium'){
+        const session=await context.newCDPSession(page);
+        await session.send('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+      }
+      assert.equal(await page.evaluate(()=>navigator.onLine),false);
+      const probe=await context.newPage();
+      try{await assert.rejects(()=>probe.goto(base+'/offline-probe'),/offline|ERR_INTERNET_DISCONNECTED/i);}
+      finally{await probe.close();}
+      assert.deepEqual(offlineProbes,[],'Uncached request outside the worker scope never reaches the server');
+    }
     async function open(stage){await activate(page.locator('[data-step="'+stage+'"]'));await waitForWorkspaceSave(page);await activate(guide().locator(':scope > summary'));}
     async function loaded(img,key){
       await img.waitFor({state:'visible'});await img.scrollIntoViewIfNeeded();
@@ -146,10 +161,12 @@ try{
       await waitForWorkspaceSave(page);const saved=await readDurableWorkspace(page),job=JSON.parse(saved).entries[0].job;
       assert.equal(job.operations.length,2);assert.deepEqual(job.operations.map(o=>o.state),entry.record.jobBundle.operations.map(o=>o.state));assert.deepEqual(job.original.record,entry.record);
       await context.setOffline(true);await page.reload();await guide().waitFor({state:'visible'});
+      await verifyOffline();
       assert.equal(await guide().evaluate(n=>n.open),false);await activate(guide().locator(':scope > summary'));
       for(const key of ['plant-pt','pipeline-pt'])await loaded(guide().locator('img[data-measurement-figure="'+key+'"]'),key);
       await viewer('pipeline-pt');assert.equal(await readDurableWorkspace(page),saved);
       await context.close();await launch(true);await page.goto(base+'/pre-alpha/#workspace');await guide().waitFor({state:'visible'});
+      await verifyOffline();
       assert.equal(await page.evaluate(()=>navigator.onLine),false);assert.equal(await readDurableWorkspace(page),saved);
       await activate(guide().locator(':scope > summary'));for(const key of ['plant-pt','pipeline-pt'])await loaded(guide().locator('img[data-measurement-figure="'+key+'"]'),key);
       await viewer('plant-pt');assert.equal(await readDurableWorkspace(page),saved);
