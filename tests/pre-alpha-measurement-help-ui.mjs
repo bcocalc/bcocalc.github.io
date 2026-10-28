@@ -24,7 +24,7 @@ try{
     await page.route('**/v1/**',async route=>{if(route.request().method()!=='GET')writes.push(route.request().method());await route.fulfill({json:{documents:[]}});});
     await page.addInitScript(history=>{if(!localStorage.getItem('measurementCardHistoryV1'))localStorage.setItem('measurementCardHistoryV1',history);},history);
     await page.goto(base+'/pre-alpha/');
-    assert.equal(await page.locator('.edition').textContent(),'PRE-ALPHA 19');
+    assert.equal(await page.locator('.edition').textContent(),'PRE-ALPHA 20');
     assert.equal(await page.locator('#local-private-preview').count(),0,'Public candidate must not ship local-only prototype scaffolding');
     await page.waitForFunction(()=>document.getElementById('connection').textContent.includes('Connected'));
     await activate(page.locator('.main-nav [data-page="library"]'));await activate(page.locator('[data-source="device"]'));await activate(page.locator('.job-card'));
@@ -44,7 +44,7 @@ try{
         await img.waitFor({state:'visible'});await img.scrollIntoViewIfNeeded();
         await img.evaluate(node=>new Promise((resolve,reject)=>{if(node.complete&&node.naturalWidth)return resolve();node.addEventListener('load',resolve,{once:true});node.addEventListener('error',()=>reject(Error('Approved image failed to load')),{once:true});}));
         assert.ok((await img.getAttribute('alt')).length>30);
-        assert.match(await img.getAttribute('src'),/measurement-figures\/[^/]+\.webp\?v=pre-alpha19$/);
+        assert.match(await img.getAttribute('src'),/measurement-figures\/[^/]+\.webp\?v=pre-alpha20$/);
       }
       if(figures)assert.match(await guide.innerText(),/TEAM, Inc\. All rights reserved/);
       if(stage==='stop')assert.match(await guide.innerText(),/LD\/WD, not MD/);

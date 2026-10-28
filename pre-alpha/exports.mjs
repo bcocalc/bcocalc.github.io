@@ -1,6 +1,6 @@
-import {geometry,number,operationType,stepsFor,resultsFor} from './model.mjs?v=pre-alpha19';
-import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha19';
-import {historicalMcoFor,historicalRodMcoFor} from './presentation.mjs?v=pre-alpha19';
+import {geometry,number,operationType,stepsFor,resultsFor} from './model.mjs?v=pre-alpha20';
+import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha20';
+import {historicalMcoFor,historicalRodMcoFor} from './presentation.mjs?v=pre-alpha20';
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const display=value=>Number.isFinite(value)?value.toFixed(4)+' in':'Not calculated';

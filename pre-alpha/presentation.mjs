@@ -1,5 +1,5 @@
-import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance} from './model.mjs?v=pre-alpha19';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha19';
+import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance} from './model.mjs?v=pre-alpha20';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha20';
 
 export const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const has=value=>String(value??'').trim()!=='';

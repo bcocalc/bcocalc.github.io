@@ -3,10 +3,15 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha19. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha20. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- This19 export parity slice is LOCAL ONLY; parent review is required before
+- This20 injected shared-snapshot adapter slice is LOCAL ONLY; parent review is required before
   any upload or publication. Published17, root/live/dev and storage stay intact.
+- Shared saves are tested only with injected synthetic REST and isolated jobs.
+  No production binding, collection change or public-write enablement. Preserve
+  the existing create-only transport, capture raw bundles before upload, and keep
+  receipts separate from editable jobs. Review legacy viewer limitations before
+  enabling any real collection; never silently project or replace raw workflows.
 - Preserve legacy synchronous popup Print / Save PDF and 1400px PNG download.
   Export immutable click-time complete jobs with metadata and every operation;
   escape print text, wrap PNG text and report size/failure without truncation.

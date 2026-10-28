@@ -1,5 +1,5 @@
-import {BUILD,STORAGE_KEY} from './model.mjs?v=pre-alpha19';
-import {createWorkspaceDatabase} from './workspace-database.mjs?v=pre-alpha19';
+import {BUILD,STORAGE_KEY} from './model.mjs?v=pre-alpha20';
+import {createWorkspaceDatabase} from './workspace-database.mjs?v=pre-alpha20';
 
 // Both older localStorage formats are read-only inputs. Web Locks alone did not
 // make their cross-process reads fresh in WebKit. IndexedDB is the authority;
@@ -8,6 +8,7 @@ export const WORKSPACE_KEY=STORAGE_KEY+'ConcurrentV1';
 export const WORKSPACE_LOCK=WORKSPACE_KEY+':write';
 const clone=value=>structuredClone(value);
 const fingerprint=value=>value==null?null:JSON.stringify(value);
+const captureFingerprint=value=>JSON.stringify(value,(_,child)=>child&&typeof child==='object'&&!Array.isArray(child)?Object.fromEntries(Object.keys(child).sort().map(key=>[key,child[key]])):child);
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 
 function parse(raw,label){
@@ -67,9 +68,11 @@ export function createWorkspaceStore({storage,locks,database=createWorkspaceData
     try{onCommit();}catch{} // A notification failure cannot undo a committed save.
     return committed.result;
   }
-  async function save(job,expected,{copy=false,isCurrent=()=>true}={}){
+  async function save(job,expected,{copy=false,isCurrent=()=>true,sharedCapture=null}={}){
     // Capture before the asynchronous lock request: edits/navigation may continue.
     const snapshot=clone(job);
+    if(sharedCapture&&(copy||sharedCapture.jobId!==snapshot.id||sharedCapture.item?.id!==snapshot.id||typeof sharedCapture.id!=='string'||!sharedCapture.id||captureFingerprint(sharedCapture.item.record?.preAlphaCapture?.job)!==captureFingerprint(snapshot)))throw fail('invalid-snapshot','The shared capture does not match this working copy. Nothing was uploaded.');
+    const capture=sharedCapture?clone(sharedCapture):null;
     if(!validJobs([snapshot]))throw fail('invalid-job','This working copy has an unsupported format. Its saved version has not been changed.');
     if(!locks?.request)throw fail('locking-unavailable','Safe saving is unavailable in this browser. Keep this page open and use a current browser over HTTPS.');
     return locks.request(WORKSPACE_LOCK,{mode:'exclusive'},()=>commit(state=>{
@@ -84,7 +87,14 @@ export function createWorkspaceStore({storage,locks,database=createWorkspaceData
         snapshot.title=(snapshot.title||'Untitled job')+' (separate copy)';
         snapshot.sharedState.jobDescription=snapshot.title;
       }
-      snapshot.updatedAt=now();
+      snapshot.updatedAt=capture?snapshot.updatedAt||now():now();
+      if(capture){
+        if(state.record.sharedSnapshots!==undefined&&!Array.isArray(state.record.sharedSnapshots))throw fail('invalid-storage','Saved shared snapshots could not be read. Nothing was changed.');
+        const captures=state.record.sharedSnapshots??=[],previousCapture=captures.find(entry=>entry.id===capture.id);
+        if(previousCapture&&captureFingerprint(previousCapture.item)!==captureFingerprint(capture.item))throw fail('snapshot-collision','The saved capture differs. Nothing was overwritten or uploaded.');
+        if(!previousCapture)captures.push({...capture,preparedAt:now(),receipt:null});
+        state.record.sharedSnapshots=captures;
+      }
       const index=state.record.entries.findIndex(entry=>entry.job.id===snapshot.id);
       const old=index<0?null:state.record.entries[index];
       const previous=state.companion.entries.find(item=>item.job.id===snapshot.id);
@@ -103,5 +113,25 @@ export function createWorkspaceStore({storage,locks,database=createWorkspaceData
       return {raw:JSON.stringify(state.record),result:undefined};
     }));
   }
-  return {ready,refresh,read,save,select,close:()=>database.close?.()};
+  function sharedSnapshots(){
+    if(!initialized)throw fail('loading-storage','Device storage is still opening.');
+    const captures=readState(storage,cachedRaw).record.sharedSnapshots??[];
+    if(!Array.isArray(captures))throw fail('invalid-storage','Saved shared snapshots could not be read.');
+    return clone(captures);
+  }
+  async function confirmSharedSnapshot(id,cloudId){
+    if(typeof cloudId!=='string'||!cloudId)throw fail('unconfirmed-upload','Shared upload was not confirmed. The local capture is retained.');
+    if(!locks?.request)throw fail('locking-unavailable','Safe saving is unavailable in this browser.');
+    return locks.request(WORKSPACE_LOCK,{mode:'exclusive'},()=>commit((state,raw)=>{
+      const captures=state.record.sharedSnapshots;
+      if(!Array.isArray(captures))throw fail('missing-snapshot','The local shared capture could not be found.');
+      const capture=captures.find(entry=>entry.id===id);
+      if(!capture)throw fail('missing-snapshot','The local shared capture could not be found.');
+      if(capture.receipt&&capture.receipt.cloudId!==cloudId)throw fail('receipt-conflict','This capture has a different confirmed receipt. Nothing was overwritten.');
+      if(capture.receipt)return {raw,result:clone(capture.receipt)};
+      capture.receipt={cloudId,confirmedAt:now()};
+      return {raw:JSON.stringify(state.record),result:clone(capture.receipt)};
+    }));
+  }
+  return {ready,refresh,read,save,select,sharedSnapshots,confirmSharedSnapshot,close:()=>database.close?.()};
 }

@@ -14,7 +14,7 @@ for(const [key,figure]of figures){
   assert.ok(figure.width>=672&&figure.width<=768&&figure.height>=378&&figure.height<=711);
   assert.match(figureSource(figure),/TEAM, Inc\. All rights reserved\. Governing revision not recorded/);
   assert.doesNotMatch(figureSource(figure),/2023-10-28|Revision A/);
-  assert.match(figureUrl(figure),/\.webp\?v=pre-alpha19$/);
+  assert.match(figureUrl(figure),/\.webp\?v=pre-alpha20$/);
   const markup=measurementFigureMarkup({figure:key,text:'A & B <context>'});
   assert.match(markup,/loading="lazy" decoding="async" alt="[^" ]/);
   assert.match(markup,new RegExp('width="'+figure.width+'" height="'+figure.height+'"'));
@@ -34,12 +34,12 @@ assert.doesNotMatch(measurementHelpMarkup(op,'stop'),/<img|<svg|data-figure-open
 const workerSource=readFileSync(new URL('../pre-alpha/service-worker.js',import.meta.url),'utf8');
 const context={URL,self:{location:{href:'https://fixture.invalid/pre-alpha/service-worker.js'}}};
 vm.runInNewContext(workerSource.split("self.addEventListener('install'")[0]+'\nglobalThis.lists={ASSETS,FIGURES};',context);
-assert.equal(context.lists.FIGURES.length,5);assert.ok(context.lists.ASSETS.every(x=>!x.endsWith('.webp?v=pre-alpha19')));
+assert.equal(context.lists.FIGURES.length,5);assert.ok(context.lists.ASSETS.every(x=>!x.endsWith('.webp?v=pre-alpha20')));
 assert.deepEqual([...context.lists.FIGURES].map(x=>new URL(x,'https://fixture.invalid/pre-alpha/').pathname.split('/').pop()).sort(),figures.map(([,v])=>v.file).sort());
 const workerEvents=new Map();let offlineResponse;
 vm.runInNewContext(workerSource,{URL,Response,self:{location:{href:'https://fixture.invalid/pre-alpha/service-worker.js'},addEventListener:(type,callback)=>workerEvents.set(type,callback)},
-  caches:{open:async name=>{assert.equal(name,'tapcalc-pre-alpha-pre-alpha19');return {match:async()=>undefined};}},fetch:async()=>{throw new TypeError('Synthetic offline figure');}});
-workerEvents.get('fetch')({request:{url:'https://fixture.invalid/pre-alpha/measurement-figures/hot-tap-md-crop.webp?v=pre-alpha19',method:'GET'},respondWith:promise=>{offlineResponse=promise;}});
+  caches:{open:async name=>{assert.equal(name,'tapcalc-pre-alpha-pre-alpha20');return {match:async()=>undefined};}},fetch:async()=>{throw new TypeError('Synthetic offline figure');}});
+workerEvents.get('fetch')({request:{url:'https://fixture.invalid/pre-alpha/measurement-figures/hot-tap-md-crop.webp?v=pre-alpha20',method:'GET'},respondWith:promise=>{offlineResponse=promise;}});
 assert.equal((await offlineResponse).status,503,'A cold offline miss produces a handled image error, not an unhandled worker rejection');
 // Model queued native close events explicitly, without changing browser timing.
 const nodes=new Map(),events=new Map(),pendingClose=[];

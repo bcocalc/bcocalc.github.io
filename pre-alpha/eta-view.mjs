@@ -1,5 +1,5 @@
-import {ETA_MACHINES,etaFor,formatEta} from './eta.mjs?v=pre-alpha19';
-import {number} from './model.mjs?v=pre-alpha19';
+import {ETA_MACHINES,etaFor,formatEta} from './eta.mjs?v=pre-alpha20';
+import {number} from './model.mjs?v=pre-alpha20';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
