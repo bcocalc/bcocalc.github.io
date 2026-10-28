@@ -16,7 +16,8 @@ const BASELINES=[
   {commit:'21bf9b289196c25912f38424573b295209e49e03',build:'pre-alpha10',transactional:false},
   {commit:'54aec7b984cec1c37ddeea4c5e17c46376473a24',build:'pre-alpha11',transactional:true},
   {commit:'e4e6389988e3f3767108b5b12a900d33e727a5ad',build:'pre-alpha12',transactional:true},
-  {commit:'4e247fbebe0bab8cf7185487aa90fd90b0f25741',build:'pre-alpha14',transactional:true}
+  {commit:'4e247fbebe0bab8cf7185487aa90fd90b0f25741',build:'pre-alpha14',transactional:true},
+  {commit:'514157d290faa81714d48892095ad4758b5716a3',build:'pre-alpha16',transactional:true}
 ];
 const root=fileURLToPath(new URL('../',import.meta.url));
 const require=createRequire(import.meta.url);
@@ -41,7 +42,7 @@ function source(path){
   if(!file.startsWith(resolve(root)+sep))throw new Error('Outside test root');
   return readFileSync(file);
 }
-const mime={'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png'};
+const mime={'.html':'text/html','.mjs':'text/javascript','.js':'text/javascript','.css':'text/css','.json':'application/json','.png':'image/png','.webp':'image/webp'};
 const server=createServer((request,response)=>{
   if(originUnavailable){request.socket.destroy();return;}
   const url=new URL(request.url,'http://localhost');
@@ -136,7 +137,12 @@ try{
       const guide=page.locator('[data-measurement-guidance="plug"]');
       assert.equal(await guide.evaluate(node=>node.open),false);
       await activate(guide.locator(':scope > summary'));
-      assert.ok(await guide.locator('svg').first().isVisible(),'Approved text and diagrams are available offline');
+      for(const img of await guide.locator('img').all()){
+        await img.waitFor({state:'visible'});await img.scrollIntoViewIfNeeded();
+        await page.waitForFunction(key=>{const node=document.querySelector('img[data-measurement-figure="'+key+'"]');return node?.complete&&node.naturalWidth>0;},await img.getAttribute('data-measurement-figure'));
+      }
+      assert.equal(await guide.locator('img').count(),2,'Both exact plug crops remain available offline');
+      assert.match(await guide.innerText(),/TEAM, Inc\. All rights reserved/);
       assert.match(await guide.innerText(),/Revision A, 15MAY18/);
       assert.match(await guide.innerText(),/no formal erratum/);
       await activate(guide.locator(':scope > summary'));
@@ -153,6 +159,22 @@ try{
       }
       await activate(page.locator('[data-operation="one"]'));await waitSaved();
       await page.locator('[data-field="cpLiManual"]').waitFor({state:'visible'});
+    }
+    async function warmOriginals(){
+      const before=await durableSnapshot();
+      assert.equal(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).filter(r=>r.url.includes('/measurement-figures/')).length,BUILD),0,'Installing17 does not prefetch original figures');
+      for(const stage of ['tap','plug']){
+        await activate(page.locator('[data-step="'+stage+'"]'));await waitSaved();
+        const guide=page.locator('[data-measurement-guidance="'+stage+'"]');await activate(guide.locator(':scope > summary'));
+        for(const img of await guide.locator('img').all()){
+          await img.waitFor({state:'visible'});await img.scrollIntoViewIfNeeded();
+          await page.waitForFunction(key=>{const node=document.querySelector('img[data-measurement-figure="'+key+'"]');return node?.complete&&node.naturalWidth>0;},await img.getAttribute('data-measurement-figure'));
+        }
+        await activate(guide.locator(':scope > summary'));
+      }
+      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);
+      const prior=durableJob(before),after=durableJob(await durableSnapshot());
+      assert.deepEqual(after.operations.map(op=>op.state),prior.operations.map(op=>op.state));assert.deepEqual(after.original,prior.original);
     }
       await load(baselineCase.build);assert.equal(await value(),'99');
       await page.locator('[data-field="cpLiManual"]').fill('100.125');await waitSaved();
@@ -172,6 +194,7 @@ try{
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),oldCompanionBytes);
       if(baselineCase.transactional)assert.equal(await durableSnapshot(),oldDurableBytes,'Opening the new build must not rewrite the transactional baseline record');
       await checkBlankLd();
+      await warmOriginals();
       await page.locator('[data-field="cpLiManual"]').fill('101.125');await waitSaved();
       const cacheKeys=await page.evaluate(()=>caches.keys());
       assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD));

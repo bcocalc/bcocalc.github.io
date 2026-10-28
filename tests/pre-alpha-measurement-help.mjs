@@ -7,8 +7,8 @@ const op={operationType:'Line Stop',state:{md:'10',ld:'-2',ldSign:'-',ptc:'1',st
 const before=structuredClone(op),results=resultsFor(op,'tap');
 const moduleBytes=readFileSync(new URL('../pre-alpha/measurement-help.mjs',import.meta.url));
 assert.ok(moduleBytes.length<=12288,'Optional guidance must remain a small dependency-free module');
-assert.ok(gzipSync(moduleBytes).length<=4096,'Keep the compressed source budget below4KiB; no PDF/image payload');
-assert.match(moduleBytes.toString(),/model\.mjs\?v=pre-alpha16/);
+assert.ok(gzipSync(moduleBytes).length<=4096,'Keep the compressed source budget below4KiB; no embedded binary payload');
+assert.match(moduleBytes.toString(),/model\.mjs\?v=pre-alpha17/);
 for(const stage of ['tap','stop','plug']){
   const guide=measurementHelpFor(op,stage),markup=measurementHelpMarkup(op,stage);
   assert.ok(guide.cards.length);
@@ -16,11 +16,13 @@ for(const stage of ['tap','stop','plug']){
   assert.match(markup,/data-no-terms="true"/);
   assert.match(markup,/Not to scale/);
   assert.doesNotMatch(markup,/<details[^>]*\sopen(?:\s|>)/,'Guidance must start collapsed');
-  assert.doesNotMatch(markup,/<(?:img|iframe|canvas)|href=|src=/,'Private pages and PDFs must not be embedded or linked');
-  assert.equal((markup.match(/role="img"/g)||[]).length,guide.cards.filter(card=>card.diagram).length);
+  assert.doesNotMatch(markup,/<(?:svg|iframe|canvas)|\ssrc=|href=/,'No guessed SVGs, eager images, private pages or PDF links');
+  assert.equal((markup.match(/<img /g)||[]).length,guide.cards.filter(card=>card.figure).length);
 }
 assert.equal(measurementHelpFor(op,'tap').cards.find(card=>card.key==='tap-start').diagram,undefined,'No universal Start index is invented');
 assert.equal(measurementHelpFor(op,'stop').cards.find(card=>card.key==='stop-ld').diagram,undefined,'Do not infer one fixed head orientation');
+assert.equal(measurementHelpFor(op,'stop').cards.find(card=>card.key==='stop-md').figure,undefined);
+assert.match(measurementHelpFor(op,'stop').cards.find(card=>card.key==='stop-md').text,/LD\/WD, not MD/);
 const plug=measurementHelpFor(op,'plug');
 assert.match(plug.scope,/not certified for any family/);
 const segmented=plug.cards.find(card=>card.key==='pipeline-jbf');
@@ -43,5 +45,5 @@ for(const stage of ['setup','pipe','review','saved'])assert.equal(measurementHel
 assert.deepEqual(op,before);
 assert.deepEqual(resultsFor(op,'tap'),results,'Guidance cannot alter canonical results');
 assert.match(readFileSync(new URL('../pre-alpha/service-worker.js',import.meta.url),'utf8'),/'\.\/measurement-help\.mjs\?v='\+BUILD/);
-console.log('PASS measurement help: verified endpoint scope, family/task distinctions, recorded manual revision and unresolved training inconsistency, absent unsupported diagrams, collapsed accessible text/SVG, no private-document links, no measurement/formula mutation and offline asset inclusion');
+console.log('PASS measurement help: approved5 original-figure hooks without eager src, qualified Line Stop MD text, preserved family/task distinctions and unresolved training inconsistency, no private-document links or measurement/formula mutation');
 console.log('MEASUREMENT_GUIDANCE_BUDGET',JSON.stringify({raw:moduleBytes.length,gzip:gzipSync(moduleBytes).length}));

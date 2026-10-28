@@ -3,16 +3,20 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha16. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha17. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- This MCO candidate is local only. Do not upload or publish it. Reviewed15 stays
-  separate. MCO follows the established measurement.js calcHotTap formula:
-  actual pipe O.D. / 2 + PTC. It is not Rod MCO. Current results are recomputed
-  from the saved raw inputs; imported historical result snapshots stay unchanged.
-- Measurement help may contain only the reviewed derived descriptions, small
-  recreated diagrams and citations approved for this test release. Original
-  Technician documents, extracts, renders, workbook data and private audit
-  records stay private. Keep the release source-boundary guard in force.
+- This17 candidate is local first; parent review is required before upload or
+  publication. Published16 and all calculations/storage remain unchanged.
+- Measurement help permits only the prior reviewed derived text and exactly
+  five explicitly authorized, hash-pinned WebP crops in measurement-figures/.
+  Preserve their complete arrows/captions, TEAM copyright and unknown-revision
+  attribution. No other originals, full pages, PDFs, slides, private manifests,
+  renders, extracts, workbook data, restricted tables or audit records may ship.
+- General Line Stop p.28 shows LD/WD, not MD. No Line Stop MD figure is verified;
+  keep the qualified text and do not substitute the separate LD/WD crop.
+- Original images load only on guide/viewer intent and cache on first use,
+  not service-worker installation. Keep offline misses explicit. Never clear
+  jobs or change storage identities to refresh figures.
 - Firebase uses the existing public shared-job transport for reads only.
   Experimental edits use the IndexedDB database tapcalc-pre-alpha-workspace-v1
   on this device. Revision comparison and mutation share a readwrite transaction.

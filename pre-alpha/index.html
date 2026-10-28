@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1727">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
-  <title>TapCalc Pre-Alpha 16</title>
-  <link rel="stylesheet" href="./workspace.css?v=pre-alpha16">
-  <script src="./firebase-config.js?v=pre-alpha16" defer></script>
+  <title>TapCalc Pre-Alpha 17</title>
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha17">
+  <script src="./firebase-config.js?v=pre-alpha17" defer></script>
   <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
-  <script type="module" src="./workspace.mjs?v=pre-alpha16"></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha17"></script>
 </head>
 <body>
   <header class="masthead">
     <button id="menu-toggle" class="quiet menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="app-menu"><span aria-hidden="true">&#9776;</span></button>
-    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 16</span></a>
+    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 17</span></a>
     <button id="theme" class="quiet">Dark mode</button>
   </header>
   <nav id="app-menu" class="app-menu" aria-label="Workspace menu" hidden><button data-page="home">Home</button><button data-page="workspace">Workspace</button><button data-page="references">References</button><button data-page="library">Job Library</button><button data-page="settings">Settings</button><button id="menu-close" class="quiet">Close menu</button></nav>
@@ -64,5 +64,6 @@
   <div id="notice" role="status" hidden></div>
   <dialog id="eta-dialog" aria-labelledby="eta-title"><header class="dialog-heading"><h2 id="eta-title">Cutting time (ETA)</h2><button type="button" data-close="eta-dialog" aria-label="Close cutting time">&times;</button></header><p class="result-hint">Estimated cutting motion from cutter on pipe to BCO only. Not complete Hot Tap, Line Stop, Completion Plug, or job duration.</p><div id="eta-fields" class="form-grid" data-help-context="eta"></div><div id="eta-results" aria-live="polite" data-help-context="eta"></div></dialog>
   <dialog id="delete-operation-dialog" aria-labelledby="delete-operation-title" aria-describedby="delete-operation-description"><form id="delete-operation-form"><h2 id="delete-operation-title">Delete this operation?</h2><p id="delete-operation-description"></p><div class="dialog-actions"><button type="button" data-close="delete-operation-dialog" autofocus>Cancel</button><button type="submit" class="danger-button">Delete operation</button></div></form></dialog>
+  <dialog id="measurement-figure-dialog" aria-labelledby="original-figure-title" aria-describedby="original-figure-instructions" data-no-terms="true"><header class="figure-dialog-heading"><h2 id="original-figure-title">Original measurement figure</h2><button type="button" id="original-figure-close" autofocus>Close figure</button></header><p id="original-figure-instructions" class="result-hint">Actual-size original. Swipe or use arrow keys inside the image area to read every arrow and caption.</p><button type="button" id="original-figure-fit" aria-pressed="false">Fit whole figure</button><figure class="figure-dialog-content"><div id="original-figure-pan" class="figure-pan" tabindex="0" role="region" aria-label="Scrollable original measurement figure"><img id="original-figure-image" data-measurement-figure="" decoding="async" alt=""></div><p class="figure-error result-hint" role="status" hidden></p><figcaption><p id="original-figure-caption"></p><small id="original-figure-source" class="datum-source"></small></figcaption></figure></dialog>
 </body>
 </html>

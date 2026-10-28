@@ -24,26 +24,30 @@ try{
     await page.route('**/v1/**',async route=>{if(route.request().method()!=='GET')writes.push(route.request().method());await route.fulfill({json:{documents:[]}});});
     await page.addInitScript(history=>{if(!localStorage.getItem('measurementCardHistoryV1'))localStorage.setItem('measurementCardHistoryV1',history);},history);
     await page.goto(base+'/pre-alpha/');
-    assert.equal(await page.locator('.edition').textContent(),'PRE-ALPHA 16');
+    assert.equal(await page.locator('.edition').textContent(),'PRE-ALPHA 17');
     assert.equal(await page.locator('#local-private-preview').count(),0,'Public candidate must not ship local-only prototype scaffolding');
     await page.waitForFunction(()=>document.getElementById('connection').textContent.includes('Connected'));
     await activate(page.locator('.main-nav [data-page="library"]'));await activate(page.locator('[data-source="device"]'));await activate(page.locator('.job-card'));
     await waitForWorkspaceSave(page);
     const initial=await readWorkspaceSnapshot(page),initialJob=initial.jobs.find(j=>j.id===initial.activeId);
-    for(const [stage,sketches] of [['tap',3],['stop',1],['plug',2]]){
+    for(const [stage,figures] of [['tap',3],['stop',0],['plug',2]]){
       await activate(page.locator('[data-step="'+stage+'"]'));
       const guide=page.locator('[data-measurement-guidance="'+stage+'"]'),summary=guide.locator(':scope > summary');
       assert.equal(await guide.count(),1);assert.equal(await guide.evaluate(node=>node.open),false);
       assert.ok(await guide.evaluate(node=>node.getBoundingClientRect().height<100),'Collapsed guidance must stay compact');
-      assert.equal(await guide.locator('svg').count(),sketches);
-      assert.ok(await guide.locator('svg').first().isHidden());
+      assert.equal(await guide.locator('svg').count(),0);
+      assert.equal(await guide.locator('img').count(),figures);
+      for(const img of await guide.locator('img').all())assert.equal(await img.getAttribute('src'),null);
       const before=await page.locator('#results').textContent();
       await summary.focus();await summary.press('Enter');assert.equal(await guide.evaluate(node=>node.open),true);
-      assert.ok(await guide.locator('svg').first().isVisible());
-      for(const svg of await guide.locator('svg').all()){
-        assert.equal(await svg.getAttribute('role'),'img');
-        const id=await svg.getAttribute('aria-labelledby');assert.equal(await svg.locator('title[id="'+id+'"]').count(),1);
+      for(const img of await guide.locator('img').all()){
+        await img.waitFor({state:'visible'});await img.scrollIntoViewIfNeeded();
+        await img.evaluate(node=>new Promise((resolve,reject)=>{if(node.complete&&node.naturalWidth)return resolve();node.addEventListener('load',resolve,{once:true});node.addEventListener('error',()=>reject(Error('Approved image failed to load')),{once:true});}));
+        assert.ok((await img.getAttribute('alt')).length>30);
+        assert.match(await img.getAttribute('src'),/measurement-figures\/[^/]+\.webp\?v=pre-alpha17$/);
       }
+      if(figures)assert.match(await guide.innerText(),/TEAM, Inc\. All rights reserved/);
+      if(stage==='stop')assert.match(await guide.innerText(),/LD\/WD, not MD/);
       assert.match(await guide.innerText(),/Revision not recorded/);
       if(stage==='tap')assert.match(await guide.locator('[data-datum="tap-start"]').innerText(),/no common Start datum/);
       if(stage==='plug'){
@@ -76,7 +80,7 @@ try{
     assert.equal(await page.locator('[data-measurement-guidance]').evaluate(node=>node.open),false);
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),history);
     assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);assert.deepEqual(pdfs,[]);
-    console.log('PASS measurement help '+engine+'/'+(mobile?'phone':'desktop')+': collapsed native keyboard/touch guidance, source-qualified text/SVG, family/task distinctions and unresolved training inconsistency, 320px themes, no private PDF requests and unchanged saved inputs/results');
+    console.log('PASS measurement help '+engine+'/'+(mobile?'phone':'desktop')+': collapsed native keyboard/touch guidance, exact original figures and qualified Line Stop MD text, copyright/source/family distinctions, 320px themes, no private PDF requests and unchanged saved inputs/results');
     await context.close();
   }
 }finally{await browser?.close();server.kill();}

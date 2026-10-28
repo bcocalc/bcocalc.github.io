@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { extname, join, resolve, sep } from 'node:path';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const documents = new Map();
-const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png' };
+const mime = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.png': 'image/png', '.webp':'image/webp' };
 const modules = {
   'firebase-app.js': 'export const getApps=()=>[]; export const initializeApp=()=>({});',
   'firebase-auth.js': `const auth={currentUser:null,authStateReady:async()=>{}};

@@ -147,7 +147,7 @@ try{
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),history);
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),sentinel);
       assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(writes,[]);
-      const screenshot=join(tmpdir(),'pre-alpha16-mco-'+engine+'-'+device+'.png');
+      const screenshot=join(tmpdir(),'pre-alpha17-mco-'+engine+'-'+device+'.png');
       await page.screenshot({path:screenshot,fullPage:true});console.log('MCO_REVIEW_SCREENSHOT '+screenshot);
       console.log('PASS MCO '+engine+'/'+device+': new, nested legacy and complete three-operation imports; current/historical separation, Review/worksheet, fractional/invalid inputs, actual local save, explicit reopen, reload, browser-process restart, both themes and source isolation');
     }catch(error){

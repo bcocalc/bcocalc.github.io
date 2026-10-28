@@ -7,18 +7,25 @@ import {WORKSPACE_DATABASE} from '../pre-alpha/workspace-database.mjs';
 
 const root=new URL('../pre-alpha/',import.meta.url);
 const text=name=>readFileSync(new URL(name,root),'utf8');
-assert.equal(BUILD,'pre-alpha16');
+assert.equal(BUILD,'pre-alpha17');
 const html=text('index.html');
-assert.match(html,/<title>TapCalc Pre-Alpha 16<\/title>/);
-assert.match(html,/<span class="edition">PRE-ALPHA 16<\/span>/);
+assert.match(html,/<title>TapCalc Pre-Alpha 17<\/title>/);
+assert.match(html,/<span class="edition">PRE-ALPHA 17<\/span>/);
 for(const asset of ['workspace.css','firebase-config.js','workspace.mjs'])assert.ok(html.includes('./'+asset+'?v='+BUILD));
 const config={window:{}};vm.runInNewContext(text('firebase-config.js'),config);
 assert.equal(config.window.TAPCALC_PRE_ALPHA_BUILD,BUILD);
 const worker={URL,self:{location:{href:'https://fixture.invalid/pre-alpha/service-worker.js?v='+BUILD}}};
-vm.runInNewContext(text('service-worker.js').split("self.addEventListener('install'")[0]+'\nglobalThis.identity={BUILD,PREFIX,CACHE,scope,ASSETS};',worker);
+vm.runInNewContext(text('service-worker.js').split("self.addEventListener('install'")[0]+'\nglobalThis.identity={BUILD,PREFIX,CACHE,scope,ASSETS,FIGURES};',worker);
 assert.equal(worker.identity.BUILD,BUILD);
 assert.equal(worker.identity.PREFIX,'tapcalc-pre-alpha-');
 assert.equal(worker.identity.CACHE,'tapcalc-pre-alpha-'+BUILD);
+assert.equal(worker.identity.FIGURES.length,5);
+assert.ok(worker.identity.FIGURES.every(asset=>!worker.identity.ASSETS.includes(asset)),'Original figures are not installation downloads');
+for(const asset of worker.identity.FIGURES){
+  const url=new URL(asset,worker.identity.scope);
+  assert.equal(url.searchParams.get('v'),BUILD);assert.equal(url.origin,'https://fixture.invalid');
+  assert.ok(url.pathname.startsWith('/pre-alpha/measurement-figures/'));
+}
 for(const asset of worker.identity.ASSETS){
   const url=new URL(asset,worker.identity.scope);
   assert.equal(url.origin,'https://fixture.invalid');
@@ -40,10 +47,10 @@ for(const name of readdirSync(root).filter(name=>/\.(?:mjs|js|html|css)$/.test(n
 }
 assert.ok(tokens>30,'Check actual module, CSS, configuration and worker identities, not just a label');
 assert.match(text('workspace.mjs'),/register\('\.\/service-worker\.js\?v='\+BUILD/);
-assert.match(text('AGENTS.md'),/- Build: pre-alpha16\./);
+assert.match(text('AGENTS.md'),/- Build: pre-alpha17\./);
 assert.equal(STORAGE_KEY,'tapcalcPreAlpha01Workspace');
 assert.equal(WORKSPACE_KEY,'tapcalcPreAlpha01WorkspaceConcurrentV1');
 assert.equal(WORKSPACE_DATABASE,'tapcalc-pre-alpha-workspace-v1');
 assert.equal(existsSync(new URL('measurement-help.mjs',root)),true,'This release includes only the approved derived guidance pinned by the separate source-boundary guard');
 assert.equal(existsSync(new URL('../local-only/',root)),false,'Do not ship private prototype or technical-ledger scaffolding');
-console.log('PASS Pre-Alpha16 identity: visible label, all versioned app tokens, config, worker/cache and stable storage identities; approved guidance cached without local-only scaffolding');
+console.log('PASS Pre-Alpha17 identity: visible label, all versioned app tokens, config, worker/cache and stable storage identities; approved guidance cached without local-only scaffolding');

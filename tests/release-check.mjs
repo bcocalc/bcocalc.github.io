@@ -18,6 +18,7 @@ const checks = [
   ['pre-alpha-release-identity.mjs', {}],
   ['pre-alpha-source-boundary.mjs', {}],
   ['pre-alpha-measurement-help.mjs', {}],
+  ['pre-alpha-measurement-figures.mjs', {}],
   ['pre-alpha-home.mjs', {}],
   ['pre-alpha-presentation.mjs', {}],
   ['pre-alpha-hot-tap-ld.mjs', {}],
@@ -41,6 +42,7 @@ if (!args.includes('--unit-only')) {
     checks.push(['pre-alpha-hot-tap-ld-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-mco-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-measurement-help-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-original-figures-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-workspace-store-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-offline-control.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-cache-context-control.mjs', { TAPCALC_BROWSER: browser }]);
