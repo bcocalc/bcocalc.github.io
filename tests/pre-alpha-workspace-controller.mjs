@@ -29,7 +29,7 @@ async function harness(initial=[fixture('a'),fixture('b')]){
     if(!nodes.has(id))nodes.set(id,{textContent:'',hidden:false,disabled:false,listeners:new Map(),addEventListener(type,fn){this.listeners.set(type,fn);}});
     return nodes.get(id);
   };
-  const context=vm.createContext({createWorkspaceStore:()=>store,WORKSPACE_KEY,STORAGE_KEY,stageFor,structuredClone,crypto:{randomUUID},localStorage:storage,navigator:{locks},$:node,notify:message=>notices.push(message),window:{confirm:()=>true,addEventListener:(type,fn)=>events.set(type,fn)}});
+  const context=vm.createContext({modernSharing:null,createWorkspaceStore:()=>store,WORKSPACE_KEY,STORAGE_KEY,stageFor,structuredClone,crypto:{randomUUID},localStorage:storage,navigator:{locks},$:node,notify:message=>notices.push(message),window:{confirm:()=>true,addEventListener:(type,fn)=>events.set(type,fn)}});
   vm.runInContext(`let jobs=[],active=null,stage='setup',currentPage='workspace';
     function renderWorkspace(){saveStatus();}
     function renderLibrary(){}

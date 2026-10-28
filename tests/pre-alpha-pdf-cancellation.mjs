@@ -15,7 +15,7 @@ assert.equal(originalSha,provenance.source_git_blob_sha,'Apart from the guard, p
 assert.equal(originalSha,'92eba689bfddc9b642260a0fd2763e4f85f3ab3c');
 assert.ok(source.includes('4.10.38')&&source.includes('Apache License, Version 2.0'));
 const owner=readFileSync(new URL('../pre-alpha/references.mjs',import.meta.url),'utf8');
-assert.match(owner,/new URL\('\.\/vendor\/pdf\.worker\.mjs\?v=pre-alpha21',import\.meta\.url\)/);
+assert.match(owner,/new URL\('\.\/vendor\/pdf\.worker\.mjs\?v=pre-alpha22',import\.meta\.url\)/);
 assert.match(owner,/await import\('\.\.\/pdf\.mjs'\)/,'Keep the compatible shared API unchanged');
 
 function failureHandler(text,terminated){

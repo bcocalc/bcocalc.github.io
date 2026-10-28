@@ -18,6 +18,7 @@ const checks = [
   ['pre-alpha-rod-mco.mjs', {}],
   ['pre-alpha-exports.mjs', {}],
   ['pre-alpha-shared-save.mjs', {}],
+  ['pre-alpha-modern-sharing.mjs', {}],
   ['pre-alpha-families.mjs', {}],
   ['pre-alpha-release-identity.mjs', {}],
   ['pre-alpha-source-boundary.mjs', {}],
@@ -47,6 +48,7 @@ if (!args.includes('--unit-only')) {
     checks.push(['pre-alpha-mco-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-exports-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-shared-save-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-modern-sharing-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-families-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-measurement-help-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-original-figures-ui.mjs', { TAPCALC_BROWSER: browser }]);

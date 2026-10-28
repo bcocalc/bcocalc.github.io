@@ -4,7 +4,7 @@ import {documentEnvelope} from '../pre-alpha/modern-transport.mjs';
 import {verifyEnvelope} from '../pre-alpha/modern-envelope.mjs';
 import {MODERN_DESTINATION} from '../pre-alpha/modern-sharing-config.mjs';
 export async function modernRelayFixture(){
-  const docs=new Map(),requests=[],posts=[],approved=new Set(['alice','bob']);let mode='success',onPost=null;
+  const docs=new Map(),requests=[],posts=[],approved=new Set(['alice','bob']);let mode='success',onPost=null,redirectTo=null;
   const name=`projects/${MODERN_DESTINATION.projectId}/databases/${MODERN_DESTINATION.database}/documents`;
   const server=createServer(async(request,response)=>{
     const reply=(status,payload)=>{if(!response.destroyed){response.writeHead(status,{'Content-Type':'application/json'});response.end(JSON.stringify(payload));}};
@@ -13,6 +13,7 @@ export async function modernRelayFixture(){
     requests.push({method:request.method,path:url.pathname,uid});
     if(!uid)return reply(401,{error:{status:'UNAUTHENTICATED'}});
     if(!approved.has(uid))return reply(403,{error:{status:'PERMISSION_DENIED'}});
+    if(mode==='redirect'&&redirectTo){response.writeHead(302,{Location:redirectTo});response.end();return;}
     const base='/__modern/v1/'+name,collection=base+'/'+MODERN_DESTINATION.collection;
     if(!url.pathname.startsWith(base))return reply(404,{error:{status:'NOT_FOUND'}});
     if(request.method==='GET'){
@@ -42,5 +43,5 @@ export async function modernRelayFixture(){
     return reply(200,{writeResults:[{updateTime:'synthetic-confirmed'}]});
   });
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  return {docs,requests,posts,approved,name,endpoint:'http://127.0.0.1:'+server.address().port+'/__modern',setMode:value=>{mode=value;},setOnPost:value=>{onPost=value;},close:async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}};
+  return {docs,requests,posts,approved,name,endpoint:'http://127.0.0.1:'+server.address().port+'/__modern',setMode:value=>{mode=value;},setRedirect:value=>{redirectTo=value;mode='redirect';},setOnPost:value=>{onPost=value;},close:async()=>{server.closeAllConnections();await new Promise(resolve=>server.close(resolve));}};
 }

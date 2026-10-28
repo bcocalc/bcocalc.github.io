@@ -7,6 +7,7 @@ import {buildSharedSnapshot} from '../pre-alpha/shared-save.mjs';
 import {createWorkspaceStore} from '../pre-alpha/workspace-store.mjs';
 import {memoryDatabase} from './pre-alpha-memory-database.mjs';
 import {modernRelayFixture} from './modern-sharing-fixture.mjs';
+import {modernSnapshotMarkup} from '../pre-alpha/modern-view.mjs';
 const clone=value=>structuredClone(value);
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 import {modernJobFixture} from './modern-job-fixture.mjs';
@@ -23,11 +24,20 @@ assert.equal(PRODUCTION_MODERN_BINDING,null);
 for(const endpoint of ['https://firestore.googleapis.com','http://example.com','http://127.0.0.1@evil.invalid'])assert.throws(()=>createModernTransport({kind:'synthetic-only',endpoint,destination:MODERN_DESTINATION,auth:{getSession:async()=>null},fetch}),/localhost|synthetic/);
 console.log('PASS production binding absent; non-loopback relays rejected');
 {
+ const job=modernJobFixture();job.title='<script>private notes</script>';job.sharedState.jobNotes='<img src=x onerror=alert(1)>';
+ const item=buildSharedSnapshot(job),current=item.record.preAlphaCapture.operations.find(op=>op.id==='htp');current.results.htp[0].value='123.4567';
+ const envelope=await makeEnvelope(item,'alice',MODERN_DESTINATION),received=await verifyEnvelope(envelope,{destination:MODERN_DESTINATION});
+ const html=modernSnapshotMarkup({item:received,envelope});assert.ok(html.includes('123.4567'),'Recipient displays captured value, not recalculated current math');assert.ok(html.includes('777'));assert.ok(html.includes('888'));assert.ok(html.includes('&lt;script&gt;'));assert.ok(!html.includes('<script>'));assert.ok(!html.includes('<img'));assert.equal((html.match(/data-modern-operation=/g)||[]).length,4);assert.ok(html.includes('futureBundle'));
+ const invalid=clone(item);invalid.record.preAlphaCapture.operations[0].results.tap[0].value=undefined;await assert.rejects(makeEnvelope(invalid,'alice',MODERN_DESTINATION),{code:'unsupported-value'});
+ const missing=clone(item);missing.record.preAlphaCapture.operations=[];await assert.rejects(verifyEnvelope(await makeEnvelope(missing,'alice',MODERN_DESTINATION)),{code:'invalid-snapshot'});
+ console.log('PASS complete read-only view: captured result attribution, escaped notes, retained originals/history/unknowns, malformed captures rejected');
+}
+{
  const h=await harness();try{
   const before=clone(h.job);const a=h.saver.save(h.job,h.version),b=h.saver.save(h.job,h.version);const [one,two]=await Promise.all([a,b]);assert.deepEqual(one,two);
   assert.equal(h.relay.posts.length,1);assert.equal(h.store.sharedSnapshots().length,1);
   const capture=h.store.sharedSnapshots()[0],envelope=capture.item.record.modernSnapshot,item=await verifyEnvelope(envelope,{destination:MODERN_DESTINATION,cloudId:one.cloudId});
-  assert.deepEqual(item,buildSharedSnapshot(before));assert.deepEqual(item.record.preAlphaCapture.job,before);assert.equal(item.record.jobBundle.operations.length,4);assert.deepEqual(h.job,before);
+  const expected=buildSharedSnapshot(before);expected.record.modernRelay=clone(h.transport.binding);assert.deepEqual(item,expected);assert.deepEqual(item.record.preAlphaCapture.job,before);assert.equal(item.record.jobBundle.operations.length,4);assert.deepEqual(h.job,before);
   assert.equal(envelope.ownerUid,'alice');assert.deepEqual(envelope.destination,MODERN_DESTINATION);assert.deepEqual(item.record.preAlphaCapture.job.operations[0].state.future,before.operations[0].state.future);
   const posts=h.relay.posts.length;await h.saver.retry(one.captureId);assert.equal(h.relay.posts.length,posts);
   const received=await h.transport.get(one.cloudId);assert.deepEqual(received.item,item);assert.equal((await h.transport.list()).length,1);
@@ -68,6 +78,7 @@ for(const session of [null,{uid:'alice',token:'fixture-alice',expiresAt:999},{ui
  const h=await harness();try{
   h.relay.setMode('post-denied');let id;await assert.rejects(h.saver.save(h.job,h.version),error=>{id=error.captureId;return true;});
   const before=h.relay.requests.length;
+  await assert.rejects(h.saver.confirmed(id),{code:'unconfirmed-upload'});assert.equal(h.relay.requests.length,before,'Copy-link validation never uploads an unconfirmed capture');
   const other=createModernSaver({store:h.store,transport:createModernTransport({...h.config,destination:{...MODERN_DESTINATION,collection:'otherTeamSnapshots'}})});
   await assert.rejects(other.retry(id),{code:'destination-changed'});assert.equal(h.relay.requests.length,before);
   h.setSession({uid:'bob',token:'fixture-bob',expiresAt:1000000});await assert.rejects(h.saver.retry(id),{code:'account-changed'});assert.equal(h.relay.requests.length,before);
@@ -109,7 +120,7 @@ for(const mode of ['conflict','quota','cancelled']){
 }
 {
  const h=await harness();try{
-  const envelope=await makeEnvelope(buildSharedSnapshot(h.job),'alice',MODERN_DESTINATION),id='tm-'+envelope.contentHash;
+  const item=buildSharedSnapshot(h.job);item.record.modernRelay=clone(h.transport.binding);const envelope=await makeEnvelope(item,'alice',MODERN_DESTINATION),id='tm-'+envelope.contentHash;
   h.relay.docs.set(h.relay.name+'/'+MODERN_DESTINATION.collection+'/'+id,{name:h.relay.name+'/'+MODERN_DESTINATION.collection+'/'+id,fields:envelopeFields(envelope)});h.relay.setMode('collision');
   await assert.rejects(h.saver.save(h.job,h.version),{code:'snapshot-mismatch'});assert.equal(h.relay.posts.length,0);assert.equal(h.store.sharedSnapshots()[0].receipt,null);
   console.log('PASS mismatched existing content: no overwrite/create/receipt; exact pending capture retained');
@@ -159,5 +170,28 @@ for(const mode of ['conflict','quota','cancelled']){
   h.relay.setMode('success');await createModernSaver({store:restarted,transport:h.transport}).retry(id);assert.deepEqual(restarted.sharedSnapshots()[0].item,captured);assert.ok(restarted.sharedSnapshots()[0].receipt);assert.equal(h.relay.docs.size,1);
   console.log('PASS restarted store recovers identical pending capture/owner/destination and verifies acknowledgement');
  }finally{await h.close();}
+}
+{
+ const h=await harness();try{
+  await assert.rejects(h.saver.save(h.job,h.version,{expectedOwnerUid:'bob'}),{code:'account-changed'});assert.equal(h.store.sharedSnapshots().length,0);assert.equal(h.relay.requests.length,0);
+  const hung=createModernTransport({...h.config,auth:{getSession:()=>new Promise(()=>{})},timeoutMs:10});
+  await assert.rejects(hung.session(),{code:'auth-timeout'});assert.equal(h.relay.requests.length,0);
+  console.log('PASS click-owner mismatch and hanging auth: no retarget/capture/request; bounded explicit failure');
+ }finally{await h.close();}
+}
+{
+ const h=await harness(),other=await modernRelayFixture();try{
+  h.relay.setMode('post-denied');let id;await assert.rejects(h.saver.save(h.job,h.version),error=>{id=error.captureId;return true;});const before=h.relay.requests.length;
+  const moved=createModernSaver({store:h.store,transport:createModernTransport({...h.config,endpoint:other.endpoint})});
+  await assert.rejects(moved.retry(id),{code:'environment-changed'});assert.equal(other.requests.length,0);assert.equal(h.relay.requests.length,before);assert.equal(h.store.sharedSnapshots()[0].receipt,null);
+  console.log('PASS relay/environment switch: a synthetic pending capture cannot move to another relay or future production binding');
+ }finally{await h.close();await other.close();}
+}
+{
+ const h=await harness(),other=await modernRelayFixture();try{
+  h.relay.setRedirect(other.endpoint+'/v1/'+other.name+'/'+MODERN_DESTINATION.collection);
+  await assert.rejects(h.saver.save(h.job,h.version),{code:'network-failure'});assert.equal(other.requests.length,0);assert.equal(h.relay.posts.length,0);assert.equal(h.store.sharedSnapshots()[0].receipt,null);
+  console.log('PASS relay redirect denied: no request or captured payload leaves the configured synthetic relay');
+ }finally{await h.close();await other.close();}
 }
 console.log('PASS modern sharing synthetic core. Production remains unbound; real Firebase rules/emulator/backend and browser integration are not certified by these fixtures.');

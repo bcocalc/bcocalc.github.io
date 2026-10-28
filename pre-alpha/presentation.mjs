@@ -1,6 +1,6 @@
-import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance,stepsFor,familyStage} from './model.mjs?v=pre-alpha21';
-import {htpChartRow,hiStopPipeOD} from './families.mjs?v=pre-alpha21';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha21';
+import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance,stepsFor,familyStage} from './model.mjs?v=pre-alpha22';
+import {htpChartRow,hiStopPipeOD} from './families.mjs?v=pre-alpha22';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha22';
 
 export const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const has=value=>String(value??'').trim()!=='';

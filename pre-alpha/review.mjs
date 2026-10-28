@@ -1,6 +1,6 @@
-import {etaFor} from './eta.mjs?v=pre-alpha21';
-import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance,familyStage} from './model.mjs?v=pre-alpha21';
-import {HTP_INPUTS,HISTOP_INPUTS,familyWarnings,hiStopPipeOD,htpChartRow} from './families.mjs?v=pre-alpha21';
+import {etaFor} from './eta.mjs?v=pre-alpha22';
+import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance,familyStage} from './model.mjs?v=pre-alpha22';
+import {HTP_INPUTS,HISTOP_INPUTS,familyWarnings,hiStopPipeOD,htpChartRow} from './families.mjs?v=pre-alpha22';
 
 export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',htp:'HTP',hiStop:'Hi-Stop',saved:'Saved measurements',eta:'Cutting time (ETA)'};
 const INPUTS={

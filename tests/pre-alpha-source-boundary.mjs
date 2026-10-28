@@ -3,36 +3,33 @@ import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
-const root=fileURLToPath(new URL('../',import.meta.url)),base='3c29fe6f9328721662f588844270305717cdb539';
+const root=fileURLToPath(new URL('../',import.meta.url)),base='ce6892c859f82decd24a742a4f1117e74cfacbc5';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer:30*1024*1024}).replace(/\r\n/g,'\n');
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
-const identity=body=>body.replaceAll('pre-alpha20','pre-alpha21').replaceAll('Pre-Alpha 20','Pre-Alpha 21').replaceAll('PRE-ALPHA 20','PRE-ALPHA 21').replaceAll('Pre-Alpha20','Pre-Alpha21');
+const identity=body=>body.replaceAll('pre-alpha21','pre-alpha22').replaceAll('Pre-Alpha 21','Pre-Alpha 22').replaceAll('PRE-ALPHA 21','PRE-ALPHA 22').replaceAll('Pre-Alpha21','Pre-Alpha22');
 const hash=body=>createHash('sha256').update(body).digest('hex');
 const functional={
- 'pre-alpha/AGENTS.md':'3931fe9f431fe5f6ff715ae1ad1c53cfbc09fa4bad4854d6a933dca28fd1551d',
- 'pre-alpha/families.mjs':'c1adcedfed16a7e7913dfa6c630cc1a243d8e25167bd141e84183a0ceef8ef85',
- 'pre-alpha/model.mjs':'bc714b7afca5db26dd11426e138d9bdbef40daf25401dd37fbc1f2f9b80ab85f',
- 'pre-alpha/review.mjs':'1c8c3315a832686ae40b86257741e3fd6fb2f3139ffdcace9ad4d942eee213df',
- 'pre-alpha/presentation.mjs':'c0966cc4bd063265272ea8e05002ffd461360e272d88ae9f9ef67b30201a4de9',
- 'pre-alpha/workspace.mjs':'708149bf2ded648f47b41698f8ccb46303090733449d9dd0a5df62aa1f6e2c0f',
- 'pre-alpha/eta.mjs':'1d7ec65bda94bd332f83516a10cfcd784fad3f6454df1e05494eac83df7bb712',
- 'pre-alpha/eta-view.mjs':'9babc6a49dba06ae291e7e3295e6f7168badca14666996ccbf063eb0fddac924',
- 'pre-alpha/auxiliary.mjs':'62d418e68ad1f750372fe68daec24842a6b1e07e1294ac758ad1ef96efef93e8',
- 'pre-alpha/help.mjs':'6eb7d2d1bfdc8a3524e16cac7aaeab79ca45d040a7457df39327250b57053614',
- 'pre-alpha/exports.mjs':'bf0913b028e91fad8282e510d440e7cf9b700eec1bb0772e3171ba9715bffea8',
- 'pre-alpha/shared-save.mjs':'2856cdaf21e207fc8008fd673bedf238b201bc96fea8b4948cef1d8af5bfe7b0',
- 'pre-alpha/index.html':'2e6e659988a0d446b8a148984d43b23380f850066e26b7b7d4b3ebba2467739b',
- 'pre-alpha/service-worker.js':'f36be86bb688e8d31a29ed87b17801a4f6791c68d4fe6037e8021b32fe58bcbf',
- 'tests/pre-alpha-families.mjs':'14dcf8947e8794c32487886d6a0925353ca35cc8cd6fd63ac1a5575a0680031d',
- 'tests/pre-alpha-families-ui.mjs':'2e1308c1f597f1e8e3153c9927ebc3dd297563d5f7384d542a066cfa1692da26',
- 'tests/pre-alpha-model.mjs':'171379aa3347fdc089c97fc633d398826fdb8fb787784e8a5147e54834bb9c45',
- 'tests/pre-alpha-next-model.mjs':'abcff53152565a4a6132aefa3fddced5ef7606cae7f38ee3fbbf6be2f3e3719b',
- 'tests/pre-alpha-home.mjs':'aff2863fda01bcca24ced10ba7de2d78df2751c0da78ea51f14bd60b2f5f7ff9',
- 'tests/pre-alpha-exports.mjs':'dbb506db8a0a3f59552c679138100ed32d158cafe8d44b963ae7b696c8bd5f94',
- 'tests/pre-alpha-exports-ui.mjs':'d23389fb72b85ff2fb398974c8a56fc2c5306bb98a1f395ce4b43e6842f23803',
- 'tests/pre-alpha-shared-save.mjs':'4237b154297d28cdb0e68157a48f2a4fc2a0ceab71c53ba329a661930eab4939',
- 'tests/pre-alpha-ui.mjs':'be17fd4b905b84cd6c3c91054d367ec22cc374c0b8e3889da475cc08b089c31d',
- 'tests/release-check.mjs':'7876adcb0a242de05cb7c82e467f497c58747dc21b2c53556f2a3b2673c688c0'
+  "pre-alpha/AGENTS.md": "8857f62481f998cc12ec46cc6188be5dc69ee6f3016bc2c7192ab29994fc92f7",
+  "pre-alpha/index.html": "f3c060df9fda9cac79e01c6091d846431ae73e6bb9bd7399c70394295157215f",
+  "pre-alpha/workspace.mjs": "0a4a755ff87aa727edcbcf4d27ac935ba1e6aa90e5dc8b17a7248b7a84dd21c0",
+  "pre-alpha/workspace.css": "cce8984b098a934f2f221f4a3156b9824455ceff58db8a431b2a193c5b964304",
+  "pre-alpha/service-worker.js": "dd41e9637072b750ed60ee6439ddbabcc5bd15184f21d3e0bde07cd06dead39c",
+  "pre-alpha/modern-sharing-config.mjs": "3c4852f89e9ff8f4f2bc6474e0b7440ec87e3e659e579f10b66a527577f44168",
+  "pre-alpha/modern-envelope.mjs": "a9e43fb86ebfcaaf09e4e48559b1b4b7a43f25aed8548294990050d6b7658981",
+  "pre-alpha/modern-transport.mjs": "13c4ee0d994728993df45c36b5b414a36b51c45da966c6e956536be8d780483d",
+  "pre-alpha/modern-saver.mjs": "fcce81adc8f0d19f93b993314c2a07e2449f56671c2bc4f910c6933659c2596c",
+  "pre-alpha/modern-view.mjs": "5b488fc35e063a57f38181fc0b17495ac3a41e857582642370dc994cc7e27b83",
+  "pre-alpha/modern-ui.mjs": "69ce25b88b4bf2c996bb8e6e927a05928b37a58858c90970a91009e18f18df02",
+  "tests/modern-job-fixture.mjs": "810790c9d5abc0db2d0767ad9b091a953ee1d6c30df98e6a5a8139c2ac9ba7d5",
+  "tests/modern-sharing-fixture.mjs": "42af5e79432d3fae893a4ed7f0e06426a873007105da44f360295d4064d86822",
+  "tests/pre-alpha-modern-sharing.mjs": "e6894560a30a79096b461039404a020a89e7302a7181a5bf92fcb4cf52565c4f",
+  "tests/pre-alpha-modern-sharing-ui.mjs": "8afb2ae8b5acbeeae3d121ef0b687ecbb2ee873b0cd7a3602a31b05081a95013",
+  "tests/pre-alpha-home.mjs": "d4dd812cbecea0c801604046393c8c28f8b878e22d74290b0f51830156630f40",
+  "tests/pre-alpha-workspace-controller.mjs": "9b24b1f18e33330f7898d422a927090a61ec3a197b070144b2106cdc7961f813",
+  "tests/pre-alpha-release-identity.mjs": "5b4b743c38f46bee7684183c8c4a40495b99706543554e1078e4cf6682c1837c",
+  "tests/pre-alpha-worker-upgrade-ui.mjs": "6cd691573089c3ab6d766bb646ad311ce787cf28dba0be6f7c231f2af8078a24",
+  "tests/release-check.mjs": "9a9ed76a9fb2eed66fe7a58c01dd689877b28b3bb9a2151a54f5cc1d7312b342",
+  "docs/pre-alpha-modern-sharing-rules-draft.txt": "50e719cffd848f2ddf4de241ba6950c97825abe0bfc2db742c42a3147e34961f"
 };
 const identityPaths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().split('\n').filter(path=>/^pre-alpha\/[^/]+\.(?:mjs|js|html|css)$/.test(path)||/^tests\/pre-alpha[^/]+\.mjs$/.test(path));
 const allowed=new Set([...Object.keys(functional),...identityPaths,'tests/pre-alpha-source-boundary.mjs']);
@@ -40,10 +37,14 @@ for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls
 assert.equal(git('diff','--name-only','--diff-filter=D',base,'--').trim(),'');
 for(const [path,pin]of Object.entries(functional))assert.equal(hash(text(path)),pin,'Exact source-reviewed local21 delta: '+path);
 for(const path of identityPaths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-source-boundary.mjs'))assert.equal(text(path),identity(git('show',base+':'+path)),'Identity-only outside distinct-family implementation: '+path);
-for(const path of ['measurement.js','cloud-sync.js','firestore.rules','dev/measurement.js','.github/workflows/library-safeguard.yml','pre-alpha/workspace.css','pre-alpha/workspace-database.mjs','pre-alpha/pipe-data.mjs','pre-alpha/reference-data.mjs','pre-alpha/reference-supplement-data.mjs'])assert.equal(git('diff',base,'--',path),'','Protected legacy/math/data/storage authority: '+path);
+for(const path of ['measurement.js','cloud-sync.js','firestore.rules','dev/measurement.js','.github/workflows/library-safeguard.yml','pre-alpha/workspace-database.mjs','pre-alpha/pipe-data.mjs','pre-alpha/reference-data.mjs','pre-alpha/reference-supplement-data.mjs'])assert.equal(git('diff',base,'--',path),'','Protected legacy/math/data/storage authority: '+path);
 assert.equal(git('diff','--name-only',base,'--','pre-alpha/measurement-figures').trim(),'','Same five approved figures');
 assert.equal(text('pre-alpha/workspace-store.mjs'),identity(git('show',base+':pre-alpha/workspace-store.mjs')),'Family work does not alter transaction/capture/receipt semantics');
 assert.equal(text('pre-alpha/firebase-config.js'),identity(git('show',base+':pre-alpha/firebase-config.js')),'No production collection or write enablement');
 assert.doesNotMatch(text('pre-alpha/workspace.mjs'),/createSharedSaver|bindSharedSaving/,'Production shared-save binding remains unapproved and unbound');
 assert.equal(text('tests/pre-alpha-original-figures-ui.mjs'),identity(git('show',base+':tests/pre-alpha-original-figures-ui.mjs')),'Inherited offline/network/assertion instrumentation preserved');
-console.log('PASS local21 boundary: exact distinct-family formulas/chart eligibility/UI/ETA/history/export/capture only; unchanged legacy sources/tables/feed/storage authority/crops; inherited offline checks and unbound production sharing preserved');
+assert.ok(text('pre-alpha/workspace.css').startsWith(identity(git('show',base+':pre-alpha/workspace.css'))),'Original styles unchanged; only scoped sharing additions');
+assert.match(text('pre-alpha/modern-sharing-config.mjs'),/PRODUCTION_MODERN_BINDING=null/,'Production remains unbound');
+assert.doesNotMatch(text('pre-alpha/modern-transport.mjs'),/https:\/\/firestore|apiKey/,'No production endpoint or credentials wired');
+assert.match(text('docs/pre-alpha-modern-sharing-rules-draft.txt'),/request.auth.uid in \[\]/,'Rule draft authorizes no real accounts');
+console.log('PASS local22 boundary: exact scoped synthetic/private sharing modules/UI/tests and build identity; unchanged calculations/tables/feed/root/live/dev/legacy transport/storage authority/approved crops/offline assertions; production unbound and empty rule-draft allowlist');

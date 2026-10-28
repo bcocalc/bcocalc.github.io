@@ -17,7 +17,8 @@ const BASELINES=[
   {commit:'54aec7b984cec1c37ddeea4c5e17c46376473a24',build:'pre-alpha11',transactional:true},
   {commit:'e4e6389988e3f3767108b5b12a900d33e727a5ad',build:'pre-alpha12',transactional:true},
   {commit:'4e247fbebe0bab8cf7185487aa90fd90b0f25741',build:'pre-alpha14',transactional:true},
-  {commit:'514157d290faa81714d48892095ad4758b5716a3',build:'pre-alpha16',transactional:true}
+  {commit:'514157d290faa81714d48892095ad4758b5716a3',build:'pre-alpha16',transactional:true},
+  {commit:'b1c87408a9d77e3937d7872555b22f0f89776e83',build:'pre-alpha17',transactional:true}
 ];
 const root=fileURLToPath(new URL('../',import.meta.url));
 const require=createRequire(import.meta.url);

@@ -41,6 +41,8 @@ The rules cannot independently calculate SHA256 over payloadJson; clients verify
 full envelope/content/ID on every read, and server-side Firebase authentication
 must validate the bearer identity. Synthetic tests exercise the access contract,
 NOT Firebase rules syntax/real emulator or deployed policy certification.
+The hashed payload also retains a synthetic relay binding. A pending fixture
+capture cannot move to another relay or be promoted to a production destination.
 An approved teammate can create their own attributed data; these are not signed
 engineering approvals. Captured raw/original data must remain clearly attributed.
 

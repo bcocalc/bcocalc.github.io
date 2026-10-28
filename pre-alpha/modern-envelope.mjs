@@ -1,4 +1,4 @@
-import {MODERN_SCHEMA,MAX_MODERN_BYTES} from './modern-sharing-config.mjs';
+import {MODERN_SCHEMA,MAX_MODERN_BYTES} from './modern-sharing-config.mjs?v=pre-alpha22';
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 export function assertJson(value,seen=new Set()){
   if(value===null||typeof value==='string'||typeof value==='boolean')return;
@@ -20,7 +20,7 @@ export function assertJson(value,seen=new Set()){
 }
 export function canonicalJson(value){assertJson(value);return JSON.stringify(value,(_,child)=>child&&typeof child==='object'&&!Array.isArray(child)?Object.fromEntries(Object.keys(child).sort().map(key=>[key,child[key]])):child);}
 export function destinationKey(value){
-  if(!value||Object.keys(value).sort().join(',')!=='collection,database,projectId'||![value.projectId,value.database,value.collection].every(v=>typeof v==='string'&&v&&!v.includes('/')))throw fail('invalid-destination','The shared destination is invalid. Nothing was sent.');
+  if(!value||Object.keys(value).sort().join(',')!=='collection,database,projectId'||![value.projectId,value.database,value.collection].every(v=>typeof v==='string'&&/^[A-Za-z0-9_().-]+$/.test(v)))throw fail('invalid-destination','The shared destination is invalid. Nothing was sent.');
   return canonicalJson(value);
 }
 export async function digest(value,crypto=globalThis.crypto){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(bytes),byte=>byte.toString(16).padStart(2,'0')).join('');}
@@ -32,15 +32,17 @@ export async function makeEnvelope(item,ownerUid,destination,crypto=globalThis.c
   assertSize(scope);const contentHash=await digest(canonicalJson(scope),crypto),envelope={...scope,contentHash};assertSize(envelope);
   return envelope;
 }
-export async function verifyEnvelope(envelope,{destination,cloudId,crypto=globalThis.crypto}={}){
+export async function verifyEnvelope(envelope,{destination,binding,cloudId,crypto=globalThis.crypto}={}){
   if(!envelope||Object.keys(envelope).sort().join(',')!=='contentHash,destination,ownerUid,payloadJson,schema'||envelope.schema!==MODERN_SCHEMA||typeof envelope.ownerUid!=='string'||!envelope.ownerUid||typeof envelope.payloadJson!=='string'||!/^[a-f0-9]{64}$/.test(envelope.contentHash||''))throw fail('invalid-snapshot','This shared snapshot has an unsupported or invalid envelope.');
   const key=destinationKey(envelope.destination);if(destination&&key!==destinationKey(destination))throw fail('destination-changed','The snapshot belongs to a different destination. Nothing was redirected.');
   assertSize(envelope);
   const {contentHash,...scope}=envelope;
   if(await digest(canonicalJson(scope),crypto)!==contentHash||cloudId&&cloudId!=='tm-'+contentHash)throw fail('snapshot-mismatch','Shared content does not match its immutable snapshot ID. Nothing was overwritten.');
   let item;try{item=JSON.parse(envelope.payloadJson);assertJson(item);}catch{throw fail('invalid-snapshot','This shared job cannot be read losslessly.');}
+  if(binding&&canonicalJson(item?.record?.modernRelay??null)!==canonicalJson(binding))throw fail('environment-changed','This snapshot belongs to a different relay or environment. It is retained without being redirected or promoted.');
   const job=item?.record?.preAlphaCapture?.job,operations=job?.operations,captured=item?.record?.preAlphaCapture?.operations;
-  if(!job||typeof item.id!=='string'||!item.id||job.id!==item.id||typeof job.title!=='string'||typeof job.savedAt!=='string'||!job.sharedState||Array.isArray(job.sharedState)||!Array.isArray(operations)||!operations.length||operations.some(op=>!op||typeof op.id!=='string'||!op.id||!op.state||typeof op.state!=='object'||Array.isArray(op.state))||new Set(operations.map(op=>op.id)).size!==operations.length||!operations.some(op=>op.id===job.selectedOperationId)||!Array.isArray(captured)||captured.length!==operations.length||captured.some((op,index)=>op.id!==operations[index].id))throw fail('invalid-snapshot','The complete captured job or attributed operation results are missing or inconsistent.');
+  if(!job||typeof item.id!=='string'||!item.id||job.id!==item.id||typeof job.title!=='string'||typeof job.savedAt!=='string'||!job.sharedState||typeof job.sharedState!=='object'||Array.isArray(job.sharedState)||!Array.isArray(operations)||!operations.length||operations.some(op=>!op||typeof op.id!=='string'||!op.id||!op.state||typeof op.state!=='object'||Array.isArray(op.state))||new Set(operations.map(op=>op.id)).size!==operations.length||!operations.some(op=>op.id===job.selectedOperationId)||!Array.isArray(captured)||captured.length!==operations.length||captured.some((op,index)=>!op||op.id!==operations[index].id))throw fail('invalid-snapshot','The complete captured job or attributed operation results are missing or inconsistent.');
+  if(captured.some(op=>typeof op.supported!=='boolean'||!op.results||typeof op.results!=='object'||Array.isArray(op.results)||!Array.isArray(op.warnings)||Object.values(op.results).some(rows=>!Array.isArray(rows)||rows.some(row=>!row||typeof row.label!=='string'||typeof row.value!=='string'))))throw fail('invalid-snapshot','Captured results have an unsupported format. No replacement calculation was made.');
   return structuredClone(item);
 }
 export function workingCopyOf(item,{uuid=()=>crypto.randomUUID()}={}){
