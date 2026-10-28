@@ -7,29 +7,31 @@ import {buildSharedSnapshot} from '../pre-alpha/shared-save.mjs';
 import {createWorkspaceStore} from '../pre-alpha/workspace-store.mjs';
 import {memoryDatabase} from './pre-alpha-memory-database.mjs';
 import {modernRelayFixture} from './modern-sharing-fixture.mjs';
-import {modernSnapshotMarkup} from '../pre-alpha/modern-view.mjs';
+import {modernSnapshotMarkup,legacySnapshotMarkup} from '../pre-alpha/modern-view.mjs';
+import {createSharedLibrary,sharedLibraryKey,legacyLibraryEntry} from '../pre-alpha/shared-library.mjs';
 const clone=value=>structuredClone(value);
 const deferred=()=>{let resolve;const promise=new Promise(r=>resolve=r);return {promise,resolve};};
 import {modernJobFixture} from './modern-job-fixture.mjs';
 async function harness(){
- let serial=0,session={uid:'alice',token:'fixture-alice',expiresAt:1000000},online=true;
+ let serial=0,online=true;
  const database=memoryDatabase(),legacy=new Map([['measurementCardHistoryV1','unchanged-history'],['measurementCardStateV1','unchanged-state']]);
  const store=createWorkspaceStore({storage:{getItem:key=>legacy.get(key)??null},locks:{request:(_name,_options,fn)=>fn()},database,uuid:()=>String(++serial),now:()=> 'fixture-time-'+serial});await store.ready;
  const saved=await store.save(modernJobFixture(),null),relay=await modernRelayFixture();
- const config={kind:'synthetic-only',endpoint:relay.endpoint,destination:MODERN_DESTINATION,auth:{getSession:async()=>session},approvedUids:['alice','bob'],fetch,online:()=>online,now:()=>1000,timeoutMs:500};
+ const config={kind:'synthetic-only',endpoint:relay.endpoint,destination:MODERN_DESTINATION,fetch,online:()=>online,timeoutMs:500};
  const transport=createModernTransport(config),saver=createModernSaver({store,transport});
- return {store,database,legacy,job:saved.job,version:saved.version,relay,config,transport,saver,setSession:value=>session=value,setOnline:value=>online=value,close:relay.close};
+ return {store,database,legacy,job:saved.job,version:saved.version,relay,config,transport,saver,setOnline:value=>online=value,close:relay.close};
 }
 assert.equal(PRODUCTION_MODERN_BINDING,null);
-for(const endpoint of ['https://firestore.googleapis.com','http://example.com','http://127.0.0.1@evil.invalid'])assert.throws(()=>createModernTransport({kind:'synthetic-only',endpoint,destination:MODERN_DESTINATION,auth:{getSession:async()=>null},fetch}),/localhost|synthetic/);
+assert.throws(()=>createModernTransport({kind:'synthetic-only',endpoint:'http://127.0.0.1:8094',destination:{...MODERN_DESTINATION,collection:'tapcalcJobs'},fetch}),{code:'legacy-read-only'});
+for(const endpoint of ['https://firestore.googleapis.com','http://example.com','http://127.0.0.1@evil.invalid'])assert.throws(()=>createModernTransport({kind:'synthetic-only',endpoint,destination:MODERN_DESTINATION,fetch}),/localhost|synthetic/);
 console.log('PASS production binding absent; non-loopback relays rejected');
 {
  const job=modernJobFixture();job.title='<script>private notes</script>';job.sharedState.jobNotes='<img src=x onerror=alert(1)>';
  const item=buildSharedSnapshot(job),current=item.record.preAlphaCapture.operations.find(op=>op.id==='htp');current.results.htp[0].value='123.4567';
- const envelope=await makeEnvelope(item,'alice',MODERN_DESTINATION),received=await verifyEnvelope(envelope,{destination:MODERN_DESTINATION});
+ const envelope=await makeEnvelope(item,MODERN_DESTINATION),received=await verifyEnvelope(envelope,{destination:MODERN_DESTINATION});
  const html=modernSnapshotMarkup({item:received,envelope});assert.ok(html.includes('123.4567'),'Recipient displays captured value, not recalculated current math');assert.ok(html.includes('777'));assert.ok(html.includes('888'));assert.ok(html.includes('&lt;script&gt;'));assert.ok(!html.includes('<script>'));assert.ok(!html.includes('<img'));assert.equal((html.match(/data-modern-operation=/g)||[]).length,4);assert.ok(html.includes('futureBundle'));
- const invalid=clone(item);invalid.record.preAlphaCapture.operations[0].results.tap[0].value=undefined;await assert.rejects(makeEnvelope(invalid,'alice',MODERN_DESTINATION),{code:'unsupported-value'});
- const missing=clone(item);missing.record.preAlphaCapture.operations=[];await assert.rejects(verifyEnvelope(await makeEnvelope(missing,'alice',MODERN_DESTINATION)),{code:'invalid-snapshot'});
+ const invalid=clone(item);invalid.record.preAlphaCapture.operations[0].results.tap[0].value=undefined;await assert.rejects(makeEnvelope(invalid,MODERN_DESTINATION),{code:'unsupported-value'});
+ const missing=clone(item);missing.record.preAlphaCapture.operations=[];await assert.rejects(verifyEnvelope(await makeEnvelope(missing,MODERN_DESTINATION)),{code:'invalid-snapshot'});
  console.log('PASS complete read-only view: captured result attribution, escaped notes, retained originals/history/unknowns, malformed captures rejected');
 }
 {
@@ -38,14 +40,13 @@ console.log('PASS production binding absent; non-loopback relays rejected');
   assert.equal(h.relay.posts.length,1);assert.equal(h.store.sharedSnapshots().length,1);
   const capture=h.store.sharedSnapshots()[0],envelope=capture.item.record.modernSnapshot,item=await verifyEnvelope(envelope,{destination:MODERN_DESTINATION,cloudId:one.cloudId});
   const expected=buildSharedSnapshot(before);expected.record.modernRelay=clone(h.transport.binding);assert.deepEqual(item,expected);assert.deepEqual(item.record.preAlphaCapture.job,before);assert.equal(item.record.jobBundle.operations.length,4);assert.deepEqual(h.job,before);
-  assert.equal(envelope.ownerUid,'alice');assert.deepEqual(envelope.destination,MODERN_DESTINATION);assert.deepEqual(item.record.preAlphaCapture.job.operations[0].state.future,before.operations[0].state.future);
+  assert.equal(envelope.schema,2);assert.equal(h.relay.requests.every(request=>request.authorization===null),true,'No account or bearer token required');assert.deepEqual(envelope.destination,MODERN_DESTINATION);assert.deepEqual(item.record.preAlphaCapture.job.operations[0].state.future,before.operations[0].state.future);
   const posts=h.relay.posts.length;await h.saver.retry(one.captureId);assert.equal(h.relay.posts.length,posts);
   const received=await h.transport.get(one.cloudId);assert.deepEqual(received.item,item);assert.equal((await h.transport.list()).length,1);
   const working=workingCopyOf(received.item,{uuid:()=> 'separate-working-copy'});assert.notEqual(working.id,before.id);assert.deepEqual(working.operations,before.operations);assert.deepEqual(working.original,before.original);assert.equal(working.sourceId,working.id);
   assert.deepEqual(h.legacy,new Map([['measurementCardHistoryV1','unchanged-history'],['measurementCardStateV1','unchanged-state']]));
-  h.setSession({uid:'bob',token:'fixture-bob',expiresAt:1000000});assert.deepEqual((await h.transport.get(one.cloudId)).item,item,'Approved teammate may read full snapshot');
-  await assert.rejects(h.saver.retry(one.captureId),{code:'account-changed'});
-  console.log('PASS complete nested-array JSON capture, canonical/history attribution, local-first duplicate clicks, verified receipt/read/list, owner-bound retry and separate working identity');
+  assert.deepEqual((await h.transport.get(one.cloudId)).item,item,'Fresh anonymous reader receives the complete snapshot');
+  console.log('PASS complete nested-array JSON capture, canonical/history attribution, local-first duplicate clicks, verified receipt/read/list, scope-bound retry and separate working identity');
  }finally{await h.close();}
 }
 for(const mode of ['post-denied','timeout','late-commit','offline']){
@@ -57,23 +58,6 @@ for(const mode of ['post-denied','timeout','late-commit','offline']){
   console.log('PASS '+mode+': immutable pending capture, bounded request/recovery and exact retry');
  }finally{await h.close();}
 }
-for(const session of [null,{uid:'alice',token:'fixture-alice',expiresAt:999},{uid:'mallory',token:'fixture-mallory',expiresAt:1000000}]){
- const h=await harness();try{h.setSession(session);await assert.rejects(h.transport.list());await assert.rejects(h.transport.get('tm-'+'a'.repeat(64)));await assert.rejects(h.saver.save(h.job,h.version));assert.equal(h.relay.requests.length,0);assert.equal(h.store.sharedSnapshots().length,0);console.log('PASS absent/expired/unapproved session: no request or shared capture');}finally{await h.close();}
-}
-{
- const h=await harness();try{
-  const envelope=await makeEnvelope(buildSharedSnapshot(h.job),'bob',MODERN_DESTINATION),id='tm-'+envelope.contentHash;
-  const commit={writes:[{update:{name:h.relay.name+'/'+MODERN_DESTINATION.collection+'/'+id,fields:envelopeFields(envelope)},currentDocument:{exists:false}}]};
-  const url=h.relay.endpoint+'/v1/'+h.relay.name;
-  for(const [token,status]of [['fixture-alice',403],['fixture-mallory',403],['expired',401]]){
-   const response=await fetch(url+':commit',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(commit)});assert.equal(response.status,status);
-   assert.equal((await fetch(url+'/'+MODERN_DESTINATION.collection,{headers:{Authorization:'Bearer '+token}})).status,token==='fixture-alice'?200:status);
-  }
-  for(const method of ['PATCH','DELETE'])assert.equal((await fetch(url+'/'+MODERN_DESTINATION.collection+'/'+id,{method,headers:{Authorization:'Bearer fixture-alice'}})).status,403);
-  assert.throws(()=>h.transport.update(),{code:'immutable'});assert.throws(()=>h.transport.delete(),{code:'immutable'});assert.equal(h.relay.docs.size,0);
-  console.log('PASS synthetic server policy: authenticated team read/list, owner-only create, unapproved/expired denial, no update/delete');
- }finally{await h.close();}
-}
 {
  const h=await harness();try{
   h.relay.setMode('post-denied');let id;await assert.rejects(h.saver.save(h.job,h.version),error=>{id=error.captureId;return true;});
@@ -81,8 +65,7 @@ for(const session of [null,{uid:'alice',token:'fixture-alice',expiresAt:999},{ui
   await assert.rejects(h.saver.confirmed(id),{code:'unconfirmed-upload'});assert.equal(h.relay.requests.length,before,'Copy-link validation never uploads an unconfirmed capture');
   const other=createModernSaver({store:h.store,transport:createModernTransport({...h.config,destination:{...MODERN_DESTINATION,collection:'otherTeamSnapshots'}})});
   await assert.rejects(other.retry(id),{code:'destination-changed'});assert.equal(h.relay.requests.length,before);
-  h.setSession({uid:'bob',token:'fixture-bob',expiresAt:1000000});await assert.rejects(h.saver.retry(id),{code:'account-changed'});assert.equal(h.relay.requests.length,before);
-  console.log('PASS destination/account switch: pending capture cannot redirect or change owner');
+  console.log('PASS destination switch: pending capture cannot redirect');
  }finally{await h.close();}
 }
 {
@@ -120,7 +103,7 @@ for(const mode of ['conflict','quota','cancelled']){
 }
 {
  const h=await harness();try{
-  const item=buildSharedSnapshot(h.job);item.record.modernRelay=clone(h.transport.binding);const envelope=await makeEnvelope(item,'alice',MODERN_DESTINATION),id='tm-'+envelope.contentHash;
+  const item=buildSharedSnapshot(h.job);item.record.modernRelay=clone(h.transport.binding);const envelope=await makeEnvelope(item,MODERN_DESTINATION),id='tm2-'+envelope.contentHash;
   h.relay.docs.set(h.relay.name+'/'+MODERN_DESTINATION.collection+'/'+id,{name:h.relay.name+'/'+MODERN_DESTINATION.collection+'/'+id,fields:envelopeFields(envelope)});h.relay.setMode('collision');
   await assert.rejects(h.saver.save(h.job,h.version),{code:'snapshot-mismatch'});assert.equal(h.relay.posts.length,0);assert.equal(h.store.sharedSnapshots()[0].receipt,null);
   console.log('PASS mismatched existing content: no overwrite/create/receipt; exact pending capture retained');
@@ -132,21 +115,6 @@ for(const mode of ['conflict','quota','cancelled']){
   const next=clone(h.job);next.operations[0].state.md='11';await h.saver.save(next,h.store.read().versions.get(next.id));assert.equal(h.relay.docs.size,2);assert.deepEqual([...h.relay.docs.values()][0],oldDocument);
   h.relay.setMode('pagination');assert.equal((await h.transport.list()).length,2);
   console.log('PASS changed content appends immutable snapshot; pagination preserves both complete records');
- }finally{await h.close();}
-}
-{
- const h=await harness();try{
-  h.setSession({uid:'alice',token:'expired-server-token',expiresAt:1000000});let id;
-  await assert.rejects(h.saver.save(h.job,h.version),error=>{id=error.captureId;return error.code==='sign-in-required';});assert.equal(h.relay.docs.size,0);assert.equal(h.relay.posts.length,0);
-  h.setSession({uid:'alice',token:'fixture-alice',expiresAt:1000000});await h.saver.retry(id);assert.equal(h.relay.docs.size,1);
-  console.log('PASS server-expired credentials: local pending capture survives and same-owner sign-in recovers exact snapshot');
- }finally{await h.close();}
-}
-{
- const h=await harness();try{
-  const saver=createModernSaver({store:h.store,transport:h.transport,onPrepared:()=>h.setSession({uid:'bob',token:'fixture-bob',expiresAt:1000000})});
-  await assert.rejects(saver.save(h.job,h.version),{code:'account-changed'});assert.equal(h.relay.requests.length,0);assert.equal(h.store.sharedSnapshots()[0].item.record.modernSnapshot.ownerUid,'alice');
-  console.log('PASS account change after local capture: no request under replacement principal');
  }finally{await h.close();}
 }
 {
@@ -168,15 +136,7 @@ for(const mode of ['conflict','quota','cancelled']){
   h.relay.setMode('post-denied');let id;await assert.rejects(h.saver.save(h.job,h.version),error=>{id=error.captureId;return true;});const captured=clone(h.store.sharedSnapshots()[0].item);
   let serial=0;const restarted=createWorkspaceStore({storage:{getItem:key=>h.legacy.get(key)??null},locks:{request:(_n,_o,fn)=>fn()},database:h.database,uuid:()=> 'restart-'+(++serial)});await restarted.ready;
   h.relay.setMode('success');await createModernSaver({store:restarted,transport:h.transport}).retry(id);assert.deepEqual(restarted.sharedSnapshots()[0].item,captured);assert.ok(restarted.sharedSnapshots()[0].receipt);assert.equal(h.relay.docs.size,1);
-  console.log('PASS restarted store recovers identical pending capture/owner/destination and verifies acknowledgement');
- }finally{await h.close();}
-}
-{
- const h=await harness();try{
-  await assert.rejects(h.saver.save(h.job,h.version,{expectedOwnerUid:'bob'}),{code:'account-changed'});assert.equal(h.store.sharedSnapshots().length,0);assert.equal(h.relay.requests.length,0);
-  const hung=createModernTransport({...h.config,auth:{getSession:()=>new Promise(()=>{})},timeoutMs:10});
-  await assert.rejects(hung.session(),{code:'auth-timeout'});assert.equal(h.relay.requests.length,0);
-  console.log('PASS click-owner mismatch and hanging auth: no retarget/capture/request; bounded explicit failure');
+  console.log('PASS restarted store recovers identical pending capture/schema/destination and verifies acknowledgement');
  }finally{await h.close();}
 }
 {
@@ -194,4 +154,39 @@ for(const mode of ['conflict','quota','cancelled']){
   console.log('PASS relay redirect denied: no request or captured payload leaves the configured synthetic relay');
  }finally{await h.close();await other.close();}
 }
-console.log('PASS modern sharing synthetic core. Production remains unbound; real Firebase rules/emulator/backend and browser integration are not certified by these fixtures.');
+console.log('PASS anonymous modern sharing synthetic core. Production remains unbound; real Firebase rules/emulator/backend and browser integration are not certified by these fixtures.');
+
+{
+ const h=await harness();try{
+  const saved=await h.saver.save(h.job,h.version),legacyScope={...MODERN_DESTINATION,collection:'tapcalcJobs'},old={...clone(h.job.original),id:saved.cloudId,source:'cloud'};
+  old.record.job.notes='<img src=x onerror=alert(1)>';const bytes=JSON.stringify(old);let legacy=[old],legacyFail=false,calls=0;
+  const library=createSharedLibrary({legacyDestination:legacyScope,legacyList:async()=>{calls++;if(legacyFail)throw Error('Synthetic legacy read failure');return clone(legacy);},modernTransport:h.transport});
+  const [first,twin]=await Promise.all([library.refresh(),library.refresh()]);assert.deepEqual(first,twin);assert.equal(calls,1);assert.equal(first.jobs.length,2);assert.equal(new Set(first.jobs.map(job=>job.id)).size,2);assert.notEqual(sharedLibraryKey(legacyScope,saved.cloudId),sharedLibraryKey(MODERN_DESTINATION,saved.cloudId));
+  const original=first.jobs.find(job=>job.sharedSnapshot.kind==='legacy');assert.equal(JSON.stringify(original.sharedSnapshot.entry),bytes);const html=legacySnapshotMarkup(original.sharedSnapshot);assert.equal((html.match(/data-modern-operation=/g)||[]).length,4);assert.ok(html.includes('&lt;img'));assert.ok(!html.includes('<img'));assert.ok(html.includes('777'));assert.ok(html.includes('888'));assert.ok(html.includes('not assigned to every operation'));
+  legacy.push({...clone(old),id:'another-old-job'});h.relay.setMode('denied');const partial=await library.refresh();assert.equal(partial.jobs.length,3);assert.equal(partial.status.legacy.state,'ready');assert.equal(partial.status.modern.state,'failed');
+  h.relay.setMode('success');legacyFail=true;const next=clone(h.job);next.operations[0].state.md='13';await h.saver.save(next,h.store.read().versions.get(next.id));const opposite=await library.refresh();assert.equal(opposite.jobs.length,4);assert.equal(opposite.status.legacy.state,'failed');assert.equal(opposite.status.modern.state,'ready');assert.equal(JSON.stringify(old),bytes);
+  const unbound=createSharedLibrary({legacyDestination:legacyScope,legacyList:async()=>clone(legacy)});const value=await unbound.refresh();assert.equal(value.jobs.length,2);assert.equal(value.status.modern.state,'unbound');assert.equal(JSON.stringify(legacyLibraryEntry(old,legacyScope).sharedSnapshot.entry),bytes);
+  console.log('PASS one-list namespace-safe identity, complete legacy saved-value view, hostile text escaping, both partial-refresh directions, duplicate refresh coalescing, unbound saving and original-record preservation');
+ }finally{await h.close();}
+}
+
+{
+ const h=await harness();try{
+  const item=buildSharedSnapshot(h.job);item.record.modernRelay=clone(h.transport.binding);const envelope=await makeEnvelope(item,MODERN_DESTINATION),id='tm2-'+envelope.contentHash;
+  const url=h.relay.endpoint+'/v1/'+h.relay.name,commit={writes:[{update:{name:h.relay.name+'/'+MODERN_DESTINATION.collection+'/'+id,fields:envelopeFields(envelope)},currentDocument:{exists:false},updateTransforms:[{fieldPath:'syncedAt',setToServerValue:'REQUEST_TIME'}]}]};
+  const response=await fetch(url+':commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(commit)});assert.equal(response.status,200);
+  assert.equal((await fetch(url+'/'+MODERN_DESTINATION.collection)).status,200);assert.equal((await fetch(url+'/'+MODERN_DESTINATION.collection+'/'+id)).status,200);
+  assert.equal((await fetch(url+':commit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(commit)})).status,409);
+  for(const method of ['PATCH','DELETE'])assert.equal((await fetch(url+'/'+MODERN_DESTINATION.collection+'/'+id,{method})).status,403);
+  assert.throws(()=>h.transport.update(),{code:'immutable'});assert.throws(()=>h.transport.delete(),{code:'immutable'});
+  assert.equal(h.relay.requests.every(entry=>entry.authorization===null),true);const bytes=JSON.stringify([...h.relay.docs]);h.relay.setMode('pagination-loop');await assert.rejects(h.transport.list(),{code:'pagination'});assert.equal(JSON.stringify([...h.relay.docs]),bytes);
+  console.log('PASS anonymous synthetic policy: get/list/create, duplicate create collision, no update/delete, no credentials and pagination-loop detection');
+ }finally{await h.close();}
+}
+{
+ const h=await harness();try{
+  const item=buildSharedSnapshot(h.job);item.record.modernSnapshot={schema:1,ownerUid:'retained-private-fixture'};await h.store.save(h.job,h.version,{sharedCapture:{id:'retained-private-capture',jobId:h.job.id,item}});
+  const before=h.database.peek();await assert.rejects(h.saver.retry('retained-private-capture'),{code:'unbound-capture'});assert.equal(h.database.peek(),before);assert.equal(h.relay.requests.length,0);
+  console.log('PASS private schema1 captures retained without promotion, reinterpretation or upload');
+ }finally{await h.close();}
+}

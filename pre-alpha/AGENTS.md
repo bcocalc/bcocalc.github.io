@@ -3,18 +3,19 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha23. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha24. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- The inherited private-team sharing slice is LOCAL ONLY; parent review is required before
-  any upload or publication. Published17, root/live/dev and storage stay intact.
-- This local23 addition is only Folding Head reference dimensions: Pipe I.D. =
+- This one-site Shared Jobs adjustment is LOCAL ONLY. No upload, publication,
+  production binding, live security/provider/rules change or record migration is
+  authorized. Preserve frozen22/private and23/folding candidates and all evidence.
+- Preserve the approved Folding Head reference dimensions: Pipe I.D. =
   actual Pipe O.D. - 2 x wall; backing-ring O.D. = I.D. - 1/2 in (1/4 each side);
   bottom roller position from center mark = I.D./2; top = I.D./2 - 1/8 in.
   These are positions, not wheel diameters; no edge/axle endpoint is supplied.
   Use only the explicit user/parent formulas and existing input conventions.
   Do not read, copy or publish private procedure screenshots or add other dimensions.
-  Keep Pivot Head/set-point/U-Wire behavior and all sharing code unchanged.
-  Shared-library and prior link/sender proposals remain unimplemented.
+  Keep Pivot Head/set-point/U-Wire behavior unchanged.
+  Prior capability-link/sender-device proposals remain unimplemented.
 - Use only the existing eight exact HTP rows and legacy calcHtp/calcHiStop
   formulas. HTP ETA uses chart cutter/chart BCO and existing0.004feed, not
   standard geometry BCO. Hi-Stop POD comes from actual Pipe & cutter O.D.,
@@ -23,24 +24,34 @@ and dev remain independent releases. Do not promote this directory onto either.
   equipment ratings or family applicability. No standard Hot Tap/Rod MCO/ETA
   fallback for Hi-Stop. Family blanks remain invalid under strict Pre-Alpha
   parsing; only standard Hot Tap blank LD has the existing zero default.
-- Modern shared saves use ONLY explicitly injected localhost synthetic auth/REST
-  and isolated jobs. Production binding stays null; no real account, destination,
-  access/rules deployment or record writes are authorized. Proposed logical
-  destination is tapcalc-afc92 / (default) / tapcalcModernSnapshots, not approval
-  of production setup. Each immutable JSON envelope binds owner, schema,
-  destination AND synthetic relay; retry must never retarget or promote a capture.
-  Recipient #shared/<id> views are read-only, never autosave/shadow local jobs;
-  Make a working copy explicitly creates a separate local identity and retains
-  its complete source envelope. Copy link requires verified acknowledgement.
-  Modern complete-job viewer direction is approved; do not integrate the
-  detached legacy adapter, split combined operations or choose new O.D. rounding.
-  The paperwork form was supplied/mapped by the parent; do not request it again
-  or invent a paperwork implementation in this slice. Physical iPhone and root
-  manifest/service-worker promotion remain later review gates.
-- Existing shared saves are tested only with injected synthetic REST and isolated jobs.
-  No production binding, collection change or public-write enablement. Preserve
-  the existing create-only transport, capture raw bundles before upload, and keep
-  receipts separate from editable jobs. Never project or replace raw workflows.
+- One website provides a combined Shared Jobs list/search/refresh, complete view,
+  explicit Load Job to a NEW local identity, edit, and local-first Save Job/Sync.
+  No required sign-in, distributed per-job links or sender-device provisioning.
+  Anonymous schema2 app sharing uses ONLY explicitly injected loopback synthetic
+  REST. Test rule-language behavior separately in the real demo-project emulator.
+  Production binding stays null.
+  Proposed internal namespace tapcalc-afc92/(default)/tapcalcModernSnapshots
+  is not approval of production anonymous get/list/create, rules or activation.
+  New adapter must reject tapcalcJobs targets. Root legacy transport/readpath and
+  existing records remain untouched. Old schema1 captures are retained unsent;
+  never promote, reinterpret, retarget or migrate them. The working job and fixed
+  schema/destination/relay-bound capture persist atomically before upload.
+  Receipts stay separate and are saved only after verified acknowledgement/readback.
+  Create-only append and exact retry/readback must preserve newer edits and all
+  operations/raw/original/unknown data. No cloud update/delete or silent merge.
+  One visible list uses namespace-safe IDs and retains each failed source's last
+  successful results. Opening never autosaves or shadows an edited local copy.
+  Legacy view shows original saved values without recalculation or invented
+  attribution; current results appear in the explicitly loaded working copy.
+  Modern complete-job viewer direction is approved. No detached legacy adapter,
+  combined-operation split, new O.D. rounding or equipment inference.
+  Public rules only constrain shape/size/hash format; they cannot verify JSON/
+  SHA256, authenticate a shop member or reliably limit anonymous create abuse.
+  Validate clients and report actual emulator limits. Existing85 private-policy
+  checks do not certify the anonymous policy. Actual deployed policy is unverified.
+  The paperwork form was supplied/mapped; do not request it again or invent a
+  paperwork feature. Physical iPhone, exact-candidate Linux/full release and
+  root manifest/service-worker/publication gates remain separate approvals.
 - Preserve legacy synchronous popup Print / Save PDF and 1400px PNG download.
   Export immutable click-time complete jobs with metadata and every operation;
   escape print text, wrap PNG text and report size/failure without truncation.

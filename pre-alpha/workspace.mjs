@@ -1,15 +1,16 @@
-import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha23';
-import {installModernSharing} from './modern-ui.mjs?v=pre-alpha23';
-import {installExports} from './exports.mjs?v=pre-alpha23';
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha23';
-import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha23';
-import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha23';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha23';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha23';
-import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,historicalFamilyMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha23';
-import {HTP_CHART,HTP_INPUTS,HISTOP_INPUTS,htpChartRow} from './families.mjs?v=pre-alpha23';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha23';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha23';
+import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha24';
+import {installModernSharing} from './modern-ui.mjs?v=pre-alpha24';
+import {createSharedLibrary} from './shared-library.mjs?v=pre-alpha24';
+import {installExports} from './exports.mjs?v=pre-alpha24';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha24';
+import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha24';
+import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha24';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha24';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha24';
+import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,historicalFamilyMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha24';
+import {HTP_CHART,HTP_INPUTS,HISTOP_INPUTS,htpChartRow} from './families.mjs?v=pre-alpha24';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha24';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha24';
 const $ = id => document.getElementById(id);
 installMeasurementFigures(document);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -40,7 +41,7 @@ const details = [['jobDescription','Job name'],['jobClient','Customer'],['jobLoc
 let jobs=[],active=null,stage='setup',source='shared',shared=[],visibleLimit=30;
 let connectionBusy=false, noticeTimer;
 let pendingDeleteId=null;
-let auxiliary,modernSharing,currentPage='home';
+let auxiliary,modernSharing,sharedLibrary,currentPage='home';
 const scrollPositions={};
 function notify(message) {
   $('notice').textContent=message; $('notice').hidden=false;
@@ -155,7 +156,7 @@ window.addEventListener('beforeunload',event=>{
   }
 });
 const pageNames=['home','workspace','library','references','settings','shared-view'];
-function routeFromLocation() {if(location.hash.startsWith('#shared/'))return 'shared-view';const name=location.hash.slice(1);return name!=='shared-view'&&pageNames.includes(name)?name:'home';}
+function routeFromLocation() {if(location.hash.startsWith('#shared/'))return 'library';const name=location.hash.slice(1);if(name==='shared-view'&&!modernSharing?.hasSelection?.())return 'library';return pageNames.includes(name)?name:'home';}
 function renderHome() {
   const job=active||jobs[0];
   $('resume').hidden=!job;$('resume-job').hidden=!job;
@@ -231,7 +232,7 @@ function renderWorkspace() {
   let migrated=false;for(const item of active.operations)if(migratePipeSource(item))migrated=true;
   if(migrated)persist();
   $('job-title').textContent=active.title;
-  $('job-origin').textContent=active.modernOrigin?'LOCAL WORKING COPY / TEAM SNAPSHOT':active.source==='shared'?'SHARED JOB / PRE-ALPHA WORKING COPY':active.source==='device'?'DEVICE JOB / PRE-ALPHA WORKING COPY':'PRE-ALPHA JOB';
+  $('job-origin').textContent=active.modernOrigin?'LOCAL WORKING COPY / SHARED JOB':active.source==='shared'?'SHARED JOB / PRE-ALPHA WORKING COPY':active.source==='device'?'DEVICE JOB / PRE-ALPHA WORKING COPY':'PRE-ALPHA JOB';
   $('job-meta').textContent=[active.sharedState.jobClient,active.sharedState.jobLocation,active.sharedState.jobNumber,active.sharedState.jobDate].filter(Boolean).join(' / ')||'Add the customer and location in Job details.';
   renderOperations();
   const op=operation();
@@ -369,16 +370,17 @@ function renderLibrary() {
   $('library-summary').textContent=entries.length+' job'+(entries.length===1?'':'s')+' found';
   $('job-list').innerHTML=jobRowsMarkup(entries.slice(0,visibleLimit),source)||'<p class="empty-state">'+(query?'No matching jobs. Try another search.':source==='shared'?'No shared jobs loaded. Use Refresh shared jobs to connect.':source==='device'?'There are no live/dev local saves in this browser. Shared jobs are available in the Shared jobs tab.':'Your experimental working copies will appear here.')+'</p>';
   $('more').hidden=entries.length<=visibleLimit;
-  $('job-list').querySelectorAll('[data-job]').forEach(button=>button.addEventListener('click',()=>openJob(entries.find(job=>job.id===button.dataset.job))));
+  $('job-list').querySelectorAll('[data-job]').forEach(button=>button.addEventListener('click',()=>{const job=entries.find(job=>job.id===button.dataset.job);if(source==='shared'&&job?.sharedSnapshot){page('shared-view');void modernSharing.showSnapshot(job.sharedSnapshot);}else openJob(job);}));
 }
 async function refreshShared() {
   if(connectionBusy)return;
   connectionBusy=true;$('refresh').disabled=true;$('connection').textContent='Connecting to shared jobs...';
   try {
-    const entries=await window.tapCalcCloud.list();
-    shared=entries.map(entry=>normalizeJob({...entry,source:'shared'}));
-    $('connection').textContent='Connected / '+shared.length+' shared jobs';
+    const result=await sharedLibrary.refresh();shared=result.jobs;
+    const states=Object.values(result.status),failed=states.filter(item=>item.state==='failed').length,ready=states.some(item=>item.state==='ready');
+    $('connection').textContent=(ready?'Connected / '+shared.length+' shared jobs':'Shared jobs could not refresh.')+(failed?' / Some results could not refresh; last successful results retained.':'');
     renderLibrary();
+    await modernSharing.renderPending();
   } catch(error) {
     $('connection').textContent='Connection failed. Tap Refresh to retry.';
     notify(error.message||'Shared jobs could not be loaded.');
@@ -466,7 +468,7 @@ auxiliary=initAuxiliary({getOperation:operation,getMachine:()=>active?.sharedSta
 installHelp();
 installExports(document,()=>active,notify);
 modernSharing=installModernSharing(document,{
-  binding:globalThis.TAPCALC_MODERN_TEST_BINDING||null,store:workspaceStore,notify,location,navigator,crypto,
+  binding:globalThis.TAPCALC_MODERN_TEST_BINDING||null,store:workspaceStore,notify,location,navigator,crypto,onSharedChange:refreshShared,
   canShare(){const draft=active&&draftFor(active);return !!draft&&!draft.error&&draft.sequence===draft.saved&&!pendingSelections&&!workspaceStartupError;},
   async getDraft(){
     const draft=active&&draftFor(active);
@@ -474,7 +476,7 @@ modernSharing=installModernSharing(document,{
     const sequence=draft.sequence,version=draft.base,snapshot=structuredClone(draft.job);
     await saveQueue;
     if(drafts.get(snapshot.id)!==draft||draft.sequence!==sequence||draft.base!==version||draft.error)throw new Error('The working copy changed before sharing. Its changes are retained; start sharing again when saved.');
-    return {job:snapshot,version,isCurrent:()=>drafts.get(draft.job.id)===draft,
+    return {job:snapshot,version,isCurrent:()=>drafts.get(draft.job.id)===draft&&draft.sequence===sequence,
       onPrepared(result){
         if(drafts.get(result.job.id)===draft&&draft.base===version){draft.base=result.version;if(draft.sequence===sequence)draft.job.updatedAt=result.job.updatedAt;}
         refreshSaved();saveStatus();
@@ -492,6 +494,7 @@ modernSharing=installModernSharing(document,{
     saveQueue=task.catch(()=>{});return task;
   }
 });
+sharedLibrary=createSharedLibrary({legacyList:()=>window.tapCalcCloud.list(),legacyDestination:{projectId:window.TAPCALC_FIREBASE_CONFIG?.projectId||'tapcalc-afc92',database:window.TAPCALC_FIRESTORE_DATABASE||'(default)',collection:window.TAPCALC_FIREBASE_COLLECTION||'tapcalcJobs'},modernTransport:modernSharing.transport});
 const initialPage=routeFromLocation()==='workspace'&&!active?'home':routeFromLocation();
 history.replaceState({preAlphaPage:initialPage},'',initialPage==='shared-view'?location.hash:'#'+initialPage);page(initialPage,{recordHistory:false,moveFocus:false});
 if(initialPage==='shared-view')void modernSharing.handleRoute();

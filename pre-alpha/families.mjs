@@ -1,5 +1,5 @@
 // Existing legacy chart/formulas only. No equipment ratings or applicability inferred.
-import {DATA} from './reference-data.mjs?v=pre-alpha23';
+import {DATA} from './reference-data.mjs?v=pre-alpha24';
 export const HTP_CHART=DATA.htp;
 export const HTP_INPUTS=[['htpMd','HTP measured distance (MD)'],['htpLd','HTP lost distance (LD)'],['htpPtc','HTP pilot to cutter (PTC)']];
 export const HISTOP_INPUTS=[['hsMd','Hi-Stop measured distance (MD)'],['hsLd','Hi-Stop lost distance (LD)'],['hsRl','Reamer length (RL)'],['hsCl','Cutter length (CL)'],['hsPtc','Hi-Stop pilot to cutter (PTC)'],['hsRcd','RCD'],['hsPb','Plug bottom (PB)'],['hsPtp','Plug taper (source value)']];

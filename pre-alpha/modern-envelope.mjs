@@ -1,4 +1,4 @@
-import {MODERN_SCHEMA,MAX_MODERN_BYTES} from './modern-sharing-config.mjs?v=pre-alpha23';
+import {MODERN_SCHEMA,MAX_MODERN_BYTES} from './modern-sharing-config.mjs?v=pre-alpha24';
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 export function assertJson(value,seen=new Set()){
   if(value===null||typeof value==='string'||typeof value==='boolean')return;
@@ -25,19 +25,18 @@ export function destinationKey(value){
 }
 export async function digest(value,crypto=globalThis.crypto){const bytes=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(bytes),byte=>byte.toString(16).padStart(2,'0')).join('');}
 function assertSize(envelope){if(new TextEncoder().encode(JSON.stringify(envelope)).byteLength>MAX_MODERN_BYTES)throw fail('snapshot-too-large','This complete job is too large for one shared snapshot. Nothing was truncated; keep the local copy and use the complete print export.');}
-export async function makeEnvelope(item,ownerUid,destination,crypto=globalThis.crypto){
-  if(typeof ownerUid!=='string'||!ownerUid)throw fail('sign-in-required','Sign in with an approved team account.');
+export async function makeEnvelope(item,destination,crypto=globalThis.crypto){
   destinationKey(destination);assertJson(item);
-  const payloadJson=JSON.stringify(item),scope={schema:MODERN_SCHEMA,ownerUid,destination:structuredClone(destination),payloadJson};
+  const payloadJson=JSON.stringify(item),scope={schema:MODERN_SCHEMA,destination:structuredClone(destination),payloadJson};
   assertSize(scope);const contentHash=await digest(canonicalJson(scope),crypto),envelope={...scope,contentHash};assertSize(envelope);
   return envelope;
 }
 export async function verifyEnvelope(envelope,{destination,binding,cloudId,crypto=globalThis.crypto}={}){
-  if(!envelope||Object.keys(envelope).sort().join(',')!=='contentHash,destination,ownerUid,payloadJson,schema'||envelope.schema!==MODERN_SCHEMA||typeof envelope.ownerUid!=='string'||!envelope.ownerUid||typeof envelope.payloadJson!=='string'||!/^[a-f0-9]{64}$/.test(envelope.contentHash||''))throw fail('invalid-snapshot','This shared snapshot has an unsupported or invalid envelope.');
+  if(!envelope||Object.keys(envelope).sort().join(',')!=='contentHash,destination,payloadJson,schema'||envelope.schema!==MODERN_SCHEMA||typeof envelope.payloadJson!=='string'||!/^[a-f0-9]{64}$/.test(envelope.contentHash||''))throw fail('invalid-snapshot','This shared snapshot has an unsupported or invalid envelope.');
   const key=destinationKey(envelope.destination);if(destination&&key!==destinationKey(destination))throw fail('destination-changed','The snapshot belongs to a different destination. Nothing was redirected.');
   assertSize(envelope);
   const {contentHash,...scope}=envelope;
-  if(await digest(canonicalJson(scope),crypto)!==contentHash||cloudId&&cloudId!=='tm-'+contentHash)throw fail('snapshot-mismatch','Shared content does not match its immutable snapshot ID. Nothing was overwritten.');
+  if(await digest(canonicalJson(scope),crypto)!==contentHash||cloudId&&cloudId!=='tm2-'+contentHash)throw fail('snapshot-mismatch','Shared content does not match its immutable snapshot ID. Nothing was overwritten.');
   let item;try{item=JSON.parse(envelope.payloadJson);assertJson(item);}catch{throw fail('invalid-snapshot','This shared job cannot be read losslessly.');}
   if(binding&&canonicalJson(item?.record?.modernRelay??null)!==canonicalJson(binding))throw fail('environment-changed','This snapshot belongs to a different relay or environment. It is retained without being redirected or promoted.');
   const job=item?.record?.preAlphaCapture?.job,operations=job?.operations,captured=item?.record?.preAlphaCapture?.operations;

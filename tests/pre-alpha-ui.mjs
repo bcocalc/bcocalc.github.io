@@ -1,4 +1,4 @@
-import {readWorkspaceSnapshot,waitForWorkspaceSave} from './pre-alpha-workspace-test-helpers.mjs';
+import {readWorkspaceSnapshot,readDurableWorkspace,waitForWorkspaceSave} from './pre-alpha-workspace-test-helpers.mjs';
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {createRequire} from 'node:module';
@@ -37,7 +37,12 @@ try{
     const activate=locator=>mobile?locator.tap():locator.click();
     await activate(page.locator('.main-nav [data-page="library"]'));
     assert.equal(await page.locator('.job-card').count(),1);
+    const beforeSharedView=await readDurableWorkspace(page);
     await activate(page.locator('.job-card'));
+    assert.equal(await page.locator('#modern-view-content [data-modern-operation]').count(),3);
+    assert.equal(await readDurableWorkspace(page),beforeSharedView,'Viewing a complete shared record never creates a working copy');
+    await activate(page.locator('#modern-make-copy'));
+    await page.waitForFunction(()=>location.hash==='#workspace');await waitForWorkspaceSave(page);
     assert.equal(await page.locator('#operations button').count(),3);
     assert.equal(await page.locator('#operations [aria-current]').getAttribute('data-operation'),'stop-2');
     assert.equal(await page.locator('[data-field="operationType"]').evaluate(el=>el.tagName),'SELECT');

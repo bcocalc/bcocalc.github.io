@@ -1,4 +1,4 @@
-import {BUILD} from './model.mjs?v=pre-alpha23';
+import {BUILD} from './model.mjs?v=pre-alpha24';
 
 const hotTap='Level I Training / 6- Measurments.pdf';
 export const MEASUREMENT_FIGURES={

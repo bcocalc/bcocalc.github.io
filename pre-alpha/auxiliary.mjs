@@ -1,7 +1,7 @@
-import {createReferences} from './references.mjs?v=pre-alpha23';
-import {ETA_MACHINES,etaFor} from './eta.mjs?v=pre-alpha23';
-import {etaPresentation} from './eta-view.mjs?v=pre-alpha23';
-import {stepsFor} from './model.mjs?v=pre-alpha23';
+import {createReferences} from './references.mjs?v=pre-alpha24';
+import {ETA_MACHINES,etaFor} from './eta.mjs?v=pre-alpha24';
+import {etaPresentation} from './eta-view.mjs?v=pre-alpha24';
+import {stepsFor} from './model.mjs?v=pre-alpha24';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const $=id=>document.getElementById(id);

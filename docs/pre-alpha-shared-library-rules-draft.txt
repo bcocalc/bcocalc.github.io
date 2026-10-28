@@ -1,0 +1,54 @@
+LOCAL REVIEW FRAGMENT ONLY — DO NOT DEPLOY
+
+One-site Shared Jobs schema2 proposal. Production binding remains null.
+This fragment is NOT a complete rules policy, a deployment configuration or
+permission to change the existing tapcalcJobs policy/records.
+
+The local emulator wrapper inserts ONLY this fragment alongside the unchanged
+checked-in legacy rules. All test data/projects are synthetic. Current deployed
+rules, overlapping matches and backend permissions remain unverified here.
+
+match /tapcalcModernSnapshots/{snapshotId} {
+  allow get, list: if true;
+  allow create: if request.resource.data.keys().hasOnly([
+      'schema', 'destination', 'contentHash', 'payloadJson', 'syncedAt'
+    ])
+    && request.resource.data.keys().hasAll([
+      'schema', 'destination', 'contentHash', 'payloadJson', 'syncedAt'
+    ])
+    && request.resource.data.schema is int
+    && request.resource.data.schema == 2
+    && request.resource.data.destination == {
+      'projectId': 'tapcalc-afc92',
+      'database': '(default)',
+      'collection': 'tapcalcModernSnapshots'
+    }
+    && request.resource.data.contentHash is string
+    && request.resource.data.contentHash.matches('^[a-f0-9]{64}$')
+    && snapshotId == 'tm2-' + request.resource.data.contentHash
+    && request.resource.data.payloadJson is string
+    && request.resource.data.payloadJson.size() <= 700000
+    && request.resource.data.syncedAt == request.time;
+  allow update, delete: if false;
+}
+
+This proposed policy permits anonymous listing, reading and creation of new
+schema2 snapshots. It does not authenticate a shop member or enforce6–10 users.
+The user accepted shared-list visibility; actual anonymous create permission,
+the target namespace and activation still require separate external approval.
+There is no new account/provider or sender-device provisioning in this design.
+
+Rules check hash format/ID equality but cannot recompute SHA256 or parse the
+opaque JSON payload. A formatted false digest or malformed/incomplete JSON can
+therefore pass rules; clients must verify full scope, digest, size and complete
+captured-job semantics before display/load/confirmation. The client additionally
+limits the UTF8 byte size of the whole envelope, not only string length.
+These are data-integrity checks, not engineering approval or writer identity.
+
+Anonymous create remains open to valid-format abuse. Client validation and an
+API key do not impose a reliable sender limit. No undisclosed abuse-prevention,
+quota cap or shop-only guarantee is claimed. This decision must be reviewed
+before any production access change; no such change is authorized by this file.
+
+Existing captures keep their schema/destination/relay binding. Old schema1
+captures and legacy jobs are not promoted, rewritten, deleted or migrated.

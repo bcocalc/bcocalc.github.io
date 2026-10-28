@@ -5,21 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1727">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
-  <title>TapCalc Pre-Alpha 23</title>
-  <link rel="stylesheet" href="./workspace.css?v=pre-alpha23">
-  <script src="./firebase-config.js?v=pre-alpha23" defer></script>
+  <title>TapCalc Pre-Alpha 24</title>
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha24">
+  <script src="./firebase-config.js?v=pre-alpha24" defer></script>
   <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
-  <script type="module" src="./workspace.mjs?v=pre-alpha23"></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha24"></script>
 </head>
 <body>
   <header class="masthead">
     <button id="menu-toggle" class="quiet menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="app-menu"><span aria-hidden="true">&#9776;</span></button>
-    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 23</span></a>
+    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 24</span></a>
     <button id="theme" class="quiet">Dark mode</button>
   </header>
   <nav id="app-menu" class="app-menu" aria-label="Workspace menu" hidden><button data-page="home">Home</button><button data-page="workspace">Workspace</button><button data-page="references">References</button><button data-page="library">Job Library</button><button data-page="settings">Settings</button><button id="menu-close" class="quiet">Close menu</button></nav>
   <div class="experiment-strip"><span class="status-dot"></span>A new workspace, taking shape.<span class="experiment-detail">Experimental jobs save separately on this device.</span></div>
-  <aside id="modern-auth-controls" class="modern-auth" aria-label="Private team account" hidden><p id="modern-auth-state" role="status"></p><button id="modern-signin" type="button" hidden>Sign in</button> <button id="modern-signout" type="button" hidden>Sign out</button><small>Signing out hides the shared view. It does not delete working copies already saved on this device.</small></aside>
   <main>
     <section id="home" aria-labelledby="home-title">
       <div id="welcome">
@@ -37,11 +36,10 @@
         <div id="save-recovery" class="warning" hidden><p id="save-recovery-message" role="status">Your changes remain in this tab. Saving a separate copy preserves the other saved version.</p><button id="save-copy" type="button">Save my changes as a separate copy</button> <button id="load-saved" type="button">Load saved version</button></div>
         <div class="operations-actions" role="group" aria-label="Export complete job"><button type="button" data-job-export="pdf">Print / Save PDF</button><button type="button" data-job-export="png">Download PNG</button></div>
         <section class="modern-sharing" aria-labelledby="modern-sharing-title">
-          <h2 id="modern-sharing-title">Private team sharing</h2><p id="modern-connection">Private team sharing is not connected. Your working copies stay on this device.</p>
-          <p class="result-hint">A snapshot includes every operation, job detail, note and preserved original. Only approved team accounts can open its link. Existing shared jobs stay unchanged.</p>
-          <button id="modern-save" type="button" disabled>Save team snapshot</button><p id="modern-status" role="status" aria-live="polite"></p><div id="modern-pending"></div>
+          <h2 id="modern-sharing-title">Save to Shared Jobs</h2>
+          <p class="result-hint">Edits save on this device. Save Job keeps a complete local snapshot, then adds a new shared save when connected. Existing shared jobs stay unchanged.</p>
+          <button id="modern-save" type="button" disabled>Save Job</button><p id="modern-status" role="status" aria-live="polite"></p>
           <details id="modern-working-origin" hidden><summary>Original shared snapshot — unchanged</summary><div id="modern-working-origin-content"></div></details>
-          <label class="field" id="modern-link-wrap" hidden>Verified snapshot link<input id="modern-link" type="text" readonly aria-label="Verified snapshot link"></label>
         </section>
         <div class="operations-heading"><h2>Operations <span id="operation-count"></span></h2><div class="operations-actions"><button class="quiet" data-action="add">+ Add operation</button><button id="delete-operation" class="quiet danger-text" data-action="delete">Delete operation</button></div></div>
         <nav id="operations" aria-label="Job operations"></nav>
@@ -60,16 +58,16 @@
     </section>
     <section id="shared-view" aria-labelledby="shared-view-title" hidden>
       <header class="library-heading"><h1 id="shared-view-title" tabindex="-1">Shared job</h1><button data-page="library">Saved jobs</button></header>
-      <p id="modern-view-status" role="status" aria-live="polite"></p><button id="modern-make-copy" type="button" hidden>Make a working copy</button><div id="modern-view-content"></div>
+      <p id="modern-view-status" role="status" aria-live="polite"></p><button id="modern-make-copy" type="button" hidden>Load Job</button><div id="modern-view-content"></div>
     </section>
     <section id="library" aria-labelledby="library-title" hidden>
-      <header class="library-heading"><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h1 id="library-title" tabindex="-1">Your job library.</h1><p>Open a past job and try it in the new workspace.</p></div><button id="refresh">Refresh shared jobs</button></header>
+      <header class="library-heading"><div><p class="eyebrow">PICK UP WHERE YOU LEFT OFF</p><h1 id="library-title" tabindex="-1">Your job library.</h1><p>Open a past job and try it in the new workspace.</p></div><div class="operations-actions"><button id="refresh">Refresh shared jobs</button><button id="modern-sync" type="button" disabled>Sync saved jobs</button></div></header>
       <div class="library-tools"><label class="search-label"><span class="sr-only">Search jobs</span><input id="search" type="search" placeholder="Search job, customer, location or number"></label><span id="connection" role="status">Connecting to shared jobs...</span></div>
       <div class="library-tabs" role="group" aria-label="Job source"><button data-source="shared" aria-pressed="true">Shared jobs <span id="shared-count">0</span></button><button data-source="device" aria-pressed="false">On this device <span id="device-count">0</span></button><button data-source="experimental" aria-pressed="false">Pre-Alpha saves <span id="experimental-count">0</span></button></div>
-      <p id="library-summary" role="status"></p><div id="job-list"></div><button id="more" hidden>Show more jobs</button>
+      <p id="modern-connection" role="status">Shared saving is not connected. Working copies save on this device.</p><p id="modern-sync-status" role="status" aria-live="polite"></p><div id="modern-pending"></div><p id="library-summary" role="status"></p><div id="job-list"></div><button id="more" hidden>Show more jobs</button>
     </section>
     <section id="references" aria-labelledby="references-title" hidden><header class="library-heading"><div><p class="eyebrow">READ-ONLY FIELD TOOLS</p><h1 id="references-title" tabindex="-1">References</h1><p>One topic at a time. Your job and current step stay in place.</p></div><button data-page="workspace">Back to workspace</button></header><div id="reference-browser"></div></section>
-    <section id="settings" aria-labelledby="settings-title" hidden><header class="library-heading"><div><p class="eyebrow">THIS WORKSPACE</p><h1 id="settings-title" tabindex="-1">Settings</h1></div><button data-page="workspace">Back to workspace</button></header><label class="field settings-theme">Appearance<select id="settings-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="result-hint">Pre-Alpha working copies save separately on this device. Shared jobs are read-only here. No live/dev saves or cloud records are deleted or migrated.</p><p>Use the underlined abbreviations with a mouse, keyboard focus, or a tap. Measurement help buttons offer a larger phone target. Escape closes help.</p></section>
+    <section id="settings" aria-labelledby="settings-title" hidden><header class="library-heading"><div><p class="eyebrow">THIS WORKSPACE</p><h1 id="settings-title" tabindex="-1">Settings</h1></div><button data-page="workspace">Back to workspace</button></header><label class="field settings-theme">Appearance<select id="settings-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="result-hint">Pre-Alpha working copies save separately on this device. Shared jobs open as complete read-only records. Load Job creates a separate working copy; Save Job adds a new shared snapshot when connected. No live/dev saves or existing cloud records are deleted or migrated.</p><p>Use the underlined abbreviations with a mouse, keyboard focus, or a tap. Measurement help buttons offer a larger phone target. Escape closes help.</p></section>
   </main>
   <nav class="main-nav" aria-label="Main navigation"><button data-page="home" aria-current="page"><span aria-hidden="true">&#8962;</span>Home</button><button data-page="workspace"><span aria-hidden="true">&#9638;</span>Workspace</button><button data-page="library"><span aria-hidden="true">&#9776;</span>Saved jobs</button></nav>
   <dialog id="details-dialog"><form id="details-form"><div class="dialog-heading"><h2>Job details</h2><button type="button" data-close="details-dialog" aria-label="Close job details">&times;</button></div><div id="details-fields"></div><button class="primary" type="submit">Save details</button></form></dialog>

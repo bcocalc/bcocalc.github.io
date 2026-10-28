@@ -92,9 +92,9 @@ await test('Hi-Stop rendering exposes current POD and retains stale raw POD with
   const h=await harness({jobs:[familyJob],hash:'#workspace'});h.run("rememberStage(operation(),'hiStop');renderWorkspace();");assert.doesNotMatch(h.node('fields').innerHTML,/data-field="hsPod"/);assert.match(h.node('results').innerHTML,/11\.3125/);assert.match(h.node('results').innerHTML,/6\.6250 in/);assert.match(h.node('results').innerHTML,/Saved Hi-Stop POD 99/);assert.doesNotMatch(h.node('results').innerHTML,/data-open-eta/);assert.equal(h.active().operations[0].state.hsPod,'99');assert.deepEqual(h.active().original,familyJob.original);assert.equal(h.node('unit-label').textContent,'INCHES, EXCEPT TAPER');
 });
 
-await test('unbound shared deep link preserves active draft and URL without autosaving or projecting it',async()=>{
+await test('earlier per-job links return to the one Shared Jobs library without autosaving or projecting the active draft',async()=>{
   const hash='#shared/tm-'+'a'.repeat(64),h=await harness({jobs:[job],hash});
-  assert.equal(h.page(),'shared-view');assert.equal(h.location.hash,hash);assert.deepEqual(h.active(),job);assert.deepEqual(h.writes,[]);assert.match(h.node('modern-view-status').textContent,/not connected/);assert.equal(h.node('modern-make-copy').hidden,true);
+  assert.equal(h.page(),'library');assert.equal(h.location.hash,'#library');assert.deepEqual(h.active(),job);assert.deepEqual(h.writes,[]);assert.match(h.node('modern-view-status').textContent,/Choose a job/);assert.equal(h.node('modern-make-copy').hidden,true);assert.doesNotMatch(html,/id="modern-signin"|id="modern-link"|id="modern-auth-controls"/);
 });
 
 console.log(`${count} network-free Home/navigation/rendering cases passed.`);
