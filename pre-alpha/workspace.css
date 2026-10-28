@@ -67,3 +67,7 @@ dialog{width:min(550px,calc(100% - 28px));max-height:90dvh;border:1px solid var(
   .wordmark{min-width:0;flex-wrap:wrap;overflow-wrap:anywhere}
   .main-nav button{min-width:0;flex:1;white-space:normal;overflow-wrap:anywhere;padding-inline:4px}
 }
+/* Windows WebKit needs a break point for this heading at 320px / 200% zoom. */
+@media(max-width:700px){#references-title{overflow-wrap:anywhere}}
+/* Optional derived measurement guidance stays full-width and collapsed by default. */
+.measurement-guidance{grid-column:1/-1;min-width:0;border-block:1px solid var(--line);font-size:13px}.measurement-guidance>summary{min-height:44px;padding:12px 4px;cursor:pointer;font-weight:600}.measurement-guidance>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}.datum-card{margin:20px 0;min-width:0}.datum-card h3{font-size:16px;line-height:1.4;margin-bottom:8px}.datum-sketch{margin:0}.datum-sketch svg{display:block;width:100%;max-width:360px;height:auto;color:var(--ink)}.datum-sketch figcaption,.datum-card p{font-size:13px;line-height:1.6;margin-bottom:8px}.datum-source{display:block;color:var(--muted);font-size:12px;line-height:1.5;overflow-wrap:anywhere}.measurement-guidance[open]{padding-bottom:12px}

@@ -3,8 +3,16 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha14. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha16. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
+- This MCO candidate is local only. Do not upload or publish it. Reviewed15 stays
+  separate. MCO follows the established measurement.js calcHotTap formula:
+  actual pipe O.D. / 2 + PTC. It is not Rod MCO. Current results are recomputed
+  from the saved raw inputs; imported historical result snapshots stay unchanged.
+- Measurement help may contain only the reviewed derived descriptions, small
+  recreated diagrams and citations approved for this test release. Original
+  Technician documents, extracts, renders, workbook data and private audit
+  records stay private. Keep the release source-boundary guard in force.
 - Firebase uses the existing public shared-job transport for reads only.
   Experimental edits use the IndexedDB database tapcalc-pre-alpha-workspace-v1
   on this device. Revision comparison and mutation share a readwrite transaction.

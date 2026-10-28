@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {dirname,join} from 'node:path';
+import {tmpdir} from 'node:os';
 import {mkdirSync} from 'node:fs';
 import {referenceView} from '../pre-alpha/references.mjs';
 const require=createRequire(import.meta.url);
@@ -33,6 +34,7 @@ try{
     const layout=await page.evaluate(()=>({viewport:innerWidth,width:document.documentElement.scrollWidth,zoom:document.body.style.zoom,theme:document.body.className,nodes:[...document.querySelectorAll('body *')].filter(el=>{const r=el.getBoundingClientRect();return r.width&&(r.right>innerWidth+1||el.scrollWidth>el.clientWidth+1);}).map(el=>{const r=el.getBoundingClientRect(),s=getComputedStyle(el);return {tag:el.tagName,id:el.id,classes:el.className,left:r.left,right:r.right,width:r.width,client:el.clientWidth,scroll:el.scrollWidth,font:s.fontSize,position:s.position,overflow:s.overflowX};}).slice(0,80)}));
     if(layout.width>layout.viewport)console.log('REFERENCE_CARD_OVERFLOW '+JSON.stringify({engine,...layout}));
     assert.equal(layout.width<=layout.viewport,true,'No page overflow');
+    assert.ok(await page.locator('#references-title').evaluate(node=>node.scrollWidth<=node.clientWidth+1),'References heading text also fits at enlarged zoom without clipping');
     const overflows=await page.locator('.reference-cards,.reference-row-card,.reference-row-card>div').evaluateAll(nodes=>nodes.filter(el=>el.getBoundingClientRect().width&&el.scrollWidth>el.clientWidth+1).map(el=>el.className));
     assert.deepEqual(overflows,[],'No card/field overflow');
     assert.equal(await page.locator('.reference-table-wrap').first().isVisible(),false);
@@ -56,8 +58,9 @@ try{
     }
   }
   await page.setViewportSize({width:390,height:844});
-  mkdirSync('evidence',{recursive:true});
-  await page.locator('.reference-row-card').first().screenshot({path:'evidence/reference-cards-390.png'});
+  const evidence=process.env.TAPCALC_EVIDENCE_DIR||(process.env.CI?'evidence':join(tmpdir(),'tapcalc-reference-evidence'));
+  mkdirSync(evidence,{recursive:true});
+  await page.locator('.reference-row-card').first().screenshot({path:join(evidence,'reference-cards-390.png')});
   // Hidden desktop table has no keyboard stop; visible mobile term help works by touch.
   const card=page.locator('.reference-row-card').first();
   const term=card.locator('[data-help-term]').first();

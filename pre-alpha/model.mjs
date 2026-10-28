@@ -1,5 +1,5 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha14';
-export const BUILD = 'pre-alpha14';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha16';
+export const BUILD = 'pre-alpha16';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
@@ -177,7 +177,9 @@ export function resultsFor(operation, stage) {
     const li = n('md') + hotTapLostDistance(s) * (s.ldSign === '-' ? -1 : 1);
     const pop = n('start') + li;
     const cop = pop + n('ptc');
-    return [['Pilot on pipe',pop],['Cutter on pipe',cop],['Rod BCO',cop+g.bco],['Total travel',li+n('ptc')+g.bco],['Lower in',li]];
+    // Established calcHotTap basis in measurement.js: const mco = (pod / 2) + ptc.
+    const mco = g.od / 2 + n('ptc');
+    return [['Pilot on pipe',pop],['Cutter on pipe',cop],['Rod BCO',cop+g.bco],['Total travel',li+n('ptc')+g.bco],['Lower in',li],['Maximum cut out (MCO)',mco]];
   }
   if (stage === 'stop') {
     const pod=g.od;

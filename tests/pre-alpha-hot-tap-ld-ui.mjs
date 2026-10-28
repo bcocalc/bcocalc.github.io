@@ -35,7 +35,7 @@ try{
     const output=async()=>page.locator('#results .result-panel:not(.bco-eta-panel)').evaluate(node=>[node.querySelector('.big-value').textContent,...[...node.querySelectorAll('.result-subgrid strong')].map(n=>n.textContent)].map(text=>text.trim()));
     const checkOutputs=async lowerIn=>{
       const bco=geometry(state).bco;
-      assert.deepEqual(await output(),[2+lowerIn,3+lowerIn,3+lowerIn+bco,lowerIn+1+bco,lowerIn].map(value=>value.toFixed(4)+' in'));
+      assert.deepEqual(await output(),[2+lowerIn,3+lowerIn,3+lowerIn+bco,lowerIn+1+bco,lowerIn,4.3125].map(value=>value.toFixed(4)+' in'));
     };
     const defaultOrigin=async()=>assert.equal(await page.locator('[data-value-origin="ld"]').textContent(),'Default 0 - not entered');
     await openDevice('ld-bundle');
@@ -56,12 +56,12 @@ try{
     }
     for(const invalid of ['oops','0oops','1/0']){
       await page.locator('[data-field="ld"]').fill(invalid);
-      assert.ok((await output()).every(text=>text==='-- in'));
+      assert.deepEqual(await output(),['-- in','-- in','-- in','-- in','-- in','4.3125 in']);
       assert.equal(await page.locator('[data-warning-code="invalid-ld"]').count(),1);
     }
     await waitForWorkspaceSave(page);await page.reload();await page.locator('[data-field="ld"]').waitFor({state:'visible'});
     assert.equal(await page.locator('[data-field="ld"]').inputValue(),'1/0');
-    assert.ok((await output()).every(text=>text==='-- in'),'Invalid LD must remain invalid after reopen');
+    assert.deepEqual(await output(),['-- in','-- in','-- in','-- in','-- in','4.3125 in'],'Invalid LD must remain invalid after reopen; independent MCO stays calculated');
     await page.locator('[data-field="ld"]').fill('');await defaultOrigin();await checkOutputs(10);
     await activate(page.locator('[data-step="review"]'));
     const review=page.locator('[data-review-stage="tap"]');

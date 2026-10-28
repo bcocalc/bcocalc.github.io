@@ -15,7 +15,8 @@ import {WORKSPACE_KEY} from '../pre-alpha/workspace-store.mjs';
 const BASELINES=[
   {commit:'21bf9b289196c25912f38424573b295209e49e03',build:'pre-alpha10',transactional:false},
   {commit:'54aec7b984cec1c37ddeea4c5e17c46376473a24',build:'pre-alpha11',transactional:true},
-  {commit:'e4e6389988e3f3767108b5b12a900d33e727a5ad',build:'pre-alpha12',transactional:true}
+  {commit:'e4e6389988e3f3767108b5b12a900d33e727a5ad',build:'pre-alpha12',transactional:true},
+  {commit:'4e247fbebe0bab8cf7185487aa90fd90b0f25741',build:'pre-alpha14',transactional:true}
 ];
 const root=fileURLToPath(new URL('../',import.meta.url));
 const require=createRequire(import.meta.url);
@@ -130,6 +131,17 @@ try{
     }
     const durableSnapshot=()=>readDurableWorkspace(page);
     const durableJob=raw=>JSON.parse(raw).entries.find(entry=>entry.job.id===fixture.id).job;
+    async function checkOfflineHelp(){
+      const before=await durableSnapshot();
+      const guide=page.locator('[data-measurement-guidance="plug"]');
+      assert.equal(await guide.evaluate(node=>node.open),false);
+      await activate(guide.locator(':scope > summary'));
+      assert.ok(await guide.locator('svg').first().isVisible(),'Approved text and diagrams are available offline');
+      assert.match(await guide.innerText(),/Revision A, 15MAY18/);
+      assert.match(await guide.innerText(),/no formal erratum/);
+      await activate(guide.locator(':scope > summary'));
+      assert.equal(await durableSnapshot(),before,'Offline help cannot change saved measurements');
+    }
     async function checkBlankLd(){
       for(const id of ['missing','empty']){
         await activate(page.locator('[data-operation="'+id+'"]'));
@@ -171,10 +183,12 @@ try{
       assert.ok(cacheKeys.includes('tapcalc-live-sentinel')&&cacheKeys.includes('tapcalc-dev-sentinel'));
       assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));
       assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));
+      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/measurement-help.mjs?v='+build)),BUILD));
       assert.ok(await page.evaluate(async build=>!!await (await caches.open('tapcalc-pre-alpha-'+build)).match(location.href,{ignoreSearch:true}),BUILD),'Navigation is cached before disconnecting');
       if(originFailure)originUnavailable=true;else await context.setOffline(true);
       await page.reload();
       await page.waitForSelector('[data-field="cpLiManual"]');assert.equal(await value(),'101.125');
+      await checkOfflineHelp();
       if(!originFailure){
         assert.equal(await page.evaluate(()=>navigator.onLine),false,'The browser is genuinely offline');
         const probe=await context.newPage();
@@ -218,6 +232,7 @@ try{
       await page.goto(base+'/pre-alpha/#workspace');
       await page.waitForSelector('[data-field="cpLiManual"]');await controlled(BUILD);
       assert.equal(await value(),'102.125','Saved measurements survive an offline browser restart');
+      await checkOfflineHelp();
       assert.equal(await page.evaluate(key=>localStorage.getItem(key),WORKSPACE_KEY),upgradedBytes);
       assert.equal(await durableSnapshot(),durableBytes);
       originUnavailable=false;await context.setOffline(false);phase='old';await load(baselineCase.build);
@@ -235,7 +250,7 @@ try{
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),'[]');
       assert.deepEqual(await preservedCaches(),['live cache','dev cache']);
       assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
-      console.log('PASS installed worker '+engine+'/'+(mobile?'phone':'desktop')+': '+baselineCase.build+' to '+BUILD+', '+(originFailure?'origin-unavailable':'browser-offline')+' edit/reload/restart, missing/empty LD without fabrication, complete4-operation bundles, offline reference cards, synthetic stale13 cache retirement, old bytes/cache isolation, rollback and re-upgrade; synthetic profile '+profile);
+      console.log('PASS installed worker '+engine+'/'+(mobile?'phone':'desktop')+': '+baselineCase.build+' to '+BUILD+', '+(originFailure?'origin-unavailable':'browser-offline')+' edit/reload/restart, approved help offline, missing/empty LD without fabrication, complete4-operation bundles, offline reference cards, synthetic stale13 cache retirement, old bytes/cache isolation, rollback and re-upgrade; synthetic profile '+profile);
     }finally{originUnavailable=false;await context.close();}
   }
 }finally{await new Promise(resolve=>server.close(resolve));}

@@ -1,10 +1,11 @@
-import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha14';
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha14';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha14';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha14';
-import {createOriginTracker,worksheetMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha14';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha14';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha14';
+import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha16';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha16';
+import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha16';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha16';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha16';
+import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha16';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha16';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha16';
 const $ = id => document.getElementById(id);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const format = value => Number.isFinite(value) ? value.toFixed(4) : '--';
@@ -235,7 +236,7 @@ function renderWorkspace() {
     if((key==='lsLiManual'||key==='cpLiManual') && ![true,'true'].includes(op.state[key+'Toggle']))return '';
     const value=key==='operationType'?operationType(op):key==='machineType'?active.sharedState.machineType:key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):key==='bcoSchedule'?(op.state.bcoSchedule || (String(op.state.bcoPipeID??'').trim()?'custom':'')):op.state[key];
     return fieldMarkup(field,value);
-  }).join('');
+  }).join('')+measurementHelpMarkup(op,stage);
   $('back').disabled=steps.indexOf(stage)===0;
   $('next').textContent=stage==='review'?'Open job library':'Next: '+stages[steps[steps.indexOf(stage)+1]][0]+' \u2192';
   renderResults();
@@ -269,7 +270,7 @@ function operationReviewMarkup(op) {
     const results=section.stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{secondary:section.results.slice(1)}):'<dl class="review-results">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';
     return '<section class="review-stage" data-help-context="'+section.stage+'" data-review-stage="'+section.stage+'"><header><div><h3>'+escape(section.title)+'</h3><p class="review-mode value-origin" data-result-origin>'+escape(section.mode+(section.override?'':' - not field verified'))+'</p></div><button data-review-edit="'+section.stage+'" aria-label="Edit '+escape(section.title)+' measurements">Edit</button></header>'+results+worksheetMarkup(op,section.stage,origins)+
       '<details class="review-inputs"><summary>'+(section.override?'Retained setup measurements (not used for lower in)':'Setup measurements')+'</summary>'+reviewInputMarkup(section.inputs)+'</details>'+
-      (section.retained.length?'<details class="review-inactive"><summary>Inactive saved inputs (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+'</section>';
+      (section.retained.length?'<details class="review-inactive"><summary>Inactive saved inputs (not used)</summary>'+reviewInputMarkup(section.retained)+'</details>':'')+(section.stage==='tap'?historicalMcoMarkup(active,op):'')+'</section>';
   }).join('');
   return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections;
 }
@@ -286,6 +287,7 @@ function renderResults() {
     if(stage==='pipe')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
     if(stage==='pipe'&&op.state.bcoPipeOD&&!String(op.state.bcoPipeID??'').trim())$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Choose chart dimensions or enter a measured Pipe I.D. Unlisted dimensions are left blank.</p>');
 
+    if(stage==='tap')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">MCO uses actual pipe O.D. / 2 + PTC. It is not a rod position.</p>'+historicalMcoMarkup(active,op));
     if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
 
     if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are still being connected in Pre-Alpha.</p>'+reviewMarkup(op.state);

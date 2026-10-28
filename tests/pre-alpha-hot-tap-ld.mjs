@@ -37,7 +37,9 @@ for(const [ld,sign,lowerIn] of [['2','+',12],['2','-',8],['-2','+',8],['-2','-',
 }
 for(const ld of ['invalid','0oops','NaN','Infinity','1/0','--1',Infinity,{bad:true}]){
   const op=operation({ld});
-  assert.ok(Object.values(results(op)).every(Number.isNaN),'Nonblank invalid LD must not be coerced to zero');
+  const values=results(op);
+  assert.ok(Object.entries(values).filter(([label])=>label!=='Maximum cut out (MCO)').every(([,value])=>Number.isNaN(value)),'Nonblank invalid LD must not be coerced to zero');
+  assert.equal(values['Maximum cut out (MCO)'],4.3125,'MCO depends only on pipe O.D. and PTC, not LD');
   assert.ok(operationWarnings(op).some(w=>w.code==='invalid-ld'));
   assert.equal(reviewSections(op).find(s=>s.stage==='tap').inputs.find(i=>i.key==='ld').value,ld);
   assert.doesNotMatch(createOriginTracker().label(op,'ld'),/Default/);

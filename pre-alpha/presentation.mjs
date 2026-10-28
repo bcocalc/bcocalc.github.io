@@ -1,5 +1,5 @@
-import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance} from './model.mjs?v=pre-alpha14';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha14';
+import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance} from './model.mjs?v=pre-alpha16';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha16';
 
 export const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const has=value=>String(value??'').trim()!=='';
@@ -49,7 +49,8 @@ export function worksheetFor(operation,stage) {
     row('Pilot on pipe',[term('Rod start','start'),term('Hot Tap lower in','',out('Lower in'))]),
     row('Cutter on pipe',[term('Pilot on pipe','',out('Pilot on pipe')),term('PTC','ptc')]),
     row('Rod BCO',[term('Cutter on pipe','',out('Cutter on pipe')),term('BCO','',g.bco)]),
-    row('Total travel',[term('Hot Tap lower in','',out('Lower in')),term('PTC','ptc'),term('BCO','',g.bco)])
+    row('Total travel',[term('Hot Tap lower in','',out('Lower in')),term('PTC','ptc'),term('BCO','',g.bco)]),
+    row('Maximum cut out (MCO)',[term('Actual pipe O.D.','preAlphaPipeOD',g.od),term('PTC','ptc')],'Actual pipe O.D. / 2 + PTC')
   ];
   if(stage==='stop')return [
     manual(state,'lsLiManualToggle')?row('Lower in',[term('Manual lower in','lsLiManual')]):
@@ -71,6 +72,30 @@ export function worksheetMarkup(operation,stage,origins) {
       (row.formula?'<p class="worksheet-formula">'+escape(row.formula)+'</p>':'')+
       '<ol>'+row.terms.map((term,index)=>'<li><span class="worksheet-operator" aria-label="'+(row.formula?'Input':index===0?'Starting value':term.operator==='-'?'Subtract':'Add')+'">'+(row.formula?'':index?escape(term.operator):'=')+'</span><span>'+escape(term.label)+'<small class="value-origin">'+escape(term.key?origins.label(operation,term.key):'Calculated from setup')+'</small></span><strong>'+escape(displayMeasurement(term.value))+'</strong></li>').join('')+'</ol>'+
       '<p class="worksheet-total"><span>'+escape(row.label)+'</span><strong>'+escape(Number.isFinite(row.result)?row.result.toFixed(4)+' in':'Not calculated')+'</strong></p></section>').join('')+'</details>';
+}
+
+export function historicalMcoFor(job,operation) {
+  const original=job.original;
+  if(!original)return undefined;
+  const record=original.record||original,saved=original.state||record.state||{};
+  const bundle=[record.jobBundle,saved.jobBundle,original.jobBundle,record.state,saved,record]
+    .find(value=>Array.isArray(value?.operations)&&value.operations.length);
+  const operations=bundle?.operations||[],matches=operations.filter((item,index)=>String(item.id||'operation-'+index)===operation.id);
+  const own=matches.length===1?matches[0].measurements?.hotTap?.mco:undefined;
+  if(own!=null)return own;
+  // A job-level snapshot belongs only to its original selected operation, never every operation.
+  if(operations.length>1&&(bundle.selectedOperationId!==operation.id||matches.length!==1))return undefined;
+  if(operations.length===1&&matches.length!==1)return undefined;
+  if(!operations.length&&operation.id!=='operation-0')return undefined;
+  return record.measurements?.hotTap?.mco;
+}
+
+export function historicalMcoMarkup(job,operation) {
+  const value=historicalMcoFor(job,operation);
+  if(value==null)return '';
+  return '<details class="review-inactive" data-historical-mco><summary>Historical MCO (not used)</summary>'+
+    '<p class="result-hint">Original imported snapshot, retained unchanged. Current MCO is calculated from this operation\'s actual pipe O.D. and PTC, not from this saved value. MCO is not a rod position.</p>'+
+    '<dl class="review-list"><div><dt>Historical MCO</dt><dd>'+escape(displayMeasurement(value))+'</dd></div></dl></details>';
 }
 
 export function matchingJobs(jobs,query='') {
