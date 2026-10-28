@@ -8,7 +8,7 @@ const before=structuredClone(op),results=resultsFor(op,'tap');
 const moduleBytes=readFileSync(new URL('../pre-alpha/measurement-help.mjs',import.meta.url));
 assert.ok(moduleBytes.length<=12288,'Optional guidance must remain a small dependency-free module');
 assert.ok(gzipSync(moduleBytes).length<=4096,'Keep the compressed source budget below4KiB; no embedded binary payload');
-assert.match(moduleBytes.toString(),/model\.mjs\?v=pre-alpha22/);
+assert.match(moduleBytes.toString(),/model\.mjs\?v=pre-alpha23/);
 for(const stage of ['tap','stop','plug']){
   const guide=measurementHelpFor(op,stage),markup=measurementHelpMarkup(op,stage);
   assert.ok(guide.cards.length);

@@ -1,7 +1,7 @@
-import {geometry,resultsFor,stepsFor,operationType,familyStage} from './model.mjs?v=pre-alpha22';
-import {operationWarnings} from './review.mjs?v=pre-alpha22';
-import {htpChartRow} from './families.mjs?v=pre-alpha22';
-import {etaPresentation} from './eta-view.mjs?v=pre-alpha22';
+import {geometry,resultsFor,stepsFor,operationType,familyStage} from './model.mjs?v=pre-alpha23';
+import {operationWarnings} from './review.mjs?v=pre-alpha23';
+import {htpChartRow} from './families.mjs?v=pre-alpha23';
+import {etaPresentation} from './eta-view.mjs?v=pre-alpha23';
 const clone=value=>structuredClone(value);
 const format=value=>Number.isFinite(value)?value.toFixed(4):'';
 const canonical=value=>JSON.stringify(value,(_,child)=>child&&typeof child==='object'&&!Array.isArray(child)?Object.fromEntries(Object.entries(child).sort(([a],[b])=>a.localeCompare(b))):child);
@@ -43,7 +43,7 @@ export function buildSharedSnapshot(job){
     measurements.hiStop={...measurements.hiStop,md:selected.state.hsMd??'',ld:selected.state.hsLd??'',ldSign:selected.state.hsLdSign??'+',rl:selected.state.hsRl??'',pod:format(g.od),cl:selected.state.hsCl??'',ptc:selected.state.hsPtc??'',rcd:selected.state.hsRcd??'',pb:selected.state.hsPb??'',ptp:selected.state.hsPtp??'',li:format(values['Lower in']),tco:format(values['Total cut out (TCO)']),psd:format(values.PSD),plugSet:format(values['Plug Set'])};
     calculations.hiStopTco=measurements.hiStop.tco;calculations.hiStopPlugSet=measurements.hiStop.plugSet;
   }
-  const record={...clone(original),meta:{...clone(original.meta||{}),title:snapshot.title,operationType:snapshot.operations.length===1?operationType(selected):snapshot.operations.length+' operations',operationCount:snapshot.operations.length,app:'TapCalc',version:'pre-alpha22',savedAtIso:snapshot.updatedAt||snapshot.savedAt||''},
+  const record={...clone(original),meta:{...clone(original.meta||{}),title:snapshot.title,operationType:snapshot.operations.length===1?operationType(selected):snapshot.operations.length+' operations',operationCount:snapshot.operations.length,app:'TapCalc',version:'pre-alpha23',savedAtIso:snapshot.updatedAt||snapshot.savedAt||''},
     job:{...clone(original.job||{}),...Object.fromEntries(metadata.map(([key,field])=>[key,Object.hasOwn(shared,field)?shared[field]:original.job?.[key]??'']))},
     jobBundle:bundle,state,measurements,calculations,
     pipe:{...clone(original.pipe||{}),material:selected.state.bcoPipeMaterial??'',nominalSize:selected.state.bcoPipeOD??'',trueOd:format(g.od),pipeId:format(g.id),wallThickness:format(g.wall),schedule:selected.state.bcoSchedule??''},

@@ -1,6 +1,6 @@
 // Read-only helpers migrated from established TapCalc sources at 3caf01f.
 // No storage, job mutation, cloud transport, or generic Hot Tap fallback.
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha22';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha23';
 
 const REFERENCE_NOTE = 'Read-only reference helper. Confirm the source, physical equipment, and approved procedure before use. Results do not change job measurements and are not setup approval.';
 const finite = Number.isFinite;
@@ -140,8 +140,37 @@ export function calculatePivotHead(values = {}) {
 export const FOLDING_NOTES = [
   'Source: Level III / 1- Folding Head Line Stops.pdf, measurement slides pages 13–14; migrated from dev/overlays/tapcalc-folding-head-reference.js.',
   'Set Point = MD +/- LD + POD - one wall thickness. When used, the start number on the bar is added to the set point.',
-  'Confirm the LD sign and valve gate clearance before use. This helper is specific to Folding Head; it is not a generic Line Stop or Hot Tap fallback.'
+  'Confirm the LD sign and valve gate clearance before use. This helper is specific to Folding Head; it is not a generic Line Stop or Hot Tap fallback.',
+  'Backing-ring clearance basis: user clarification. Pipe I.D. = actual Pipe O.D. - twice wall thickness. Backing-ring O.D. = Pipe I.D. - 1/2 in, giving 1/4 in clearance on each side.',
+  'Supplied roller-position formulas (HTS-5400.1K Rev0, page 4): bottom = half Pipe I.D.; top = half Pipe I.D. - 1/8 in. These are positions from the center mark, not wheel diameters. The measurement endpoint beyond the center mark is unspecified.'
 ];
+
+// Only the expressly supplied Folding Head formulas; independent of set-point inputs.
+export function calculateFoldingDimensions(values = {}) {
+  const {parsed, issues} = parseFields(values, {pod:'Actual Pipe O.D.',wall:'Wall thickness'});
+  const {pod,wall}=parsed,missing=Object.entries({pod,wall}).filter(([,n])=>!finite(n)).map(([key])=>key==='pod'?'actual Pipe O.D.':'wall thickness');
+  let pipeId=NaN,backingRingOd=NaN,bottomRollerPosition=NaN,topRollerPosition=NaN;
+  if(!issues.length&&!missing.length){
+    const candidate=pod-2*wall;
+    if(!finite(candidate)||candidate<=0)issues.push('Wall thickness must leave a positive Pipe I.D. for Folding Head dimensions.');
+    else if(candidate>=pod)issues.push('The entered wall cannot be resolved at this Pipe O.D.; check the measurement precision.');
+    else{
+      pipeId=candidate;
+      const bottom=pipeId/2;
+      if(!finite(bottom)||bottom<=0)issues.push('Bottom roller position cannot be resolved at the entered measurement precision.');
+      else bottomRollerPosition=bottom;
+      const ring=pipeId-0.5,top=bottomRollerPosition-0.125;
+      // Compare the total deductions too, avoiding a positive floating-point residue at zero.
+      if(pod<=2*wall+0.5||!finite(ring)||ring<=0)issues.push('Backing-ring O.D. is unavailable: Pipe I.D. must exceed 1/2 in for the specified clearance.');
+      else if(ring>=pipeId)issues.push('The 1/2 in backing-ring deduction cannot be resolved at this Pipe I.D.; check the measurement precision.');
+      else backingRingOd=ring;
+      if(pod<=2*wall+0.25||!finite(top)||top<=0)issues.push('Top roller position is unavailable: half Pipe I.D. minus 1/8 in must be positive.');
+      else if(top>=bottomRollerPosition)issues.push('The 1/8 in top-roller deduction cannot be resolved at this Pipe I.D.; check the measurement precision.');
+      else topRollerPosition=top;
+    }
+  }
+  return {issues,missing,pipeId,backingRingOd,bottomRollerPosition,topRollerPosition};
+}
 
 export function calculateFoldingHead(values = {}) {
   const {parsed, issues} = parseFields(values, {md:'MD',ld:'LD',pod:'Pipe O.D.',wall:'Wall thickness',start:'Start number'}, {signed:['md','ld','start']});
@@ -150,7 +179,7 @@ export function calculateFoldingHead(values = {}) {
   if (all(pod,wall) && 2*wall >= pod) issues.push('Wall thickness must leave a positive Pipe I.D.');
   if (values.ldSign && !['add','subtract'].includes(values.ldSign)) issues.push('Select Add LD or Subtract LD.');
   const setPoint = !issues.length && !missing.length ? md + (values.ldSign === 'subtract' ? -ld : ld) + pod - wall : NaN;
-  return {issues, missing, setPoint, barTarget:all(setPoint,start)?setPoint+start:NaN};
+  return {issues, missing, setPoint, barTarget:all(setPoint,start)?setPoint+start:NaN,dimensions:calculateFoldingDimensions(values)};
 }
 
 export const UWIRE_NOTES = [
@@ -232,7 +261,7 @@ export function helperFields(category, values = {}) {
   if(category==='foldinghelper')return [
     {key:'md',label:'MD (in)'},{key:'ld',label:'LD (in)'},
     {key:'ldSign',label:'LD sign',options:[['add','Add LD'],['subtract','Subtract LD']]},
-    {key:'pod',label:'POD / pipe O.D. (in)'},{key:'wall',label:'Wall thickness (in)'},{key:'start',label:'Start number on bar (in, optional)'}
+    {key:'pod',label:'Actual pipe O.D. / POD (in)'},{key:'wall',label:'Wall thickness (in)'},{key:'start',label:'Start number on bar (in, optional)'}
   ];
   if(category==='uwire')return [
     ...Object.entries(UWIRE_LABELS).map(([key,label])=>({key,label:label+(['rpm','feedRate'].includes(key)?'':' (in)')})),
@@ -263,9 +292,15 @@ export function helperReference(category, values = {}) {
   }
   if(category==='foldinghelper'){
     const r=calculateFoldingHead(values);
-    result.issue=[...r.issues,...r.missing.length?['Enter '+r.missing.join(', ')+' to calculate the set point.']:[]].join(' ');
+    const d=r.dimensions,dimensionInches=value=>finite(value)&&value>0&&value<0.0001?'<0.0001 in':inches(value);
+    result.issue=[...r.issues,...r.missing.length?['Enter '+r.missing.join(', ')+' to calculate the set point.']:[],...d.issues,...d.missing.length?['Enter '+d.missing.join(' and ')+' for backing-ring and roller dimensions.']:[]].join(' ');
     result.tables=[pairs('Folding Head set-point helper',[
       ['Set point',inches(r.setPoint)],['Bar target',finite(r.barTarget)?inches(r.barTarget):finite(r.setPoint)?'Add start number if used':'Not available']
+    ]),pairs('Folding Head backing ring and roller positions',[
+      ['Pipe I.D. (actual O.D. - 2 x wall)',dimensionInches(d.pipeId)],
+      ['Backing-ring O.D. (1/4 in clearance each side)',dimensionInches(d.backingRingOd)],
+      ['Bottom roller position from center mark',dimensionInches(d.bottomRollerPosition)],
+      ['Top roller position from center mark',dimensionInches(d.topRollerPosition)]
     ])];
     result.lists=[{title:'Source and limitations',items:FOLDING_NOTES}];
   }

@@ -1,8 +1,8 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha22';
-import {number,geometry} from './model.mjs?v=pre-alpha22';
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha22';
-import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha22';
-import {helperFields,helperReference,PIVOT_NOTES,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha22';
+import {DATA} from './reference-data.mjs?v=pre-alpha23';
+import {number,geometry} from './model.mjs?v=pre-alpha23';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha23';
+import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha23';
+import {helperFields,helperReference,PIVOT_NOTES,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha23';
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 export const REFERENCE_CATEGORIES={glossary:'Glossary',cutters:'Hot Tap / Line Stop cutters',smartstop:'SmartStop',foldinghead:'Folding Head',fieldmanual:'Field manual',bolting:'Bolting',htp:'HTP chart',plant150:'150# Plant',plant600:'600# Plant',torque:'Graphonic torque',papergaskets:'Durlon Gaskets',stackups:'Machine Stack-Ups',manuals:'Manual index',pivothead:'Pivot Head Setup',uwire:'U-Wire calculator',fieldcheck:'Field checklists',fractions:'Decimal / fraction',formulas:'Calculation guide'};
@@ -253,7 +253,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
     let markup;
     if(category==='cutters')markup='';
     else if(category==='smartstop')markup=select('size','SmartStop size',DATA.smartstop.suffixCharts.map(chart=>[chart.size,chart.label]))+input('wall','Wall filter (positive decimal inches)')+input('id','Pipe I.D. filter (positive decimal inches)');
-    else if(category==='foldinghead')markup=select('topic','Folding Head topic',[['capacity','Capacity'],['helper','Set-point / bar-target helper'],['assembly','Head assembly'],['overview','Source, fit and limitations'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
+    else if(category==='foldinghead')markup=select('topic','Folding Head topic',[['capacity','Capacity'],['helper','Set point, backing ring & rollers'],['assembly','Head assembly'],['overview','Source, fit and limitations'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
     else if(category==='fieldmanual')markup=select('topic','Field manual topic',[['thread','Thread make-up'],['all','All manual topics / search'],['rpm','Cutter RPM'],['histop','Hi-Stop setup'],['machines','Machine specifications'],['checks','Post-job checks / tolerances']]);
     else if(category==='fractions')markup=input('decimal','Decimal or fraction to convert (in)')+select('rounding','Round to nearest',[['64','1/64 in'],['32','1/32 in'],['16','1/16 in']]);
     else markup='';
@@ -336,7 +336,7 @@ async function previewStackup(trigger,previews) {
   try{
     const pdfjs=await import('../pdf.mjs');if(cancelled)return;
     // Isolate the PDF.js cancellation backport from the shared live/dev worker.
-    pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha22',import.meta.url).href;
+    pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha23',import.meta.url).href;
     loadingTask=pdfjs.getDocument({url:new URL(source.path,import.meta.url).href,isEvalSupported:false});pdf=await loadingTask.promise;if(cancelled)return;
     const page=await pdf.getPage(row.sourcePage);if(cancelled)return;
     const unit=page.getViewport({scale:1}),width=Math.max(240,holder.clientWidth||600),scale=Math.min(2,width/unit.width),viewport=page.getViewport({scale});

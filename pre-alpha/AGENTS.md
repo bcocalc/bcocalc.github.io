@@ -3,10 +3,18 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha22. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha23. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- This22 private-team sharing slice is LOCAL ONLY; parent review is required before
+- The inherited private-team sharing slice is LOCAL ONLY; parent review is required before
   any upload or publication. Published17, root/live/dev and storage stay intact.
+- This local23 addition is only Folding Head reference dimensions: Pipe I.D. =
+  actual Pipe O.D. - 2 x wall; backing-ring O.D. = I.D. - 1/2 in (1/4 each side);
+  bottom roller position from center mark = I.D./2; top = I.D./2 - 1/8 in.
+  These are positions, not wheel diameters; no edge/axle endpoint is supplied.
+  Use only the explicit user/parent formulas and existing input conventions.
+  Do not read, copy or publish private procedure screenshots or add other dimensions.
+  Keep Pivot Head/set-point/U-Wire behavior and all sharing code unchanged.
+  Shared-library and prior link/sender proposals remain unimplemented.
 - Use only the existing eight exact HTP rows and legacy calcHtp/calcHiStop
   formulas. HTP ETA uses chart cutter/chart BCO and existing0.004feed, not
   standard geometry BCO. Hi-Stop POD comes from actual Pipe & cutter O.D.,

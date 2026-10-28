@@ -20,6 +20,7 @@ const checks = [
   ['pre-alpha-shared-save.mjs', {}],
   ['pre-alpha-modern-sharing.mjs', {}],
   ['pre-alpha-families.mjs', {}],
+  ['pre-alpha-folding-dimensions.mjs', {}],
   ['pre-alpha-release-identity.mjs', {}],
   ['pre-alpha-source-boundary.mjs', {}],
   ['pre-alpha-measurement-help.mjs', {}],
@@ -42,6 +43,7 @@ if (!args.includes('--unit-only')) {
     checks.push(['tools-mode-reload-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['coupon-free-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-folding-dimensions-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-reference-cards-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-presentation-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-hot-tap-ld-ui.mjs', { TAPCALC_BROWSER: browser }]);

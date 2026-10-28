@@ -1,5 +1,5 @@
 // Synthetic/emulator relay ONLY. No default fetch, real account or production endpoint.
-import {destinationKey,verifyEnvelope,canonicalJson} from './modern-envelope.mjs?v=pre-alpha22';
+import {destinationKey,verifyEnvelope,canonicalJson} from './modern-envelope.mjs?v=pre-alpha23';
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 export function envelopeFields(envelope){
   return {schema:{integerValue:String(envelope.schema)},ownerUid:{stringValue:envelope.ownerUid},

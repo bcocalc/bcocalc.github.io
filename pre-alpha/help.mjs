@@ -1,4 +1,4 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha22';
+import {DATA} from './reference-data.mjs?v=pre-alpha23';
 
 export const TERMS=Object.fromEntries(DATA.glossary.filter(([key])=>/^[A-Z]{2,5}$/.test(key)).map(([key,full])=>[key,{full,meaning:full+'. Term from the existing TapCalc glossary.'}]));
 Object.assign(TERMS,{
