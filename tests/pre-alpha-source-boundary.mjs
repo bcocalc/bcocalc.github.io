@@ -23,7 +23,7 @@ const functional={
   "tests/modern-job-fixture.mjs": "810790c9d5abc0db2d0767ad9b091a953ee1d6c30df98e6a5a8139c2ac9ba7d5",
   "tests/modern-sharing-fixture.mjs": "42af5e79432d3fae893a4ed7f0e06426a873007105da44f360295d4064d86822",
   "tests/pre-alpha-modern-sharing.mjs": "e6894560a30a79096b461039404a020a89e7302a7181a5bf92fcb4cf52565c4f",
-  "tests/pre-alpha-modern-sharing-ui.mjs": "8afb2ae8b5acbeeae3d121ef0b687ecbb2ee873b0cd7a3602a31b05081a95013",
+  "tests/pre-alpha-modern-sharing-ui.mjs": "74e7abf0bc92305a912e99f54d71bfd2d2e98f2229f3736eb8c08e45c63b2be5",
   "tests/pre-alpha-home.mjs": "d4dd812cbecea0c801604046393c8c28f8b878e22d74290b0f51830156630f40",
   "tests/pre-alpha-workspace-controller.mjs": "9b24b1f18e33330f7898d422a927090a61ec3a197b070144b2106cdc7961f813",
   "tests/pre-alpha-release-identity.mjs": "5b4b743c38f46bee7684183c8c4a40495b99706543554e1078e4cf6682c1837c",

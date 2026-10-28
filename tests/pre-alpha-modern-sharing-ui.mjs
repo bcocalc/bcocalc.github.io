@@ -22,7 +22,7 @@ try{
   const options={headless:true,...(mobile?pw.devices['iPhone 13']:{viewport:{width:1280,height:900}}),serviceWorkers:'block'};
   async function launch({path=profile,uid='alice',nextUser='alice',bound=true}={}){
    context=await pw[engine].launchPersistentContext(path,options);
-   context.on('page',target=>target.on('pageerror',error=>errors.push(error.message)));
+   context.on('page',target=>target.on('pageerror',error=>errors.push({message:error.message,url:target.url(),stack:error.stack})));
    await context.route('**/*',async route=>{
     const request=route.request(),url=new URL(request.url());
     if(url.origin===base){
@@ -36,6 +36,7 @@ try{
     unexpected.push(request.method()+' '+url.origin+url.pathname);return route.abort();
    });
    await context.addInitScript(({history,sentinel,base,uid,nextUser,bound})=>{
+    if(location.origin!==base)return;
     if(localStorage.getItem('measurementCardHistoryV1')===null){localStorage.setItem('measurementCardHistoryV1',history);localStorage.setItem('measurementCardStateV1',sentinel);}
     const listeners=new Set(),sessionFor=who=>who?{uid:who,token:'fixture-'+who,expiresAt:Date.now()+3600000}:null;let session=sessionFor(uid),next=nextUser;
     const publish=()=>listeners.forEach(fn=>fn());
