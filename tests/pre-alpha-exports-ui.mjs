@@ -61,6 +61,7 @@ try{
       const text=await popup.locator('pre').textContent();
       for(const expected of ['Pressure: 250 psi','Temperature: 80 F','Product: Water','Operation 1 of 3: First tap','Operation 2 of 3: Second stop','Operation 3 of 3: Saved HTP','Rod MCO: 16.5625 in','Saved htp tco: 47.25','Historical Rod MCO (original snapshot; not used): 89','Historical Rod MCO (original snapshot; not used): 111','<script>bad()</script>','α ¾'])assert.ok(text.includes(expected),expected);
       assert.equal(await popup.locator('script,img,iframe').count(),0);assert.equal(await popup.evaluate(()=>typeof window.bad),'undefined');
+      const savedSection=text.split('Operation 3 of 3:')[1];assert.match(savedSection,/BCO: Not recalculated for this operation/);assert.doesNotMatch(savedSection,/Rod MCO:|BCO: [\d.-]+ in/);
       if(dark)await popup.screenshot({path:join(profile,'print-view.png'),fullPage:true});
       await popup.close();
     }

@@ -28,7 +28,7 @@ export function buildExportText(job){
   for(const [index,operation]of job.operations.entries()){
     const g=geometry(operation.state),steps=stepsFor(operation),tap=Object.fromEntries(resultsFor(operation,'tap'));
     lines.push('','Operation '+(index+1)+' of '+job.operations.length+': '+String(operation.label||operation.id)+' ('+operationType(operation)+')');
-    lines.push('Pipe: OD '+display(g.od)+' | Wall '+display(g.wall),'Cutter: '+display(g.cutter),'BCO: '+display(g.bco));
+    lines.push('Pipe: OD '+display(g.od)+' | Wall '+display(g.wall),'Cutter: '+display(g.cutter),'BCO: '+(steps.includes('tap')?display(g.bco):'Not recalculated for this operation'));
     lines.push('Hot Tap: '+(steps.includes('tap')?'MD '+display(number(operation.state.md))+' | LI '+display(tap['Lower in'])+' | TTD '+display(tap['Total travel']):'Not applicable to this operation'));
     lines.push('Line Stop LI: '+(steps.includes('stop')?display(resultsFor(operation,'stop')[0][1]):'Not applicable to this operation'));
     lines.push('Completion Plug LI: '+(steps.includes('plug')?display(resultsFor(operation,'plug')[0][1]):'Not applicable to this operation'));
@@ -37,7 +37,7 @@ export function buildExportText(job){
       for(const [group,values]of Object.entries(originalMeasurements(job,operation)))for(const [key,value]of Object.entries(values||{}))
         if(value!=null&&String(value).trim())lines.push('Saved '+group+' '+key+': '+savedText(value));
     }
-    for(const stage of steps.filter(s=>['pipe','tap','stop','plug','htp','hiStop'].includes(s))){
+    for(const stage of steps.filter(s=>['tap','stop','plug','htp','hiStop'].includes(s)||s==='pipe'&&steps.includes('tap'))){
       lines.push(STAGE_TITLES[stage]||stage);
       for(const [label,value]of resultsFor(operation,stage))lines.push('  '+label+': '+display(value));
     }

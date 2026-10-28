@@ -14,10 +14,10 @@ const functional={
  'pre-alpha/index.html':'40b954d9f2fbfc84495e58ab2d443bc14760d65df51a7673dfec84a0c03adb19',
  'pre-alpha/workspace.mjs':'25f9fa9663da90c28d176a5c1ce6bd3959cdf3c51e231a1db790554bffe9b563',
  'pre-alpha/service-worker.js':'eca7d072fb308e982e2b9b6eb247cc12260dbcb528704431dba4673e0cf6caa8',
- 'pre-alpha/exports.mjs':'2277209b3658d8d50a9c4e95bfaac3f73861da8f08bf15409f57f498b6c35583',
+ 'pre-alpha/exports.mjs':'99f8349bf3dfeb196514a05663bf290ddf5229e29aa82e694c22c0e8ec96d632',
  'tests/release-check.mjs':'9227440af66afcd329a2011cb1aa75aeabe8e60788aca76e59c9c34ab0e07dbb',
- 'tests/pre-alpha-exports.mjs':'9562f0e219c78c2f87697045e7e6466475a4cc1b9acff6e0fae979b7db11d91f',
- 'tests/pre-alpha-exports-ui.mjs':'bbf85aee22d6a76f9719097633deaa3d5cd308eda35755c3711bff31c53559a9'
+ 'tests/pre-alpha-exports.mjs':'170731b8ec5ec5112338c34a257198fe6fdb9527eea59b0b675756016e76c00e',
+ 'tests/pre-alpha-exports-ui.mjs':'cbb0bdfdb3b90fef1a4d728bfb792fcc3155133ad7f98f505eb495d2957eb949'
 };
 const identityPaths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().split('\n').filter(path=>/^pre-alpha\/[^/]+\.(?:mjs|js|html|css)$/.test(path)||/^tests\/pre-alpha[^/]+\.mjs$/.test(path));
 const allowed=new Set([...Object.keys(functional),...identityPaths,'tests/pre-alpha-source-boundary.mjs']);

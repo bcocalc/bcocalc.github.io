@@ -36,6 +36,8 @@ assert.throws(()=>downloadJobImage({...job,sharedState:{...info,jobNotes:'x'.rep
 assert.equal(downloads.length,1,'Oversize export must not silently download a truncated image');
 const unsupported={...job,operations:[{id:'operation-0',label:'Saved HTP',operationType:'HTP',state}],original:{record:{measurements:{htp:{tco:'47.25',future:'kept'}}}}};
 const saved=buildExportText(unsupported);assert.match(saved,/Saved values only.*not recalculated/);assert.match(saved,/Saved htp tco: 47\.25/);assert.doesNotMatch(saved,/Rod MCO:/);
+assert.match(saved,/BCO: Not recalculated for this operation/);assert.doesNotMatch(saved,/BCO: [\d.-]+ in/);
+const savedHiStop=buildExportText({...unsupported,operations:[{...unsupported.operations[0],operationType:'Hi-Stop'}]});assert.match(savedHiStop,/BCO: Not recalculated for this operation/);assert.doesNotMatch(savedHiStop,/Rod MCO:|BCO: [\d.-]+ in/);
 const attributed={...job,original:{record:{jobBundle:{selectedOperationId:'two',operations:[{id:'one',measurements:{hotTap:{mco:'88',rodMco:'89'}}},{id:'two'}]},measurements:{hotTap:{mco:'99',rodMco:'111'}}}}};
 const attributedText=buildExportText(attributed),[first,second]=attributedText.split('Operation 2 of 2:');
 assert.match(first,/Historical Rod MCO \(original snapshot; not used\): 89/);assert.doesNotMatch(first,/snapshot; not used\): 111/);
