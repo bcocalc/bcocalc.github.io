@@ -15,6 +15,7 @@ const checks = [
   ['browser-evidence-unit.mjs', {}],
   ['pre-alpha-model.mjs', {}],
   ['pre-alpha-mco.mjs', {}],
+  ['pre-alpha-rod-mco.mjs', {}],
   ['pre-alpha-release-identity.mjs', {}],
   ['pre-alpha-source-boundary.mjs', {}],
   ['pre-alpha-measurement-help.mjs', {}],

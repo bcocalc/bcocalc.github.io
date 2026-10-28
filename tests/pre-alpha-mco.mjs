@@ -29,7 +29,7 @@ for(const patch of [{},{preAlphaPipeOD:'6 5/8',ptc:'1 1/4'},{preAlphaPipeOD:'22'
   assert.equal(row.result,result);
   assert.equal(row.formula,'Actual pipe O.D. / 2 + PTC');
   assert.deepEqual(row.terms.map(term=>term.value),[geometry(op.state).od,op.state.ptc]);
-  assert.doesNotMatch(resultsFor(op,'tap').map(([key])=>key).join('|'),/Rod MCO/);
+  assert.equal(resultsFor(op,'tap').find(([key])=>key==='Rod MCO')[1],resultsFor(op,'tap')[0][1]+result,'Rod reading is separate from MCO distance');
   assert.deepEqual(op,before,'Calculation and presentation cannot mutate raw or unknown fields');
 }
 assert.equal(mco(operation({preAlphaPipeOD:'6 5/8',ptc:'1 1/4'})),4.5625);
@@ -70,4 +70,4 @@ assert.equal(historicalMcoFor(ambiguous,ambiguous.operations[1]),undefined,'No i
 const hostile=structuredClone(job);hostile.original.record.measurements.hotTap.mco='<img src=x>';
 assert.doesNotMatch(historicalMcoMarkup(hostile,op),/<img/);
 assert.equal(historicalMcoMarkup(fresh,fresh.operations[0]),'');
-console.log('PASS MCO: established legacy calculator parity, actual/table OD, fractions, invalid/missing/signed values, independent operands, canonical Review/worksheet, new/legacy/multi-operation inputs and distinct immutable historical snapshots; no Rod MCO');
+console.log('PASS MCO: established legacy calculator parity, actual/table OD, fractions, invalid/missing/signed values, independent operands, canonical Review/worksheet, new/legacy/multi-operation inputs and distinct immutable historical snapshots; active Rod MCO remains separate');

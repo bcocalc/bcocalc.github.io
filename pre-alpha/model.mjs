@@ -1,5 +1,5 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha17';
-export const BUILD = 'pre-alpha17';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha18';
+export const BUILD = 'pre-alpha18';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete'];
@@ -179,7 +179,10 @@ export function resultsFor(operation, stage) {
     const cop = pop + n('ptc');
     // Established calcHotTap basis in measurement.js: const mco = (pod / 2) + ptc.
     const mco = g.od / 2 + n('ptc');
-    return [['Pilot on pipe',pop],['Cutter on pipe',cop],['Rod BCO',cop+g.bco],['Total travel',li+n('ptc')+g.bco],['Lower in',li],['Maximum cut out (MCO)',mco]];
+    const results=[['Pilot on pipe',pop],['Cutter on pipe',cop],['Rod BCO',cop+g.bco],['Total travel',li+n('ptc')+g.bco],['Lower in',li],['Maximum cut out (MCO)',mco]];
+    // Legacy calcHotTap: rmco = pop + mco. This is a rod reading, not MCO travel.
+    if(stepsFor(operation).includes('tap'))results.push(['Rod MCO',pop+mco]);
+    return results;
   }
   if (stage === 'stop') {
     const pod=g.od;

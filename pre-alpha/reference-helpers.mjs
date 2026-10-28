@@ -1,6 +1,6 @@
 // Read-only helpers migrated from established TapCalc sources at 3caf01f.
 // No storage, job mutation, cloud transport, or generic Hot Tap fallback.
-import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha17';
+import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha18';
 
 const REFERENCE_NOTE = 'Read-only reference helper. Confirm the source, physical equipment, and approved procedure before use. Results do not change job measurements and are not setup approval.';
 const finite = Number.isFinite;

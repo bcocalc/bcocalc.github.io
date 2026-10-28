@@ -3,10 +3,14 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha17. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha18. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- This17 candidate is local first; parent review is required before upload or
-  publication. Published16 and all calculations/storage remain unchanged.
+- This18 Rod MCO parity slice is LOCAL ONLY; parent review is required before
+  any upload or publication. Published17, root/live/dev and storage stay intact.
+- Authorized numerical addition: eligible Hot Tap-stage Rod MCO = Pilot on pipe
+  + MCO, matching legacy calcHotTap. Keep current strict invalid/fraction/signed
+  and blank-LD rules. Rod MCO is a rod reading, not the MCO cutout distance.
+  Keep original imported snapshots separate and never persist over raw inputs.
 - Measurement help permits only the prior reviewed derived text and exactly
   five explicitly authorized, hash-pinned WebP crops in measurement-figures/.
   Preserve their complete arrows/captions, TEAM copyright and unknown-revision

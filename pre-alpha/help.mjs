@@ -1,4 +1,4 @@
-import {DATA} from './reference-data.mjs?v=pre-alpha17';
+import {DATA} from './reference-data.mjs?v=pre-alpha18';
 
 export const TERMS=Object.fromEntries(DATA.glossary.filter(([key])=>/^[A-Z]{2,5}$/.test(key)).map(([key,full])=>[key,{full,meaning:full+'. Term from the existing TapCalc glossary.'}]));
 Object.assign(TERMS,{
@@ -10,6 +10,7 @@ Object.assign(TERMS,{
   CCO:{full:'Coupon cut out',meaning:'Historical glossary term. The Coupon free result in this workspace uses cutter inside diameter; do not substitute it for BCO.'},
   POP:{full:'Pilot on pipe',meaning:'Hot Tap rod-scale position: Rod start plus Hot Tap lower in.'},
   COP:{full:'Cutter on pipe',meaning:'Calculated Hot Tap rod position: Pilot on pipe plus pilot-to-cutter distance. This is not a field-verified reading.'},
+  MCO:{full:'Maximum cut out',meaning:'Cutout distance: actual pipe O.D. / 2 + PTC. Rod MCO is a different quantity: the rod reading at maximum cut out, Pilot on pipe + MCO. Neither is field verification.'},
   TTD:{full:'Total travel distance',meaning:'Hot Tap lowering distance plus pilot-to-cutter distance and book cut out. Not the same as cutting-only ETA distance.'},
   OD:{full:'Outside diameter',meaning:'Outside diameter of the item named in this label. For pipe, use the actual dimension, not nominal size; Pipe & cutter is the single job source.'},
   ID:{full:'Inside diameter',meaning:'Inside diameter of the pipe or cutter named in this label. Pipe inside diameter must be smaller than pipe outside diameter.'},

@@ -11,14 +11,15 @@ import {readWorkspaceSnapshot,readDurableWorkspace,waitForWorkspaceSave} from '.
 const require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
 const engine=process.env.TAPCALC_BROWSER||'chromium',label='Maximum cut out (MCO)';
-const state={bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',preAlphaPipeOD:'6 5/8',bcoPipeID:'6',bcoCutterOD:'4',md:'10',ld:'',ptc:'1 1/4',start:'2',mt:'52',pod:'99',mco:'888',future:{retain:['raw',3]}};
+const state={bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',preAlphaPipeOD:'6 5/8',bcoPipeID:'6',bcoCutterOD:'4',md:'10',ld:'',ldSign:'+',ptc:'1 1/4',start:'2',mt:'52',pod:'99',mco:'888',rmco:'999',rodMco:'777',future:{retain:['raw',3]}};
 const bundle={id:'mco-bundle',record:{job:{client:'Synthetic customer',notes:'Retain all operations'},measurements:{hotTap:{mco:'99',rodMco:'111'}},futureRecord:{keep:true},jobBundle:{selectedOperationId:'two',sharedState:{jobDescription:'MCO bundle',futureShared:{keep:2}},futureBundle:{keep:[1,2]},operations:[
   {id:'one',label:'First stop',operationType:'Line Stop',state,measurements:{hotTap:{mco:'88',rodMco:'89'}},futureOperation:{keep:'one'}},
   {id:'two',label:'Second tap and plug',operationType:'Tap & Complete',state:{...state,preAlphaPipeOD:'26',ptc:'2 1/2',cpStart:'20',cpJbf:'1',cpLd:'0',cpPt:'2'}},
   {id:'three',label:'Third tap',operationType:'Hot Tap',state:{...state,preAlphaPipeOD:'28',ptc:'1/2'}}
 ]}}};
 const nested={id:'mco-nested',record:{meta:{title:'MCO nested legacy',operationType:'Hot Tap'},pipe:{material:'Carbon Steel',nominalSize:'6',trueOd:'6.625',pipeId:'6'},machine:{cutterOd:'4'},measurements:{hotTap:{md:'10',ld:'0',ptc:'1',rodStart:'2',mt:'52',mco:'55',rodMco:'67'}},future:{retain:true}}};
-const history=JSON.stringify([bundle,nested]),sentinel='{"synthetic":"MCO live draft unchanged"}';
+const unsupported=['HTP','Hi-Stop'].map((type,index)=>({id:'unsupported-'+index,record:{meta:{title:type+' saved operation',operationType:type},state:{...state,lineStopVariant:index?'hiStop':'htp'},measurements:{hotTap:{rodMco:'444'}}}}));
+const history=JSON.stringify([bundle,nested,...unsupported]),sentinel='{"synthetic":"MCO live draft unchanged"}';
 const server=spawn(process.execPath,['tests/sync-preview.mjs'],{stdio:['ignore','pipe','inherit']});
 let context,page,device;
 try{
@@ -48,7 +49,7 @@ try{
     }
     const activate=locator=>mobile?locator.tap():locator.click();
     const tapOutput=()=>page.locator('#results .result-subgrid > div').filter({has:page.locator('span',{hasText:label})}).locator('strong');
-    async function checkTap(expected,historical){
+    async function checkTap(expected,historical,pilot=12){
       await tapOutput().waitFor({state:'visible'});
       assert.equal((await tapOutput().textContent()).trim(),Number.isFinite(expected)?expected.toFixed(4)+' in':'-- in');
       const old=page.locator('#results [data-historical-mco]');
@@ -58,7 +59,12 @@ try{
         assert.match(await old.locator('dd').textContent(),new RegExp(Number(historical).toFixed(4)+' in'));
       }
       assert.match(await page.locator('#results [data-result-origin]').first().textContent(),/Calculated from setup - not field verified/);
-      assert.doesNotMatch(await page.locator('#results .result-panel').first().innerText(),/Rod MCO|888/);
+      const rod=page.locator('#results .result-subgrid > div').filter({has:page.locator('span',{hasText:/^Rod MCO$/})}).locator('strong');
+      assert.equal((await rod.textContent()).trim(),Number.isFinite(expected)&&Number.isFinite(pilot)?(expected+pilot).toFixed(4)+' in':'-- in');
+      const snapshot={'55':'67','88':'89','99':'111'}[historical],oldRod=page.locator('#results [data-historical-rod-mco]');
+      assert.equal(await oldRod.count(),snapshot?1:0);
+      if(snapshot)assert.equal(await oldRod.locator('dd').textContent(),Number(snapshot).toFixed(4)+' in');
+      assert.doesNotMatch(await page.locator('#results .result-panel').first().innerText(),/888|999|777|111\.0000|89\.0000|67\.0000/,'Historical/raw readings cannot replace current results');
     }
     async function openJob(source,id){
       await activate(page.locator('.main-nav [data-page="library"]'));
@@ -79,6 +85,13 @@ try{
       assert.match(await worksheet.locator('li').first().innerText(),/Actual pipe O.D./);
       assert.match(await worksheet.locator('li').nth(1).innerText(),/PTC/);
       assert.doesNotMatch(await worksheet.innerText(),/Historical|888|99\.0000/);
+      const rod=section.locator('.review-results > div').filter({has:page.locator('dt',{hasText:/^Rod MCO$/})});
+      assert.equal((await rod.locator('dd').textContent()).trim(),(expected+12).toFixed(4)+' in');
+      const rodSheet=section.locator('.worksheet-result').filter({has:page.locator('h4',{hasText:/^Rod MCO$/})});
+      assert.equal(await rodSheet.locator('.worksheet-formula').textContent(),'Pilot on pipe + MCO');
+      assert.equal(await rodSheet.locator('.worksheet-total strong').textContent(),(expected+12).toFixed(4)+' in');
+      assert.deepEqual(await rodSheet.locator('li strong').allTextContents(),['12.0000 in',expected.toFixed(4)+' in']);
+      assert.doesNotMatch(await rodSheet.innerText(),/111\.0000|89\.0000|67\.0000|Historical/);
     }
     async function activeJob(){const view=await readWorkspaceSnapshot(page);return view.jobs.find(job=>job.id===view.activeId);}
     await launch();
@@ -110,6 +123,16 @@ try{
         assert.equal(await page.locator('[data-field="ptc"]').inputValue(),invalid);
       }
       await page.locator('[data-field="ptc"]').fill('2 1/2');await checkTap(15.5,'99');
+      await page.locator('[data-field="start"]').fill('-2 1/2');await checkTap(15.5,'99',7.5);
+      await page.locator('[data-field="ld"]').fill('2 1/2');
+      await page.locator('[data-field="ldSign"]').selectOption('-');await checkTap(15.5,'99',5);
+      await page.locator('[data-field="ld"]').fill('-2 1/2');await checkTap(15.5,'99',10);
+      await waitForWorkspaceSave(page);await page.reload();await checkTap(15.5,'99',10);
+      assert.equal(await page.locator('[data-field="ld"]').inputValue(),'-2 1/2');
+      await page.locator('[data-field="start"]').fill('oops');await checkTap(15.5,'99',NaN);
+      await page.locator('[data-field="start"]').fill('');await checkTap(15.5,'99',NaN);
+      await page.locator('[data-field="start"]').fill('2');await page.locator('[data-field="ld"]').fill('');
+      await page.locator('[data-field="ldSign"]').selectOption('+');await checkTap(15.5,'99');
       await activate(page.locator('[data-step="pipe"]'));
       await page.locator('[data-field="preAlphaPipeOD"]').fill('1/0');
       await activate(page.locator('[data-step="tap"]'));await checkTap(NaN,'99');
@@ -144,12 +167,22 @@ try{
         if(await page.locator('body').evaluate(node=>node.classList.contains('dark'))!==dark)await activate(page.locator('#theme'));
         assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'MCO Review and worksheet fit viewport in both themes');
       }
+      for(const entry of unsupported){
+        await activate(page.locator('.main-nav [data-page="library"]'));await activate(page.locator('[data-source="device"]'));
+        await activate(page.locator('.job-card[data-job="'+entry.id+'"]'));await waitForWorkspaceSave(page);
+        assert.equal(await page.locator('[data-step="tap"]').count(),0,'Do not activate standard Hot Tap/Rod MCO for unsupported families');
+        await activate(page.locator('[data-step="review"]'));
+        assert.equal(await page.locator('[data-review-stage="tap"]').count(),0);
+        assert.deepEqual((await activeJob()).original,{...entry,source:'device'});
+        assert.equal((await activeJob()).operations[0].state.rmco,'999');
+      }
+      await openJob('experimental',before.id);await checkReview(14.5);
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),history);
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),sentinel);
       assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(writes,[]);
-      const screenshot=join(tmpdir(),'pre-alpha17-mco-'+engine+'-'+device+'.png');
+      const screenshot=join(tmpdir(),'pre-alpha18-mco-'+engine+'-'+device+'.png');
       await page.screenshot({path:screenshot,fullPage:true});console.log('MCO_REVIEW_SCREENSHOT '+screenshot);
-      console.log('PASS MCO '+engine+'/'+device+': new, nested legacy and complete three-operation imports; current/historical separation, Review/worksheet, fractional/invalid inputs, actual local save, explicit reopen, reload, browser-process restart, both themes and source isolation');
+      console.log('PASS MCO and Rod MCO '+engine+'/'+device+': new, nested legacy and complete three-operation imports; separate current/historical distance and rod reading, Review/operand worksheet, signed/fraction/blank/invalid inputs, actual local save, explicit reopen, reload, browser-process restart, both themes and source isolation');
     }catch(error){
       try{const path=join(tmpdir(),'pre-alpha-mco-failure-'+engine+'-'+device+'-'+Date.now()+'.png');await page.screenshot({path});console.error('Screenshot: '+path);}catch(diagnosticError){console.error('MCO_DIAGNOSTIC_FAILURE',diagnosticError.message);}
       throw error;
