@@ -35,7 +35,7 @@ try{
     const output=async()=>page.locator('#results .result-panel:not(.bco-eta-panel)').evaluate(node=>[node.querySelector('.big-value').textContent,...[...node.querySelectorAll('.result-subgrid strong')].map(n=>n.textContent)].map(text=>text.trim()));
     const checkOutputs=async lowerIn=>{
       const bco=geometry(state).bco;
-      assert.deepEqual(await output(),[2+lowerIn,3+lowerIn,3+lowerIn+bco,lowerIn+1+bco,lowerIn,4.3125].map(value=>value.toFixed(4)+' in'));
+      assert.deepEqual(await output(),[2+lowerIn,3+lowerIn,3+lowerIn+bco,lowerIn+1+bco,lowerIn,4.3125,2+lowerIn+4.3125].map(value=>value.toFixed(4)+' in'));
     };
     const defaultOrigin=async()=>assert.equal(await page.locator('[data-value-origin="ld"]').textContent(),'Default 0 - not entered');
     await openDevice('ld-bundle');
@@ -56,12 +56,12 @@ try{
     }
     for(const invalid of ['oops','0oops','1/0']){
       await page.locator('[data-field="ld"]').fill(invalid);
-      assert.deepEqual(await output(),['-- in','-- in','-- in','-- in','-- in','4.3125 in']);
+      assert.deepEqual(await output(),['-- in','-- in','-- in','-- in','-- in','4.3125 in','-- in']);
       assert.equal(await page.locator('[data-warning-code="invalid-ld"]').count(),1);
     }
     await waitForWorkspaceSave(page);await page.reload();await page.locator('[data-field="ld"]').waitFor({state:'visible'});
     assert.equal(await page.locator('[data-field="ld"]').inputValue(),'1/0');
-    assert.deepEqual(await output(),['-- in','-- in','-- in','-- in','-- in','4.3125 in'],'Invalid LD must remain invalid after reopen; independent MCO stays calculated');
+    assert.deepEqual(await output(),['-- in','-- in','-- in','-- in','-- in','4.3125 in','-- in'],'Invalid LD must remain invalid after reopen, including Rod MCO; independent MCO stays calculated');
     await page.locator('[data-field="ld"]').fill('');await defaultOrigin();await checkOutputs(10);
     await activate(page.locator('[data-step="review"]'));
     const review=page.locator('[data-review-stage="tap"]');
@@ -90,8 +90,10 @@ try{
     for(const [key,value]of Object.entries({md:'10',ptc:'1',start:'2'}))await page.locator('[data-field="'+key+'"]').fill(value);
     assert.match((await output())[0],/^12\.0000 in$/,'A fresh blank LD calculates POP without defaulting pipe geometry');
     assert.match((await output())[1],/^13\.0000 in$/);
+    assert.equal((await output())[6],'-- in','Rod MCO must remain invalid without pipe geometry');
     assert.equal(await page.locator('[data-field="ld"]').inputValue(),'');
     await page.locator('[data-field="start"]').fill('');assert.equal((await output())[0],'-- in','Rod start must not be defaulted');
+    assert.equal((await output())[6],'-- in','Missing rod start must not produce Rod MCO');
     await waitForWorkspaceSave(page);
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),old);
     assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),liveDraft);

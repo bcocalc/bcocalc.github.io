@@ -8,7 +8,7 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const hash=body=>createHash('sha256').update(body).digest('hex');
 const app=['AGENTS.md','auxiliary.mjs','eta-view.mjs','eta.mjs','firebase-config.js','help.mjs','index.html','measurement-figures.mjs','measurement-help.mjs','model.mjs','presentation.mjs','reference-helpers.mjs','references.mjs','review.mjs','service-worker.js','workspace-store.mjs','workspace.mjs'];
-const tests=['pre-alpha-mco-ui.mjs','pre-alpha-mco.mjs','pre-alpha-rod-mco.mjs','pre-alpha-measurement-help.mjs','pre-alpha-measurement-help-ui.mjs','pre-alpha-measurement-figures.mjs','pre-alpha-original-figures-ui.mjs','pre-alpha-pdf-cancellation.mjs','pre-alpha-pdf-worker-ui.mjs','pre-alpha-release-identity.mjs','pre-alpha-source-boundary.mjs','release-check.mjs'];
+const tests=['pre-alpha-hot-tap-ld-ui.mjs','pre-alpha-mco-ui.mjs','pre-alpha-mco.mjs','pre-alpha-rod-mco.mjs','pre-alpha-measurement-help.mjs','pre-alpha-measurement-help-ui.mjs','pre-alpha-measurement-figures.mjs','pre-alpha-original-figures-ui.mjs','pre-alpha-pdf-cancellation.mjs','pre-alpha-pdf-worker-ui.mjs','pre-alpha-release-identity.mjs','pre-alpha-source-boundary.mjs','release-check.mjs'];
 const workflow='.github/workflows/library-safeguard.yml';
 const allowed=new Set([...app.map(name=>'pre-alpha/'+name),...tests.map(name=>'tests/'+name),workflow]);
 for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))assert.ok(allowed.has(path),'Outside authorized local18 Rod MCO parity slice: '+path);
