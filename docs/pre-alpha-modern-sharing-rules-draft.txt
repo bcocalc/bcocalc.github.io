@@ -1,0 +1,52 @@
+LOCAL REVIEW FRAGMENT ONLY - DO NOT DEPLOY
+
+Proposed target: tapcalc-afc92 / Standard database (default) /
+tapcalcModernSnapshots. Production binding is null. Current deployed rules,
+provider configuration and account approvals have NOT been verified here.
+
+This is an ADDITIVE REVIEW FRAGMENT, not a complete Firebase rules policy.
+Do not replace firestore.rules or existing tapcalcJobs behavior with this file.
+The empty UID allowlist deliberately authorizes nobody. Only explicit later
+approval can select real users, publish rules or connect a production client.
+
+function approvedModernMember() {
+  return request.auth != null && request.auth.uid in [];
+}
+match /tapcalcModernSnapshots/{snapshotId} {
+  allow get, list: if approvedModernMember();
+  allow create: if approvedModernMember()
+    && request.resource.data.keys().hasOnly([
+      'schema', 'ownerUid', 'destination', 'contentHash', 'payloadJson', 'syncedAt'
+    ])
+    && request.resource.data.keys().hasAll([
+      'schema', 'ownerUid', 'destination', 'contentHash', 'payloadJson', 'syncedAt'
+    ])
+    && request.resource.data.schema == 1
+    && request.resource.data.ownerUid == request.auth.uid
+    && request.resource.data.destination == {
+      'projectId': 'tapcalc-afc92',
+      'database': '(default)',
+      'collection': 'tapcalcModernSnapshots'
+    }
+    && request.resource.data.contentHash is string
+    && request.resource.data.contentHash.matches('^[a-f0-9]{64}$')
+    && snapshotId == 'tm-' + request.resource.data.contentHash
+    && request.resource.data.payloadJson is string
+    && request.resource.data.payloadJson.size() <= 700000
+    && request.resource.data.syncedAt == request.time;
+  allow update, delete: if false;
+}
+
+The rules cannot independently calculate SHA256 over payloadJson; clients verify
+full envelope/content/ID on every read, and server-side Firebase authentication
+must validate the bearer identity. Synthetic tests exercise the access contract,
+NOT Firebase rules syntax/real emulator or deployed policy certification.
+An approved teammate can create their own attributed data; these are not signed
+engineering approvals. Captured raw/original data must remain clearly attributed.
+
+Later setup gates: read/export current deployed policy and auth setup without
+mutating records; compile/test an additive policy in an actual Firebase emulator;
+review owner-create/team-read and deny-update/delete cases; get explicit setup
+approval; publish only reviewed configuration/rules and perform separately
+authorized synthetic production acceptance. Do not use existing job records as
+write fixtures. Existing tapcalcJobs and all unknown deployed matches stay intact.
