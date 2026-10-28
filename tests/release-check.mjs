@@ -19,6 +19,7 @@ const checks = [
   ['pre-alpha-exports.mjs', {}],
   ['pre-alpha-shared-save.mjs', {}],
   ['pre-alpha-modern-sharing.mjs', {}],
+  ['pre-alpha-production-binding.mjs', {}],
   ['pre-alpha-families.mjs', {}],
   ['pre-alpha-folding-dimensions.mjs', {}],
   ['pre-alpha-release-identity.mjs', {}],

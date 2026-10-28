@@ -7,10 +7,10 @@ import {WORKSPACE_DATABASE} from '../pre-alpha/workspace-database.mjs';
 
 const root=new URL('../pre-alpha/',import.meta.url);
 const text=name=>readFileSync(new URL(name,root),'utf8');
-assert.equal(BUILD,'pre-alpha24');
+assert.equal(BUILD,'pre-alpha25');
 const html=text('index.html');
-assert.match(html,/<title>TapCalc Pre-Alpha 24<\/title>/);
-assert.match(html,/<span class="edition">PRE-ALPHA 24<\/span>/);
+assert.match(html,/<title>TapCalc Pre-Alpha 25<\/title>/);
+assert.match(html,/<span class="edition">PRE-ALPHA 25<\/span>/);
 for(const asset of ['workspace.css','firebase-config.js','workspace.mjs'])assert.ok(html.includes('./'+asset+'?v='+BUILD));
 const config={window:{}};vm.runInNewContext(text('firebase-config.js'),config);
 assert.equal(config.window.TAPCALC_PRE_ALPHA_BUILD,BUILD);
@@ -47,10 +47,10 @@ for(const name of readdirSync(root).filter(name=>/\.(?:mjs|js|html|css)$/.test(n
 }
 assert.ok(tokens>30,'Check actual module, CSS, configuration and worker identities, not just a label');
 assert.match(text('workspace.mjs'),/register\('\.\/service-worker\.js\?v='\+BUILD/);
-assert.match(text('AGENTS.md'),/- Build: pre-alpha24\./);
+assert.match(text('AGENTS.md'),/- Build: pre-alpha25\./);
 assert.equal(STORAGE_KEY,'tapcalcPreAlpha01Workspace');
 assert.equal(WORKSPACE_KEY,'tapcalcPreAlpha01WorkspaceConcurrentV1');
 assert.equal(WORKSPACE_DATABASE,'tapcalc-pre-alpha-workspace-v1');
 assert.equal(existsSync(new URL('measurement-help.mjs',root)),true,'This release includes only the approved derived guidance pinned by the separate source-boundary guard');
 assert.equal(existsSync(new URL('../local-only/',root)),false,'Do not ship private prototype or technical-ledger scaffolding');
-console.log('PASS Pre-Alpha24 identity: visible label, all versioned app tokens, config, worker/cache and stable storage identities; approved guidance and unbound modern modules cached without local-only scaffolding');
+console.log('PASS Pre-Alpha25 identity: visible label, all versioned app tokens, config, worker/cache and stable storage identities; approved guidance and unbound modern modules cached without local-only scaffolding');

@@ -1,5 +1,5 @@
-import {buildSharedSnapshot} from './shared-save.mjs?v=pre-alpha24';
-import {makeEnvelope,verifyEnvelope,canonicalJson,assertJson} from './modern-envelope.mjs?v=pre-alpha24';
+import {buildSharedSnapshot} from './shared-save.mjs?v=pre-alpha25';
+import {makeEnvelope,verifyEnvelope,canonicalJson,assertJson} from './modern-envelope.mjs?v=pre-alpha25';
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 export function createModernSaver({store,transport,crypto=globalThis.crypto,onPrepared=()=>{}}){
   const preparing=new Map(),sending=new Map();

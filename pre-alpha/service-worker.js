@@ -1,4 +1,4 @@
-const BUILD = 'pre-alpha24';
+const BUILD = 'pre-alpha25';
 const PREFIX = 'tapcalc-pre-alpha-';
 const CACHE = PREFIX + BUILD;
 const scope = new URL('./', self.location.href);

@@ -1,17 +1,20 @@
-import {createModernTransport} from './modern-transport.mjs?v=pre-alpha24';
-import {createModernSaver} from './modern-saver.mjs?v=pre-alpha24';
-import {MODERN_DESTINATION} from './modern-sharing-config.mjs?v=pre-alpha24';
-import {destinationKey,canonicalJson,workingCopyOf,verifyEnvelope} from './modern-envelope.mjs?v=pre-alpha24';
-import {modernSnapshotMarkup,legacySnapshotMarkup} from './modern-view.mjs?v=pre-alpha24';
-import {escape} from './presentation.mjs?v=pre-alpha24';
+import {createModernTransport,createProductionTransport} from './modern-transport.mjs?v=pre-alpha25';
+import {createModernSaver} from './modern-saver.mjs?v=pre-alpha25';
+import {MODERN_DESTINATION,PRODUCTION_MODERN_BINDING} from './modern-sharing-config.mjs?v=pre-alpha25';
+import {destinationKey,canonicalJson,workingCopyOf,verifyEnvelope} from './modern-envelope.mjs?v=pre-alpha25';
+import {modernSnapshotMarkup,legacySnapshotMarkup} from './modern-view.mjs?v=pre-alpha25';
+import {escape} from './presentation.mjs?v=pre-alpha25';
 
-export function installModernSharing(document,{binding=null,store,getDraft,makeWorkingCopy,notify,canShare=()=>true,onSharedChange=async()=>{},location=globalThis.location,navigator=globalThis.navigator,crypto=globalThis.crypto}){
+export function installModernSharing(document,{binding=null,publicApiKey=null,store,getDraft,makeWorkingCopy,notify,canShare=()=>true,onSharedChange=async()=>{},location=globalThis.location,navigator=globalThis.navigator,crypto=globalThis.crypto}){
   const el=id=>document.getElementById(id),errors=new Map();
   let transport=null,saver=null,busy=false,localPending=false,received=null,requestId=0,renderId=0,originId=0,pendingIds=[];
   const setStatus=message=>{el('modern-status').textContent=message;el('modern-sync-status').textContent=message;};
   try{
     if(binding?.kind==='synthetic-only'&&['127.0.0.1','localhost','[::1]'].includes(location.hostname)){
       transport=createModernTransport({...binding,destination:binding.destination||MODERN_DESTINATION,fetch:binding.fetch||globalThis.fetch,online:binding.online||(()=>navigator.onLine),crypto});
+      saver=createModernSaver({store,transport,crypto});
+    }else if(binding===PRODUCTION_MODERN_BINDING&&binding?.kind==='firestore-public'&&binding.enabled===true){
+      transport=createProductionTransport({proposal:binding,apiKey:publicApiKey,fetch:globalThis.fetch,online:()=>navigator.onLine,crypto});
       saver=createModernSaver({store,transport,crypto});
     }
   }catch(error){setStatus(error.message);}
@@ -23,7 +26,7 @@ export function installModernSharing(document,{binding=null,store,getDraft,makeW
   }
   async function renderPending(){
     const token=++renderId;pendingIds=[];controls();
-    el('modern-connection').textContent=transport?'Shared saving connected to local synthetic fixtures. No production connection.':'Shared saving is not connected. Working copies save on this device.';
+    el('modern-connection').textContent=transport?(transport.kind==='synthetic-only'?'Shared saving connected to local synthetic fixtures. No production connection.':'Shared saving is connected. Local snapshots stay retained until confirmed.'):'Shared saving is not connected. Working copies save on this device.';
     try{
       await store.ready;await store.refresh();if(token!==renderId)return;
       const all=store.sharedSnapshots(),same=all.filter(capture=>{

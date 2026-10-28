@@ -1,5 +1,5 @@
-import {BUILD,STORAGE_KEY} from './model.mjs?v=pre-alpha24';
-import {createWorkspaceDatabase} from './workspace-database.mjs?v=pre-alpha24';
+import {BUILD,STORAGE_KEY} from './model.mjs?v=pre-alpha25';
+import {createWorkspaceDatabase} from './workspace-database.mjs?v=pre-alpha25';
 
 // Both older localStorage formats are read-only inputs. Web Locks alone did not
 // make their cross-process reads fresh in WebKit. IndexedDB is the authority;

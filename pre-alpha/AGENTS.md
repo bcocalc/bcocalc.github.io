@@ -3,11 +3,13 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha24. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha25. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- This one-site Shared Jobs adjustment is LOCAL ONLY. No upload, publication,
-  production binding, live security/provider/rules change or record migration is
-  authorized. Preserve frozen22/private and23/folding candidates and all evidence.
+- This25 preparation is LOCAL ONLY on frozen24. Read-only actual Firebase
+  inspection and a DISABLED fixed production binding/policy proposal are authorized.
+  No activation/deployment/access/rules/provider/security change, production write,
+  new credential, migration, upload/push or publication is authorized. Preserve
+  frozen24 app+CI,22/private,23/folding and all failures/evidence/held CI files.
 - Preserve the approved Folding Head reference dimensions: Pipe I.D. =
   actual Pipe O.D. - 2 x wall; backing-ring O.D. = I.D. - 1/2 in (1/4 each side);
   bottom roller position from center mark = I.D./2; top = I.D./2 - 1/8 in.
@@ -27,12 +29,18 @@ and dev remain independent releases. Do not promote this directory onto either.
 - One website provides a combined Shared Jobs list/search/refresh, complete view,
   explicit Load Job to a NEW local identity, edit, and local-first Save Job/Sync.
   No required sign-in, distributed per-job links or sender-device provisioning.
-  Anonymous schema2 app sharing uses ONLY explicitly injected loopback synthetic
-  REST. Test rule-language behavior separately in the real demo-project emulator.
-  Production binding stays null.
+  Anonymous schema2 app sharing remains disabled for production. A separate fixed
+  HTTPS production constructor is prepared and tested ONLY with explicitly injected
+  mocks or a guarded demo-emulator rewrite. Production binding stays null and its
+  proposal enabled:false. Runtime/window/localStorage values cannot activate it.
+  Existing loopback fixture behavior remains unchanged. No sign-in/provider setup.
+  Test rule language and wire behavior separately in the real demo emulator.
   Proposed internal namespace tapcalc-afc92/(default)/tapcalcModernSnapshots
   is not approval of production anonymous get/list/create, rules or activation.
-  New adapter must reject tapcalcJobs targets. Root legacy transport/readpath and
+  Both constructors must reject tapcalcJobs targets. Production is fixed to the
+  Standard(default) project/namespace and HTTPS origin; never Enterprise default.
+  Existing public app identifier stays outside captures and is not authorization.
+  Root legacy transport/readpath and
   existing records remain untouched. Old schema1 captures are retained unsent;
   never promote, reinterpret, retarget or migrate them. The working job and fixed
   schema/destination/relay-bound capture persist atomically before upload.
@@ -48,7 +56,11 @@ and dev remain independent releases. Do not promote this directory onto either.
   Public rules only constrain shape/size/hash format; they cannot verify JSON/
   SHA256, authenticate a shop member or reliably limit anonymous create abuse.
   Validate clients and report actual emulator limits. Existing85 private-policy
-  checks do not certify the anonymous policy. Actual deployed policy is unverified.
+  checks do not certify the anonymous policy. Actual deployed policy is unverified
+  until authenticated read-only inspection succeeds. Never treat local files or
+  old reports as current deployed evidence; stop at auth/permission barriers.
+  Inspect only metadata/rules/names/counts/billing, not unrelated job content.
+  Overlapping allow rules are additive; a deny cannot override a broader allow.
   The paperwork form was supplied/mapped; do not request it again or invent a
   paperwork feature. Physical iPhone, exact-candidate Linux/full release and
   root manifest/service-worker/publication gates remain separate approvals.

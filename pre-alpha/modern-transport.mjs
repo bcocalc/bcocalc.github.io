@@ -1,5 +1,6 @@
-// Synthetic/emulator relay ONLY. No default fetch, real account or production endpoint.
-import {destinationKey,verifyEnvelope,canonicalJson} from './modern-envelope.mjs?v=pre-alpha24';
+// Explicit injected fetch only. Production constructor is prepared behind a disabled source binding.
+import {destinationKey,verifyEnvelope,canonicalJson} from './modern-envelope.mjs?v=pre-alpha25';
+import {MODERN_DESTINATION,PRODUCTION_MODERN_PROPOSAL} from './modern-sharing-config.mjs?v=pre-alpha25';
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 export function envelopeFields(envelope){
   return {schema:{integerValue:String(envelope.schema)},
@@ -16,10 +17,20 @@ export function documentEnvelope(document){
 export function createModernTransport({kind,endpoint,destination,fetch:fetcher,online=()=>true,timeoutMs=12000,crypto=globalThis.crypto}){
   const relay=new URL(endpoint);
   if(kind!=='synthetic-only'||!['http:','https:'].includes(relay.protocol)||!['127.0.0.1','localhost','[::1]'].includes(relay.hostname)||relay.username||relay.password||relay.search||relay.hash||typeof fetcher!=='function')throw fail('production-unbound','Modern production sharing is not connected. Only an explicit localhost synthetic relay is allowed.');
-  if(!Number.isFinite(timeoutMs)||timeoutMs<1||timeoutMs>12000)throw fail('invalid-timeout','Synthetic request deadlines must remain bounded at twelve seconds or less.');
+  return createSnapshotTransport({endpoint:relay.href,destination,fetch:fetcher,online,timeoutMs,crypto,binding:{kind:'synthetic-only',endpoint:relay.href.replace(/\/$/,'')}});
+}
+export function createProductionTransport({proposal=PRODUCTION_MODERN_PROPOSAL,apiKey,fetch:fetcher,online=()=>true,timeoutMs=12000,crypto=globalThis.crypto}={}){
+  if(proposal?.enabled!==true)throw fail('production-disabled','Production Shared Jobs remains disabled.');
+  if(Object.keys(proposal).sort().join(',')!=='destination,enabled,endpoint,id,kind,schema'||proposal.id!==PRODUCTION_MODERN_PROPOSAL.id||proposal.kind!=='firestore-public'||proposal.schema!==2||proposal.endpoint!=='https://firestore.googleapis.com'||destinationKey(proposal.destination)!==destinationKey(MODERN_DESTINATION))throw fail('production-target','The production proposal does not match the reviewed Standard database and snapshot namespace.');
+  if(typeof fetcher!=='function'||typeof apiKey!=='string'||!/^[A-Za-z0-9_-]{1,200}$/.test(apiKey))throw fail('production-unbound','An explicit fetch and existing public Firebase app identifier are required.');
+  return createSnapshotTransport({endpoint:proposal.endpoint,destination:proposal.destination,fetch:fetcher,online,timeoutMs,crypto,apiKey,binding:{kind:'firestore-public',endpoint:proposal.endpoint,bindingId:proposal.id}});
+}
+function createSnapshotTransport({endpoint,destination,fetch:fetcher,online,timeoutMs,crypto,apiKey=null,binding}){
+  const relay=new URL(endpoint);
+  if(!Number.isFinite(timeoutMs)||timeoutMs<1||timeoutMs>12000)throw fail('invalid-timeout','Shared request deadlines must remain bounded at twelve seconds or less.');
   const fixed=Object.freeze(structuredClone(destination)),scope=destinationKey(fixed);
   if(fixed.collection==='tapcalcJobs')throw fail('legacy-read-only','Existing shared records are read-only through this adapter. Choose a separate snapshot namespace.');
-  const fixedBinding=Object.freeze({kind:'synthetic-only',endpoint:relay.href.replace(/\/$/,'')});
+  const fixedBinding=Object.freeze(structuredClone(binding));
   const name=`projects/${fixed.projectId}/databases/${fixed.database}/documents`,base=relay.href.replace(/\/$/,'')+'/v1/'+name;
   const collection=base+'/'+encodeURIComponent(fixed.collection),sending=new Map();
   async function request(url,{method='GET',body}={}){
@@ -27,7 +38,8 @@ export function createModernTransport({kind,endpoint,destination,fetch:fetcher,o
     const controller=new AbortController();let timer;
     try{
       return await Promise.race([(async()=>{
-        let response;try{response=await fetcher(url,{method,body:body===undefined?undefined:JSON.stringify(body),headers:{'Content-Type':'application/json'},cache:'no-store',credentials:'omit',redirect:'error',signal:controller.signal});}
+        const target=new URL(url);if(apiKey!==null)target.searchParams.set('key',apiKey);
+        let response;try{response=await fetcher(target.href,{method,body:body===undefined?undefined:JSON.stringify(body),headers:{'Content-Type':'application/json'},cache:'no-store',credentials:'omit',redirect:'error',signal:controller.signal});}
         catch{throw fail(controller.signal.aborted?'timeout':'network-failure','The shared network request was not confirmed. The complete local snapshot is retained.');}
         let payload;try{payload=await response.json();}catch{throw fail('invalid-response','The shared response could not be verified. The local snapshot is retained.');}
         if(!response.ok){const error=fail(response.status===401?'access-denied':response.status===403?'permission-denied':response.status===404?'not-found':response.status===409?'already-exists':'network-failure',response.status===403?'Team sharing was denied. Your local snapshot is retained.':response.status===401?'Shared access was denied. Your local snapshot is retained.':'The shared request was not confirmed. Your local snapshot is retained.');error.status=response.status;throw error;}
@@ -65,6 +77,6 @@ export function createModernTransport({kind,endpoint,destination,fetch:fetcher,o
       if(!await verify())throw fail('unconfirmed-upload','The uploaded snapshot could not be read back and verified.');return id;
     })();sending.set(id,task);task.then(()=>sending.delete(id),()=>sending.delete(id));return task;
   }
-  return Object.freeze({kind:'synthetic-only',binding:fixedBinding,destination:fixed,get:id=>read(id),list,upload,
+  return Object.freeze({kind:fixedBinding.kind,binding:fixedBinding,destination:fixed,get:id=>read(id),list,upload,
     update:()=>{throw fail('immutable','Shared snapshots cannot be updated. Save a new snapshot.');},delete:()=>{throw fail('immutable','Shared snapshots cannot be deleted by this client.');}});
 }

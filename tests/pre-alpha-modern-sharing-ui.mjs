@@ -23,7 +23,7 @@ try{
   const legacyDocs=new Map([['legacy-existing',clone(source.record)]]);let legacyFailure=false;
   const options={headless:true,...(mobile?pw.devices['iPhone 13']:{viewport:{width:1280,height:900}}),serviceWorkers:'block'};
   const legacyDocuments=()=>[...legacyDocs].map(([id,record])=>({name:'projects/demo-tapcalc-test/databases/(default)/documents/tapcalcJobs/'+id,fields:encode(record).mapValue.fields}));
-  async function launch({path=profile,bound=true,localHistory=history}={}){
+  async function launch({path=profile,bound=true,localHistory=history,forgedProduction=false}={}){
    context=await pw[engine].launchPersistentContext(path,options);context.on('page',target=>target.on('pageerror',error=>errors.push({message:error.message,url:target.url(),stack:error.stack})));
    await context.route('**/*',async route=>{
     const request=route.request(),url=new URL(request.url());
@@ -36,7 +36,7 @@ try{
     }
     if(url.origin!==base||request.method()!=='GET'){unexpected.push(request.method()+' '+url.origin+url.pathname);return route.abort();}return route.continue();
    });
-   await context.addInitScript(({history,sentinel,base,bound})=>{if(location.origin!==base)return;if(localStorage.getItem('measurementCardHistoryV1')===null){localStorage.setItem('measurementCardHistoryV1',history);localStorage.setItem('measurementCardStateV1',sentinel);}if(bound)window.TAPCALC_MODERN_TEST_BINDING={kind:'synthetic-only',endpoint:base+'/__modern'};},{history:localHistory,sentinel,base,bound});
+   await context.addInitScript(({history,sentinel,base,bound,forgedProduction})=>{if(location.origin!==base)return;if(localStorage.getItem('measurementCardHistoryV1')===null){localStorage.setItem('measurementCardHistoryV1',history);localStorage.setItem('measurementCardStateV1',sentinel);}if(bound)window.TAPCALC_MODERN_TEST_BINDING={kind:'synthetic-only',endpoint:base+'/__modern'};if(forgedProduction)window.TAPCALC_MODERN_TEST_BINDING={id:'tapcalc-standard-public-schema2-v1',kind:'firestore-public',enabled:true,endpoint:'https://firestore.googleapis.com',schema:2,destination:{projectId:'tapcalc-afc92',database:'(default)',collection:'tapcalcModernSnapshots'}};},{history:localHistory,sentinel,base,bound,forgedProduction});
    page=await context.newPage();page.setDefaultTimeout(15000);
   }
   const activate=locator=>mobile?locator.tap():locator.click(),ready=target=>(target||page).waitForFunction(()=>document.getElementById('connection')?.textContent.includes('Connected'));
@@ -49,6 +49,8 @@ try{
   const openShared=async(id,kind='modern')=>{await library();await refresh();const key=sharedLibraryKey(await scope(kind),id);await activate(page.locator('[data-job="'+key+'"]'));await waitText('modern-view-status','View only');assert.equal(new URL(page.url()).hash,'#shared-view');assert.ok(!page.url().includes(id));};
   const openDevice=async()=>{await ready();await activate(page.locator('.main-nav [data-page="library"]'));await activate(page.locator('[data-source="device"]'));await activate(page.locator('[data-job="synthetic-modern"]'));await waitForWorkspaceSave(page);await activate(page.locator('[data-operation="tap"]'));await activate(page.locator('[data-step="tap"]'));await waitForWorkspaceSave(page);};
   step='unbound default';await launch({path:mkdtempSync(join(tmpdir(),'tapcalc-library-unbound-')),bound:false});await page.goto(base+'/pre-alpha/');await openDevice();assert.equal(await page.locator('#modern-save').isDisabled(),true);assert.equal(await page.locator('#modern-auth-controls,#modern-signin,#modern-link,[data-modern-copy]').count(),0);assert.equal(relay.requests.length,0);await openShared('legacy-existing','legacy');await activate(page.locator('#modern-make-copy'));await page.waitForFunction(()=>location.hash==='#workspace');await waitForWorkspaceSave(page);assert.equal((await active()).modernOrigin.kind,'legacy');assert.equal(await page.locator('#modern-save').isDisabled(),true);assert.equal(relay.requests.length,0);await context.close();context=null;
+
+  step='window production override cannot activate disabled source';await launch({path:mkdtempSync(join(tmpdir(),'tapcalc-library-disabled-production-')),bound:false,forgedProduction:true});await page.goto(base+'/pre-alpha/');await openDevice();assert.equal(await page.locator('#modern-save').isDisabled(),true);await library();await refresh();assert.equal(await page.locator('#modern-sync').isDisabled(),true);assert.equal(relay.requests.length,0);assert.deepEqual(unexpected,[]);await context.close();context=null;
 
   step='local-first capture and late acknowledgement';await launch();await page.goto(base+'/pre-alpha/');await openDevice();await page.locator('[data-field="md"]').fill('10');await waitForWorkspaceSave(page);const original=await active();assert.deepEqual(original.original.record,source.record);
   const started=deferred(),gate=deferred();release=gate.resolve;relay.setOnPost(async()=>{started.resolve();await gate.promise;});await activate(page.locator('#modern-save'));

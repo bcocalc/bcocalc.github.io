@@ -1,16 +1,17 @@
-import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha24';
-import {installModernSharing} from './modern-ui.mjs?v=pre-alpha24';
-import {createSharedLibrary} from './shared-library.mjs?v=pre-alpha24';
-import {installExports} from './exports.mjs?v=pre-alpha24';
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha24';
-import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha24';
-import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha24';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha24';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha24';
-import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,historicalFamilyMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha24';
-import {HTP_CHART,HTP_INPUTS,HISTOP_INPUTS,htpChartRow} from './families.mjs?v=pre-alpha24';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha24';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha24';
+import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha25';
+import {installModernSharing} from './modern-ui.mjs?v=pre-alpha25';
+import {createSharedLibrary} from './shared-library.mjs?v=pre-alpha25';
+import {PRODUCTION_MODERN_BINDING} from './modern-sharing-config.mjs?v=pre-alpha25';
+import {installExports} from './exports.mjs?v=pre-alpha25';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha25';
+import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha25';
+import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha25';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha25';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha25';
+import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,historicalFamilyMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha25';
+import {HTP_CHART,HTP_INPUTS,HISTOP_INPUTS,htpChartRow} from './families.mjs?v=pre-alpha25';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha25';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha25';
 const $ = id => document.getElementById(id);
 installMeasurementFigures(document);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -468,7 +469,7 @@ auxiliary=initAuxiliary({getOperation:operation,getMachine:()=>active?.sharedSta
 installHelp();
 installExports(document,()=>active,notify);
 modernSharing=installModernSharing(document,{
-  binding:globalThis.TAPCALC_MODERN_TEST_BINDING||null,store:workspaceStore,notify,location,navigator,crypto,onSharedChange:refreshShared,
+  binding:globalThis.TAPCALC_MODERN_TEST_BINDING||PRODUCTION_MODERN_BINDING,publicApiKey:window.TAPCALC_FIREBASE_CONFIG?.apiKey||null,store:workspaceStore,notify,location,navigator,crypto,onSharedChange:refreshShared,
   canShare(){const draft=active&&draftFor(active);return !!draft&&!draft.error&&draft.sequence===draft.saved&&!pendingSelections&&!workspaceStartupError;},
   async getDraft(){
     const draft=active&&draftFor(active);

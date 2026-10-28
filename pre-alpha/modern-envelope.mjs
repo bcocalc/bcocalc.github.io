@@ -1,4 +1,4 @@
-import {MODERN_SCHEMA,MAX_MODERN_BYTES} from './modern-sharing-config.mjs?v=pre-alpha24';
+import {MODERN_SCHEMA,MAX_MODERN_BYTES} from './modern-sharing-config.mjs?v=pre-alpha25';
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 export function assertJson(value,seen=new Set()){
   if(value===null||typeof value==='string'||typeof value==='boolean')return;

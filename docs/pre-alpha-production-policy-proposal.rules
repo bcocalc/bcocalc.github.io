@@ -1,0 +1,42 @@
+// LOCAL NONDEPLOYABLE REVIEW PROPOSAL. NOT VERIFIED DEPLOYED POLICY.
+// Exact checked-in legacy block retained; rebase against authenticated deployed rules before activation.
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Temporary public access for TapCalc Shared jobs only.
+    match /tapcalcJobs/{jobId} {
+      allow read, create, update: if true;
+      allow delete: if false;
+    }
+
+match /tapcalcModernSnapshots/{snapshotId} {
+  allow get, list: if true;
+  allow create: if request.resource.data.keys().hasOnly([
+      'schema', 'destination', 'contentHash', 'payloadJson', 'syncedAt'
+    ])
+    && request.resource.data.keys().hasAll([
+      'schema', 'destination', 'contentHash', 'payloadJson', 'syncedAt'
+    ])
+    && request.resource.data.schema is int
+    && request.resource.data.schema == 2
+    && request.resource.data.destination == {
+      'projectId': 'tapcalc-afc92',
+      'database': '(default)',
+      'collection': 'tapcalcModernSnapshots'
+    }
+    && request.resource.data.contentHash is string
+    && request.resource.data.contentHash.matches('^[a-f0-9]{64}$')
+    && snapshotId == 'tm2-' + request.resource.data.contentHash
+    && request.resource.data.payloadJson is string
+    && request.resource.data.payloadJson.size() <= 700000
+    && request.resource.data.syncedAt == request.time;
+  allow update, delete: if false;
+}
+
+    // Keep all other collections and subcollections private.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
