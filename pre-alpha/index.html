@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1727">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
-  <title>TapCalc Pre-Alpha 18</title>
-  <link rel="stylesheet" href="./workspace.css?v=pre-alpha18">
-  <script src="./firebase-config.js?v=pre-alpha18" defer></script>
+  <title>TapCalc Pre-Alpha 19</title>
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha19">
+  <script src="./firebase-config.js?v=pre-alpha19" defer></script>
   <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
-  <script type="module" src="./workspace.mjs?v=pre-alpha18"></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha19"></script>
 </head>
 <body>
   <header class="masthead">
     <button id="menu-toggle" class="quiet menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="app-menu"><span aria-hidden="true">&#9776;</span></button>
-    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 18</span></a>
+    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 19</span></a>
     <button id="theme" class="quiet">Dark mode</button>
   </header>
   <nav id="app-menu" class="app-menu" aria-label="Workspace menu" hidden><button data-page="home">Home</button><button data-page="workspace">Workspace</button><button data-page="references">References</button><button data-page="library">Job Library</button><button data-page="settings">Settings</button><button id="menu-close" class="quiet">Close menu</button></nav>
@@ -34,6 +34,7 @@
       <div id="job-workspace" hidden>
         <header class="job-heading"><div><p class="eyebrow" id="job-origin">WORKING COPY</p><h1 id="job-title" tabindex="-1"></h1><p id="job-meta"></p></div><button data-action="details">Job details <span aria-hidden="true">&nearr;</span></button></header>
         <div id="save-recovery" class="warning" hidden><p id="save-recovery-message" role="status">Your changes remain in this tab. Saving a separate copy preserves the other saved version.</p><button id="save-copy" type="button">Save my changes as a separate copy</button> <button id="load-saved" type="button">Load saved version</button></div>
+        <div class="operations-actions" role="group" aria-label="Export complete job"><button type="button" data-job-export="pdf">Print / Save PDF</button><button type="button" data-job-export="png">Download PNG</button></div>
         <div class="operations-heading"><h2>Operations <span id="operation-count"></span></h2><div class="operations-actions"><button class="quiet" data-action="add">+ Add operation</button><button id="delete-operation" class="quiet danger-text" data-action="delete">Delete operation</button></div></div>
         <nav id="operations" aria-label="Job operations"></nav>
         <section id="empty-operations" class="empty-state" hidden><h2>No operations yet.</h2><p>Your job details remain in this working copy. Add an operation to start entering measurements.</p><button class="primary" data-action="add">+ Add operation</button></section>

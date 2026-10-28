@@ -180,7 +180,7 @@ try{
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardHistoryV1')),history);
       assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),sentinel);
       assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(writes,[]);
-      const screenshot=join(tmpdir(),'pre-alpha18-mco-'+engine+'-'+device+'.png');
+      const screenshot=join(tmpdir(),'pre-alpha19-mco-'+engine+'-'+device+'.png');
       await page.screenshot({path:screenshot,fullPage:true});console.log('MCO_REVIEW_SCREENSHOT '+screenshot);
       console.log('PASS MCO and Rod MCO '+engine+'/'+device+': new, nested legacy and complete three-operation imports; separate current/historical distance and rod reading, Review/operand worksheet, signed/fraction/blank/invalid inputs, actual local save, explicit reopen, reload, browser-process restart, both themes and source isolation');
     }catch(error){

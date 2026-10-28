@@ -1,12 +1,13 @@
-import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha18';
-import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha18';
-import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha18';
-import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha18';
-import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha18';
-import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha18';
-import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha18';
-import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha18';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha18';
+import {createWorkspaceStore,WORKSPACE_KEY} from './workspace-store.mjs?v=pre-alpha19';
+import {installExports} from './exports.mjs?v=pre-alpha19';
+import {FIELD_HELP,installHelp} from './help.mjs?v=pre-alpha19';
+import {measurementHelpMarkup} from './measurement-help.mjs?v=pre-alpha19';
+import {installMeasurementFigures} from './measurement-figures.mjs?v=pre-alpha19';
+import {initAuxiliary} from './auxiliary.mjs?v=pre-alpha19';
+import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha19';
+import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha19';
+import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha19';
+import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number} from './model.mjs?v=pre-alpha19';
 const $ = id => document.getElementById(id);
 installMeasurementFigures(document);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -432,6 +433,7 @@ $('theme').addEventListener('click',()=>{const dark=!document.body.classList.con
 renderHome();saveStatus();
 auxiliary=initAuxiliary({getOperation:operation,getMachine:()=>active?.sharedState.machineType||'',persist,onEtaChanged:renderResults,notify,setTheme:dark=>{theme(dark);try{localStorage.setItem(THEME_KEY,dark?'dark':'light');}catch{}},getTheme:()=>document.body.classList.contains('dark')?'dark':'light'});
 installHelp();
+installExports(document,()=>active,notify);
 const initialPage=routeFromLocation()==='workspace'&&!active?'home':routeFromLocation();
 history.replaceState({preAlphaPage:initialPage},'','#'+initialPage);page(initialPage,{recordHistory:false,moveFocus:false});
 function restorePage(){

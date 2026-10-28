@@ -3,10 +3,14 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha18. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha19. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
-- This18 Rod MCO parity slice is LOCAL ONLY; parent review is required before
+- This19 export parity slice is LOCAL ONLY; parent review is required before
   any upload or publication. Published17, root/live/dev and storage stay intact.
+- Preserve legacy synchronous popup Print / Save PDF and 1400px PNG download.
+  Export immutable click-time complete jobs with metadata and every operation;
+  escape print text, wrap PNG text and report size/failure without truncation.
+  Export must never save, migrate or upload a job.
 - Authorized numerical addition: eligible Hot Tap-stage Rod MCO = Pilot on pipe
   + MCO, matching legacy calcHotTap. Keep current strict invalid/fraction/signed
   and blank-LD rules. Rod MCO is a rod reading, not the MCO cutout distance.

@@ -1,8 +1,8 @@
-const BUILD = 'pre-alpha18';
+const BUILD = 'pre-alpha19';
 const PREFIX = 'tapcalc-pre-alpha-';
 const CACHE = PREFIX + BUILD;
 const scope = new URL('./', self.location.href);
-const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?v='+BUILD,'./workspace-store.mjs?v='+BUILD,'./workspace-database.mjs?v='+BUILD,'./model.mjs?v='+BUILD,'./review.mjs?v='+BUILD,'./presentation.mjs?v='+BUILD,'./help.mjs?v='+BUILD,'./measurement-help.mjs?v='+BUILD,'./measurement-figures.mjs?v='+BUILD,'./eta.mjs?v='+BUILD,'./eta-view.mjs?v='+BUILD,'./auxiliary.mjs?v='+BUILD,'./references.mjs?v='+BUILD,'./reference-data.mjs?v='+BUILD,'./reference-supplement-data.mjs?v='+BUILD,'./reference-helpers.mjs?v='+BUILD,'./pipe-data.mjs?v='+BUILD,'./firebase-config.js?v='+BUILD];
+const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?v='+BUILD,'./exports.mjs?v='+BUILD,'./workspace-store.mjs?v='+BUILD,'./workspace-database.mjs?v='+BUILD,'./model.mjs?v='+BUILD,'./review.mjs?v='+BUILD,'./presentation.mjs?v='+BUILD,'./help.mjs?v='+BUILD,'./measurement-help.mjs?v='+BUILD,'./measurement-figures.mjs?v='+BUILD,'./eta.mjs?v='+BUILD,'./eta-view.mjs?v='+BUILD,'./auxiliary.mjs?v='+BUILD,'./references.mjs?v='+BUILD,'./reference-data.mjs?v='+BUILD,'./reference-supplement-data.mjs?v='+BUILD,'./reference-helpers.mjs?v='+BUILD,'./pipe-data.mjs?v='+BUILD,'./firebase-config.js?v='+BUILD];
 // Approved figures are cache-on-use, never an installation-time image download.
 const FIGURES=['hot-tap-md-crop.webp','negative-ld-crop.webp','positive-ld-crop.webp','plant-pt-crop.webp','pipeline-pt-crop.webp'].map(file=>'./measurement-figures/'+file+'?v='+BUILD);
 self.addEventListener('install', event => event.waitUntil(

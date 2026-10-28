@@ -1,33 +1,29 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {readFileSync,readdirSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
-const root=fileURLToPath(new URL('../',import.meta.url)),base='b1c87408a9d77e3937d7872555b22f0f89776e83';
+const root=fileURLToPath(new URL('../',import.meta.url)),base='c183cb28c5f5ff51db182e62afb185d1c424c378';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer:30*1024*1024}).replace(/\r\n/g,'\n');
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const identity=body=>body.replaceAll('pre-alpha18','pre-alpha19').replaceAll('Pre-Alpha 18','Pre-Alpha 19').replaceAll('PRE-ALPHA 18','PRE-ALPHA 19').replaceAll('Pre-Alpha18','Pre-Alpha19');
 const hash=body=>createHash('sha256').update(body).digest('hex');
-const app=['AGENTS.md','auxiliary.mjs','eta-view.mjs','eta.mjs','firebase-config.js','help.mjs','index.html','measurement-figures.mjs','measurement-help.mjs','model.mjs','presentation.mjs','reference-helpers.mjs','references.mjs','review.mjs','service-worker.js','workspace-store.mjs','workspace.mjs'];
-const tests=['pre-alpha-hot-tap-ld-ui.mjs','pre-alpha-mco-ui.mjs','pre-alpha-mco.mjs','pre-alpha-rod-mco.mjs','pre-alpha-measurement-help.mjs','pre-alpha-measurement-help-ui.mjs','pre-alpha-measurement-figures.mjs','pre-alpha-original-figures-ui.mjs','pre-alpha-pdf-cancellation.mjs','pre-alpha-pdf-worker-ui.mjs','pre-alpha-release-identity.mjs','pre-alpha-source-boundary.mjs','release-check.mjs'];
-const workflow='.github/workflows/library-safeguard.yml';
-const allowed=new Set([...app.map(name=>'pre-alpha/'+name),...tests.map(name=>'tests/'+name),workflow]);
-for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))assert.ok(allowed.has(path),'Outside authorized local18 Rod MCO parity slice: '+path);
-assert.equal(git('diff','--name-only','--diff-filter=D',base,'--').trim(),'');
-for(const path of ['measurement.js','cloud-sync.js','firestore.rules','dev/measurement.js','pre-alpha/new-original.webp','pre-alpha/measurement-figures/extra.webp','private-source-review.txt'])assert.equal(allowed.has(path),false);
-const pinned={
-  'model.mjs':'bd272aba6067fc119408104439fe112addb1a93a781513321440ad482e3dd4e4',
-  'presentation.mjs':'362ed286e8c15f1868c48ca32799a5cf38ebe8261fba10b41848e74dd9979c03',
-  'workspace.mjs':'01088c4edf8cfd10d79f7cb5ca833a77a848496a67a471051d0ee31eafaee64d',
-  'help.mjs':'3f605b31d49cc019afb421893e901aea209677a4eda641a1d331c2a2334eb2bc'
+const functional={
+ 'pre-alpha/AGENTS.md':'7140482acb35c63f5551877a41dcc2cc2b6440405a78b4abdfe4ce00be7f8cb1',
+ 'pre-alpha/index.html':'40b954d9f2fbfc84495e58ab2d443bc14760d65df51a7673dfec84a0c03adb19',
+ 'pre-alpha/workspace.mjs':'25f9fa9663da90c28d176a5c1ce6bd3959cdf3c51e231a1db790554bffe9b563',
+ 'pre-alpha/service-worker.js':'eca7d072fb308e982e2b9b6eb247cc12260dbcb528704431dba4673e0cf6caa8',
+ 'pre-alpha/exports.mjs':'2277209b3658d8d50a9c4e95bfaac3f73861da8f08bf15409f57f498b6c35583',
+ 'tests/release-check.mjs':'9227440af66afcd329a2011cb1aa75aeabe8e60788aca76e59c9c34ab0e07dbb',
+ 'tests/pre-alpha-exports.mjs':'9562f0e219c78c2f87697045e7e6466475a4cc1b9acff6e0fae979b7db11d91f',
+ 'tests/pre-alpha-exports-ui.mjs':'bbf85aee22d6a76f9719097633deaa3d5cd308eda35755c3711bff31c53559a9'
 };
-for(const [name,digest]of Object.entries(pinned))assert.equal(hash(text('pre-alpha/'+name)),digest,'Exact bounded Rod MCO implementation: '+name);
-for(const name of app.filter(name=>!['AGENTS.md','index.html',...Object.keys(pinned)].includes(name)))
-  assert.equal(text('pre-alpha/'+name),git('show',base+':pre-alpha/'+name).replaceAll('pre-alpha17','pre-alpha18'),'Identity-only outside Rod MCO model/presentation/controller/help: '+name);
-assert.equal(text('pre-alpha/index.html'),git('show',base+':pre-alpha/index.html').replaceAll('pre-alpha17','pre-alpha18').replaceAll('Pre-Alpha 17','Pre-Alpha 18').replaceAll('PRE-ALPHA 17','PRE-ALPHA 18'));
-const expectedWorkflow=git('show',base+':'+workflow).replaceAll('Fetch immutable published16 base for approved-content scope guard','Fetch immutable published17 base for approved-content scope guard').replaceAll('run: git fetch --no-tags --depth=1 origin 514157d290faa81714d48892095ad4758b5716a3','run: git fetch --no-tags --depth=1 origin '+base);
-assert.equal(text(workflow),expectedWorkflow,'Only immutable scope-base CI wiring may change; publishing/security policy stays unchanged');
-const names=['hot-tap-md-crop.webp','negative-ld-crop.webp','positive-ld-crop.webp','plant-pt-crop.webp','pipeline-pt-crop.webp'];
-const dir=new URL('../pre-alpha/measurement-figures/',import.meta.url);assert.deepEqual(readdirSync(dir).sort(),names.toSorted());
-for(const name of names){const path='pre-alpha/measurement-figures/'+name;assert.equal(hash(readFileSync(new URL('../'+path,import.meta.url))),hash(execFileSync('git',['show',base+':'+path],{cwd:root})));}
-assert.equal(text('pre-alpha/workspace.css'),git('show',base+':pre-alpha/workspace.css'),'No unrelated style changes');
-console.log('PASS local18 boundary: exact Rod MCO-only functional delta,17 identity-only remainder, same five images, unchanged math sources/cloud transport/storage/published root-live-dev, strict workflow-base wiring and no private/source assets');
+const identityPaths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().split('\n').filter(path=>/^pre-alpha\/[^/]+\.(?:mjs|js|html|css)$/.test(path)||/^tests\/pre-alpha[^/]+\.mjs$/.test(path));
+const allowed=new Set([...Object.keys(functional),...identityPaths,'tests/pre-alpha-source-boundary.mjs']);
+for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))assert.ok(allowed.has(path),'Outside authorized local19 export parity: '+path);
+assert.equal(git('diff','--name-only','--diff-filter=D',base,'--').trim(),'');
+for(const [path,pin]of Object.entries(functional))assert.equal(hash(text(path)),pin,'Exact reviewed export-only implementation: '+path);
+for(const path of identityPaths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-source-boundary.mjs'))assert.equal(text(path),identity(git('show',base+':'+path)),'Identity-only outside export integration: '+path);
+for(const path of ['measurement.js','cloud-sync.js','firestore.rules','dev/measurement.js','.github/workflows/library-safeguard.yml','pre-alpha/workspace.css','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected source: '+path);
+assert.equal(git('diff','--name-only',base,'--','pre-alpha/measurement-figures').trim(),'','Same five approved figure bytes');
+console.log('PASS local19 boundary: validated18 base, exact export-only integration, identity-only remainder, unchanged formulas/storage/cloud/workflow/published source and approved figures');
