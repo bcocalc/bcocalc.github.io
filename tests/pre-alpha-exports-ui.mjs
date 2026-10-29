@@ -1,5 +1,6 @@
 // Synthetic persistent localhost profiles. No production records or writes.
 import assert from 'node:assert/strict';
+import {cleanupExports,observeChildClose} from './runner-cleanup.mjs';
 import {spawn} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {mkdtempSync,readFileSync} from 'node:fs';
@@ -17,6 +18,7 @@ const fixture={id:'export-fixture',record:{job:{client:'Synthetic client',pressu
 ]}}};
 const history=JSON.stringify([fixture]),sentinel='{"synthetic":"export live key unchanged"}';
 const server=spawn(process.execPath,['tests/sync-preview.mjs'],{stdio:['ignore','pipe','inherit']});
+const preview=observeChildClose(server);
 let context,page;
 try{
   const base=await new Promise((resolve,reject)=>{
@@ -92,4 +94,4 @@ try{
     console.log('PASS exports '+engine+'/'+device+': actual synchronous popup/print, escaped complete three-operation metadata/current/historical/saved output, decoded wrapped1400px PNG, blocked-popup handling, raw/original/live-key invariants, reload and browser-process restart; profile '+profile);
   }
 }catch(error){console.error('EXPORT_UI_FAILURE',JSON.stringify({engine,message:error.message,stack:error.stack}));throw error;}
-finally{await context?.close();server.kill();}
+finally{await cleanupExports(context,preview,{report:({owner,phase,error})=>{process.exitCode=1;console.error('EXPORT_CLEANUP_FAILURE',JSON.stringify({owner,phase,message:error.message,stack:error.stack}));}});}

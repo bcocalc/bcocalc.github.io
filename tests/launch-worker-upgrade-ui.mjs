@@ -1,6 +1,7 @@
 // New promotion routing only. Frozen published root -> local modern launch -> legacy rollback.
 // Isolated localhost profiles, synthetic complete jobs/captures, no production records.
 import assert from 'node:assert/strict';
+import {cleanupLaunch} from './runner-cleanup.mjs';
 import {createServer} from 'node:http';
 import {readFileSync,mkdtempSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
@@ -56,4 +57,4 @@ try{
   console.log('PASS launch '+engine+'/'+device+(originFailure?'/origin-unavailable':'/online')+': frozen legacy root/cache -> modern26 child owner; old installed start, explicit legacy bypass, complete jobs/pending capture/receipt and old-key preservation, process restart, route-only rollback/re-upgrade; no production writes; profile '+profile);
  }
 }catch(error){console.error('LAUNCH_STATE',JSON.stringify(await Promise.race([page?.evaluate(async()=>({title:document.title,status:document.getElementById('launch-status')?.textContent,controller:navigator.serviceWorker.controller?.scriptURL,registrations:(await navigator.serviceWorker.getRegistrations()).map(r=>({scope:r.scope,active:r.active?.scriptURL,activeState:r.active?.state,waiting:r.waiting?.scriptURL,installing:r.installing?.scriptURL})),caches:await caches.keys()})),new Promise(resolve=>setTimeout(()=>resolve('diagnostic timeout'),2000))]).catch(e=>e.message)));console.error('LAUNCH_UI_FAILURE',JSON.stringify({engine,device,step,url:page?.url(),message:error.message.slice(0,2000),stack:error.stack?.slice(0,2500)}));process.exitCode=1;}
-finally{await Promise.race([context?.close(),new Promise(resolve=>setTimeout(resolve,5000))]);const closing=new Promise(resolve=>server.close(resolve));server.closeAllConnections();await closing;if(pageErrorCount&&!process.exitCode){process.exitCode=1;console.error('LAUNCH_LATE_PAGE_ERROR','Page errors remain failures, including teardown.');}}
+finally{await cleanupLaunch(context,server,{report:({owner,phase,error})=>{process.exitCode=1;console.error('LAUNCH_CLEANUP_FAILURE',JSON.stringify({owner,phase,message:error.message,stack:error.stack}));},checkLateErrors:()=>{if(pageErrorCount){process.exitCode=1;console.error('LAUNCH_LATE_PAGE_ERROR','Page errors remain failures, including teardown.');}}});}

@@ -8,12 +8,15 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
+  "tests/pre-alpha-exports-ui.mjs": "ec522552727976091d2f80229ab34bc5b3d564200602d138c9cb2959e738b7e5",
+  "tests/runner-cleanup-test.mjs": "152bedfcd08e3f6b35ac8b7c3d03852119f72d69b4533be58245462e3adca800",
+  "tests/runner-cleanup.mjs": "c25cb1b3eae4b354d19c15cf5caaa9c362780ece52479d21265dddbeb3fae565",
   "tests/pre-alpha-release-identity.mjs": "aa81487361379f4d23057896f10a9fb42a72c8dbe7ca18b8f33de2fad6e71b92",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
   "measurement.js": "788d7b370acf21fca7ef47f57ff2ec0ab7c76f415a63fa5fe33a2930fb36a87d",
   "docs/pre-alpha26-local-launch-readiness.md": "4509f54a989f570d55b757a7251b6147c2fa9ec46c50d341fc8d76fe55745a21",
-  "tests/launch-worker-upgrade-ui.mjs": "59507843b46aa25f222cfa37d94f6431acfb4efb40bbf13a0b945ed609d562f4",
-  "tests/launch-readiness.mjs": "cec306d6eaf97b40cb320c7eb055f4f68d38ae67d6c1708549852fd8d86cbc9a",
+  "tests/launch-worker-upgrade-ui.mjs": "80e0448a6549142a585e8f75dc37fc19637db1b3bb6ea449ec15df3100c482c7",
+  "tests/launch-readiness.mjs": "dbdc27882abf950c128d02611bfe0ca6871384d6769bdd6ada1b5274eb388d22",
   "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
   "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",
   "service-worker.js": "1970e7c4f8be9fa2d0fe069ad4be5ef6b2c4c4d26fd3dbe74057ee6e0cb1bc96",
