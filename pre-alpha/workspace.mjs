@@ -510,7 +510,7 @@ refreshShared();
 if ('serviceWorker' in navigator) {
   const workerScope=new URL('./',location.href);
   navigator.serviceWorker.getRegistration(workerScope.href)
-    .then(registration=>registration&&registration.scope===workerScope.href
+    .then(registration=>registration&&registration.scope===workerScope.href&&registration.active?.scriptURL===new URL('service-worker.js?v='+BUILD,workerScope).href
       ? registration.update()
       : navigator.serviceWorker.register(new URL('service-worker.js?v='+BUILD,workerScope).href,{scope:workerScope.pathname,updateViaCache:'none'}).then(registration=>registration.update()))
     .catch(()=>{});

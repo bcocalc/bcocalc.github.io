@@ -251,3 +251,39 @@ cancellation inference entirely. The specific correction must be reviewed
 before the already-authorized test-branch upload and full pinned Linux gate.
 Main/Pages/live publication, private template upload and production records
 remain outside scope. No new generic approval is requested by this source.
+
+## Installed-worker current-build correction after Linux run 81
+
+Run 40912197122 on fda9454 fetched every required baseline and passed all
+33 units. Both browser component jobs then failed the first frozen10 -> 26
+installed-worker upgrade at the unchanged current-controller-URL assertion;
+the full release aggregate was skipped. Independent offline/cache controls
+passed. A version-matched one-case online control reproduced the timeout and
+read back page edition 26 with controller/active script URL still ending in
+pre-alpha10. This is a current-build identity regression, not a timeout budget
+or missing-baseline issue.
+
+The child boot may reuse a registration only when both its exact scope and
+active script URL match the current BUILD. An older script URL instead takes
+the existing current-build registration path. The meaningful version-query
+upgrade assertion and all data/rollback/offline assertions remain unchanged.
+A stale-child unit case proves it must register the current URL instead of
+calling update on the old URL. No root worker, calculator, data/store/routing
+or backend behavior is changed by this one-condition correction. The full
+installed-worker matrix still requires Linux validation; focused online
+controls do not replace its offline/rollback coverage.
+
+### Local current-build correction validation
+
+The before-fix pinned Chromium one-case control failed the same unchanged
+controller-URL predicate and read back page edition 26 with active/controller
+URL pre-alpha10. After the one-condition correction, pinned Chromium and WebKit
+both passed that same focused frozen10 -> 26 online identity/raw-store control,
+with active/controller URL pre-alpha26. All 33 unit/source scripts passed.
+
+The control intentionally stops before offline/rollback scenarios and is not a
+release-gate substitute. The repository's installed-worker test, its timeout,
+current-version predicate and all data/offline/rollback assertions are unchanged.
+The full pinned Linux matrix must run on the new exact candidate after review.
+No new application-source upload has occurred for this correction; root files,
+backend, production records, private PDF transfer and publication are unchanged.
