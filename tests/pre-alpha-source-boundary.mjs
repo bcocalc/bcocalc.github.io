@@ -10,16 +10,16 @@ const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('
 const functional={
   "tests/pre-alpha-release-identity.mjs": "aa81487361379f4d23057896f10a9fb42a72c8dbe7ca18b8f33de2fad6e71b92",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
-  "measurement.js": "fb79d066895b63d73dd070f1297c6799f90ee6998e8415af4b79e37450ec8768",
-  "docs/pre-alpha26-local-launch-readiness.md": "8c14b01e0620ad8b59e8b506eff26e630cefaac4e0ca5ed5d6f3505cfb543ccd",
+  "measurement.js": "06fe66e10eb2b7688d36c36af12ab023de6d588b3ca5dc0adf3c3aab2bb34273",
+  "docs/pre-alpha26-local-launch-readiness.md": "a86117f85e06f10375760ee4946c905a63b46e070281c887f31b7c8b177192c0",
   "tests/launch-worker-upgrade-ui.mjs": "ec799f97a0f73f77b0a2687e138149c1cda47528b9307c80efd821e8f73eb85f",
-  "tests/launch-readiness.mjs": "7d1d363f175872fb6bf75cf36bf0eba18e11e2597202f3bee8128b2e88005c91",
+  "tests/launch-readiness.mjs": "73ebbaf04ab71982db197def15d3736259d7b14c3f77b0b99b76e913d4f3cff0",
   "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
   "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",
   "service-worker.js": "1970e7c4f8be9fa2d0fe069ad4be5ef6b2c4c4d26fd3dbe74057ee6e0cb1bc96",
   "manifest.json": "479a51a3de2ccee5c46c661591395031a6126b6241ec3a612d4640b05c38f763",
   "index.html": "0bd867f99dab99483894b03289b02c8f0230f8818df3eaf2736c8bd352d1f008",
-  "launch.js": "c6dc63143b13e6509424603ce298fabe8cf2615dfffc64f709d490a45708044c",
+  "launch.js": "1d53a737087a34c9192d3a894dee0998dfe65e8ae83b3bfbcef1d97e950ed2ee",
   "docs/pre-alpha-worksheet-local-draft.md": "1308008bf3d9e3f4fdfd143facb2de78bc06db7ad09afe6e6ca8381af08ce702",
   "pre-alpha/worksheet-print.css": "04de166fd4e01709797e08fb0ba2a1b0ecd1afbd33a7c8c2a3abcb5af080763c",
   "tests/pre-alpha-worksheet-ui.mjs": "3303c501a9df1945fa905e85327df6ab2da9684361ef3bca39f9abbb92e352a4",
@@ -57,7 +57,7 @@ for(const path of paths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-
 for(const path of ['cloud-sync.js','firestore.rules','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
 // Only the existing root registration owner changes; credentials and calculator bytes stay frozen.
 const duplicateWorkerOwner="if ('serviceWorker' in navigator) {\n  window.addEventListener('load', async () => {\nnavigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});\n  });\n}\n";
-const previewLifecycle="window.addEventListener('beforeunload',()=>{machineReferenceVisualRenderToken+=1;});\nwindow.addEventListener('pagehide',()=>{machineReferenceVisualRenderToken+=1;});\nwindow.addEventListener('pageshow',(event)=>{if(event.persisted)updateMachineReferenceSummary();});\n";
+const previewLifecycle="let machineReferencePageHidden=false,machineReferenceResumeTimer=null;\nwindow.addEventListener('beforeunload',()=>{\n  machineReferenceVisualRenderToken+=1;\n  clearTimeout(machineReferenceResumeTimer);\n  machineReferenceResumeTimer=setTimeout(()=>{machineReferenceResumeTimer=null;if(!machineReferencePageHidden)updateMachineReferenceSummary();},0);\n});\nwindow.addEventListener('pagehide',()=>{\n  machineReferencePageHidden=true;machineReferenceVisualRenderToken+=1;\n  clearTimeout(machineReferenceResumeTimer);machineReferenceResumeTimer=null;\n});\nwindow.addEventListener('pageshow',(event)=>{\n  machineReferencePageHidden=false;clearTimeout(machineReferenceResumeTimer);machineReferenceResumeTimer=null;\n  if(event.persisted)updateMachineReferenceSummary();\n});\n";
 assert.equal(text('measurement.js').replace(previewLifecycle,''),git('show',base+':measurement.js').replace(duplicateWorkerOwner,''),'Calculator source unchanged except worker duplicate removal and preview unload/restore lifecycle');
 const rootConfig=text('firebase-config.js'),frozenRootConfig=git('show',base+':firebase-config.js'),oldOwnerStart=frozenRootConfig.indexOf('  function registerFreshServiceWorker(){'),oldOwnerEnd=frozenRootConfig.indexOf('  function bootTapCalcShell(){',oldOwnerStart),newOwnerStart=rootConfig.indexOf('  let rootWorkerPreparation;'),newOwnerEnd=rootConfig.indexOf('  function bootTapCalcShell(){',newOwnerStart);
 assert.ok(oldOwnerStart>=0&&oldOwnerEnd>oldOwnerStart&&newOwnerStart>=0&&newOwnerEnd>newOwnerStart);

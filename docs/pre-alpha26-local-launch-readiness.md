@@ -160,12 +160,12 @@ registration semantics and keeping the real workspace source executable in the
 network-free VM harness. The URL constructor/build/scope identity assertions
 remain exact; no application or harness assertion is removed.
 
-### Actual local review outcome
+### Actual a3cd50e local review outcome (before these corrections)
 
-The current edited candidate passed all 33 unit/source scripts. Its pinned
+The a3cd50e candidate passed all 33 unit/source scripts. Its pinned
 Playwright 1.64 Chromium launch regression passed phone and desktop, including
 automatic rollback/re-upgrade, restart, complete durable jobs/captures/receipts,
-legacy keys and page-error assertions. The final WebKit run crashed its target
+legacy keys and page-error assertions. Its last WebKit run crashed its target
 during the phone rollback identity probe; it exited failure and desktop did not
 run. Earlier controls and intermediate candidates are retained as evidence,
 not substituted for this failed result. No retry-until-pass is authorized here.
@@ -176,3 +176,39 @@ with the same calculator/config lifecycle edits. The complete pinned Linux
 this new diff; main, the public readiness branch and diagnostic branch remain
 unchanged. No publication, private template upload or production record write
 was performed. This local repair is reviewable but is not release-ready.
+
+## Two bounded review corrections
+
+The launcher applies one 20-second deadline to the complete preparation phase,
+including lookup, registration, update and both identity checks. A timed-out
+attempt restores Retry and failure feedback. Native promises cannot be canceled,
+so an attempt-liveness check after every await prevents late settlement from
+continuing preparation or navigating. Exact active/controller identities remain
+required. Deterministic tests cover never-settling lookup/register/update, busy
+coalescing, a successful explicit retry and stale completion after timeout.
+
+Preview invalidation now schedules recovery if beforeunload is followed by no
+pagehide. Actual pagehide cancels that recovery; persisted pageshow still resumes
+the selected reference. Tests exercise canceled/failed navigation with usable
+preview/fallback afterward, actual departure and browser restoration. No worker
+policy, calculator formula, data/store behavior or unrelated source is changed
+by these two corrections. Public upload remains held for review.
+
+### Bounded-correction candidate outcome
+
+All 33 unit/source scripts passed on the corrected application source, including
+never-settling lookup/register/update, timeout/Retry/stale-result behavior and
+beforeunload without pagehide with a usable retained-page preview/fallback.
+The actual pinned Playwright 1.64 Chromium and WebKit online launch regression
+both passed phone and desktop once on this edit, with all exact-identity,
+complete data, restart, rollback/re-upgrade and page-error assertions intact.
+The prior WebKit crash remains historical evidence, not this candidate's result.
+
+This review delta changes root launch.js and measurement.js only, plus focused
+tests, exact pins and this record. The cumulative unuploaded application files
+are root firebase-config.js, launch.js, measurement.js, service-worker.js and
+pre-alpha/workspace.mjs. No Firebase settings/keys/credentials, formulas, store
+semantics, original PDFs or public workflow changes are included. The complete
+85-script pinned Linux run has not run on this candidate and public upload
+remains held for review. Original-template, installed-iPhone and final launch
+approval gates remain open. No publication or production writes occurred.
