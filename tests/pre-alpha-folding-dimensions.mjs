@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import {calculateFoldingDimensions,calculateFoldingHead,helperReference,parseHelperMeasurement} from '../pre-alpha/reference-helpers.mjs';
-import {currentPipeReferenceValues} from '../pre-alpha/references.mjs';
+import {calculateFoldingDimensions,calculateFoldingHead,helperReference,helperFields,parseHelperMeasurement} from '../pre-alpha/reference-helpers.mjs';
+import {currentPipeReferenceValues,referenceTables} from '../pre-alpha/references.mjs';
 import {TRUE_OD} from '../pre-alpha/pipe-data.mjs';
 let checks=0;
 const equal=(value,expected,message)=>{assert.deepEqual(value,expected,message);checks++;};
@@ -37,4 +37,8 @@ const transfer=currentPipeReferenceValues('foldinghelper',operation);equal(trans
 equal(parseHelperMeasurement('-0 1/2'),-.5,'Existing signed fraction convention preserved for set-point inputs');
 const view=helperReference('foldinghelper',{pod:'6 5/8',wall:'1/4'});equal(view.tables[0].rows[0][1],'Not available');equal(view.tables[1].rows.map(row=>row[1]),['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);
 equal(view.lists[0].items.some(x=>x.includes('not wheel diameters')&&x.includes('endpoint')),true);
+const assembly=referenceTables('foldinghead',{topic:'assembly',pod:'6 5/8',wall:'1/4',md:'bad'});equal(assembly.tables.length,1);equal(assembly.tables[0].rows.map(row=>row[1]),['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);equal(assembly.tables[0].title,'Folding Head backing ring and wheel positions');equal(assembly.lists.some(list=>list.title==='Head Assembly - source reminders'),true);equal(assembly.issue,'');equal(assembly.tables[0].rows.slice(2).every(row=>row[0].includes('wheel position from center mark')),true);
+const setup=referenceTables('foldinghead',{topic:'helper',md:'12 1/2',ld:'1/4',ldSign:'subtract',pod:'6 5/8',wall:'1/4',start:'-0 1/2'});equal(setup.tables.length,1);equal(setup.tables[0].rows.map(row=>row[1]),['18.6250 in','18.1250 in']);
+const standalone=helperFields('foldinghelper',{topic:'assembly'});equal(standalone.map(field=>field.key),['foldingPipe','wall']);equal(standalone[0].options.some(([key,label])=>key==='CarbonSteel:6.0'&&label.includes('6.625 in actual O.D.')),true);equal(helperFields('foldinghelper',{topic:'assembly',foldingPipe:'custom'}).map(field=>field.key),['foldingPipe','pod','wall']);equal(referenceTables('foldinghead',{topic:'assembly',pod:'6 5/8'}).resolvedPipeOd,'6.6250 in');equal(referenceTables('foldinghead',{topic:'assembly',pod:'bad'}).resolvedPipeOd,'Not available');
+equal(referenceTables('foldinghead',{topic:'assembly',pod:'+1/4'}).resolvedPipeOd,'Not available');equal(referenceTables('foldinghead',{topic:'assembly',pod:'.00001'}).resolvedPipeOd,'<0.0001 in');
 console.log('PASS '+checks+' Folding Head dimension checks: actual O.D., fractions, independent inputs, missing/invalid/geometry/precision boundaries, positive result guards, source/datum labels and no job mutation.');

@@ -8,6 +8,11 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha25').replaceAll('Pre-Alpha 24','Pre-Alpha 25').replaceAll('PRE-ALPHA 24','PRE-ALPHA 25').replaceAll('Pre-Alpha24','Pre-Alpha25');
 const functional={
+  "tests/pre-alpha-reference-selectors.mjs": "4ca60772877b50020e6347f2843837ecd7de08d21168d642e4851125c43d8ad4",
+  "tests/pre-alpha-folding-dimensions-ui.mjs": "fc25e379a1e576b221ba1201a72df60dd0d6cd15ea4c222d1123cfcaf6ad4591",
+  "tests/pre-alpha-folding-dimensions.mjs": "bc66befff6e8f596aaa9322160cd903f59817ad228aeacb030895b87c324c3b5",
+  "pre-alpha/references.mjs": "e2d4d2f8a8747d4cc477e3a582f0b98a6c7388a436e0e66588dc40985f54e046",
+  "pre-alpha/reference-helpers.mjs": "99ba15b95acf88d5167ddd2ec861f72a756fd7c48788ac41ee8718dbf805edd1",
   ".github/workflows/library-safeguard.yml": "1750e2f452b4960143d652add2a7a832de7be812bc70070e0c8fc8040f091e65",
   "tests/pre-alpha-modern-sharing.mjs": "cc80f566738a1d004d333a593f54f70b510de2d04940e115c7aa6bf41e24f004",
   "pre-alpha/AGENTS.md": "1231acc377a48f032bca6399d0a7db12d4ccd97b3c85fca51f26a7e3627a41ee",
@@ -24,10 +29,16 @@ const paths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().sp
 const allowed=new Set([...Object.keys(functional),...paths,'tests/pre-alpha-source-boundary.mjs']);
 for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))assert.ok(allowed.has(path),'Outside reviewed production activation: '+path);
 assert.equal(git('diff','--name-only','--diff-filter=D',base,'--').trim(),'');
-for(const [path,pin]of Object.entries(functional))assert.equal(createHash('sha256').update(text(path)).digest('hex'),pin,'Exact reviewed production activation: '+path);
+for(const [path,pin]of Object.entries(functional))assert.equal(createHash('sha256').update(text(path)).digest('hex'),pin,'Exact reviewed production activation and Head Assembly UI: '+path);
 for(const path of paths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-source-boundary.mjs'))assert.equal(text(path),identity(git('show',base+':'+path)),'Identity-only outside preparation: '+path);
 for(const path of ['measurement.js','cloud-sync.js','firestore.rules','firebase-config.js','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
-for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','pre-alpha/firebase-config.js','pre-alpha/reference-helpers.mjs','pre-alpha/references.mjs','pre-alpha/model.mjs','pre-alpha/families.mjs','pre-alpha/modern-envelope.mjs','pre-alpha/modern-saver.mjs','pre-alpha/shared-library.mjs','pre-alpha/modern-view.mjs'])assert.equal(text(path),identity(git('show',base+':'+path)),'Preserved math/folding/parser/store/capture/one-site library/view semantics: '+path);
+for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','pre-alpha/firebase-config.js','pre-alpha/model.mjs','pre-alpha/families.mjs','pre-alpha/modern-envelope.mjs','pre-alpha/modern-saver.mjs','pre-alpha/shared-library.mjs','pre-alpha/modern-view.mjs'])assert.equal(text(path),identity(git('show',base+':'+path)),'Preserved math/folding/parser/store/capture/one-site library/view semantics: '+path);
+// The approved Head Assembly move changes only helper presentation and wheel wording.
+const helpers=text('pre-alpha/reference-helpers.mjs'),oldHelpers=identity(git('show',base+':pre-alpha/reference-helpers.mjs'));
+const section=(source,start,end)=>{const a=source.indexOf(start),b=source.indexOf(end,a);assert.ok(a>=0&&b>a);return source.slice(a,b);};
+assert.equal(helpers.slice(0,helpers.indexOf('export const FOLDING_NOTES')),oldHelpers.slice(0,oldHelpers.indexOf('export const FOLDING_NOTES')),'Pivot, parsing and existing source data unchanged');
+assert.equal(section(helpers,'export function calculateFoldingDimensions','export const UWIRE_NOTES').replaceAll('wheel','roller'),section(oldHelpers,'export function calculateFoldingDimensions','export const UWIRE_NOTES'),'Folding formulas and validation unchanged except approved visible wheel wording');
+assert.equal(section(helpers,'export const UWIRE_NOTES','export function helperFields'),section(oldHelpers,'export const UWIRE_NOTES','export function helperFields'),'U-Wire formulas, validation and source data unchanged');
 assert.equal(git('diff','--name-only',base,'--','pre-alpha/measurement-figures').trim(),'','No original/approved image changes');
 const config=text('pre-alpha/modern-sharing-config.mjs'),transport=text('pre-alpha/modern-transport.mjs'),ui=text('pre-alpha/modern-ui.mjs');
 assert.match(config,/PRODUCTION_MODERN_BINDING=PRODUCTION_MODERN_PROPOSAL/);assert.match(config,/kind:'firestore-public',enabled:true/);assert.match(config,/database:'\(default\)'/);assert.match(config,/collection:'tapcalcModernSnapshots'/);
@@ -36,4 +47,4 @@ assert.match(ui,/binding===PRODUCTION_MODERN_BINDING/);assert.doesNotMatch(ui,/g
 const original=text('firestore.rules'),draft=text('docs/pre-alpha-shared-library-rules-draft.txt'),fragment=draft.slice(draft.indexOf('match /tapcalcModernSnapshots'),draft.indexOf('\nThis proposed policy'));
 assert.equal(text('docs/pre-alpha-production-policy-proposal.rules').split('\n').slice(2).join('\n').replace(fragment+'\n',''),original,'Policy proposal only adds the reviewed new match to unchanged checked-in legacy source; not deployed evidence');
 assert.match(text('pre-alpha/AGENTS.md'),/Runtime\/window\/localStorage values cannot activate/);
-console.log('PASS local25 boundary: fixed source production activation only; one-site workflow/full raw captures/store/folding/current math preserved from frozen24; root/dev/deployed authority/crops untouched; exact test CI pinned; local additive policy is not deployed evidence.');
+console.log('PASS local25 boundary: fixed source production activation plus local Head Assembly UI; one-site workflow/full raw captures/store/folding/current math preserved from frozen24; root/dev/deployed authority/crops untouched; exact test CI pinned; local additive policy is not deployed evidence.');

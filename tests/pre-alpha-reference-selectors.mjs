@@ -93,7 +93,7 @@ function parseControls(markup){
 }
 const filters={children:[],ownerDocument:{createElement(){return {content:{children:[]},set innerHTML(markup){this.content.children=parseControls(markup);}};}},get firstElementChild(){return this.children[0]||null;},get innerHTML(){return this.children.map(x=>x.outerHTML).join('');},insertBefore(node,position){if(node.parent){relocations++;node.remove();}const index=position?this.children.indexOf(position):this.children.length;this.children.splice(index,0,node);node.parent=this;},querySelector(selector){const key=selector.match(/data-ref-filter="([^"]*)"/)?.[1];return this.children.map(x=>x.querySelector()).find(x=>x?.dataset.refFilter===key);}};
 const root={innerHTML:'',querySelector:selector=>({'#reference-filters':filters,'#reference-content':content,'#reference-query':query}[selector]),addEventListener:(type,fn)=>listeners[type]=fn};
-createReferences(root);
+let currentOperation=null;createReferences(root,{getOperation:()=>currentOperation});
 const category=value=>listeners.change({target:{id:'reference-category',value,dataset:{}}});
 const choose=(key,value)=>{const target=filters.querySelector('[data-ref-filter="'+key+'"]');assert.ok(target,'Control exists: '+key);target.value=value;listeners.change({target});};
 const search=value=>{query.value=value;listeners.input({target:{id:'reference-query',value}});};
@@ -130,3 +130,10 @@ click('[data-ref-clear]');search('Paper Gaskets');assert.equal(checkCardParity()
 category('glossary');search('');assert.equal(checkCardParity().length,20);
 click('[data-ref-table-page]',{tableIndex:'0',refTablePage:'1'});assert.equal(checkCardParity().length,17);
 console.log('PASS responsive card markup parity: 15-field gasket, all 99 source rows, pagination; layout still requires browser checks.');
+
+// Standalone Head Assembly selection and optional BCO copying never mutate a job.
+const type=(key,value)=>{const target=filters.querySelector('[data-ref-filter="'+key+'"]');assert.ok(target);target.value=value;listeners.input({target});};
+category('foldinghead');choose('topic','assembly');click('[data-ref-clear]');choose('foldingPipe','CarbonSteel:6.0');type('wall','1/4');assert.match(content.innerHTML,/Actual pipe O.D.: 6\.6250 in/);assert.match(content.innerHTML,/5\.6250 in/);assert.equal(selected('pod'),undefined);
+choose('foldingPipe','custom');type('pod','12 3/4');type('wall','3/8');click('[data-ref-current-pipe]');assert.match(content.innerHTML,/Open a job first/);assert.equal(selected('pod'),'12 3/4');
+const opA={id:'a',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',bcoPipeID:'6 1/8'}},opB={id:'b',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',preAlphaPipeOD:'12 3/4',bcoPipeID:'12'}};const operationsBefore=JSON.stringify([opA,opB]);currentOperation=opA;click('[data-ref-current-pipe]');assert.equal(selected('foldingPipe'),'CarbonSteel:6.0');assert.equal(selected('wall'),'0.25');currentOperation=opB;category('glossary');category('foldinghead');assert.equal(selected('foldingPipe'),'CarbonSteel:6.0','Operation changes do not auto-follow');click('[data-ref-current-pipe]');assert.equal(selected('foldingPipe'),'custom');assert.equal(selected('pod'),'12.75');assert.equal(selected('wall'),'0.375');type('pod','8 5/8');type('wall','1/4');assert.equal(JSON.stringify([opA,opB]),operationsBefore);currentOperation={id:'invalid',state:{bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',bcoPipeID:''}};click('[data-ref-current-pipe]');assert.match(content.innerHTML,/incomplete or invalid/);assert.equal(selected('pod'),'8 5/8');assert.equal(selected('wall'),'1/4');choose('foldingPipe','');assert.match(content.innerHTML,/Actual pipe O.D.: Not available/);
+console.log('PASS standalone Folding Head catalog/custom OD, fractional wall, no-job fallback, optional current-operation copy, independent scratch state and no BCO mutation');

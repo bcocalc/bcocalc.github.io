@@ -64,7 +64,7 @@ export function referenceTables(category,filters={}) {
     if((filters.topic||'capacity')==='capacity')result.tables=[objects('Capacity',DATA.folding.capacityRows,[['line','Line size (in)'],['tap','Tap size (in)'],['psi','Pressure (psi)'],['bar','Pressure (bar)']])];
     else if(filters.topic==='procedures')result.tables=[table('Source procedure identifiers',['Identifier','Application'],DATA.folding.procedureRows)];
     else if(filters.topic==='overview')result.lists=[{title:'Source overview',items:SUPPLEMENT.folding.overviewNotes},{title:'Good fit',items:SUPPLEMENT.folding.goodFit},{title:'Watch outs',items:SUPPLEMENT.folding.watchOuts},{title:'DS-803 source details',items:[SUPPLEMENT.folding.ds803Note]}];
-    else if(filters.topic==='assembly')result.lists=[{title:'Head assembly — source reminders',items:SUPPLEMENT.folding.headAssembly}];
+    else if(filters.topic==='assembly'){const assembly=helperReference('foldinghelper',filters);result.tables=assembly.tables;result.issue=assembly.issue;result.resolvedPipeOd=assembly.resolvedPipeOd;result.lists=[...assembly.lists,{title:'Head Assembly - source reminders',items:SUPPLEMENT.folding.headAssembly}];}
     else result.lists=[{title:'Setup checks',items:DATA.folding.setupChecks},{title:'Execution checks',items:DATA.folding.executionChecks},{title:'Concrete cylinder pipe reminders',items:DATA.folding.pccpChecks}];
   }
   if(category==='fieldmanual'){
@@ -253,7 +253,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
     let markup;
     if(category==='cutters')markup='';
     else if(category==='smartstop')markup=select('size','SmartStop size',DATA.smartstop.suffixCharts.map(chart=>[chart.size,chart.label]))+input('wall','Wall filter (positive decimal inches)')+input('id','Pipe I.D. filter (positive decimal inches)');
-    else if(category==='foldinghead')markup=select('topic','Folding Head topic',[['capacity','Capacity'],['helper','Set point, backing ring & rollers'],['assembly','Head assembly'],['overview','Source, fit and limitations'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
+    else if(category==='foldinghead')markup=select('topic','Folding Head topic',[['capacity','Capacity'],['helper','Set point'],['assembly','Head Assembly'],['overview','Source, fit and limitations'],['procedures','Procedure identifiers'],['checks','Source checklists']]);
     else if(category==='fieldmanual')markup=select('topic','Field manual topic',[['thread','Thread make-up'],['all','All manual topics / search'],['rpm','Cutter RPM'],['histop','Hi-Stop setup'],['machines','Machine specifications'],['checks','Post-job checks / tolerances']]);
     else if(category==='fractions')markup=input('decimal','Decimal or fraction to convert (in)')+select('rounding','Round to nearest',[['64','1/64 in'],['32','1/32 in'],['16','1/16 in']]);
     else markup='';
@@ -261,8 +261,9 @@ export function createReferences(root,{getOperation=()=>null}={}) {
       if(!field.options.some(([value])=>value===values[field.key]))values[field.key]=field.options[0][0];
       markup+=select(field.key,field.label,field.options);
     }
-    const helper=category==='foldinghead'&&values.topic==='helper'?'foldinghelper':['pivothead','uwire'].includes(category)?category:'';
+    const helper=category==='foldinghead'&&['helper','assembly'].includes(values.topic)?'foldinghelper':['pivothead','uwire'].includes(category)?category:'';
     if(helper){
+      if(category==='foldinghead'&&values.topic==='assembly'){const [material,size]=String(values.foldingPipe||'').split(':');const selected=TRUE_OD[material]?.[size];if(String(values.pod??'').trim()&&values.foldingPipe!=='custom'&&String(selected??'')!==String(values.pod))values.foldingPipe='custom';}
       const fields=helperFields(helper,values);
       for(const field of fields){
         if(field.options&&!field.options.some(([value])=>value===values[field.key]))values[field.key]=field.options[0][0];
@@ -270,7 +271,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
       }
       markup+=(fields.map(field=>field.options?select(field.key,field.label,field.options):input(field.key,field.label)).join(''));
     }
-    if(helper)markup+='<button type="button" data-ref-current-pipe data-ref-control="$current-pipe">Use current pipe (reference only)</button>';
+    if(helper)markup+='<button type="button" data-ref-current-pipe data-ref-control="$current-pipe">'+(category==='foldinghead'&&values.topic==='assembly'?'Copy current BCO pipe (reference only)':'Use current pipe (reference only)')+'</button>';
     if(category==='fractions')markup+='<div data-ref-control="$fractions" class="fraction-quick" role="group" aria-label="Quick decimal inserts">'+[['0.0625','1/16'],['0.1250','1/8'],['0.2500','1/4'],['0.3750','3/8'],['0.5000','1/2']].map(([value,label])=>'<button type="button" data-ref-decimal="'+value+'">'+label+'</button>').join('')+'</div>';
     if(referenceSelectionFields(category,values).length||['pivothead','uwire','foldinghead','fractions','smartstop'].includes(category))markup+='<button type="button" data-ref-clear data-ref-control="$clear">Clear reference inputs</button>';
     reconcileReferenceControls(filters,markup);
@@ -279,6 +280,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
     for(const stop of previews)stop();previews.clear();
     const data=referenceView(category,values,query);content.dataset.helpContext=category;
     content.innerHTML=(data.qualification?'<p class="warning" data-reference-qualification role="note">'+escape(data.qualification)+'</p>':'')+provenanceMarkup(category,values)+'<p class="result-hint">'+escape(data.note)+'</p>'+(transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
+      (data.resolvedPipeOd?'<p class="result-hint" data-folding-actual-od>Actual pipe O.D.: '+escape(data.resolvedPipeOd)+'</p>':'')+
       (data.prompt?'<p class="reference-prompt" role="status">'+escape(data.prompt)+'</p>':'')+
       (data.records&&!data.prompt?stackupCards(data.records,page):'')+
       data.tables.map((item,index)=>{const rows=item.rows,current=Math.min(tablePages.get(index)||0,Math.max(0,Math.ceil(rows.length/20)-1)),visible=rows.slice(current*20,current*20+20);return '<section class="reference-section"><h3>'+escape(item.title)+'</h3><p class="reference-count" role="status" tabindex="-1">'+rows.length+' matching rows'+(rows.length>20?'; showing '+(current*20+1)+'–'+(current*20+visible.length):'')+'</p>'+pagination(current,rows.length,'data-ref-table-page',index)+'<div class="reference-table-wrap" tabindex="0" role="region" aria-label="'+escape(item.title)+' table; scroll horizontally if needed"><table><thead><tr>'+item.columns.map(label=>'<th scope="col">'+escape(label)+'</th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map(value=>'<td>'+escape(value===''?'Not listed':value)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'+referenceCards(item,visible)+(rows.length?'':'<p class="result-hint">No listed match. Do not substitute a different size, class or equipment.</p>')+'</section>';}).join('')+
@@ -291,6 +293,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
     }
     else if(event.target.dataset.refFilter){
       const key=event.target.dataset.refFilter;values[key]=event.target.value;page=0;tablePages.clear();
+      if(category==='foldinghead'&&key==='foldingPipe'&&values.foldingPipe!=='custom'){const [material,size]=values.foldingPipe.split(':');const od=TRUE_OD[material]?.[size];values.pod=Number.isFinite(od)?String(od):'';}
       if(key==='topic'){for(const name of ['size','machine','cutter','manualPart','item','boringOd'])delete values[name];}
       if(key==='manualPart')delete values.item;
       if(event.target.tagName==='SELECT')controls();render();
@@ -301,7 +304,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
     if(event.target.closest('[data-ref-clear]')){transferNote='';query='';page=0;tablePages.clear();root.querySelector('#reference-query').value='';const topic=values.topic;for(const key of Object.keys(values))delete values[key];if(topic)values.topic=topic;controls();render();}
     if(event.target.closest('[data-ref-current-pipe]')){
       const helper=category==='foldinghead'?'foldinghelper':category,transfer=currentPipeReferenceValues(helper,getOperation());
-      if(transfer.issue)transferNote=transfer.issue;else{Object.assign(values,transfer.values);transferNote='Copied the current pipe into this reference only. Other helper inputs are unchanged; verify them independently. Job measurements were not changed.';}
+      if(transfer.issue)transferNote=transfer.issue;else{Object.assign(values,transfer.values);if(category==='foldinghead'){const state=getOperation()?.state||{},size=number(state.bcoPipeOD).toFixed(1),material=state.bcoPipeMaterial;values.foldingPipe=!String(state.preAlphaPipeOD??'').trim()&&TRUE_OD[material]?.[size]===Number(transfer.values.pod)?material+':'+size:'custom';}transferNote='Copied the current pipe into this reference only. Other helper inputs are unchanged; verify them independently. Job measurements were not changed.';}
       controls();render();
     }
     const quick=event.target.closest('[data-ref-decimal]');if(quick){values.decimal=quick.dataset.refDecimal;controls();render();}
