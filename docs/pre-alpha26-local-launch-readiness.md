@@ -354,3 +354,84 @@ destroy methods through both lifecycle handlers, verifies the original error
 is reported exactly once, and verifies no restart/fallback or retained task.
 This corrects an unhandled cleanup-rejection gap; it does not claim the
 remaining Linux PDF failure is resolved before Linux verification.
+
+## Pending-root readiness observation after Linux run 83
+
+Run 40926416633 on exact7fd5d58 passed all3 prerequisite jobs, then failed
+aggregate script55/85 (Chromium desktop root rollback).54 scripts passed,
+one failed,30 unrun. The outgoing root answered launch-pre-alpha26-1 while
+a replacement remained waiting; no full85 result or WebKit root/PDF proof.
+
+A bounded pinned Chromium156.0.8078.4 / Playwright1.64 observer reproduced
+this class of waiting state: replacement install settled, skipWaiting
+called/resolved once, correct replacement identity; outgoing worker had
+restarted and answered186 root identity messages. A35-second quiet
+observation after the original failure did not release it. This preserved
+the original failure and did not increase an assertion deadline. Chromium's
+version-matched registration/version implementation gates activation on
+old-worker idle/work state even after skipWaiting; an inspected worker
+restart also resets its immediate-idle-termination state. This supports a
+probe/lifecycle interaction, not a missing update call or wrong root scope.
+The Linux job itself did not record those internal counters; exact Linux
+internal ordering is not retroactively proven.
+
+The local external-only route-matcher control passed, but Playwright's
+implementation still enables protocol interception. It is not evidence of
+a native-network repair. A per-worker successful-reply memoization control
+also passed without network changes; it is diagnostic only, not the source
+correction. The final pending-state guard control passed original strict
+phone/desktop identity/data/error assertions and rollback/re-upgrade with
+original all-request routing and unchanged deadlines. Observers can affect
+timing; a Linux release pass is still required.
+
+The narrow source correction makes existing rootReady return false without
+messaging an outgoing worker while registration.installing or.waiting is
+present. The browser fixture's existing root-version helper does the same.
+Once both pending slots clear, the original active/controller version
+queries and expected identity assertions remain mandatory. No cached
+identity, activation command, network handler, force unregister, data
+mutation, worker source, timeout, error filter or expected identity changes.
+Focused unit guards throw if either path touches/probes the old controller
+while pending and prove the two exact identity checks resume afterward.
+
+Sources reviewed: Chromium156.0.8078.4 content/browser/service_worker/
+service_worker_registration.cc (IsReadyToActivate, ActivateWaitingVersion)
+and service_worker_version.cc (TriggerIdleTerminationAsap, HasNoWork,
+OnRequestTermination, StartWorkerInternal), and installed Playwright1.64
+coreBundle.js interception/continuation implementation. This is a local
+repair candidate; no further revision upload is authorized without review
+and exact approval. Original-PDF alignment and iPhone gates remain pending.
+
+The deterministic regression also executes the same readiness function with
+only the new guard removed: three retries generate three outgoing-worker
+probes while a replacement is pending. The guarded function generates none
+and still performs both exact identity checks when pending state clears.
+The prior browser-helper control touches the outgoing controller; the
+guarded helper returns pending without touching it. These tests establish
+the invalid probing pattern, not a model that proves Chromium internals.
+
+The browser root probe additionally requires registration.active.state and
+controller.state to be activated before querying version. Diagnostic traces
+showed a matching reply while state was still activating; that reply alone
+is now insufficient. Direct tests cover each activating state and retain
+the exact reply check once both are activated. Deadlines are unchanged.
+
+### Final local pending-root validation
+
+All33 unit/source scripts passed on the final state-aware source. Without
+worker/source diagnostic instrumentation, pinned Chromium passed all4
+original root-upgrade cases: phone/desktop online and phone/desktop origin
+unavailable, including installed start, legacy fallback, complete jobs,
+pending captures/receipts, old-key preservation, restart, rollback and
+re-upgrade. Network routing, expected identities, data/error assertions and
+deadlines remained unchanged. The earlier observer controls are retained
+as supporting diagnostic evidence, not substituted for these browser cases.
+
+No Windows WebKit rerun was used to chase the previously recorded crash.
+The new candidate has not run on Linux; prior run83 remains54pass/1fail/
+30unrun. The earlier Linux WebKit/PDF issue and original-template alignment
+are not claimed resolved. Local waiting reproductions included the forward
+re-upgrade direction; they establish a matching lifecycle problem class,
+not the exact unrecorded internal ordering of Linux's rollback failure.
+No further push, dispatch, deployment, production save or private source
+transfer occurred. Next revision requires review and exact upload approval.

@@ -17,7 +17,7 @@
   const timer=setTimeout(()=>done(null),350);channel.port1.onmessage=event=>done(event.data?.[key]??null);
   try{worker.postMessage({type},[channel.port2]);}catch{done(null);}
  });
- const rootReady=async reg=>(await ask(reg?.active,'tapcalc-launch-version','version'))===VERSION&&(await ask(navigator.serviceWorker.controller,'tapcalc-launch-version','version'))===VERSION;
+ const rootReady=async reg=>!reg?.installing&&!reg?.waiting&&(await ask(reg?.active,'tapcalc-launch-version','version'))===VERSION&&(await ask(navigator.serviceWorker.controller,'tapcalc-launch-version','version'))===VERSION;
  const modernReady=async reg=>(await ask(reg?.active,'tapcalc-pre-alpha-version','build'))===APP;
  async function waitReady(reg,ready,check){
   const end=Date.now()+20000;

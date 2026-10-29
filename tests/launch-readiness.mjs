@@ -35,6 +35,36 @@ for(const path of ['/pre-alpha/','/pre-alpha/reference-helpers.mjs','/dev/measur
 }
 let version;listeners.message({data:{type:'tapcalc-launch-version'},ports:[{postMessage:value=>version=value.version}]});assert.equal(version,VERSION);
 assert.match(read('service-worker.js'),/cache\.addAll\(CRITICAL/);assert.match(read('service-worker.js'),/cache:'no-store'/);
+// Readiness observation must not wake an outgoing worker while its replacement is pending.
+const rootReadyStart=source.indexOf(' const rootReady='),rootReadyEnd=source.indexOf(' const modernReady=',rootReadyStart);assert.ok(rootReadyStart>=0&&rootReadyEnd>rootReadyStart);
+for(const pending of ['installing','waiting']){
+ let priorProbes=0;const priorContext={VERSION,navigator:{serviceWorker:{controller:{}}},ask:async()=>{priorProbes++;return 'outgoing-build';}};
+ const priorReady=vm.runInNewContext(source.slice(rootReadyStart,rootReadyEnd).replace('!reg?.installing&&!reg?.waiting&&','')+';rootReady;',priorContext);
+ for(let turn=0;turn<3;turn++)assert.equal(await priorReady({[pending]:{},active:{}}),false);
+ assert.equal(priorProbes,3,'Regression control: the prior readiness code repeatedly messages the outgoing worker while '+pending);
+}
+for(const pending of ['installing','waiting']){
+ let probes=0;const nextWorker={},pendingRegistration={[pending]:{state:pending==='installing'?'installing':'installed'}};
+ Object.defineProperty(pendingRegistration,'active',{get(){throw Error('Pending replacement must not probe outgoing worker');},configurable:true});
+ const readyContext={VERSION,navigator:{serviceWorker:{controller:nextWorker}},ask:async()=>{probes++;return VERSION;}};
+ const rootReady=vm.runInNewContext(source.slice(rootReadyStart,rootReadyEnd)+';rootReady;',readyContext);
+ assert.equal(await rootReady(pendingRegistration),false);assert.equal(probes,0);
+ delete pendingRegistration[pending];Object.defineProperty(pendingRegistration,'active',{value:nextWorker});assert.equal(await rootReady(pendingRegistration),true);assert.equal(probes,2,'Exact active and controller identity checks resume after pending state clears');
+}
+const browserSource=read('tests/launch-worker-upgrade-ui.mjs'),browserAskStart=browserSource.indexOf('const ask=async('),browserAskEnd=browserSource.indexOf('\ntry{',browserAskStart);assert.ok(browserAskStart>=0&&browserAskEnd>browserAskStart);
+for(const pending of ['installing','waiting']){
+ const sw={getRegistration:async()=>({[pending]:{}})};Object.defineProperty(sw,'controller',{get(){throw Error('Test must passively observe pending replacement');}});
+ const ask=vm.runInNewContext(browserSource.slice(browserAskStart,browserAskEnd)+';ask;',{URL,location:{href:'https://fixture.invalid/measurement-card.html'},navigator:{serviceWorker:sw},MessageChannel,setTimeout,clearTimeout});
+ assert.equal(await ask({evaluate:(fn,arg)=>fn(arg)},'tapcalc-launch-version','version'),null);
+ const priorAskSource=browserSource.slice(browserAskStart,browserAskEnd).replace("if(type==='tapcalc-launch-version'){const reg=await navigator.serviceWorker.getRegistration(new URL('/',location.href).href);if(reg?.installing||reg?.waiting||reg?.active?.state!=='activated')return null;}",'');
+ const priorAsk=vm.runInNewContext(priorAskSource+';ask;',{URL,location:{href:'https://fixture.invalid/measurement-card.html'},navigator:{serviceWorker:sw},MessageChannel,setTimeout,clearTimeout});await assert.rejects(priorAsk({evaluate:(fn,arg)=>fn(arg)},'tapcalc-launch-version','version'),/Test must passively observe pending replacement/,'Regression control: prior test probe touches the outgoing controller');
+}
+for(const target of ['active','controller']){
+ const controller={state:target==='controller'?'activating':'activated',postMessage(){throw Error('Activating controller must not be probed');}},reg={active:{state:target==='active'?'activating':'activated'}};
+ const ask=vm.runInNewContext(browserSource.slice(browserAskStart,browserAskEnd)+';ask;',{URL,location:{href:'https://fixture.invalid/measurement-card.html'},navigator:{serviceWorker:{getRegistration:async()=>reg,controller}},MessageChannel,setTimeout,clearTimeout});assert.equal(await ask({evaluate:(fn,arg)=>fn(arg)},'tapcalc-launch-version','version'),null);
+}
+const actualActivated={state:'activated',postMessage(message,ports){ports[0].postMessage({version:'rollback-'+VERSION});ports[0].close();}},activatedAsk=vm.runInNewContext(browserSource.slice(browserAskStart,browserAskEnd)+';ask;',{URL,location:{href:'https://fixture.invalid/measurement-card.html'},navigator:{serviceWorker:{getRegistration:async()=>({active:actualActivated}),controller:actualActivated}},MessageChannel,setTimeout,clearTimeout});assert.equal(await activatedAsk({evaluate:(fn,arg)=>fn(arg)},'tapcalc-launch-version','version'),'rollback-'+VERSION,'Exact reply is required from activated registration/controller');
+console.log('PASS pending root guard: launcher and browser observer send no outgoing identity messages during installing/waiting; both exact root identity checks remain required afterward.');
 console.log('PASS launch unit: normal legacy and explicit bypass preserved; installed bridge; cached worker handoff; held failures; stable manifest identity/icons/scope; root/child ownership; no job/storage access.');
 
 // The existing shell owner must update the exact root registration once per page.
