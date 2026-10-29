@@ -1,3 +1,4 @@
+import {openWorksheetDraft} from './worksheet-draft.mjs?v=pre-alpha25';
 import {geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha25';
 import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha25';
 import {historicalMcoFor,historicalRodMcoFor,historicalFamilyFor} from './presentation.mjs?v=pre-alpha25';
@@ -110,6 +111,7 @@ export function installExports(document,getJob,onError){
       const snapshot=structuredClone(getJob());
       if(action==='pdf')printJob(snapshot).catch(error=>onError(error.message));
       if(action==='png')downloadJobImage(snapshot,document);
+      if(action==='worksheet')openWorksheetDraft(snapshot);
     }catch(error){onError(error.message);}
   });
 }

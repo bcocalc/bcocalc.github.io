@@ -17,6 +17,7 @@ const checks = [
   ['pre-alpha-mco.mjs', {}],
   ['pre-alpha-rod-mco.mjs', {}],
   ['pre-alpha-exports.mjs', {}],
+  ['pre-alpha-worksheet.mjs', {}],
   ['pre-alpha-shared-save.mjs', {}],
   ['pre-alpha-modern-sharing.mjs', {}],
   ['pre-alpha-production-binding.mjs', {}],
@@ -50,6 +51,7 @@ if (!args.includes('--unit-only')) {
     checks.push(['pre-alpha-hot-tap-ld-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-mco-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-exports-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['pre-alpha-worksheet-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-shared-save-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-modern-sharing-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-families-ui.mjs', { TAPCALC_BROWSER: browser }]);

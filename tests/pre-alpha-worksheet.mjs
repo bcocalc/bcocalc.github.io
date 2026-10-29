@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {WORKSHEET_SOURCE,WORKSHEET_FIELDS,createWorksheetDraft,applyHotTapCandidates,setWorksheetValue,worksheetLayout,worksheetPrintDocument,openWorksheetDraft} from '../pre-alpha/worksheet-draft.mjs';
+const state={bcoPipeMaterial:'CarbonSteel',bcoPipeOD:'6.0',preAlphaPipeOD:'6 5/8',bcoPipeID:'6',bcoCutterOD:'4',md:'10',ld:'',ptc:'1 1/4',start:'2',mt:'52'};
+const job={id:'synthetic-worksheet',title:'DRAFT synthetic worksheet',sharedState:{jobClient:'Synthetic client',jobNumber:'NOT-AN-AX-PROJECT',jobTechnician:'NOT-BOTH-PEOPLE',jobNotes:'Synthetic layout check only.'},selectedOperationId:'tap',operations:[{id:'tap',label:'Selected synthetic tap',operationType:'Hot Tap',state},{id:'other',label:'Other operation must not leak',operationType:'Hot Tap',state:{...state,md:'999',start:'999'}}],original:{future:{raw:['1/4','invalid']}}};
+const before=structuredClone(job),draft=createWorksheetDraft(job),measure=(text,font)=>[...text].length*font*.5;
+assert.deepEqual(job,before);assert.equal(WORKSHEET_SOURCE.page,5);assert.equal(WORKSHEET_SOURCE.printedDate,'08/12/2026');assert.equal(WORKSHEET_FIELDS.length,67);assert.equal(new Set(WORKSHEET_FIELDS.map(f=>f.id)).size,67);
+for(const field of WORKSHEET_FIELDS){const [x,y,right,bottom]=field.rect;assert.ok(x>=0&&y>=0&&right>x&&bottom>y&&right<=612&&bottom<=792);}
+assert.equal(draft.values.client,'Synthetic client');for(const id of ['ax','leadName','secondName'])assert.equal(draft.values[id],'');
+assert.ok(WORKSHEET_FIELDS.filter(f=>f.side).every(f=>draft.values[f.id]===''),'All numeric/manual fields initially blank');
+assert.throws(()=>applyHotTapCandidates(draft),/Confirm.*apply/);
+applyHotTapCandidates(draft,{applicabilityConfirmed:true});
+assert.deepEqual(draft.candidates,{bco:'1.0764',mco:'4.5625',rodBco:'14.3264',rodMco:'16.5625',li:'10.0000'});
+for(const f of WORKSHEET_FIELDS.filter(f=>f.binding))assert.equal(draft.values[f.id],draft.candidates[f.binding]);
+assert.equal(WORKSHEET_FIELDS.filter(f=>f.binding).length,10);
+for(const f of WORKSHEET_FIELDS.filter(f=>f.side&&!f.binding))assert.equal(draft.values[f.id],'','Unconfirmed or observation field blank: '+f.id);
+const get=id=>WORKSHEET_FIELDS.find(f=>f.id===id);
+assert.deepEqual(get('lead.hotCalc.bco').rect,[81.10,220.70,152.43,236.47]);assert.deepEqual(get('second.hotCalc.mco').rect,[351.43,253.75,422.78,268.75]);assert.deepEqual(get('lead.hotReading.rodBco').rect,[220.78,204.20,305.63,219.95]);assert.deepEqual(get('second.hotReading.rodMco').rect,[491.10,220.70,575.95,236.47]);
+setWorksheetValue(draft,'leadName','Lead only');setWorksheetValue(draft,'secondName','Second only');setWorksheetValue(draft,'lead.hotReading.rodBco','8 1/2');assert.equal(draft.values['second.hotReading.rodBco'],draft.candidates.rodBco);
+assert.throws(()=>setWorksheetValue(draft,'signature','checked'),/Unknown/);assert.ok(!WORKSHEET_FIELDS.some(f=>/sign|unlabel/i.test(f.id)));
+assert.equal(worksheetLayout(draft.values,measure).errors.length,0);
+setWorksheetValue(draft,'lead.hotCalc.md','x'.repeat(200));assert.ok(worksheetLayout(draft.values,measure).errors.length);assert.equal(draft.values['lead.hotCalc.md'].length,200);assert.throws(()=>worksheetPrintDocument('data:image/png;base64,AAAA',draft.values,measure),/nothing will be truncated/);setWorksheetValue(draft,'lead.hotCalc.md','');
+setWorksheetValue(draft,'notes','<script>not code</script> & synthetic');const html=worksheetPrintDocument('data:image/png;base64,AAAA',draft.values,measure);assert.match(readFileSync(new URL('../pre-alpha/worksheet-print.css',import.meta.url),'utf8'),/size:612pt 792pt;margin:0/);assert.match(html,/DRAFT - REVIEW REQUIRED/);assert.match(html,/&lt;script&gt;not code&lt;\/script&gt;/);assert.doesNotMatch(html,/<script>/);assert.equal((html.match(/class="sheet"/g)||[]).length,1);assert.match(html,/data-worksheet-print-field="lead.hotCalc.bco" x="116.765" y="231.06"/);
+assert.throws(()=>worksheetPrintDocument('',draft.values,measure),/verified original/);
+setWorksheetValue(draft,'notes','x'.repeat(10000));assert.ok(worksheetLayout(draft.values,measure).errors.some(e=>e.startsWith('Notes')));setWorksheetValue(draft,'notes','Synthetic');
+const absent=createWorksheetDraft({...job,operations:[{id:'tap',operationType:'Hot Tap',state:{}}]});assert.equal(absent.candidates.bco,'');assert.equal(absent.candidates.mco,'');assert.equal(absent.candidates.rodBco,'');
+for(const operationType of ['HTP','Hi-Stop','Completion Plug','ReStop']){const unsupported=createWorksheetDraft({...job,operations:[{id:'tap',operationType,state}]});assert.equal(unsupported.eligible,false);assert.ok(Object.values(unsupported.candidates).every(v=>v===''));assert.throws(()=>applyHotTapCandidates(unsupported,{applicabilityConfirmed:true}),/No fallback/);}
+const invalid=createWorksheetDraft({...job,operations:[{id:'tap',operationType:'Hot Tap',state:{...state,bcoPipeID:'bad',md:'bad'}}]});assert.equal(invalid.candidates.bco,'');assert.equal(invalid.candidates.li,'');
+assert.throws(()=>createWorksheetDraft({...job,selectedOperationId:'missing'}),/No other operation/);
+let receive,sent;const host={addEventListener:(_type,fn)=>receive=fn,removeEventListener:()=>{}},popup={closed:false,postMessage:(message,origin)=>sent={message,origin}};
+openWorksheetDraft(job,{open:()=>popup,host,sourceUrl:'https://fixture.invalid/pre-alpha/worksheet-draft.mjs'});job.operations[0].state.md='888';receive({source:popup,origin:'https://wrong.invalid',data:{type:'tapcalc-worksheet-ready'}});assert.equal(sent,undefined);receive({source:popup,origin:'https://fixture.invalid',data:{type:'tapcalc-worksheet-ready'}});assert.equal(sent.message.snapshot.operations[0].state.md,'10');assert.equal(sent.origin,'https://fixture.invalid');
+job.operations[0].state.md='10';assert.deepEqual(job,before);assert.throws(()=>openWorksheetDraft(job,{open:()=>null,host}),/window blocked/);
+for(const path of ['pre-alpha/worksheet-draft.mjs','pre-alpha/worksheet-draft-ui.mjs'])assert.doesNotMatch(readFileSync(new URL('../'+path,import.meta.url),'utf8'),/localStorage\.(?:setItem|removeItem|clear)|sessionStorage\.|addDoc\(|:commit|tapCalcCloud\.upload/);
+console.log('PASS DRAFT worksheet: 67 pinned rectangles; selected click-time snapshot; units/applicability gate; confirmed distance/rod pairing; independent technicians; metadata exclusions; unknown/observations/sign-offs blank; missing/invalid/family holds; overflow, escaping, blocked popup and no job/storage/network mutation. Original-PDF rendering remains a separate materialization gate.');

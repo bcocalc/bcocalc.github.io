@@ -8,6 +8,17 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha25').replaceAll('Pre-Alpha 24','Pre-Alpha 25').replaceAll('PRE-ALPHA 24','PRE-ALPHA 25').replaceAll('Pre-Alpha24','Pre-Alpha25');
 const functional={
+  "docs/pre-alpha-worksheet-local-draft.md": "1308008bf3d9e3f4fdfd143facb2de78bc06db7ad09afe6e6ca8381af08ce702",
+  "pre-alpha/worksheet-print.css": "04de166fd4e01709797e08fb0ba2a1b0ecd1afbd33a7c8c2a3abcb5af080763c",
+  "tests/pre-alpha-worksheet-ui.mjs": "3a5616e09c0f12c40b7d07c584ed72bb4dff73505abbabacadc3abc679a2d8f0",
+  "tests/pre-alpha-worksheet.mjs": "11bd35a79abe20dd53b735d1d438c5c77da2589c60f37d11847e04cce4b63be6",
+  "pre-alpha/service-worker.js": "7800b20d342e587075ae020abb7dec0365af168842994bb9c3594b5dd959ec2f",
+  "pre-alpha/index.html": "97b3837152e65c8b7937f35f0ce4bdd31bdbd65568104868d545cf0723a8916f",
+  "pre-alpha/exports.mjs": "6d3a11fb09ca1958d69a59d06ca57282a4191c4346ac8a0fd7ae2f859ab250ad",
+  "pre-alpha/worksheet-draft.css": "9eb896be0b20e2c8d1fb7f7621606f7c89c346002b8147e0c5d99a6a70f6dd07",
+  "pre-alpha/worksheet-draft.html": "8b63f7e538ec7e878e2f03c84038ba618e57940e110d4b38d07c6bf2fed6dfd8",
+  "pre-alpha/worksheet-draft-ui.mjs": "df1b87cee04b165b28623f0fa28a8ded31b697eda37592ff6bfaaa604b98a167",
+  "pre-alpha/worksheet-draft.mjs": "da01ec5b6539bfba2527e383b9f83a8e474f0acc3b3a4343091b1073091a56ed",
   "tests/pre-alpha-reference-selectors.mjs": "4ca60772877b50020e6347f2843837ecd7de08d21168d642e4851125c43d8ad4",
   "tests/pre-alpha-folding-dimensions-ui.mjs": "fc25e379a1e576b221ba1201a72df60dd0d6cd15ea4c222d1123cfcaf6ad4591",
   "tests/pre-alpha-folding-dimensions.mjs": "bc66befff6e8f596aaa9322160cd903f59817ad228aeacb030895b87c324c3b5",
@@ -22,17 +33,23 @@ const functional={
   "pre-alpha/workspace.mjs": "636ee703dc65947f5bb926944ffc99a0bb07ac16232352e7db4e0ed87a4f9425",
   "tests/pre-alpha-production-binding.mjs": "bb79b42a7dd60fba2cc8e0ad1e871b497f996fbd046ff6a5f12bff23cf43f44c",
   "tests/pre-alpha-modern-sharing-ui.mjs": "8616f8be0a7004de14c5419edec493bfbd4486c1e951b80e783df7bbcba3c743",
-  "tests/release-check.mjs": "94dd8f0b760391ef5784ab6f068448b35f767df9424a46f49fe97105990c4db2",
+  "tests/release-check.mjs": "5be3bcd0d81a193c2f0e5a1b1dbef22277f6cc50b6e54f61a2b893c18f8541c0",
   "docs/pre-alpha-production-policy-proposal.rules": "5b2d23015f192cb41016d95936eea6febd9d48fcd64c6096b5968a8f5415ee50"
 };
 const paths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().split('\n').filter(path=>/^pre-alpha\/[^/]+\.(?:mjs|js|html|css)$/.test(path)||/^tests\/pre-alpha[^/]+\.mjs$/.test(path));
 const allowed=new Set([...Object.keys(functional),...paths,'tests/pre-alpha-source-boundary.mjs']);
 for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))assert.ok(allowed.has(path),'Outside reviewed production activation: '+path);
 assert.equal(git('diff','--name-only','--diff-filter=D',base,'--').trim(),'');
-for(const [path,pin]of Object.entries(functional))assert.equal(createHash('sha256').update(text(path)).digest('hex'),pin,'Exact reviewed production activation and Head Assembly UI: '+path);
+for(const [path,pin]of Object.entries(functional))assert.equal(createHash('sha256').update(text(path)).digest('hex'),pin,'Exact reviewed production activation, Head Assembly UI and local worksheet: '+path);
 for(const path of paths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-source-boundary.mjs'))assert.equal(text(path),identity(git('show',base+':'+path)),'Identity-only outside preparation: '+path);
 for(const path of ['measurement.js','cloud-sync.js','firestore.rules','firebase-config.js','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
 for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','pre-alpha/firebase-config.js','pre-alpha/model.mjs','pre-alpha/families.mjs','pre-alpha/modern-envelope.mjs','pre-alpha/modern-saver.mjs','pre-alpha/shared-library.mjs','pre-alpha/modern-view.mjs'])assert.equal(text(path),identity(git('show',base+':'+path)),'Preserved math/folding/parser/store/capture/one-site library/view semantics: '+path);
+// The local worksheet adds an explicit export path; generic exports, routing and worker ownership stay intact.
+const oldExport=identity(git('show',base+':pre-alpha/exports.mjs'));
+assert.equal(text('pre-alpha/exports.mjs').replace("import {openWorksheetDraft} from './worksheet-draft.mjs?v=pre-alpha25';\n",'').replace("      if(action==='worksheet')openWorksheetDraft(snapshot);\n",''),oldExport,'Generic print/PNG export code unchanged');
+assert.equal(text('pre-alpha/index.html').replace('aria-label="Export job or selected-operation worksheet"','aria-label="Export complete job"').replace('<button type="button" data-job-export="worksheet">Draft HTS-5201 worksheet</button>',''),identity(git('show',base+':pre-alpha/index.html')),'Only the explicit draft export button changes the existing shell');
+const worksheetAssets="'./worksheet-draft.mjs?v='+BUILD,'./worksheet-draft-ui.mjs?v='+BUILD,'./worksheet-draft.html?v='+BUILD,'./worksheet-draft.css?v='+BUILD,'./worksheet-print.css?v='+BUILD,";
+assert.equal(text('pre-alpha/service-worker.js').replace(worksheetAssets,''),identity(git('show',base+':pre-alpha/service-worker.js')),'Only code assets added; worker scope, build and cache ownership unchanged');
 // The approved Head Assembly move changes only helper presentation and wheel wording.
 const helpers=text('pre-alpha/reference-helpers.mjs'),oldHelpers=identity(git('show',base+':pre-alpha/reference-helpers.mjs'));
 const section=(source,start,end)=>{const a=source.indexOf(start),b=source.indexOf(end,a);assert.ok(a>=0&&b>a);return source.slice(a,b);};
