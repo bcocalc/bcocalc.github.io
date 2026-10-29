@@ -1062,7 +1062,7 @@ let machineReferencePreviewPaused=false;
 window.addEventListener('beforeunload',()=>{
   const pausedToken=++machineReferenceVisualRenderToken;
   machineReferencePreviewPaused=true;
-  stopMachineReferenceVisualLoads();
+  stopMachineReferenceVisualLoads().catch(error=>console.error('Stack-up preview cleanup failed.',error));
   if(!machineReferenceVisualFallbackEl)return;
   setMachineReferenceVisualMessage('Preview paused. ',true);
   const resume=document.createElement('button');
@@ -1073,7 +1073,7 @@ window.addEventListener('beforeunload',()=>{
   });
   machineReferenceVisualFallbackEl.appendChild(resume);
 });
-window.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferencePreviewPaused=true;machineReferenceVisualRenderToken+=1;stopMachineReferenceVisualLoads();});
+window.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferencePreviewPaused=true;machineReferenceVisualRenderToken+=1;stopMachineReferenceVisualLoads().catch(error=>console.error('Stack-up preview cleanup failed.',error));});
 window.addEventListener('pageshow',(event)=>{machineReferencePageHidden=false;if(event.persisted){machineReferencePreviewPaused=false;updateMachineReferenceSummary();}});
 const stackupPdfDocumentCache = new Map();
 const bundledStackupReferences = Array.isArray(window.TAPCALC_STACKUP_REFERENCES) ? window.TAPCALC_STACKUP_REFERENCES : [];

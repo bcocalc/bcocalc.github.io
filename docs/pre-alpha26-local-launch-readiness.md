@@ -342,3 +342,15 @@ page-error filtering, larger timeout, forced unregister/storage clear or
 browser-test alteration was used. Full pinned Linux verification is pending
 concrete review of this correction; the original private PDF and physical
 iPhone gates are still separate and pending.
+
+### Cleanup rejection review correction
+
+Both beforeunload and pagehide explicitly catch the cleanup owner's promise
+and report the original rejection through console.error with the stable
+message Stack-up preview cleanup failed. The owner still returns rejection
+to explicit callers; no global error handler or browser assertion is changed.
+A focused regression executes the real cleanup owner with rejecting task
+destroy methods through both lifecycle handlers, verifies the original error
+is reported exactly once, and verifies no restart/fallback or retained task.
+This corrects an unhandled cleanup-rejection gap; it does not claim the
+remaining Linux PDF failure is resolved before Linux verification.
