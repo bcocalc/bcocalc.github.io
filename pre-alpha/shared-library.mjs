@@ -1,6 +1,6 @@
 // One visible library; each source retains its own immutable namespace and refresh state.
-import {normalizeJob} from './model.mjs?v=pre-alpha25';
-import {assertJson,destinationKey} from './modern-envelope.mjs?v=pre-alpha25';
+import {normalizeJob} from './model.mjs?v=pre-alpha26';
+import {assertJson,destinationKey} from './modern-envelope.mjs?v=pre-alpha26';
 const clone=value=>structuredClone(value);
 export function sharedLibraryKey(destination,id){
   destinationKey(destination);

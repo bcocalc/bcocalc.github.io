@@ -1,9 +1,9 @@
-import {openWorksheetDraft} from './worksheet-draft.mjs?v=pre-alpha25';
-import {geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha25';
-import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha25';
-import {historicalMcoFor,historicalRodMcoFor,historicalFamilyFor} from './presentation.mjs?v=pre-alpha25';
-import {htpChartRow} from './families.mjs?v=pre-alpha25';
-import {etaPresentation} from './eta-view.mjs?v=pre-alpha25';
+import {openWorksheetDraft} from './worksheet-draft.mjs?v=pre-alpha26';
+import {geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha26';
+import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha26';
+import {historicalMcoFor,historicalRodMcoFor,historicalFamilyFor} from './presentation.mjs?v=pre-alpha26';
+import {htpChartRow} from './families.mjs?v=pre-alpha26';
+import {etaPresentation} from './eta-view.mjs?v=pre-alpha26';
 
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const display=value=>Number.isFinite(value)?value.toFixed(4)+' in':'Not calculated';

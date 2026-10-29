@@ -6,34 +6,43 @@ import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url)),base='fcdb3d7d5b9bca5ecce0d6050d1577ff315b52d5';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer:30*1024*1024}).replace(/\r\n/g,'\n');
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
-const identity=value=>value.replaceAll('pre-alpha24','pre-alpha25').replaceAll('Pre-Alpha 24','Pre-Alpha 25').replaceAll('PRE-ALPHA 24','PRE-ALPHA 25').replaceAll('Pre-Alpha24','Pre-Alpha25');
+const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
+  "docs/pre-alpha26-local-launch-readiness.md": "f6f9ab9ac98d8ae25f57a10e2727f7529e4c6e675b19b0bdb2f226db076ac751",
+  "tests/launch-worker-upgrade-ui.mjs": "ab186022c8f94cfd15466ea1c5172435cb918164cfcd0e09fcecaccac84a8f0e",
+  "tests/launch-readiness.mjs": "930537f15c4ab8811b1a3e08cedc7f63fc1116718c063763775b1c6f1b392800",
+  "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
+  "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",
+  "service-worker.js": "d1dfb7163cb3c54414d6fc45941b30d5bc95e38d8786ff9c3c7bf41d1469f61f",
+  "manifest.json": "479a51a3de2ccee5c46c661591395031a6126b6241ec3a612d4640b05c38f763",
+  "index.html": "0bd867f99dab99483894b03289b02c8f0230f8818df3eaf2736c8bd352d1f008",
+  "launch.js": "3d6043bfc96b39ad5c48a6950f5ce68ba3b76bbd734709504ee7c70976d0b398",
   "docs/pre-alpha-worksheet-local-draft.md": "1308008bf3d9e3f4fdfd143facb2de78bc06db7ad09afe6e6ca8381af08ce702",
   "pre-alpha/worksheet-print.css": "04de166fd4e01709797e08fb0ba2a1b0ecd1afbd33a7c8c2a3abcb5af080763c",
-  "tests/pre-alpha-worksheet-ui.mjs": "3a5616e09c0f12c40b7d07c584ed72bb4dff73505abbabacadc3abc679a2d8f0",
+  "tests/pre-alpha-worksheet-ui.mjs": "3303c501a9df1945fa905e85327df6ab2da9684361ef3bca39f9abbb92e352a4",
   "tests/pre-alpha-worksheet.mjs": "11bd35a79abe20dd53b735d1d438c5c77da2589c60f37d11847e04cce4b63be6",
-  "pre-alpha/service-worker.js": "7800b20d342e587075ae020abb7dec0365af168842994bb9c3594b5dd959ec2f",
-  "pre-alpha/index.html": "97b3837152e65c8b7937f35f0ce4bdd31bdbd65568104868d545cf0723a8916f",
-  "pre-alpha/exports.mjs": "6d3a11fb09ca1958d69a59d06ca57282a4191c4346ac8a0fd7ae2f859ab250ad",
+  "pre-alpha/service-worker.js": "0de5991ac41f201ba7b53c338c3e0b17470ae810943f7347f1712e374d6d33af",
+  "pre-alpha/index.html": "cf777f2a7cd7708c4e3f71eadb20edc99cef9e03a33016f4191c360008d5e554",
+  "pre-alpha/exports.mjs": "e3457ca96b324bd61baba2429730b4e4d029e3b4066fc7cbe3f79c1433ca9eae",
   "pre-alpha/worksheet-draft.css": "9eb896be0b20e2c8d1fb7f7621606f7c89c346002b8147e0c5d99a6a70f6dd07",
-  "pre-alpha/worksheet-draft.html": "8b63f7e538ec7e878e2f03c84038ba618e57940e110d4b38d07c6bf2fed6dfd8",
-  "pre-alpha/worksheet-draft-ui.mjs": "df1b87cee04b165b28623f0fa28a8ded31b697eda37592ff6bfaaa604b98a167",
-  "pre-alpha/worksheet-draft.mjs": "da01ec5b6539bfba2527e383b9f83a8e474f0acc3b3a4343091b1073091a56ed",
+  "pre-alpha/worksheet-draft.html": "2177cf8d2b3fffc67878137244d84e529f20c4678f2ea26090862d694a1ecdd6",
+  "pre-alpha/worksheet-draft-ui.mjs": "14514557958aa1c764d3a6e48c4749d5858f144694569b5ec21f4b4befd2843c",
+  "pre-alpha/worksheet-draft.mjs": "bd04ed1661b0d1f2daaa748f216ef7f50d36d6acbf4ea5190f508c5f2b5ba982",
   "tests/pre-alpha-reference-selectors.mjs": "4ca60772877b50020e6347f2843837ecd7de08d21168d642e4851125c43d8ad4",
   "tests/pre-alpha-folding-dimensions-ui.mjs": "fc25e379a1e576b221ba1201a72df60dd0d6cd15ea4c222d1123cfcaf6ad4591",
   "tests/pre-alpha-folding-dimensions.mjs": "bc66befff6e8f596aaa9322160cd903f59817ad228aeacb030895b87c324c3b5",
-  "pre-alpha/references.mjs": "e2d4d2f8a8747d4cc477e3a582f0b98a6c7388a436e0e66588dc40985f54e046",
-  "pre-alpha/reference-helpers.mjs": "99ba15b95acf88d5167ddd2ec861f72a756fd7c48788ac41ee8718dbf805edd1",
-  ".github/workflows/library-safeguard.yml": "1750e2f452b4960143d652add2a7a832de7be812bc70070e0c8fc8040f091e65",
+  "pre-alpha/references.mjs": "63c47ac3a690033ab6fa28ec7be3f45c3ebc1c2c31904e468732a059dda2d885",
+  "pre-alpha/reference-helpers.mjs": "280e70af15cfd6410b01a04c589928512cde08d034a857153f9703c206856908",
+  ".github/workflows/library-safeguard.yml": "755b1d24771f2addb9b96dd2f7ec432af85e898ba0dfb80fd0ca1a8df6c46aff",
   "tests/pre-alpha-modern-sharing.mjs": "cc80f566738a1d004d333a593f54f70b510de2d04940e115c7aa6bf41e24f004",
-  "pre-alpha/AGENTS.md": "1231acc377a48f032bca6399d0a7db12d4ccd97b3c85fca51f26a7e3627a41ee",
+  "pre-alpha/AGENTS.md": "b808e34b3770a5751ed5e9c4beceeef70ed6ae5da92dcd77672c61c0009346eb",
   "pre-alpha/modern-sharing-config.mjs": "2dfaeaff716e69a3c8630451d2ec52b8ade14f31bf57908e2d3290f3685d26d7",
-  "pre-alpha/modern-transport.mjs": "397d524fd9ae0df63d6b0840dbca6544398814ba51f3d8171c08113566a8d336",
-  "pre-alpha/modern-ui.mjs": "39338a8e5c12f62996b45ba3e44765fbf917b679f7818c27083aed77039a9489",
-  "pre-alpha/workspace.mjs": "636ee703dc65947f5bb926944ffc99a0bb07ac16232352e7db4e0ed87a4f9425",
+  "pre-alpha/modern-transport.mjs": "d00d5ab6445d74ed4e26760ae607e36fc7793132403ce14a5e61bbdce85618c4",
+  "pre-alpha/modern-ui.mjs": "54c8e2818da8bca404975f8b7abf4762f009f8df6bd305cbfab2cca894b39747",
+  "pre-alpha/workspace.mjs": "bdfd1ce6ad77bee50db260681f7aad3ce622960df3e9919c8ab1be35c2f49101",
   "tests/pre-alpha-production-binding.mjs": "bb79b42a7dd60fba2cc8e0ad1e871b497f996fbd046ff6a5f12bff23cf43f44c",
   "tests/pre-alpha-modern-sharing-ui.mjs": "8616f8be0a7004de14c5419edec493bfbd4486c1e951b80e783df7bbcba3c743",
-  "tests/release-check.mjs": "5be3bcd0d81a193c2f0e5a1b1dbef22277f6cc50b6e54f61a2b893c18f8541c0",
+  "tests/release-check.mjs": "fda3e84e64ceddc0d6d4265a7662821168252d2bb327c797172713713fd59cbf",
   "docs/pre-alpha-production-policy-proposal.rules": "5b2d23015f192cb41016d95936eea6febd9d48fcd64c6096b5968a8f5415ee50"
 };
 const paths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().split('\n').filter(path=>/^pre-alpha\/[^/]+\.(?:mjs|js|html|css)$/.test(path)||/^tests\/pre-alpha[^/]+\.mjs$/.test(path));
@@ -45,11 +54,12 @@ for(const path of paths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-
 for(const path of ['measurement.js','cloud-sync.js','firestore.rules','firebase-config.js','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
 for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','pre-alpha/firebase-config.js','pre-alpha/model.mjs','pre-alpha/families.mjs','pre-alpha/modern-envelope.mjs','pre-alpha/modern-saver.mjs','pre-alpha/shared-library.mjs','pre-alpha/modern-view.mjs'])assert.equal(text(path),identity(git('show',base+':'+path)),'Preserved math/folding/parser/store/capture/one-site library/view semantics: '+path);
 // The local worksheet adds an explicit export path; generic exports, routing and worker ownership stay intact.
+assert.equal(text('measurement-card.html').replace('<link rel="manifest" href="./manifest.json">\n<script src="./launch.js?v=launch-pre-alpha26-1"></script>\n',''),git('show',base+':measurement-card.html'),'Frozen legacy calculator HTML is unchanged except manifest and installed-start bridge');
 const oldExport=identity(git('show',base+':pre-alpha/exports.mjs'));
-assert.equal(text('pre-alpha/exports.mjs').replace("import {openWorksheetDraft} from './worksheet-draft.mjs?v=pre-alpha25';\n",'').replace("      if(action==='worksheet')openWorksheetDraft(snapshot);\n",''),oldExport,'Generic print/PNG export code unchanged');
-assert.equal(text('pre-alpha/index.html').replace('aria-label="Export job or selected-operation worksheet"','aria-label="Export complete job"').replace('<button type="button" data-job-export="worksheet">Draft HTS-5201 worksheet</button>',''),identity(git('show',base+':pre-alpha/index.html')),'Only the explicit draft export button changes the existing shell');
+assert.equal(text('pre-alpha/exports.mjs').replace("import {openWorksheetDraft} from './worksheet-draft.mjs?v=pre-alpha26';\n",'').replace("      if(action==='worksheet')openWorksheetDraft(snapshot);\n",''),oldExport,'Generic print/PNG export code unchanged');
+assert.equal(text('pre-alpha/index.html').replace('  <link rel="manifest" href="../manifest.json">\n  <meta name="apple-mobile-web-app-capable" content="yes">\n  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n  <meta name="apple-mobile-web-app-title" content="TapCalc">\n','').replace('<p><a data-legacy-fallback href="../measurement-card.html?legacy=1&amp;v=3.0.0-livefix21">Open legacy calculator</a></p>','').replace('aria-label="Export job or selected-operation worksheet"','aria-label="Export complete job"').replace('<button type="button" data-job-export="worksheet">Draft HTS-5201 worksheet</button>',''),identity(git('show',base+':pre-alpha/index.html')),'Only the explicit draft export button changes the existing shell');
 const worksheetAssets="'./worksheet-draft.mjs?v='+BUILD,'./worksheet-draft-ui.mjs?v='+BUILD,'./worksheet-draft.html?v='+BUILD,'./worksheet-draft.css?v='+BUILD,'./worksheet-print.css?v='+BUILD,";
-assert.equal(text('pre-alpha/service-worker.js').replace(worksheetAssets,''),identity(git('show',base+':pre-alpha/service-worker.js')),'Only code assets added; worker scope, build and cache ownership unchanged');
+assert.equal(text('pre-alpha/service-worker.js').replace(worksheetAssets,'').replace("cache.addAll(ASSETS.map(asset=>new Request(asset,{cache:'no-store'})))",'cache.addAll(ASSETS)').replace("\n// Launch readiness reports only build identity; never touches jobs or cache contents.\nself.addEventListener('message',event=>{if(event.data?.type==='tapcalc-pre-alpha-version')event.ports?.[0]?.postMessage({build:BUILD});});\n",''),identity(git('show',base+':pre-alpha/service-worker.js')),'Only code assets added; worker scope, build and cache ownership unchanged');
 // The approved Head Assembly move changes only helper presentation and wheel wording.
 const helpers=text('pre-alpha/reference-helpers.mjs'),oldHelpers=identity(git('show',base+':pre-alpha/reference-helpers.mjs'));
 const section=(source,start,end)=>{const a=source.indexOf(start),b=source.indexOf(end,a);assert.ok(a>=0&&b>a);return source.slice(a,b);};
@@ -64,4 +74,4 @@ assert.match(ui,/binding===PRODUCTION_MODERN_BINDING/);assert.doesNotMatch(ui,/g
 const original=text('firestore.rules'),draft=text('docs/pre-alpha-shared-library-rules-draft.txt'),fragment=draft.slice(draft.indexOf('match /tapcalcModernSnapshots'),draft.indexOf('\nThis proposed policy'));
 assert.equal(text('docs/pre-alpha-production-policy-proposal.rules').split('\n').slice(2).join('\n').replace(fragment+'\n',''),original,'Policy proposal only adds the reviewed new match to unchanged checked-in legacy source; not deployed evidence');
 assert.match(text('pre-alpha/AGENTS.md'),/Runtime\/window\/localStorage values cannot activate/);
-console.log('PASS local25 boundary: fixed source production activation plus local Head Assembly UI; one-site workflow/full raw captures/store/folding/current math preserved from frozen24; root/dev/deployed authority/crops untouched; exact test CI pinned; local additive policy is not deployed evidence.');
+console.log('PASS local26 boundary: reviewed local launch/worksheet/Head Assembly changes; one-site workflow/full raw captures/store/folding/current math and legacy calculation/sync/dev sources preserved from frozen24; reviewed root routing and test CI pinned; no deployment evidence implied.');

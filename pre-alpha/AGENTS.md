@@ -3,7 +3,7 @@
 This directory is a separate, user-authorized redesign experiment. Root/live
 and dev remain independent releases. Do not promote this directory onto either.
 
-- Build: pre-alpha25. Keep visible label, module/stylesheet queries, module
+- Build: pre-alpha26. Keep visible label, module/stylesheet queries, module
   constant, Firebase configuration build marker and worker build synchronized.
 - This25 preparation is LOCAL ONLY on frozen24. Read-only actual Firebase
   inspection and a DISABLED fixed production binding/policy proposal are authorized.

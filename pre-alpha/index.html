@@ -5,16 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0d1727">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self' https://firestore.googleapis.com; object-src 'none'; base-uri 'self'">
-  <title>TapCalc Pre-Alpha 25</title>
-  <link rel="stylesheet" href="./workspace.css?v=pre-alpha25">
-  <script src="./firebase-config.js?v=pre-alpha25" defer></script>
+  <title>TapCalc Pre-Alpha 26</title>
+  <link rel="manifest" href="../manifest.json">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TapCalc">
+  <link rel="stylesheet" href="./workspace.css?v=pre-alpha26">
+  <script src="./firebase-config.js?v=pre-alpha26" defer></script>
   <script src="../cloud-sync.js?v=3.0.0-livefix21" defer></script>
-  <script type="module" src="./workspace.mjs?v=pre-alpha25"></script>
+  <script type="module" src="./workspace.mjs?v=pre-alpha26"></script>
 </head>
 <body>
   <header class="masthead">
     <button id="menu-toggle" class="quiet menu-toggle" aria-label="Open menu" aria-expanded="false" aria-controls="app-menu"><span aria-hidden="true">&#9776;</span></button>
-    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 25</span></a>
+    <a class="wordmark" href="#home" data-page="home" aria-label="TapCalc Home"><span class="brand-icon" aria-hidden="true">T/</span>TapCalc<span class="edition">PRE-ALPHA 26</span></a>
     <button id="theme" class="quiet">Dark mode</button>
   </header>
   <nav id="app-menu" class="app-menu" aria-label="Workspace menu" hidden><button data-page="home">Home</button><button data-page="workspace">Workspace</button><button data-page="references">References</button><button data-page="library">Job Library</button><button data-page="settings">Settings</button><button id="menu-close" class="quiet">Close menu</button></nav>
@@ -67,7 +71,7 @@
       <p id="modern-connection" role="status">Shared saving is not connected. Working copies save on this device.</p><p id="modern-sync-status" role="status" aria-live="polite"></p><div id="modern-pending"></div><p id="library-summary" role="status"></p><div id="job-list"></div><button id="more" hidden>Show more jobs</button>
     </section>
     <section id="references" aria-labelledby="references-title" hidden><header class="library-heading"><div><p class="eyebrow">READ-ONLY FIELD TOOLS</p><h1 id="references-title" tabindex="-1">References</h1><p>One topic at a time. Your job and current step stay in place.</p></div><button data-page="workspace">Back to workspace</button></header><div id="reference-browser"></div></section>
-    <section id="settings" aria-labelledby="settings-title" hidden><header class="library-heading"><div><p class="eyebrow">THIS WORKSPACE</p><h1 id="settings-title" tabindex="-1">Settings</h1></div><button data-page="workspace">Back to workspace</button></header><label class="field settings-theme">Appearance<select id="settings-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="result-hint">Pre-Alpha working copies save separately on this device. Shared jobs open as complete read-only records. Load Job creates a separate working copy; Save Job adds a new shared snapshot when connected. No live/dev saves or existing cloud records are deleted or migrated.</p><p>Use the underlined abbreviations with a mouse, keyboard focus, or a tap. Measurement help buttons offer a larger phone target. Escape closes help.</p></section>
+    <section id="settings" aria-labelledby="settings-title" hidden><header class="library-heading"><div><p class="eyebrow">THIS WORKSPACE</p><h1 id="settings-title" tabindex="-1">Settings</h1></div><button data-page="workspace">Back to workspace</button></header><label class="field settings-theme">Appearance<select id="settings-theme"><option value="light">Light</option><option value="dark">Dark</option></select></label><p class="result-hint">Pre-Alpha working copies save separately on this device. Shared jobs open as complete read-only records. Load Job creates a separate working copy; Save Job adds a new shared snapshot when connected. No live/dev saves or existing cloud records are deleted or migrated.</p><p>Use the underlined abbreviations with a mouse, keyboard focus, or a tap. Measurement help buttons offer a larger phone target. Escape closes help.</p><p><a data-legacy-fallback href="../measurement-card.html?legacy=1&amp;v=3.0.0-livefix21">Open legacy calculator</a></p></section>
   </main>
   <nav class="main-nav" aria-label="Main navigation"><button data-page="home" aria-current="page"><span aria-hidden="true">&#8962;</span>Home</button><button data-page="workspace"><span aria-hidden="true">&#9638;</span>Workspace</button><button data-page="library"><span aria-hidden="true">&#9776;</span>Saved jobs</button></nav>
   <dialog id="details-dialog"><form id="details-form"><div class="dialog-heading"><h2>Job details</h2><button type="button" data-close="details-dialog" aria-label="Close job details">&times;</button></div><div id="details-fields"></div><button class="primary" type="submit">Save details</button></form></dialog>

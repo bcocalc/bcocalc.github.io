@@ -26,6 +26,7 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
           git fetch --no-tags --depth=1 origin fcdb3d7d5b9bca5ecce0d6050d1577ff315b52d5
+          git fetch --no-tags --depth=1 origin cdf8471c94a03dfbd93737e5b87d16759d112f52
       - run: node tests/release-check.mjs --unit-only
 
   mobile-library:
@@ -190,6 +191,7 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
           git fetch --no-tags --depth=1 origin fcdb3d7d5b9bca5ecce0d6050d1577ff315b52d5
+          git fetch --no-tags --depth=1 origin cdf8471c94a03dfbd93737e5b87d16759d112f52
       - name: Run the complete release command without retries
         run: node tests/release-check.mjs
       - name: Retain synthetic screenshots after a failure

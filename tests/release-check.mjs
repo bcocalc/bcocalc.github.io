@@ -7,6 +7,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const checks = [
   ['library-release-guard.mjs', {}],
   ['library-release-guard-test.mjs', {}],
+  ['launch-readiness.mjs', {}],
   ['reference-measurements.mjs', {}],
   ['pipe-size-data.mjs', {}],
   ['cutter-reference.mjs', {}],
@@ -61,6 +62,8 @@ if (!args.includes('--unit-only')) {
     checks.push(['pre-alpha-offline-control.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-cache-context-control.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-worker-upgrade-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['launch-worker-upgrade-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['launch-worker-upgrade-ui.mjs', { TAPCALC_BROWSER: browser, TAPCALC_LAUNCH_ORIGIN_UNAVAILABLE: '1' }]);
     checks.push(['hot-tap-field-reading-ui.mjs', { TAPCALC_BROWSER: browser }]);
     // Bound each device separately as the application-switching coverage grows.
     for (const device of ['phone', 'desktop']) {

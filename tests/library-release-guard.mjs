@@ -57,7 +57,14 @@ export function checkLibraryContract(read = readSource) {
     assert.equal(build.serviceWorkerVersion, build.version);
     assert.ok(read(directory + 'measurement-card.html').includes(build.label), 'Visible build label is out of sync');
     assert.ok(read(directory + 'service-worker.js').includes('cache-' + build.version), 'Service worker cache build is out of sync');
-    assert.ok(JSON.parse(read(directory + 'manifest.json')).start_url.includes('v=' + build.version), 'Installed app start URL is out of sync');
+    const manifest=JSON.parse(read(directory + 'manifest.json'));
+    if(directory)assert.ok(manifest.start_url.includes('v='+build.version),'Installed dev start URL is out of sync');
+    else {
+      const modern=read('pre-alpha/firebase-config.js').match(/TAPCALC_PRE_ALPHA_BUILD = '([^']+)'/)?.[1];
+      assert.ok(modern,'Modern launch build is explicit');assert.equal(manifest.start_url,'./pre-alpha/?v='+modern,'Installed live start must open the reviewed modern workspace');
+      assert.equal(manifest.id,'./measurement-card.html?v='+build.version,'Preserve the declared legacy install identity');assert.equal(manifest.scope,'./');
+      assert.ok(read('index.html').includes('launch.js?v=launch-'+modern+'-1'),'Root launch identity is synchronized');
+    }
   }
 }
 

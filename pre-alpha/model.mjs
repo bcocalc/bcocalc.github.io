@@ -1,6 +1,6 @@
-import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha25';
-import {familyFor,familyResults} from './families.mjs?v=pre-alpha25';
-export const BUILD = 'pre-alpha25';
+import {PIPE_DATA,TRUE_OD} from './pipe-data.mjs?v=pre-alpha26';
+import {familyFor,familyResults} from './families.mjs?v=pre-alpha26';
+export const BUILD = 'pre-alpha26';
 export const STORAGE_KEY = 'tapcalcPreAlpha01Workspace';
 export const THEME_KEY = 'tapcalcPreAlpha01Theme';
 export const OPERATION_CHOICES = ['Hot Tap','Line Stop','Tap & Complete','HTP','Hi-Stop'];

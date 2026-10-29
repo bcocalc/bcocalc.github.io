@@ -1,9 +1,9 @@
-import {createModernTransport,createProductionTransport} from './modern-transport.mjs?v=pre-alpha25';
-import {createModernSaver} from './modern-saver.mjs?v=pre-alpha25';
-import {MODERN_DESTINATION,PRODUCTION_MODERN_BINDING} from './modern-sharing-config.mjs?v=pre-alpha25';
-import {destinationKey,canonicalJson,workingCopyOf,verifyEnvelope} from './modern-envelope.mjs?v=pre-alpha25';
-import {modernSnapshotMarkup,legacySnapshotMarkup} from './modern-view.mjs?v=pre-alpha25';
-import {escape} from './presentation.mjs?v=pre-alpha25';
+import {createModernTransport,createProductionTransport} from './modern-transport.mjs?v=pre-alpha26';
+import {createModernSaver} from './modern-saver.mjs?v=pre-alpha26';
+import {MODERN_DESTINATION,PRODUCTION_MODERN_BINDING} from './modern-sharing-config.mjs?v=pre-alpha26';
+import {destinationKey,canonicalJson,workingCopyOf,verifyEnvelope} from './modern-envelope.mjs?v=pre-alpha26';
+import {modernSnapshotMarkup,legacySnapshotMarkup} from './modern-view.mjs?v=pre-alpha26';
+import {escape} from './presentation.mjs?v=pre-alpha26';
 
 export function installModernSharing(document,{binding=null,publicApiKey=null,store,getDraft,makeWorkingCopy,notify,canShare=()=>true,onSharedChange=async()=>{},location=globalThis.location,navigator=globalThis.navigator,crypto=globalThis.crypto}){
   const el=id=>document.getElementById(id),errors=new Map();

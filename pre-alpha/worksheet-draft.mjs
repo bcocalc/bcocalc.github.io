@@ -1,5 +1,5 @@
 // Local DRAFT mapping only. The private original PDF is selected by the user, never shipped.
-import {geometry,resultsFor,stepsFor} from './model.mjs?v=pre-alpha25';
+import {geometry,resultsFor,stepsFor} from './model.mjs?v=pre-alpha26';
 export const WORKSHEET_SOURCE=Object.freeze({sha256:'b800c3777fe6f8475582a7d2a447d2e5d1c3576cd3b22943eff525c6d9fab30a',page:5,width:612,height:792,title:'HTS-5201-SWI Rev1 Pivot Head Line Stop/Plant Series Fitting',printedDate:'08/12/2026',units:'inches'});
 const sides=[['lead','Lead technician'],['second','Second technician']];
 const fields=[];
@@ -79,11 +79,11 @@ export function worksheetPrintDocument(background,values,measure){
   const left=field.section==='Job details'||field.id==='notes',tx=left?x+2:x+width/2,baseline=y+(field.id==='notes'?font:(height-lineHeight)/2+font*.85);
   return '<text data-worksheet-print-field="'+field.id+'" x="'+pos(tx)+'" y="'+pos(baseline)+'" font-family="Arial, sans-serif" font-size="'+font+'" text-anchor="'+(left?'start':'middle')+'" fill="#000">'+lines.map((line,index)=>'<tspan x="'+pos(tx)+'" y="'+pos(baseline+index*lineHeight)+'">'+escape(line)+'</tspan>').join('')+'</text>';
  }).join('');
- const stylesheet=new URL('./worksheet-print.css?v=pre-alpha25',import.meta.url).href;
+ const stylesheet=new URL('./worksheet-print.css?v=pre-alpha26',import.meta.url).href;
  return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; img-src data:; style-src \'self\'"><title>DRAFT HTS-5201 worksheet</title><link rel="stylesheet" href="'+escape(stylesheet)+'"></head><body><main class="sheet"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 612 792" role="img" aria-label="DRAFT original worksheet page 5 with reviewed entries"><image class="background" href="'+background+'" x="0" y="0" width="612" height="792" preserveAspectRatio="none"/>'+overlays+'<text x="20" y="390" transform="rotate(-90 20 390)" font-family="Arial, sans-serif" font-size="9" font-weight="bold" letter-spacing="1" fill="#555">DRAFT - REVIEW REQUIRED - NOT FIELD VERIFICATION</text></svg></main></body></html>';
 }
 export function openWorksheetDraft(job,{open=url=>window.open(url,'_blank','width=1100,height=850'),host=globalThis.window,sourceUrl=import.meta.url}={}){
- const draft=createWorksheetDraft(job),url=new URL('./worksheet-draft.html?v=pre-alpha25',sourceUrl),popup=open(url.href);
+ const draft=createWorksheetDraft(job),url=new URL('./worksheet-draft.html?v=pre-alpha26',sourceUrl),popup=open(url.href);
  if(!popup)throw Error('Worksheet window blocked. Allow the draft window and try again. Your job is unchanged.');
  let timer;
  const cleanup=()=>{host.removeEventListener('message',receive);clearTimeout(timer);};

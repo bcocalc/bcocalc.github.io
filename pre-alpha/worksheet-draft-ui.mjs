@@ -1,4 +1,4 @@
-import {WORKSHEET_SOURCE,WORKSHEET_FIELDS,createWorksheetDraft,applyHotTapCandidates,setWorksheetValue,worksheetLayout,worksheetPrintDocument} from './worksheet-draft.mjs?v=pre-alpha25';
+import {WORKSHEET_SOURCE,WORKSHEET_FIELDS,createWorksheetDraft,applyHotTapCandidates,setWorksheetValue,worksheetLayout,worksheetPrintDocument} from './worksheet-draft.mjs?v=pre-alpha26';
 const $=id=>document.getElementById(id),escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let draft=null,background='',backgroundImage=null,loadingTask=null,renderTask=null,generation=0,closed=false;
 const measureCanvas=document.createElement('canvas'),measureContext=measureCanvas.getContext('2d');
@@ -23,7 +23,7 @@ async function loadTemplate(file){
   const bytes=new Uint8Array(await file.arrayBuffer());const digest=[...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(v=>v.toString(16).padStart(2,'0')).join('');
   if(digest!==WORKSHEET_SOURCE.sha256)throw Error('This is not the reviewed HTS-5201 source version. Nothing was printed. Select the correct original file.');
   const pdfjs=await import('../pdf.mjs');if(token!==generation||closed)return;
-  pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha25',import.meta.url).href;
+  pdfjs.GlobalWorkerOptions.workerSrc=new URL('./vendor/pdf.worker.mjs?v=pre-alpha26',import.meta.url).href;
   loadingTask=pdfjs.getDocument({data:bytes,isEvalSupported:false});const pdf=await loadingTask.promise;if(token!==generation||closed)return;
   if(pdf.numPages<5)throw Error('The reviewed worksheet page is missing.');
   const page=await pdf.getPage(5),actual=page.getViewport({scale:1});if(Math.abs(actual.width-612)>.1||Math.abs(actual.height-792)>.1)throw Error('Worksheet page 5 must be Letter 612 x 792 points.');

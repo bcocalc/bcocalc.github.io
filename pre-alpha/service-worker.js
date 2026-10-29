@@ -1,4 +1,4 @@
-const BUILD = 'pre-alpha25';
+const BUILD = 'pre-alpha26';
 const PREFIX = 'tapcalc-pre-alpha-';
 const CACHE = PREFIX + BUILD;
 const scope = new URL('./', self.location.href);
@@ -6,7 +6,7 @@ const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?
 // Approved figures are cache-on-use, never an installation-time image download.
 const FIGURES=['hot-tap-md-crop.webp','negative-ld-crop.webp','positive-ld-crop.webp','plant-pt-crop.webp','pipeline-pt-crop.webp'].map(file=>'./measurement-figures/'+file+'?v='+BUILD);
 self.addEventListener('install', event => event.waitUntil(
-  caches.open(CACHE).then(cache=>cache.addAll(ASSETS)).then(()=>self.skipWaiting())
+  caches.open(CACHE).then(cache=>cache.addAll(ASSETS.map(asset=>new Request(asset,{cache:'no-store'})))).then(()=>self.skipWaiting())
 ));
 self.addEventListener('activate', event => event.waitUntil(
   caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith(PREFIX)&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim())
@@ -31,3 +31,6 @@ self.addEventListener('fetch', event => {
     return await cached.match(event.request,{ignoreSearch:true})||Response.error();
   }));
 });
+
+// Launch readiness reports only build identity; never touches jobs or cache contents.
+self.addEventListener('message',event=>{if(event.data?.type==='tapcalc-pre-alpha-version')event.ports?.[0]?.postMessage({build:BUILD});});

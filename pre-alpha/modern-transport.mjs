@@ -1,6 +1,6 @@
 // Explicit injected fetch only. Production constructor is prepared behind a disabled source binding.
-import {destinationKey,verifyEnvelope,canonicalJson} from './modern-envelope.mjs?v=pre-alpha25';
-import {MODERN_DESTINATION,PRODUCTION_MODERN_PROPOSAL} from './modern-sharing-config.mjs?v=pre-alpha25';
+import {destinationKey,verifyEnvelope,canonicalJson} from './modern-envelope.mjs?v=pre-alpha26';
+import {MODERN_DESTINATION,PRODUCTION_MODERN_PROPOSAL} from './modern-sharing-config.mjs?v=pre-alpha26';
 const fail=(code,message)=>Object.assign(new Error(message),{code});
 export function envelopeFields(envelope){
   return {schema:{integerValue:String(envelope.schema)},

@@ -1,9 +1,11 @@
-const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix21';
+const LAUNCH_VERSION = 'launch-pre-alpha26-1';
+const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix21-' + LAUNCH_VERSION;
 const CACHE_PREFIX = 'tapcalc-cache-';
-const SHELL_FALLBACK = './measurement-card.html';
+const SHELL_FALLBACK = './measurement-card.html?legacy=1&v=3.0.0-livefix21';
 const ASSETS = [
   './',
   './index.html',
+  './launch.js?v=' + LAUNCH_VERSION,
   './measurement-card.html',
   './styles.css?v=3.0.0-livefix21',
   './measurement.js?v=3.0.0-livefix21',
@@ -33,10 +35,13 @@ const ASSETS = [
   './team-logo.png'
 ];
 
+const CRITICAL = ['./','./index.html','./manifest.json','./launch.js?v='+LAUNCH_VERSION,'./measurement-card.html','./styles.css?v=3.0.0-livefix21','./measurement.js?v=3.0.0-livefix21','./firebase-config.js?v=3.0.0-livefix21','./cloud-sync.js?v=3.0.0-livefix21'];
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => Promise.allSettled(ASSETS.map((asset) => cache.add(asset))))
+      .then((cache) => Promise.allSettled(ASSETS.map((asset) => cache.add(new Request(asset,{cache:'no-store'})))))
+      .then(() => caches.open(CACHE_NAME).then(cache=>cache.addAll(CRITICAL.map(asset=>new Request(asset,{cache:'no-store'})))))
       .then(() => self.skipWaiting())
   );
 });
@@ -98,6 +103,9 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
 
+  // Existing child workers own their routes; never serve a cached legacy shell there.
+  if(url.origin===self.location.origin&&(url.pathname.startsWith('/pre-alpha/')||url.pathname.startsWith('/dev/')))return;
+
   // Cache public shell assets and SDK files, never authenticated database reads.
   if (event.request.headers.has('Authorization')) return;
   if (url.origin !== self.location.origin && url.hostname !== 'www.gstatic.com') return;
@@ -123,3 +131,6 @@ self.addEventListener('fetch', (event) => {
       }))
   );
 });
+
+// Read-only launch identity handshake. No job data is read or modified.
+self.addEventListener('message',event=>{if(event.data?.type==='tapcalc-launch-version')event.ports?.[0]?.postMessage({version:LAUNCH_VERSION});});
