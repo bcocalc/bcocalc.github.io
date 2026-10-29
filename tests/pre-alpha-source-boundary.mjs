@@ -8,8 +8,8 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
-  "docs/pre-alpha26-local-launch-readiness.md": "f6f9ab9ac98d8ae25f57a10e2727f7529e4c6e675b19b0bdb2f226db076ac751",
-  "tests/launch-worker-upgrade-ui.mjs": "ab186022c8f94cfd15466ea1c5172435cb918164cfcd0e09fcecaccac84a8f0e",
+  "docs/pre-alpha26-local-launch-readiness.md": "9e7e6a23ce0e55dfed56b4d2dde5231e0b19ec72e2c71467b2211b99fe6b4036",
+  "tests/launch-worker-upgrade-ui.mjs": "ec799f97a0f73f77b0a2687e138149c1cda47528b9307c80efd821e8f73eb85f",
   "tests/launch-readiness.mjs": "930537f15c4ab8811b1a3e08cedc7f63fc1116718c063763775b1c6f1b392800",
   "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
   "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",

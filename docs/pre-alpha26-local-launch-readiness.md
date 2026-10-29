@@ -76,3 +76,38 @@ then check the existing iPhone installed icon online and offline after restart.
 Check multi-operation jobs and pending saves without clearing/reinstalling,
 legacy fallback, Head Assembly standalone/custom/BCO-copy behavior, and the draft
 worksheet with the selected private template. No extra production fixture writes.
+
+## Diagnostic 79 and unresolved launch lifecycle
+
+Run 40897482834 used exact diagnostic 28b9ac8, directly based on 3d34dce.
+Chromium candidate and frozen-baseline jobs passed all three fixed phone/desktop
+trials. Both WebKit jobs stopped at trial 1: frozen-source worker request page
+errors occurred between beforeunload and pagehide; candidate retained the launch
+identity for 277 probes with no replacement root-worker source request. Its
+legacy load/pageshow fired and both PDF responses finished successfully. These
+are distinct failures; this does not prove the earlier release PDF page error
+has the same cause. All four artifact ZIP digests were verified locally.
+
+A pass-through local observer reproduced the candidate identity failure: both
+existing legacy register callers ran, but neither reached its update callback
+during rollback. It returned the original promises and arguments and preserved
+assertions, but observers can affect timing. A server-only stable-root-URL control
+passed pinned Windows Chromium/WebKit phone and desktop without those proxies.
+An observer-enabled control still failed a PDF Service Worker context closed
+page error. The actual local implementation then failed WebKit phone on that
+page error and Chromium desktop on re-upgrade with an active and waiting root
+worker. The implementation was therefore withdrawn; its failed patch/logs are
+retained outside the repository. No root-worker URL repair is claimed.
+
+Application bytes and the full 85-script release workflow remain exactly as
+3d34dce. This local change only fixes the defective async rollback wait: it now
+polls and asserts the exact activated rollback identity. Page errors, including
+teardown errors, remain failures. No timing delay, forced worker update, PDF
+response replacement, error filtering or weaker data assertion was added.
+
+The application lifecycle cause remains unresolved. A passing local control is
+not a release pass. The diagnostic workflow override stays isolated on its own
+branch and must never be merged into readiness/main. The complete pinned Linux
+gate, original private-template alignment, physical-iPhone installed-route
+acceptance and final launch approval remain outstanding. No further public
+upload, publication, production write or private-source transfer is implied.
