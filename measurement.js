@@ -1058,20 +1058,23 @@ const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix21';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
 let machineReferencePageHidden=false;
+let machineReferencePreviewPaused=false;
 window.addEventListener('beforeunload',()=>{
   const pausedToken=++machineReferenceVisualRenderToken;
+  machineReferencePreviewPaused=true;
+  stopMachineReferenceVisualLoads();
   if(!machineReferenceVisualFallbackEl)return;
   setMachineReferenceVisualMessage('Preview paused. ',true);
   const resume=document.createElement('button');
   resume.type='button';resume.className='secondary-btn';resume.textContent='Resume preview';
   resume.addEventListener('click',()=>{
     if(machineReferencePageHidden||resume.disabled||pausedToken!==machineReferenceVisualRenderToken)return;
-    resume.disabled=true;updateMachineReferenceSummary();
+    resume.disabled=true;machineReferencePreviewPaused=false;updateMachineReferenceSummary();
   });
   machineReferenceVisualFallbackEl.appendChild(resume);
 });
-window.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferenceVisualRenderToken+=1;});
-window.addEventListener('pageshow',(event)=>{machineReferencePageHidden=false;if(event.persisted)updateMachineReferenceSummary();});
+window.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferencePreviewPaused=true;machineReferenceVisualRenderToken+=1;stopMachineReferenceVisualLoads();});
+window.addEventListener('pageshow',(event)=>{machineReferencePageHidden=false;if(event.persisted){machineReferencePreviewPaused=false;updateMachineReferenceSummary();}});
 const stackupPdfDocumentCache = new Map();
 const bundledStackupReferences = Array.isArray(window.TAPCALC_STACKUP_REFERENCES) ? window.TAPCALC_STACKUP_REFERENCES : [];
 const machineManualIndexData = [
@@ -1372,16 +1375,27 @@ async function getStackupPdfJs() {
   return stackupPdfJsPromise;
 }
 
-async function getStackupPdfDocument(pdfUrl) {
+function stopMachineReferenceVisualLoads() {
+  const entries = [...stackupPdfDocumentCache.values()];
+  stackupPdfDocumentCache.clear();
+  return Promise.all(entries.map((entry) => entry.task.destroy()));
+}
+
+async function getStackupPdfDocument(pdfUrl, token) {
+  const current = () => !machineReferencePageHidden && !machineReferencePreviewPaused && token === machineReferenceVisualRenderToken;
+  if (!current()) return null;
+  const pdfjsLib = await getStackupPdfJs();
+  if (!current()) return null;
   if (!stackupPdfDocumentCache.has(pdfUrl)) {
-    const pdfjsLib = await getStackupPdfJs();
-    const docPromise = pdfjsLib.getDocument({ url: pdfUrl }).promise.catch((error) => {
-      stackupPdfDocumentCache.delete(pdfUrl);
+    const task = pdfjsLib.getDocument({ url: pdfUrl });
+    const entry = { task, promise: null };
+    entry.promise = task.promise.catch((error) => {
+      if (stackupPdfDocumentCache.get(pdfUrl) === entry) stackupPdfDocumentCache.delete(pdfUrl);
       throw error;
     });
-    stackupPdfDocumentCache.set(pdfUrl, docPromise);
+    stackupPdfDocumentCache.set(pdfUrl, entry);
   }
-  return stackupPdfDocumentCache.get(pdfUrl);
+  return stackupPdfDocumentCache.get(pdfUrl).promise;
 }
 
 function hideMachineReferenceNativePreview() {
@@ -1401,7 +1415,7 @@ function showMachineReferenceNativePreview(source) {
 async function renderMachineReferenceVisualPage(source, token) {
   if (!machineReferenceVisualCanvasEl || !machineReferenceVisualWrapEl || !source) return;
   hideMachineReferenceNativePreview();
-  const pdf = await getStackupPdfDocument(source.pdfUrl);
+  const pdf = await getStackupPdfDocument(source.pdfUrl, token);
   if (token !== machineReferenceVisualRenderToken) return;
 
   const page = await pdf.getPage(Math.min(source.pageNumber, pdf.numPages));
@@ -1433,6 +1447,7 @@ async function renderMachineReferenceVisualPage(source, token) {
 }
 
 function updateMachineReferenceVisual(row) {
+  if (machineReferencePageHidden || machineReferencePreviewPaused) return;
   const visualSource = getMachineReferenceVisualSource(row);
   const visualUrl = visualSource?.openUrl || '';
   machineReferenceVisualRenderToken += 1;

@@ -287,3 +287,58 @@ current-version predicate and all data/offline/rollback assertions are unchanged
 The full pinned Linux matrix must run on the new exact candidate after review.
 No new application-source upload has occurred for this correction; root files,
 backend, production records, private PDF transfer and publication are unchanged.
+
+## PDF loading-task lifetime after Linux run 82
+
+Run 40915884426 tested exact aad5a729 and failed at 17:24:54 UTC. All three
+prerequisite jobs passed. The aggregate passed 80 scripts, failed script 81
+(launch-worker-upgrade-ui.mjs, WebKit desktop online rollback/re-upgrade),
+and did not run four later scripts. Its page-error assertion caught the
+legacy stack-up PDF fetch access-control error; phone online passed. The
+child worker correction passed all twelve frozen-version cases per engine
+in both prerequisite and aggregate runs. This is not a full release pass.
+
+The fixture uses frozen HTML in rollback but current measurement.js. The
+local source observer confirms the rollback script's exact aad5a729 hash
+and presence of the unload lifecycle code; it does not establish that Linux
+executed frozen script bytes. A deterministic deferred-module probe shows
+both frozen cdf8471 and current aad5a729 loaders start getDocument after
+preview invalidation. The earlier fix only guarded rendering/fallback after
+that task. Existing loading tasks also had no lifecycle owner/destroy call.
+These are inherited loader-lifetime gaps, not an identity timeout regression.
+The exact Linux PDF event ordering is not established by its stack alone.
+
+The narrow local correction guards the module continuation before creating
+a loading task, rechecks the cache after that await to coalesce concurrent
+requests, retains each loading task and destroys it on pause/departure.
+Paused/hidden previews cannot restart. Explicit Resume or persisted restore
+can recreate a task. A rejected old entry cannot evict a newer cache entry.
+Active loading errors still propagate to the existing preview fallback.
+No PDF library, browser page-error assertion, timeout, navigation fixture,
+formula, storage, worker, backend or publication workflow changes.
+
+Focused deterministic regressions cover delayed-module pause/hidden/stale
+continuations, one concurrent task, destroy, explicit resume, active failure
+propagation and no job/storage access. The metadata-only Windows WebKit
+observer crashed in phone rollback; it is not proof of the Linux desktop
+error or a successful regression. Browser and full Linux outcomes must be
+reported separately after testing; no unproven release-success claim.
+
+No upload, deployment, production writes or private PDF materialization is
+authorized by this local correction. The changed source requires concrete
+review before another already-authorized candidate upload/Linux run.
+
+### Local lifetime-correction outcomes
+
+All 33 unit/source scripts passed. The unchanged pinned Chromium online
+phone/desktop root handoff, installed start, legacy fallback, complete
+data/pending-capture/receipt preservation, restart and route rollback/re-upgrade
+test passed. The unchanged pinned Windows WebKit test failed during phone
+rollback with page.evaluate: Target crashed / Target page, context or browser
+has been closed, before the Linux desktop point. The observer also crashed
+at phone rollback before this repair. Neither result proves the cause is
+Windows-only or that the Linux PDF access-control failure is fixed. No
+page-error filtering, larger timeout, forced unregister/storage clear or
+browser-test alteration was used. Full pinned Linux verification is pending
+concrete review of this correction; the original private PDF and physical
+iPhone gates are still separate and pending.
