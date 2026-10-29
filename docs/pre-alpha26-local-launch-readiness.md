@@ -194,7 +194,7 @@ preview/fallback afterward, actual departure and browser restoration. No worker
 policy, calculator formula, data/store behavior or unrelated source is changed
 by these two corrections. Public upload remains held for review.
 
-### Bounded-correction candidate outcome
+### f760313 bounded-correction outcome (before race correction)
 
 All 33 unit/source scripts passed on the corrected application source, including
 never-settling lookup/register/update, timeout/Retry/stale-result behavior and
@@ -212,3 +212,42 @@ semantics, original PDFs or public workflow changes are included. The complete
 85-script pinned Linux run has not run on this candidate and public upload
 remains held for review. Original-template, installed-iPhone and final launch
 approval gates remain open. No publication or production writes occurred.
+
+## Explicit recovery after preview-race review
+
+No timer can establish that navigation was canceled. Automatic zero-delay
+recovery is removed. Beforeunload invalidates stale preview work and offers
+a native Resume preview button in the existing preview status. Only explicit
+user intent resumes that owner on a retained page; hidden pages and stale or
+duplicate recovery actions are rejected. Pagehide still cancels obsolete work,
+and persisted pageshow remains a positive restoration signal. No arbitrary
+delay, error suppression, PDF substitution or job mutation is used.
+
+The exact beforeunload -> timer opportunity -> later pagehide ordering is tested
+with zero restart/fallback, alongside explicit canceled-navigation recovery,
+stale action rejection, normal fallback and persisted restoration. The reviewed
+whole-preparation deadline and its tests are unchanged. Actual final candidate
+unit/browser outcomes and the specific review boundary must be recorded.
+
+
+### Explicit-recovery candidate outcome
+
+All 33 unit/source scripts passed. The exact unload -> timer opportunity ->
+later pagehide case passed with zero automatic restart/fallback. Explicit
+retained-page recovery, stale/duplicate action rejection, normal fallback and
+persisted restore also passed. The reviewed whole-preparation deadline is
+byte-for-byte unchanged from f760313.
+
+The actual pinned Playwright 1.64 Chromium online launch regression passed
+phone and desktop. The single WebKit run failed on phone at the retained
+page-error assertion with Service Worker context closed during rollback;
+desktop did not run. No error was suppressed and no retry-until-pass was made.
+The failure is preserved for Linux investigation, not attributed to this
+correction or called a Windows limitation without further evidence.
+
+This correction changes measurement.js only in application source, plus the
+focused regression, exact source pins and this record. It removes automatic
+cancellation inference entirely. The specific correction must be reviewed
+before the already-authorized test-branch upload and full pinned Linux gate.
+Main/Pages/live publication, private template upload and production records
+remain outside scope. No new generic approval is requested by this source.

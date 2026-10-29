@@ -1057,20 +1057,21 @@ const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix21';
 const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix21';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
-let machineReferencePageHidden=false,machineReferenceResumeTimer=null;
+let machineReferencePageHidden=false;
 window.addEventListener('beforeunload',()=>{
-  machineReferenceVisualRenderToken+=1;
-  clearTimeout(machineReferenceResumeTimer);
-  machineReferenceResumeTimer=setTimeout(()=>{machineReferenceResumeTimer=null;if(!machineReferencePageHidden)updateMachineReferenceSummary();},0);
+  const pausedToken=++machineReferenceVisualRenderToken;
+  if(!machineReferenceVisualFallbackEl)return;
+  setMachineReferenceVisualMessage('Preview paused. ',true);
+  const resume=document.createElement('button');
+  resume.type='button';resume.className='secondary-btn';resume.textContent='Resume preview';
+  resume.addEventListener('click',()=>{
+    if(machineReferencePageHidden||resume.disabled||pausedToken!==machineReferenceVisualRenderToken)return;
+    resume.disabled=true;updateMachineReferenceSummary();
+  });
+  machineReferenceVisualFallbackEl.appendChild(resume);
 });
-window.addEventListener('pagehide',()=>{
-  machineReferencePageHidden=true;machineReferenceVisualRenderToken+=1;
-  clearTimeout(machineReferenceResumeTimer);machineReferenceResumeTimer=null;
-});
-window.addEventListener('pageshow',(event)=>{
-  machineReferencePageHidden=false;clearTimeout(machineReferenceResumeTimer);machineReferenceResumeTimer=null;
-  if(event.persisted)updateMachineReferenceSummary();
-});
+window.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferenceVisualRenderToken+=1;});
+window.addEventListener('pageshow',(event)=>{machineReferencePageHidden=false;if(event.persisted)updateMachineReferenceSummary();});
 const stackupPdfDocumentCache = new Map();
 const bundledStackupReferences = Array.isArray(window.TAPCALC_STACKUP_REFERENCES) ? window.TAPCALC_STACKUP_REFERENCES : [];
 const machineManualIndexData = [

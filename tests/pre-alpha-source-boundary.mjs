@@ -10,10 +10,10 @@ const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('
 const functional={
   "tests/pre-alpha-release-identity.mjs": "aa81487361379f4d23057896f10a9fb42a72c8dbe7ca18b8f33de2fad6e71b92",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
-  "measurement.js": "06fe66e10eb2b7688d36c36af12ab023de6d588b3ca5dc0adf3c3aab2bb34273",
-  "docs/pre-alpha26-local-launch-readiness.md": "a86117f85e06f10375760ee4946c905a63b46e070281c887f31b7c8b177192c0",
+  "measurement.js": "ada6727a7d4c94d28250fdc8305948977cea5742e6eca0069b0750a6065458a8",
+  "docs/pre-alpha26-local-launch-readiness.md": "311a40887f73100a517e4dadd52bff176f6877c8e2649ef512f0ed3dce4cf03d",
   "tests/launch-worker-upgrade-ui.mjs": "ec799f97a0f73f77b0a2687e138149c1cda47528b9307c80efd821e8f73eb85f",
-  "tests/launch-readiness.mjs": "73ebbaf04ab71982db197def15d3736259d7b14c3f77b0b99b76e913d4f3cff0",
+  "tests/launch-readiness.mjs": "3cbcf2a7a0d61d256c73c5a9096670e55d238ef5af44eab1d2baf881b4d0ec2c",
   "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
   "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",
   "service-worker.js": "1970e7c4f8be9fa2d0fe069ad4be5ef6b2c4c4d26fd3dbe74057ee6e0cb1bc96",
@@ -57,7 +57,7 @@ for(const path of paths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-
 for(const path of ['cloud-sync.js','firestore.rules','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
 // Only the existing root registration owner changes; credentials and calculator bytes stay frozen.
 const duplicateWorkerOwner="if ('serviceWorker' in navigator) {\n  window.addEventListener('load', async () => {\nnavigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});\n  });\n}\n";
-const previewLifecycle="let machineReferencePageHidden=false,machineReferenceResumeTimer=null;\nwindow.addEventListener('beforeunload',()=>{\n  machineReferenceVisualRenderToken+=1;\n  clearTimeout(machineReferenceResumeTimer);\n  machineReferenceResumeTimer=setTimeout(()=>{machineReferenceResumeTimer=null;if(!machineReferencePageHidden)updateMachineReferenceSummary();},0);\n});\nwindow.addEventListener('pagehide',()=>{\n  machineReferencePageHidden=true;machineReferenceVisualRenderToken+=1;\n  clearTimeout(machineReferenceResumeTimer);machineReferenceResumeTimer=null;\n});\nwindow.addEventListener('pageshow',(event)=>{\n  machineReferencePageHidden=false;clearTimeout(machineReferenceResumeTimer);machineReferenceResumeTimer=null;\n  if(event.persisted)updateMachineReferenceSummary();\n});\n";
+const previewLifecycle="let machineReferencePageHidden=false;\nwindow.addEventListener('beforeunload',()=>{\n  const pausedToken=++machineReferenceVisualRenderToken;\n  if(!machineReferenceVisualFallbackEl)return;\n  setMachineReferenceVisualMessage('Preview paused. ',true);\n  const resume=document.createElement('button');\n  resume.type='button';resume.className='secondary-btn';resume.textContent='Resume preview';\n  resume.addEventListener('click',()=>{\n    if(machineReferencePageHidden||resume.disabled||pausedToken!==machineReferenceVisualRenderToken)return;\n    resume.disabled=true;updateMachineReferenceSummary();\n  });\n  machineReferenceVisualFallbackEl.appendChild(resume);\n});\nwindow.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferenceVisualRenderToken+=1;});\nwindow.addEventListener('pageshow',(event)=>{machineReferencePageHidden=false;if(event.persisted)updateMachineReferenceSummary();});\n";
 assert.equal(text('measurement.js').replace(previewLifecycle,''),git('show',base+':measurement.js').replace(duplicateWorkerOwner,''),'Calculator source unchanged except worker duplicate removal and preview unload/restore lifecycle');
 const rootConfig=text('firebase-config.js'),frozenRootConfig=git('show',base+':firebase-config.js'),oldOwnerStart=frozenRootConfig.indexOf('  function registerFreshServiceWorker(){'),oldOwnerEnd=frozenRootConfig.indexOf('  function bootTapCalcShell(){',oldOwnerStart),newOwnerStart=rootConfig.indexOf('  let rootWorkerPreparation;'),newOwnerEnd=rootConfig.indexOf('  function bootTapCalcShell(){',newOwnerStart);
 assert.ok(oldOwnerStart>=0&&oldOwnerEnd>oldOwnerStart&&newOwnerStart>=0&&newOwnerEnd>newOwnerStart);
