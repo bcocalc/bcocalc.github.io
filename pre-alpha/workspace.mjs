@@ -508,5 +508,10 @@ window.addEventListener('popstate',restorePage);
 window.addEventListener('hashchange',restorePage);
 refreshShared();
 if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('./service-worker.js?v='+BUILD,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{});
+  const workerScope=new URL('./',location.href);
+  navigator.serviceWorker.getRegistration(workerScope.href)
+    .then(registration=>registration&&registration.scope===workerScope.href
+      ? registration.update()
+      : navigator.serviceWorker.register(new URL('service-worker.js?v='+BUILD,workerScope).href,{scope:workerScope.pathname,updateViaCache:'none'}).then(registration=>registration.update()))
+    .catch(()=>{});
 }

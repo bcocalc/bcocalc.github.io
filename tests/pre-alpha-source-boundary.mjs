@@ -8,15 +8,18 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
-  "docs/pre-alpha26-local-launch-readiness.md": "9e7e6a23ce0e55dfed56b4d2dde5231e0b19ec72e2c71467b2211b99fe6b4036",
+  "tests/pre-alpha-release-identity.mjs": "aa81487361379f4d23057896f10a9fb42a72c8dbe7ca18b8f33de2fad6e71b92",
+  "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
+  "measurement.js": "fb79d066895b63d73dd070f1297c6799f90ee6998e8415af4b79e37450ec8768",
+  "docs/pre-alpha26-local-launch-readiness.md": "8c14b01e0620ad8b59e8b506eff26e630cefaac4e0ca5ed5d6f3505cfb543ccd",
   "tests/launch-worker-upgrade-ui.mjs": "ec799f97a0f73f77b0a2687e138149c1cda47528b9307c80efd821e8f73eb85f",
-  "tests/launch-readiness.mjs": "930537f15c4ab8811b1a3e08cedc7f63fc1116718c063763775b1c6f1b392800",
+  "tests/launch-readiness.mjs": "7d1d363f175872fb6bf75cf36bf0eba18e11e2597202f3bee8128b2e88005c91",
   "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
   "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",
-  "service-worker.js": "d1dfb7163cb3c54414d6fc45941b30d5bc95e38d8786ff9c3c7bf41d1469f61f",
+  "service-worker.js": "1970e7c4f8be9fa2d0fe069ad4be5ef6b2c4c4d26fd3dbe74057ee6e0cb1bc96",
   "manifest.json": "479a51a3de2ccee5c46c661591395031a6126b6241ec3a612d4640b05c38f763",
   "index.html": "0bd867f99dab99483894b03289b02c8f0230f8818df3eaf2736c8bd352d1f008",
-  "launch.js": "3d6043bfc96b39ad5c48a6950f5ce68ba3b76bbd734709504ee7c70976d0b398",
+  "launch.js": "c6dc63143b13e6509424603ce298fabe8cf2615dfffc64f709d490a45708044c",
   "docs/pre-alpha-worksheet-local-draft.md": "1308008bf3d9e3f4fdfd143facb2de78bc06db7ad09afe6e6ca8381af08ce702",
   "pre-alpha/worksheet-print.css": "04de166fd4e01709797e08fb0ba2a1b0ecd1afbd33a7c8c2a3abcb5af080763c",
   "tests/pre-alpha-worksheet-ui.mjs": "3303c501a9df1945fa905e85327df6ab2da9684361ef3bca39f9abbb92e352a4",
@@ -39,7 +42,7 @@ const functional={
   "pre-alpha/modern-sharing-config.mjs": "2dfaeaff716e69a3c8630451d2ec52b8ade14f31bf57908e2d3290f3685d26d7",
   "pre-alpha/modern-transport.mjs": "d00d5ab6445d74ed4e26760ae607e36fc7793132403ce14a5e61bbdce85618c4",
   "pre-alpha/modern-ui.mjs": "54c8e2818da8bca404975f8b7abf4762f009f8df6bd305cbfab2cca894b39747",
-  "pre-alpha/workspace.mjs": "bdfd1ce6ad77bee50db260681f7aad3ce622960df3e9919c8ab1be35c2f49101",
+  "pre-alpha/workspace.mjs": "c6365312997350e17b67afc833fcaa785df5ec83494cf816fc3ca259a620b0c0",
   "tests/pre-alpha-production-binding.mjs": "bb79b42a7dd60fba2cc8e0ad1e871b497f996fbd046ff6a5f12bff23cf43f44c",
   "tests/pre-alpha-modern-sharing-ui.mjs": "8616f8be0a7004de14c5419edec493bfbd4486c1e951b80e783df7bbcba3c743",
   "tests/release-check.mjs": "fda3e84e64ceddc0d6d4265a7662821168252d2bb327c797172713713fd59cbf",
@@ -51,8 +54,17 @@ for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls
 assert.equal(git('diff','--name-only','--diff-filter=D',base,'--').trim(),'');
 for(const [path,pin]of Object.entries(functional))assert.equal(createHash('sha256').update(text(path)).digest('hex'),pin,'Exact reviewed production activation, Head Assembly UI and local worksheet: '+path);
 for(const path of paths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-source-boundary.mjs'))assert.equal(text(path),identity(git('show',base+':'+path)),'Identity-only outside preparation: '+path);
-for(const path of ['measurement.js','cloud-sync.js','firestore.rules','firebase-config.js','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
+for(const path of ['cloud-sync.js','firestore.rules','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
+// Only the existing root registration owner changes; credentials and calculator bytes stay frozen.
+const duplicateWorkerOwner="if ('serviceWorker' in navigator) {\n  window.addEventListener('load', async () => {\nnavigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});\n  });\n}\n";
+const previewLifecycle="window.addEventListener('beforeunload',()=>{machineReferenceVisualRenderToken+=1;});\nwindow.addEventListener('pagehide',()=>{machineReferenceVisualRenderToken+=1;});\nwindow.addEventListener('pageshow',(event)=>{if(event.persisted)updateMachineReferenceSummary();});\n";
+assert.equal(text('measurement.js').replace(previewLifecycle,''),git('show',base+':measurement.js').replace(duplicateWorkerOwner,''),'Calculator source unchanged except worker duplicate removal and preview unload/restore lifecycle');
+const rootConfig=text('firebase-config.js'),frozenRootConfig=git('show',base+':firebase-config.js'),oldOwnerStart=frozenRootConfig.indexOf('  function registerFreshServiceWorker(){'),oldOwnerEnd=frozenRootConfig.indexOf('  function bootTapCalcShell(){',oldOwnerStart),newOwnerStart=rootConfig.indexOf('  let rootWorkerPreparation;'),newOwnerEnd=rootConfig.indexOf('  function bootTapCalcShell(){',newOwnerStart);
+assert.ok(oldOwnerStart>=0&&oldOwnerEnd>oldOwnerStart&&newOwnerStart>=0&&newOwnerEnd>newOwnerStart);
+assert.equal(rootConfig.slice(0,newOwnerStart)+frozenRootConfig.slice(oldOwnerStart,oldOwnerEnd)+rootConfig.slice(newOwnerEnd),frozenRootConfig,'Root config credentials/build/backend/overlay setup unchanged outside worker owner');
 for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','pre-alpha/firebase-config.js','pre-alpha/model.mjs','pre-alpha/families.mjs','pre-alpha/modern-envelope.mjs','pre-alpha/modern-saver.mjs','pre-alpha/shared-library.mjs','pre-alpha/modern-view.mjs'])assert.equal(text(path),identity(git('show',base+':'+path)),'Preserved math/folding/parser/store/capture/one-site library/view semantics: '+path);
+const oldChildBoot="if ('serviceWorker' in navigator) {\n  navigator.serviceWorker.register('./service-worker.js?v='+BUILD,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{});\n}\n",newChildBoot="if ('serviceWorker' in navigator) {\n  const workerScope=new URL('./',location.href);\n  navigator.serviceWorker.getRegistration(workerScope.href)\n    .then(registration=>registration&&registration.scope===workerScope.href\n      ? registration.update()\n      : navigator.serviceWorker.register(new URL('service-worker.js?v='+BUILD,workerScope).href,{scope:workerScope.pathname,updateViaCache:'none'}).then(registration=>registration.update()))\n    .catch(()=>{});\n}\n";
+assert.equal(text('pre-alpha/workspace.mjs').replace(newChildBoot,oldChildBoot),git('show','3d34dcebd96dc00fa46765173351a31cc25a6a03:pre-alpha/workspace.mjs'),'Workspace module unchanged outside exact-scope worker boot; job/routing/store code preserved');
 // The local worksheet adds an explicit export path; generic exports, routing and worker ownership stay intact.
 assert.equal(text('measurement-card.html').replace('<link rel="manifest" href="./manifest.json">\n<script src="./launch.js?v=launch-pre-alpha26-1"></script>\n',''),git('show',base+':measurement-card.html'),'Frozen legacy calculator HTML is unchanged except manifest and installed-start bridge');
 const oldExport=identity(git('show',base+':pre-alpha/exports.mjs'));

@@ -1057,6 +1057,9 @@ const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix21';
 const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix21';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
+window.addEventListener('beforeunload',()=>{machineReferenceVisualRenderToken+=1;});
+window.addEventListener('pagehide',()=>{machineReferenceVisualRenderToken+=1;});
+window.addEventListener('pageshow',(event)=>{if(event.persisted)updateMachineReferenceSummary();});
 const stackupPdfDocumentCache = new Map();
 const bundledStackupReferences = Array.isArray(window.TAPCALC_STACKUP_REFERENCES) ? window.TAPCALC_STACKUP_REFERENCES : [];
 const machineManualIndexData = [
@@ -2468,11 +2471,6 @@ document.addEventListener('click', (event) => {
 
 initBoltingReference();
 
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', async () => {
-navigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});
-  });
-}
 
 // ===== HTP HOT TAP =====
 const htpPipeSizeEl = document.getElementById('htpPipeSize');

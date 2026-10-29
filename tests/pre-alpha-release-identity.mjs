@@ -46,7 +46,9 @@ for(const name of readdirSync(root).filter(name=>/\.(?:mjs|js|html|css)$/.test(n
   }
 }
 assert.ok(tokens>30,'Check actual module, CSS, configuration and worker identities, not just a label');
-assert.match(text('workspace.mjs'),/register\('\.\/service-worker\.js\?v='\+BUILD/);
+assert.match(text('workspace.mjs'),/register\(new URL\('service-worker\.js\?v='\+BUILD,workerScope\)\.href/);
+assert.match(text('workspace.mjs'),/workerScope=new URL\('\.\/',location\.href\)/);
+assert.match(text('workspace.mjs'),/scope:workerScope\.pathname/);
 assert.match(text('AGENTS.md'),/- Build: pre-alpha26\./);
 assert.equal(STORAGE_KEY,'tapcalcPreAlpha01Workspace');
 assert.equal(WORKSPACE_KEY,'tapcalcPreAlpha01WorkspaceConcurrentV1');

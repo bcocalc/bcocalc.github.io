@@ -38,11 +38,11 @@ const ASSETS = [
 const CRITICAL = ['./','./index.html','./manifest.json','./launch.js?v='+LAUNCH_VERSION,'./measurement-card.html','./styles.css?v=3.0.0-livefix21','./measurement.js?v=3.0.0-livefix21','./firebase-config.js?v=3.0.0-livefix21','./cloud-sync.js?v=3.0.0-livefix21'];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => Promise.allSettled(ASSETS.map((asset) => cache.add(new Request(asset,{cache:'no-store'})))))
       .then(() => caches.open(CACHE_NAME).then(cache=>cache.addAll(CRITICAL.map(asset=>new Request(asset,{cache:'no-store'})))))
-      .then(() => self.skipWaiting())
   );
 });
 

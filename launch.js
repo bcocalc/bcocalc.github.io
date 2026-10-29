@@ -29,7 +29,11 @@
   try{
    if('serviceWorker' in navigator){
     let registration=await navigator.serviceWorker.getRegistration(root.href);
-    if(!await rootReady(registration)){registration=await navigator.serviceWorker.register(new URL('./service-worker.js?v='+VERSION,root).href,{scope:root.pathname,updateViaCache:'none'});await waitReady(registration,rootReady);}
+    if(!await rootReady(registration)){
+     if(registration?.scope===root.href)await registration.update();
+     else registration=await navigator.serviceWorker.register(new URL('./service-worker.js?v='+VERSION,root).href,{scope:root.pathname,updateViaCache:'none'});
+     await waitReady(registration,rootReady);
+    }
     let modern=await navigator.serviceWorker.getRegistration(target.href);
     if(!await modernReady(modern)){modern=await navigator.serviceWorker.register(new URL('./pre-alpha/service-worker.js?v='+APP,root).href,{scope:new URL('./pre-alpha/',root).pathname,updateViaCache:'none'});await waitReady(modern,modernReady);}
    }

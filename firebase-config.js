@@ -50,13 +50,19 @@ window.TAPCALC_BUILD = Object.assign({
     OVERLAYS.forEach((overlay) => addScript(overlay.js));
   }
 
+  let rootWorkerPreparation;
   function registerFreshServiceWorker(){
     if (!('serviceWorker' in navigator)) return;
+    if (rootWorkerPreparation) return rootWorkerPreparation;
+    const rootScope = new URL('./', location.href);
     const swVersion = BUILD.serviceWorkerVersion || VERSION;
-    navigator.serviceWorker
-      .register(`service-worker.js?v=${swVersion}`, { updateViaCache: 'none' })
+    rootWorkerPreparation = navigator.serviceWorker.getRegistration(rootScope.href)
+      .then((registration) => registration && registration.scope === rootScope.href
+        ? registration
+        : navigator.serviceWorker.register(new URL('service-worker.js?v=' + swVersion, rootScope).href, { scope: rootScope.pathname, updateViaCache: 'none' }))
       .then((registration) => registration.update())
       .catch(() => {});
+    return rootWorkerPreparation;
   }
 
   function bootTapCalcShell(){

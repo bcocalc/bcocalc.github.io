@@ -99,8 +99,9 @@ page error and Chromium desktop on re-upgrade with an active and waiting root
 worker. The implementation was therefore withdrawn; its failed patch/logs are
 retained outside the repository. No root-worker URL repair is claimed.
 
-Application bytes and the full 85-script release workflow remain exactly as
-3d34dce. This local change only fixes the defective async rollback wait: it now
+The diagnostic-only 28b9ac8 changed no application bytes. The full 85-script
+release workflow remains exactly as 3d34dce. The regression fixes the defective
+async rollback wait: it now
 polls and asserts the exact activated rollback identity. Page errors, including
 teardown errors, remain failures. No timing delay, forced worker update, PDF
 response replacement, error filtering or weaker data assertion was added.
@@ -111,3 +112,67 @@ branch and must never be merged into readiness/main. The complete pinned Linux
 gate, original private-template alignment, physical-iPhone installed-route
 acceptance and final launch approval remain outstanding. No further public
 upload, publication, production write or private-source transfer is implied.
+
+## Narrow worker and preview lifecycle repair (local only)
+
+The full-sequence trace proved the fallback/rollback page uses the exact root
+registration, not the child. Both legacy register callers ran, but their
+promises stopped resolving after the preceding fallback page closed; no update
+callback or replacement source fetch followed. A diagnostic explicit update of
+the discovered root also stayed pending for six seconds. Waiting for both
+already-existing predecessor promises while that page remained open restored
+the next automatic rollback fetch. This ordering control still failed page
+errors, and no settlement wait was added to the regression.
+
+The existing firebase-config shell owner now coalesces preparation per page and
+updates the exact existing root registration; it registers only when absent.
+The duplicate measurement.js worker listener is removed. The existing launcher
+also updates an existing root before verifying its actual active/controller
+identity. Cold registration retains its existing versioned URL. The child
+module follows the same exact-own-scope rule and rejects a parent registration.
+Its worker, store, model, save and routing code are unchanged.
+
+A separate failure-only readback found the intended next root build installed
+and waiting behind the previous active build. The root worker now requests
+its existing unconditional skip-waiting policy synchronously in the install
+listener. Its install waitUntil still awaits critical caching; a missing
+critical asset still rejects installation. The broader activation-message
+experiment was removed. No unregister, storage clear, new update owner or
+version/identity shortcut is included.
+
+The legacy preview now invalidates outstanding render tokens on unload/pagehide
+so an obsolete rejection cannot open a native PDF fallback while leaving. A
+persisted pageshow resumes the existing selected-reference owner. Normal
+preview failures still show their fallback. Actual PDF responses/content and
+all page-error assertions stay unchanged. Behavior tests cover normal failure,
+unload cancellation, restore and no job-storage access.
+
+Strict reconstruction guards prove calculator code, root configuration and
+workspace code are unchanged outside these exact lifecycle blocks. The release
+identity check now recognizes the equivalent URL constructor and still requires
+the build token and exact child scope. Full 85-script Linux release, original
+private-template alignment, physical-iPhone acceptance and final publication
+approval remain required. Actual final local outcomes must be recorded; no
+public upload or release pass is implied.
+
+Child scope is resolved from the document URL, preserving the previous relative
+registration semantics and keeping the real workspace source executable in the
+network-free VM harness. The URL constructor/build/scope identity assertions
+remain exact; no application or harness assertion is removed.
+
+### Actual local review outcome
+
+The current edited candidate passed all 33 unit/source scripts. Its pinned
+Playwright 1.64 Chromium launch regression passed phone and desktop, including
+automatic rollback/re-upgrade, restart, complete durable jobs/captures/receipts,
+legacy keys and page-error assertions. The final WebKit run crashed its target
+during the phone rollback identity probe; it exited failure and desktop did not
+run. Earlier controls and intermediate candidates are retained as evidence,
+not substituted for this failed result. No retry-until-pass is authorized here.
+
+Live/dev Library touch and mocked pending sync passed on both pinned engines
+with the same calculator/config lifecycle edits. The complete pinned Linux
+85-script gate has not run on this repair. Public upload is held for review of
+this new diff; main, the public readiness branch and diagnostic branch remain
+unchanged. No publication, private template upload or production record write
+was performed. This local repair is reviewable but is not release-ready.
