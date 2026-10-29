@@ -8,14 +8,14 @@ import {createModernSaver} from '../pre-alpha/modern-saver.mjs';
 import {createWorkspaceStore} from '../pre-alpha/workspace-store.mjs';
 import {memoryDatabase} from './pre-alpha-memory-database.mjs';
 import {modernJobFixture} from './modern-job-fixture.mjs';
-const clone=value=>structuredClone(value),proposal={...clone(PRODUCTION_MODERN_PROPOSAL),enabled:true},key='synthetic-public-identifier-a';
-assert.equal(PRODUCTION_MODERN_BINDING,null);assert.equal(PRODUCTION_MODERN_PROPOSAL.enabled,false);assert.equal(Object.isFrozen(PRODUCTION_MODERN_PROPOSAL),true);assert.equal(Object.isFrozen(PRODUCTION_MODERN_PROPOSAL.destination),true);
+const clone=value=>structuredClone(value),proposal=PRODUCTION_MODERN_BINDING,key='synthetic-public-identifier-a';
+assert.equal(PRODUCTION_MODERN_BINDING,PRODUCTION_MODERN_PROPOSAL);assert.equal(PRODUCTION_MODERN_PROPOSAL.enabled,true);assert.equal(Object.isFrozen(PRODUCTION_MODERN_PROPOSAL),true);assert.equal(Object.isFrozen(PRODUCTION_MODERN_PROPOSAL.destination),true);
 let calls=0;const forbidden=()=>{calls++;throw Error('No real fetch is allowed in this test');};
-assert.throws(()=>createProductionTransport({apiKey:key,fetch:forbidden}),{code:'production-disabled'});assert.equal(calls,0);
+assert.throws(()=>createProductionTransport({proposal:{...proposal,enabled:false},apiKey:key,fetch:forbidden}),{code:'production-disabled'});assert.equal(calls,0);
 for(const change of [{endpoint:'http://firestore.googleapis.com'},{endpoint:'https://example.invalid'},{endpoint:'https://firestore.googleapis.com/?key=other'},{kind:'synthetic-only'},{id:'another-binding'},{schema:1},{extra:'unsupported'},...['projectId','database','collection'].map(field=>({destination:{...MODERN_DESTINATION,[field]:field==='database'?'default':field==='collection'?'tapcalcJobs':'another-project'}}))])assert.throws(()=>createProductionTransport({proposal:{...proposal,...change},apiKey:key,fetch:forbidden}));
 for(const apiKey of [null,'','a\r\nb','a?key=other'])assert.throws(()=>createProductionTransport({proposal,apiKey,fetch:forbidden}),{code:'production-unbound'});
 assert.throws(()=>createProductionTransport({proposal,apiKey:key}),{code:'production-unbound'});assert.equal(calls,0);
-console.log('PASS production binding disabled by source; fixed HTTPS project/(default)/new namespace; invalid or missing explicit dependencies reject before fetch');
+console.log('PASS production binding enabled by source; explicit disabled descriptor rejects; fixed HTTPS project/(default)/new namespace; invalid or missing explicit dependencies reject before fetch');
 
 const docs=new Map(),requests=[],name='projects/tapcalc-afc92/databases/(default)/documents',reply=(status,value)=>new Response(JSON.stringify(value),{status,headers:{'Content-Type':'application/json'}});let mode='success',online=false,posts=0;
 const fetcher=async(url,options)=>{
@@ -44,5 +44,5 @@ const changed=clone(first.job);changed.operations[0].state.md='21 1/4';mode='lat
 assert.deepEqual((await transport.list()).map(snapshot=>snapshot.item.record.preAlphaCapture.job.operations[0].state.md),[first.job.operations[0].state.md,'21 1/4']);
 const fixture=buildSharedSnapshot(first.job);fixture.record.modernRelay={kind:'synthetic-only',endpoint:'http://127.0.0.1:9999'};const fixtureEnvelope=await makeEnvelope(fixture,MODERN_DESTINATION),before=requests.length;await assert.rejects(transport.upload(fixtureEnvelope),{code:'environment-changed'});assert.equal(requests.length,before);
 const last=[...docs.values()].at(-1),envelope=documentEnvelope(last);assert.deepEqual(await verifyEnvelope(envelope,{destination:MODERN_DESTINATION,binding:transport.binding,cloudId:last.name.split('/').at(-1)}),JSON.parse(envelope.payloadJson));
-assert.equal(PRODUCTION_MODERN_BINDING,null);assert.equal(PRODUCTION_MODERN_PROPOSAL.enabled,false);
+assert.equal(PRODUCTION_MODERN_BINDING,PRODUCTION_MODERN_PROPOSAL);assert.equal(PRODUCTION_MODERN_PROPOSAL.enabled,true);
 console.log('PASS injected-only production contract: local-first complete capture; public identifier outside immutable data; anonymous fixed-target GET/list/create-only server stamp/readback; denied/offline exact retry, receipt/dedup, late acknowledgement recovery, immutable append and no fixture promotion');

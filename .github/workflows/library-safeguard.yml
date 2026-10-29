@@ -2,6 +2,7 @@ name: Library safeguard
 
 on:
   push:
+    branches: [candidate/pre-alpha25-production-activation-test]
   pull_request:
   workflow_dispatch:
 
@@ -22,7 +23,9 @@ jobs:
         with:
           node-version: '24'
       - name: Fetch immutable published17 base for approved-content scope guard
-        run: git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
+        run: |
+          git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
+          git fetch --no-tags --depth=1 origin fcdb3d7d5b9bca5ecce0d6050d1577ff315b52d5
       - run: node tests/release-check.mjs --unit-only
 
   mobile-library:
@@ -122,6 +125,7 @@ jobs:
           git fetch --no-tags --depth=1 origin e4e6389988e3f3767108b5b12a900d33e727a5ad
           git fetch --no-tags --depth=1 origin 4e247fbebe0bab8cf7185487aa90fd90b0f25741
           git fetch --no-tags --depth=1 origin 514157d290faa81714d48892095ad4758b5716a3
+          git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
       - name: Verify independent offline and persistent-cache controls
         run: |
           node tests/pre-alpha-offline-control.mjs
@@ -181,8 +185,11 @@ jobs:
           git fetch --no-tags --depth=1 origin e4e6389988e3f3767108b5b12a900d33e727a5ad
           git fetch --no-tags --depth=1 origin 4e247fbebe0bab8cf7185487aa90fd90b0f25741
           git fetch --no-tags --depth=1 origin 514157d290faa81714d48892095ad4758b5716a3
+          git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
       - name: Fetch immutable published17 base for approved-content scope guard
-        run: git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
+        run: |
+          git fetch --no-tags --depth=1 origin b1c87408a9d77e3937d7872555b22f0f89776e83
+          git fetch --no-tags --depth=1 origin fcdb3d7d5b9bca5ecce0d6050d1577ff315b52d5
       - name: Run the complete release command without retries
         run: node tests/release-check.mjs
       - name: Retain synthetic screenshots after a failure

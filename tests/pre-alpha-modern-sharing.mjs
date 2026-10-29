@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createModernTransport,envelopeFields} from '../pre-alpha/modern-transport.mjs';
 import {createModernSaver} from '../pre-alpha/modern-saver.mjs';
 import {verifyEnvelope,makeEnvelope,workingCopyOf,assertJson} from '../pre-alpha/modern-envelope.mjs';
-import {MODERN_DESTINATION,PRODUCTION_MODERN_BINDING,MAX_MODERN_BYTES} from '../pre-alpha/modern-sharing-config.mjs';
+import {MODERN_DESTINATION,PRODUCTION_MODERN_BINDING,PRODUCTION_MODERN_PROPOSAL,MAX_MODERN_BYTES} from '../pre-alpha/modern-sharing-config.mjs';
 import {buildSharedSnapshot} from '../pre-alpha/shared-save.mjs';
 import {createWorkspaceStore} from '../pre-alpha/workspace-store.mjs';
 import {memoryDatabase} from './pre-alpha-memory-database.mjs';
@@ -21,10 +21,10 @@ async function harness(){
  const transport=createModernTransport(config),saver=createModernSaver({store,transport});
  return {store,database,legacy,job:saved.job,version:saved.version,relay,config,transport,saver,setOnline:value=>online=value,close:relay.close};
 }
-assert.equal(PRODUCTION_MODERN_BINDING,null);
+assert.equal(PRODUCTION_MODERN_BINDING,PRODUCTION_MODERN_PROPOSAL);assert.equal(PRODUCTION_MODERN_BINDING.enabled,true);
 assert.throws(()=>createModernTransport({kind:'synthetic-only',endpoint:'http://127.0.0.1:8094',destination:{...MODERN_DESTINATION,collection:'tapcalcJobs'},fetch}),{code:'legacy-read-only'});
 for(const endpoint of ['https://firestore.googleapis.com','http://example.com','http://127.0.0.1@evil.invalid'])assert.throws(()=>createModernTransport({kind:'synthetic-only',endpoint,destination:MODERN_DESTINATION,fetch}),/localhost|synthetic/);
-console.log('PASS production binding absent; non-loopback relays rejected');
+console.log('PASS source production binding enabled; synthetic non-loopback relays rejected');
 {
  const job=modernJobFixture();job.title='<script>private notes</script>';job.sharedState.jobNotes='<img src=x onerror=alert(1)>';
  const item=buildSharedSnapshot(job),current=item.record.preAlphaCapture.operations.find(op=>op.id==='htp');current.results.htp[0].value='123.4567';
