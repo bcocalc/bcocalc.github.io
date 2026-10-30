@@ -1,3 +1,4 @@
+import {restoreControlledHandoff} from './controlled-handoff-source-reconstruction.mjs';
 import assert from 'node:assert/strict';
 import {EventEmitter} from 'node:events';
 import {readFileSync} from 'node:fs';
@@ -67,7 +68,7 @@ const frozenHashes={
   "tests/release-check.mjs": "fda3e84e64ceddc0d6d4265a7662821168252d2bb327c797172713713fd59cbf",
   "tests/launch-readiness.mjs": "cec306d6eaf97b40cb320c7eb055f4f68d38ae67d6c1708549852fd8d86cbc9a"
 };
-const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n'),sourceHash=text=>createHash('sha256').update(text).digest('hex');
+const read=path=>restoreControlledHandoff(path,readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n')),sourceHash=text=>createHash('sha256').update(text).digest('hex');
 const oldLaunch="finally{await Promise.race([context?.close(),new Promise(resolve=>setTimeout(resolve,5000))]);const closing=new Promise(resolve=>server.close(resolve));server.closeAllConnections();await closing;if(pageErrorCount&&!process.exitCode){process.exitCode=1;console.error('LAUNCH_LATE_PAGE_ERROR','Page errors remain failures, including teardown.');}}";
 const launch=read('tests/launch-worker-upgrade-ui.mjs'),launchFinally=launch.slice(launch.lastIndexOf('finally{')).trim();assert.ok(launchFinally.includes('if(pageErrorCount){process.exitCode=1;'),'Late page errors checked even with existing primary failure');assert.equal(sourceHash(launch.replaceAll("document.title==='TapCalc V.3'","document.title==='TapCalc Pre-Alpha 26'").replace("import {cleanupLaunch} from './runner-cleanup.mjs';\n",'').replace(launchFinally,oldLaunch)),frozenHashes['tests/launch-worker-upgrade-ui.mjs']);
 const exports=read('tests/pre-alpha-exports-ui.mjs'),exportFinally=exports.slice(exports.lastIndexOf('finally{')).trim();assert.equal(sourceHash(exports.replace("import {cleanupExports,observeChildClose} from './runner-cleanup.mjs';\n",'').replace('const preview=observeChildClose(server);\n','').replace(exportFinally,'finally{await context?.close();server.kill();}')),frozenHashes['tests/pre-alpha-exports-ui.mjs']);

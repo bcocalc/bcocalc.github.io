@@ -9,13 +9,20 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
+  "tests/controlled-handoff-source-reconstruction.mjs": "9260440e2a4b0292a513e1d05432b555fdbd3c51bf7a001f08b4a06e3e283aef",
+  "tests/fixtures/root-worker-916610b.txt": "c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f",
+  "tests/root-partial-cache.mjs": "e594b9bba119b2948b548874401e7077b60198116b8671edac0d0330226a8546",
+  "tests/controlled-rollback.mjs": "1e364b9b15982b802e79d312ec68d7320af09b1261140573a122b7ec8319a3ef",
+  "tests/controlled-rollback-test.mjs": "bf75e094588ca33a4a3eaf7c18784a9f24aca488e9335b4b154819d648e3d1e9",
+  "tests/controlled-handoff-dom.mjs": "5947e679ed7a8078af70b0f81116556ee40bdd215a270dcaf13f609022d22d5a",
+  "tests/controlled-handoff.mjs": "a43d26a33d97b74dec85ce13c3e1802a25c98221ace5b28a69eeea2fb7450901",
   "pre-alpha/modern-view.mjs": "2c78f4d8d885dc283a12543c4db47dd9d5fd221bff044fe808dc4d882dc63fa0",
   "tests/pre-alpha-ui.mjs": "bd9dddbb3a5ddf546d94519a7758f4562aaf9672db0263e338b409f22277e0fa",
   "tests/launch-branding-ui.mjs": "f5cb1eacd8e6f0446a27bc3576bdbf9df267edf74af3cd6b3065173e84ae9b58",
   "tests/pre-alpha-worker-upgrade-ui.mjs": "30e88d9295e13b19a0de11b148910a4bfd831cd00e12fcc1d32da8e2dc0cce2c",
   "tests/pre-alpha-reference-migration.mjs": "2d3f69c01ee0cbed97712ea83d02a602fcb501bf2ab1cd53f98331575ba882ca",
   "tests/pre-alpha-measurement-help-ui.mjs": "5a0783d9758bd2d175afb49657f9b44680d716429b6fe2874d2a102e883cb9ad",
-  "tests/launch-branding.mjs": "599459ae94605e0cb7b8ba646f2c151d257a1a47b19ab8b24d85c44899847392",
+  "tests/launch-branding.mjs": "01a26466b16f1934e0f2cd5eb19e310b25f530b7e742df9feba62efabb25325d",
   "pre-alpha/review.mjs": "8d6f7024396b60f3a8cc4369a7c90d02150fdea13e98fa6e535deb684db6c048",
   "pre-alpha/eta.mjs": "9e3b69e4b4cedaf0f5bb575217736813ef886ed4d6adaf6caf76ce682befcfd9",
   "pre-alpha/presentation.mjs": "9840bf6b4cba752af1cef5b5f7ed5c792c644f4b149b33bdf0a204ee0daf75d9",
@@ -23,25 +30,25 @@ const functional={
   "tests/pdf-cleanup-ownership.mjs": "8bfcf6a29e3e1ebff0b08bfd8fb1ef87c4cf95f16ff5b80b264faf6bdb209af7",
   "pdf-api-provenance.json": "556c32d02df138c5002d7f9a54bfb5c57558367ab2c155c9b48dc22b9b54b7b6",
   "pdf.mjs": "9cda957c60e5f8200363913b7eda935978128af415c6e4ca03da8c9f871c73ed",
-  "tests/root-runtime-cache-lifetime.mjs": "13e3d3ae9611a2978eac3d6f5956271dda08a32be92682db336edac67f276ed7",
+  "tests/root-runtime-cache-lifetime.mjs": "fa4e9c9cac5ab637e2718d96c77de437d8ca9baecccc04b02f7d0a0ac6e7d5e7",
   "tests/pre-alpha-worksheet-deferred.mjs": "c44487e852619d3a8316ce70ad33689dae4a151650226d4dd02edd1614f6c647",
   "tests/pre-alpha-worksheet-deferred-ui.mjs": "9eafca526c691d661aad86075e934fd42e53882e843c041c46cbe81a3f66fda8",
   "docs/pre-alpha-worksheet-local-draft.md": "919d74bb78523087159ba211015af3e2af01dc8b6fd0fdec3aac69ab12b6fbb0",
   "tests/pre-alpha-exports-ui.mjs": "ec522552727976091d2f80229ab34bc5b3d564200602d138c9cb2959e738b7e5",
-  "tests/runner-cleanup-test.mjs": "b8423d6fd98ee42ed4c0174149925839da458b74df08c7bdbc82959c8440d6d3",
+  "tests/runner-cleanup-test.mjs": "6eea55ec4f695857cb72ca95e3fddc70ff60728477251ef2c9393e1a8338e30d",
   "tests/runner-cleanup.mjs": "c25cb1b3eae4b354d19c15cf5caaa9c362780ece52479d21265dddbeb3fae565",
   "tests/pre-alpha-release-identity.mjs": "87d18da37b75118adacae81ec7b53110f7dddc6b83416f40d07ceb05b39210ed",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
   "measurement.js": "788d7b370acf21fca7ef47f57ff2ec0ab7c76f415a63fa5fe33a2930fb36a87d",
-  "docs/pre-alpha26-local-launch-readiness.md": "f626967eaf8d7c2fd15422da878b7677fd31362ee4dd211d7616722d1d29bd40",
-  "tests/launch-worker-upgrade-ui.mjs": "a94e3a50b636877ec25f11866ab6b6a4093ae560f8c1be5c6507d539f6f52848",
-  "tests/launch-readiness.mjs": "22ab63972950c4d20135ba494bb1001d3fbef9a3edec10bb3379e58e6f8e9400",
-  "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
-  "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",
-  "service-worker.js": "c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f",
-  "manifest.json": "d5b7eaf3c25d5385473f999798d32bf145ddd99fb675cd2f4fb2e87478b0b18a",
-  "index.html": "39f44fea9a2d54c6081e956b6529c1841cb93de26467032fa9d810f599778b10",
-  "launch.js": "0a69df1dcb9c0a6a3d9c4078223e773a83013403e54714027089fbaae4748b08",
+  "docs/pre-alpha26-local-launch-readiness.md": "f67e88349668930e1131b4cff980b9c0e2fdf6dd45bb73122b12a112d631267a",
+  "tests/launch-worker-upgrade-ui.mjs": "658f6cde1c62d77b4034332116ae215ce5fb9fddd25d1313240c41f32e1661f6",
+  "tests/launch-readiness.mjs": "c5b79efc1e2b5b6b1212f6bbc341e125e1b67877ce707f3ac2d9130e746d2b89",
+  "tests/library-release-guard.mjs": "d66ade69720db56d34e1774e654cd76522d47b615d02c25d8530744e69031374",
+  "measurement-card.html": "733750937a218aa5ce1466712d5b54160ee3220b0fcaa8cd2478e6a7ab923402",
+  "service-worker.js": "19035a045cec2ba074380b0cee81cc4df4bea01075e5fd4fb6592d17b2cad410",
+  "manifest.json": "adc9cb1cf422e2e06d0c44eae00cc4f88062bcacda8df4e2caf7a951a0459a93",
+  "index.html": "3e7375ac9aefadd751a8a99f7dd221ba8afa5a85c9645eb2e9b2617b1f8ddb02",
+  "launch.js": "a3dbbfcee6d6a2280a5e4b9431919ed17b278d055c21c0eb01cebec7974708b2",
   "pre-alpha/worksheet-print.css": "04de166fd4e01709797e08fb0ba2a1b0ecd1afbd33a7c8c2a3abcb5af080763c",
   "tests/pre-alpha-worksheet-ui.mjs": "3303c501a9df1945fa905e85327df6ab2da9684361ef3bca39f9abbb92e352a4",
   "tests/pre-alpha-worksheet.mjs": "11bd35a79abe20dd53b735d1d438c5c77da2589c60f37d11847e04cce4b63be6",
@@ -88,7 +95,7 @@ for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','
 const oldChildBoot="if ('serviceWorker' in navigator) {\n  navigator.serviceWorker.register('./service-worker.js?v='+BUILD,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{});\n}\n",newChildBoot="if ('serviceWorker' in navigator) {\n  const workerScope=new URL('./',location.href);\n  navigator.serviceWorker.getRegistration(workerScope.href)\n    .then(registration=>registration&&registration.scope===workerScope.href&&registration.active?.scriptURL===new URL('service-worker.js?v='+BUILD,workerScope).href\n      ? registration.update()\n      : navigator.serviceWorker.register(new URL('service-worker.js?v='+BUILD,workerScope).href,{scope:workerScope.pathname,updateViaCache:'none'}).then(registration=>registration.update()))\n    .catch(()=>{});\n}\n";
 assert.equal(restoreBranding('pre-alpha/workspace.mjs',text('pre-alpha/workspace.mjs')).replace(newChildBoot,oldChildBoot),git('show','3d34dcebd96dc00fa46765173351a31cc25a6a03:pre-alpha/workspace.mjs'),'Workspace module unchanged outside exact-scope worker boot; job/routing/store code preserved');
 // The worksheet is deferred; generic exports, root routing and worker ownership stay intact.
-assert.equal(text('measurement-card.html').replace('<link rel="manifest" href="./manifest.json">\n<script src="./launch.js?v=launch-pre-alpha26-1"></script>\n',''),git('show',base+':measurement-card.html'),'Frozen legacy calculator HTML is unchanged except manifest and installed-start bridge');
+assert.equal(text('measurement-card.html').replace('<link rel="manifest" href="./manifest.json">\n<script src="./launch.js?v=launch-pre-alpha26-2"></script>\n',''),git('show',base+':measurement-card.html'),'Frozen legacy calculator HTML is unchanged except manifest and installed-start bridge');
 assert.doesNotMatch(text('pre-alpha/index.html'),/data-job-export="worksheet"/);
 assert.doesNotMatch(text('pre-alpha/service-worker.js'),/\.\/worksheet-/);
 const oldExport=identity(git('show',base+':pre-alpha/exports.mjs'));
