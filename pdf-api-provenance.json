@@ -4,8 +4,8 @@
   "license": "Apache-2.0; original complete license notice retained verbatim.",
   "originalGitBlob": "0d201af6b5ffdeaedd0ed5b1b12050e51335e3ee",
   "originalNormalizedSha256": "a209a2124baa35cbb9015b809926f1bcec9dd1c247296290e205dd9d76cb9128",
-  "modifiedNormalizedSha256": "9cda957c60e5f8200363913b7eda935978128af415c6e4ca03da8c9f871c73ed",
-  "scope": "Local fetch cancellation and readiness promise ownership only; no worker protocol/version, parsing, rendering or original load-error filtering. Readiness outcomes are retained before a first read and preserve the original reason through read/cancel/destruction. Independent defects, not proven CI91 root cause.",
+  "modifiedNormalizedSha256": "6b046ea1040e0ee80c4b75d10f6d58b92d29cc06a791b2a4792e46cbdba5a61c",
+  "scope": "Local fetch cancellation and readiness promise ownership only; no worker protocol/version, parsing, rendering or original load-error filtering. Readiness outcomes are retained before a first read and preserve the original reason through read/cancel/destruction. Independent defects, not proven CI91 root cause. Full/range stream cancellation now also owns the sink.ready continuation; waits for both independent settlements and retains simultaneous original errors. The existing destroyed-transport readiness rule is preserved. This independent defect is not established as run41115954363 cause.",
   "updates": "Not an upstream release/backport. Rebase these explicit edits and repeat ownership tests before replacing the bundled API. Both root and pre-alpha import this shared API; pdf.worker.mjs and pre-alpha/vendor/pdf.worker.mjs unchanged. Existing source-map reference retained; no source map bundled.",
   "edits": [
     {
@@ -62,15 +62,15 @@
       "count": 1
     },
     {
-      "label": "return this._fullReader cancellation to message owner",
+      "label": "own this._fullReader cancellation and sink readiness at message owner",
       "oldText": "      sink.onCancel = reason => {\n        this._fullReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n      };",
-      "newText": "      sink.onCancel = reason => {\n        const cancellation = this._fullReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return cancellation;\n      };",
+      "newText": "      sink.onCancel = reason => {\n        const cancellation = Promise.try(() => this._fullReader.cancel(reason));\n        const readiness = sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return Promise.allSettled([cancellation, readiness]).then(results => {\n          const errors = results.filter(result => result.status === \"rejected\").map(result => result.reason);\n          if (errors.length === 1) {\n            throw errors[0];\n          }\n          if (errors.length > 1) {\n            throw new AggregateError(errors, \"PDF stream cancellation failed.\");\n          }\n        });\n      };",
       "count": 1
     },
     {
-      "label": "return rangeReader cancellation to message owner",
+      "label": "own rangeReader cancellation and sink readiness at message owner",
       "oldText": "      sink.onCancel = reason => {\n        rangeReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n      };",
-      "newText": "      sink.onCancel = reason => {\n        const cancellation = rangeReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return cancellation;\n      };",
+      "newText": "      sink.onCancel = reason => {\n        const cancellation = Promise.try(() => rangeReader.cancel(reason));\n        const readiness = sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return Promise.allSettled([cancellation, readiness]).then(results => {\n          const errors = results.filter(result => result.status === \"rejected\").map(result => result.reason);\n          if (errors.length === 1) {\n            throw errors[0];\n          }\n          if (errors.length > 1) {\n            throw new AggregateError(errors, \"PDF stream cancellation failed.\");\n          }\n        });\n      };",
       "count": 1
     },
     {

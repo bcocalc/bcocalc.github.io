@@ -105,9 +105,60 @@ for(const kind of ['full','range'])for(const failedFetch of [false,true]){
 }
 
 for(const reader of ['this._fullReader','rangeReader']){
-  const start='      sink.onCancel = reason => {\n        const cancellation = '+reader+'.cancel(reason);',callback=section(source,start,'\n    });').trim();
+  const callback=messageCancelCallback(source,reader);
   const error=Error('Original message cancellation failure'),sink={ready:Promise.resolve()},owner={destroyed:false,_fullReader:{cancel:()=>Promise.reject(error)}};
   // Bind the full-reader callback's lexical this using a wrapper.
-  const setup=vm.runInNewContext('(function(){'+callback+'})',{sink,rangeReader:owner._fullReader});setup.call(owner);await assert.rejects(sink.onCancel(Error('Departure')),e=>e===error);
+  const setup=vm.runInNewContext('(function(){'+callback+'})',{sink,rangeReader:owner._fullReader,Promise,AggregateError});setup.call(owner);await assert.rejects(sink.onCancel(Error('Departure')),e=>e===error);
 }
 console.log('PASS PDF cleanup ownership: exact upstream reconstruction and license; full/range cancellation returns original errors; all readers attempted/settled; headers own streaming-disable failure; transport/task destruction awaits cleanup, releases owners on failure, aggregates simultaneous errors; strict load and message cancellation errors retained; no-first-read failed/healthy readiness, immediate early abort, late reader cleanup, public task destruction and app capability reachability. Not CI91 attribution.');
+
+
+// Full/range message cancellation must own readiness independently of native reader cancellation.
+function messageCancelCallback(text,reader){const start=text.indexOf('      sink.onCancel = reason => {',text.indexOf('messageHandler.on("'+(reader==='this._fullReader'?'GetReader':'GetRangeReader')+'"'));const end=text.indexOf('\n      };',start);assert.ok(start>=0&&end>start);return text.slice(start,end+9);}
+const previousMessageCallbacks={
+  "this._fullReader": {
+    "source": "      sink.onCancel = reason => {\n        const cancellation = this._fullReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return cancellation;\n      };",
+    "sha256": "a2c5e1d2d75f91960ecac166cbf273cb4d50ec9979deacc088a2db3d9d0b3fb2"
+  },
+  "rangeReader": {
+    "source": "      sink.onCancel = reason => {\n        const cancellation = rangeReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return cancellation;\n      };",
+    "sha256": "d86450b012716ef02eb05737c6896e30f9290dd08a1e84dc87994c4adac200de"
+  }
+};
+for(const reader of ['this._fullReader','rangeReader']){
+ const current=messageCancelCallback(source,reader),previous=previousMessageCallbacks[reader];assert.equal(sha(previous.source),previous.sha256);
+ for(const [label,callback,expected]of [['previous',previous.source,1],['corrected',current,0]]){
+  const script="import assert from 'node:assert/strict';import vm from 'node:vm';const ready=Promise.withResolvers(),cancel=Promise.withResolvers(),failure=new TypeError('Synthetic pending sink.ready failure'),sink={ready:ready.promise},owner={destroyed:false,_fullReader:{cancel:()=>cancel.promise}};vm.runInNewContext("+JSON.stringify('(function(){'+callback+'})')+",{sink,rangeReader:owner._fullReader,Promise,AggregateError}).call(owner);const returned=sink.onCancel(Error('worker cancel'));returned.catch(()=>{});ready.reject(failure);await new Promise(resolve=>setImmediate(resolve));cancel.resolve();await assert.rejects(returned,e=>e===failure);";
+  const result=spawnSync(process.execPath,['--unhandled-rejections=strict','--input-type=module'],{input:script,encoding:'utf8',timeout:5000});assert.equal(result.error,undefined);assert.equal(result.status,expected,label+' '+reader+' pending readiness ownership');if(expected)assert.match(result.stderr,/TypeError: Synthetic pending sink.ready failure/);
+ }
+ for(const order of ['readiness-first','cancellation-first'])for(const readinessFails of [false,true])for(const cancellationFails of [false,true]){
+  const ready=deferred(),cancel=deferred(),readyError=Error('Original readiness failure'),cancelError=Error('Original reader failure'),sink={ready:ready.promise},owner={destroyed:false,_fullReader:{cancel:()=>cancel.promise}};
+  vm.runInNewContext('(function(){'+current+'})',{sink,rangeReader:owner._fullReader,Promise,AggregateError}).call(owner);
+  let settled=false;const work=sink.onCancel(Error('Worker cancel')),observed=work.then(value=>{settled=true;return {value};},error=>{settled=true;return {error};});
+  const settleReady=()=>readinessFails?ready.reject(readyError):ready.resolve(),settleCancel=()=>cancellationFails?cancel.reject(cancelError):cancel.resolve();
+  (order==='readiness-first'?settleReady:settleCancel)();await tick();assert.equal(settled,false,'Wait for both independent owned settlements');(order==='readiness-first'?settleCancel:settleReady)();
+  const result=await observed,errors=[...(cancellationFails?[cancelError]:[]),...(readinessFails?[readyError]:[])];
+  if(errors.length===0)assert.equal(result.value,undefined);else if(errors.length===1)assert.equal(result.error,errors[0]);else{assert.ok(result.error instanceof AggregateError);assert.deepEqual(result.error.errors,errors);}
+ }
+ for(const cancellationFails of [false,true]){
+  const ready=deferred(),cancel=deferred(),cancelError=Error('Destroyed transport reader failure'),sink={ready:ready.promise},owner={destroyed:true,_fullReader:{cancel:()=>cancel.promise}};
+  vm.runInNewContext('(function(){'+current+'})',{sink,rangeReader:owner._fullReader,Promise,AggregateError}).call(owner);const work=sink.onCancel(Error('Worker cancel')),observed=work.then(value=>({value}),error=>({error}));ready.reject(Error('Existing destroyed-readiness rule'));await tick();if(cancellationFails)cancel.reject(cancelError);else cancel.resolve();const result=await observed;if(cancellationFails)assert.equal(result.error,cancelError);else assert.equal(result.value,undefined);
+ }
+ {
+  const ready=deferred(),cancel=deferred(),error=Error('Active readiness failure remains retained'),sink={ready:ready.promise},owner={destroyed:false,_fullReader:{cancel:()=>cancel.promise}};
+  vm.runInNewContext('(function(){'+current+'})',{sink,rangeReader:owner._fullReader,Promise,AggregateError}).call(owner);const observed=sink.onCancel(Error('Worker cancel')).catch(e=>e);ready.reject(error);await tick();owner.destroyed=true;cancel.resolve();assert.equal(await observed,error,'Later destruction must not erase an earlier active readiness failure');
+ }
+ {
+  const ready=deferred(),cancelError=Error('Synchronous reader cancellation failure'),readyError=Error('Independent readiness failure'),sink={ready:ready.promise},owner={destroyed:false,_fullReader:{cancel(){throw cancelError;}}};
+  vm.runInNewContext('(function(){'+current+'})',{sink,rangeReader:owner._fullReader,Promise,AggregateError}).call(owner);const observed=sink.onCancel(Error('Worker cancel')).catch(e=>e);ready.reject(readyError);const error=await observed;assert.ok(error instanceof AggregateError);assert.deepEqual(error.errors,[cancelError,readyError]);
+ }
+ // Execute the unchanged message handler CANCEL case: it rejects sink.ready after invoking onCancel.
+ // Completion cannot await its own acknowledgment; the independently settled reader is the only gate here.
+ for(const destroyed of [false,true]){
+  const ready=deferred(),cancel=deferred(),reason=Error('Original protocol cancellation'),sink={ready:ready.promise,sinkCapability:ready},owner={destroyed,_fullReader:{cancel:()=>cancel.promise}},messages=[];
+  vm.runInNewContext('(function(){'+current+'})',{sink,rangeReader:owner._fullReader,Promise,AggregateError}).call(owner);
+  const body=section(source,'      case StreamKind.CANCEL:\n','      default:'),connection={streamSinks:{1:sink}},context={Promise,StreamKind:{CANCEL:1,CANCEL_COMPLETE:2},data:{stream:1,reason},streamId:1,streamSink:sink,sourceName:'main',targetName:'worker',comObj:{postMessage:message=>messages.push(message)},wrapReason:e=>e};
+  vm.runInNewContext('(function(){switch(data.stream){'+body+'}})',context).call(connection);assert.equal(sink.isCancelled,true);assert.equal(connection.streamSinks[1],undefined);await tick();assert.equal(messages.length,0);cancel.resolve();await tick();assert.equal(messages.length,1);if(destroyed)assert.equal(messages[0].success,true);else assert.equal(messages[0].reason,reason);
+ }
+}
+console.log('PASS PDF sink ownership: exact prior strict-unhandled negatives, full/range independent pending/healthy/rejected orders, original/simultaneous errors, synchronous failure, destruction timing and unchanged CANCEL dispatch with no completion cycle. Not Linux cause proof.');

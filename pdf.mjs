@@ -12654,14 +12654,22 @@ class WorkerTransport {
         });
       };
       sink.onCancel = reason => {
-        const cancellation = this._fullReader.cancel(reason);
-        sink.ready.catch(readyReason => {
+        const cancellation = Promise.try(() => this._fullReader.cancel(reason));
+        const readiness = sink.ready.catch(readyReason => {
           if (this.destroyed) {
             return;
           }
           throw readyReason;
         });
-        return cancellation;
+        return Promise.allSettled([cancellation, readiness]).then(results => {
+          const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
+          if (errors.length === 1) {
+            throw errors[0];
+          }
+          if (errors.length > 1) {
+            throw new AggregateError(errors, "PDF stream cancellation failed.");
+          }
+        });
       };
     });
     messageHandler.on("ReaderHeadersReady", async data => {
@@ -12711,14 +12719,22 @@ class WorkerTransport {
         });
       };
       sink.onCancel = reason => {
-        const cancellation = rangeReader.cancel(reason);
-        sink.ready.catch(readyReason => {
+        const cancellation = Promise.try(() => rangeReader.cancel(reason));
+        const readiness = sink.ready.catch(readyReason => {
           if (this.destroyed) {
             return;
           }
           throw readyReason;
         });
-        return cancellation;
+        return Promise.allSettled([cancellation, readiness]).then(results => {
+          const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
+          if (errors.length === 1) {
+            throw errors[0];
+          }
+          if (errors.length > 1) {
+            throw new AggregateError(errors, "PDF stream cancellation failed.");
+          }
+        });
       };
     });
     messageHandler.on("GetDoc", ({
