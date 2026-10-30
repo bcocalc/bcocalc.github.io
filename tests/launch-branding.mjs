@@ -66,6 +66,10 @@ export const brandingChanges={
     [
       "and its measurements from this Pre-Alpha working copy?",
       "and its measurements from this working copy?"
+    ],
+    [
+      "calculations are still being connected in this design study.",
+      "calculations are not connected in this workspace."
     ]
   ],
   "pre-alpha/presentation.mjs": [
@@ -109,6 +113,12 @@ export const brandingChanges={
       "import {helperFields,helperReference,PIVOT_NOTES,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha26';",
       "import {helperFields,helperReference,PIVOT_NOTES,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha26';\nconst fieldChecklistNote=SUPPLEMENT.fieldChecklistNote.replace('this pre-alpha study','this workspace').replace('pre-alpha edits','working-copy edits');\nconst stopMathNote=SUPPLEMENT.stopMathNote.replace('the pre-alpha general','the general');"
     ]
+  ],
+  "pre-alpha/modern-view.mjs": [
+    [
+      "escape(item.record.meta?.version||'an unrecorded build')",
+      "escape(String(item.record.meta?.version||'an unrecorded build').replace(/^pre-alpha(\\d+)$/,'TapCalc build $1'))"
+    ]
   ]
 };
 const originalHashes={
@@ -118,9 +128,13 @@ const originalHashes={
   "pre-alpha/presentation.mjs": "a4ce6bafdd4fc12afb2ceca143e6c3a170314c05b7ed64e6b573768e5e311aa6",
   "pre-alpha/eta.mjs": "4965f21715256b1999f4196f372d4f6131177c35c503c86a8edef46f40cb105f",
   "pre-alpha/review.mjs": "d7ad56dec76c203d679e6348c32ea8c214f594d734e9d1b90b4a67b4f75d3a03",
-  "pre-alpha/references.mjs": "63c47ac3a690033ab6fa28ec7be3f45c3ebc1c2c31904e468732a059dda2d885"
+  "pre-alpha/references.mjs": "63c47ac3a690033ab6fa28ec7be3f45c3ebc1c2c31904e468732a059dda2d885",
+  "pre-alpha/modern-view.mjs": "461ee6a9e6de0644f792ef6c1bc5126446a21c92bf132d965464f81d300a5daa"
 };
 export function restoreBranding(path,source){for(const [before,after,count=1]of [...(brandingChanges[path]||[])].reverse()){assert.equal(source.split(after).length,count+1,'Exact approved display-only branding: '+path);source=source.split(after).join(before);}return source;}
 for(const [path,pin]of Object.entries(originalHashes)){const source=readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');assert.equal(createHash('sha256').update(restoreBranding(path,source)).digest('hex'),pin,'Preserve every nonbranding byte from passed60e0546: '+path);}
 const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));assert.equal(manifest.name,'TapCalc');assert.equal(manifest.short_name,'TapCalc');assert.equal(manifest.id,'./measurement-card.html?v=3.0.0-livefix21');assert.equal(manifest.start_url,'./pre-alpha/?v=pre-alpha26');assert.equal(manifest.scope,'./');
 console.log('PASS launch branding: exact reversible display-only labels against passed60e0546; build token, routes, installed identity, data/working-copy identifiers, warnings and legacy fallback preserved.');
+
+const {modernSnapshotMarkup}=await import('../pre-alpha/modern-view.mjs');
+for(const version of ['pre-alpha26','pre-alpha17','old-build<&>']){const item={record:{meta:{version},preAlphaCapture:{job:{title:'Synthetic branding',operations:[]},operations:[]}}},before=JSON.stringify(item),markup=modernSnapshotMarkup({item});assert.equal(JSON.stringify(item),before,'Captured record bytes stay unchanged');assert.ok(markup.includes(version.startsWith('pre-alpha')?'Captured with TapCalc build '+version.slice(9):'Captured with old-build&lt;&amp;&gt;'),'Format only known build branding; escape unknown provenance');assert.ok(markup.includes('Complete preserved snapshot'),'Raw original record remains available');}

@@ -3,7 +3,7 @@ const json=value=>escape(JSON.stringify(value,null,2));
 const metadata=[['Client','client'],['Job description','description'],['Job number','jobNumber'],['Pressure','pressure'],['Temperature','temperature'],['Date','date'],['Product','product'],['Location','location'],['Technician','technician'],['Notes','notes']];
 export function modernSnapshotMarkup({item,envelope}){
   const job=item.record.preAlphaCapture.job,captured=item.record.preAlphaCapture.operations;
-  return '<p class="eyebrow">SHARED JOB / VIEW ONLY</p><h2>'+escape(job.title)+'</h2><p>Load Job creates a separate working copy on this device. This shared snapshot stays unchanged.</p><p class="result-hint">Captured with '+escape(item.record.meta?.version||'an unrecorded build')+'. Results below are the captured values, not a new calculation.</p>'+
+  return '<p class="eyebrow">SHARED JOB / VIEW ONLY</p><h2>'+escape(job.title)+'</h2><p>Load Job creates a separate working copy on this device. This shared snapshot stays unchanged.</p><p class="result-hint">Captured with '+escape(String(item.record.meta?.version||'an unrecorded build').replace(/^pre-alpha(\d+)$/,'TapCalc build $1'))+'. Results below are the captured values, not a new calculation.</p>'+
     '<dl class="modern-metadata">'+metadata.map(([label,key])=>'<div><dt>'+label+'</dt><dd>'+escape(item.record.job?.[key]??'Not entered')+'</dd></div>').join('')+'</dl>'+
     job.operations.map((operation,index)=>{
       const result=captured[index],groups=result.results&&typeof result.results==='object'?Object.entries(result.results):[];

@@ -331,7 +331,7 @@ function renderResults() {
     $('results').innerHTML='<p class="result-hint">'+escape(path)+' '+active.operations.length+' operation'+(active.operations.length===1?'':'s')+' in this job.</p>';
   } else {
     $('results').innerHTML=stage==='review'?operationReviewMarkup(op):reviewMarkup(op.state);
-    if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are still being connected in this design study.</p>');
+    if(stage==='saved')$('results').insertAdjacentHTML('afterbegin','<p class="result-hint">All saved values are preserved. '+escape(operationType(op))+' calculations are not connected in this workspace.</p>');
   }
   if(!['setup','pipe','review'].includes(stage)&&stepsFor(op).includes('tap'))$('results').insertAdjacentHTML('beforeend',etaSummary(op,active.sharedState.machineType));
   if(stage==='htp')$('results').insertAdjacentHTML('beforeend',etaSummary(op,active.sharedState.machineType));

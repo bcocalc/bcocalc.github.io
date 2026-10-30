@@ -9,12 +9,13 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
+  "pre-alpha/modern-view.mjs": "2c78f4d8d885dc283a12543c4db47dd9d5fd221bff044fe808dc4d882dc63fa0",
   "tests/pre-alpha-ui.mjs": "bd9dddbb3a5ddf546d94519a7758f4562aaf9672db0263e338b409f22277e0fa",
   "tests/launch-branding-ui.mjs": "2ec885058f53a9f67ce44ba36599c8e25abb629bd3eb166cc1a31389b4e9bd47",
   "tests/pre-alpha-worker-upgrade-ui.mjs": "30e88d9295e13b19a0de11b148910a4bfd831cd00e12fcc1d32da8e2dc0cce2c",
   "tests/pre-alpha-reference-migration.mjs": "56166db3bf919caf64e7172f4bec84983189017c2a674e214ffcb5c028e91927",
   "tests/pre-alpha-measurement-help-ui.mjs": "5a0783d9758bd2d175afb49657f9b44680d716429b6fe2874d2a102e883cb9ad",
-  "tests/launch-branding.mjs": "96d6d8ceaf00320eabd166c4fcbce9e2952552c62ccc95caa527ca0a890d3961",
+  "tests/launch-branding.mjs": "1b5e1740c06603f953fa2562b05c41f51aa2a2a385d3e965ca1dd64ee7bfa1dd",
   "pre-alpha/review.mjs": "8d6f7024396b60f3a8cc4369a7c90d02150fdea13e98fa6e535deb684db6c048",
   "pre-alpha/eta.mjs": "9e3b69e4b4cedaf0f5bb575217736813ef886ed4d6adaf6caf76ce682befcfd9",
   "pre-alpha/presentation.mjs": "9840bf6b4cba752af1cef5b5f7ed5c792c644f4b149b33bdf0a204ee0daf75d9",
@@ -62,7 +63,7 @@ const functional={
   "pre-alpha/modern-sharing-config.mjs": "2dfaeaff716e69a3c8630451d2ec52b8ade14f31bf57908e2d3290f3685d26d7",
   "pre-alpha/modern-transport.mjs": "d00d5ab6445d74ed4e26760ae607e36fc7793132403ce14a5e61bbdce85618c4",
   "pre-alpha/modern-ui.mjs": "54c8e2818da8bca404975f8b7abf4762f009f8df6bd305cbfab2cca894b39747",
-  "pre-alpha/workspace.mjs": "f84355ea30de8872933ac5226031807a08b3498ddb4c61409324cb0c6d805108",
+  "pre-alpha/workspace.mjs": "a57f91ade0c45b9b0f76d94eb7f542a97f963958695e03bd88a04dd3a2500327",
   "tests/pre-alpha-production-binding.mjs": "bb79b42a7dd60fba2cc8e0ad1e871b497f996fbd046ff6a5f12bff23cf43f44c",
   "tests/pre-alpha-modern-sharing-ui.mjs": "8616f8be0a7004de14c5419edec493bfbd4486c1e951b80e783df7bbcba3c743",
   "tests/release-check.mjs": "ef108043651a153388462d488689ea240d192ec95438a95ccc2d25038298717b",
@@ -83,7 +84,7 @@ assert.equal(text('measurement.js').replace(previewLifecycle,'').replace(preview
 const rootConfig=text('firebase-config.js'),frozenRootConfig=git('show',base+':firebase-config.js'),oldOwnerStart=frozenRootConfig.indexOf('  function registerFreshServiceWorker(){'),oldOwnerEnd=frozenRootConfig.indexOf('  function bootTapCalcShell(){',oldOwnerStart),newOwnerStart=rootConfig.indexOf('  let rootWorkerPreparation;'),newOwnerEnd=rootConfig.indexOf('  function bootTapCalcShell(){',newOwnerStart);
 assert.ok(oldOwnerStart>=0&&oldOwnerEnd>oldOwnerStart&&newOwnerStart>=0&&newOwnerEnd>newOwnerStart);
 assert.equal(rootConfig.slice(0,newOwnerStart)+frozenRootConfig.slice(oldOwnerStart,oldOwnerEnd)+rootConfig.slice(newOwnerEnd),frozenRootConfig,'Root config credentials/build/backend/overlay setup unchanged outside worker owner');
-for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','pre-alpha/firebase-config.js','pre-alpha/model.mjs','pre-alpha/families.mjs','pre-alpha/modern-envelope.mjs','pre-alpha/modern-saver.mjs','pre-alpha/shared-library.mjs','pre-alpha/modern-view.mjs'])assert.equal(text(path),identity(git('show',base+':'+path)),'Preserved math/folding/parser/store/capture/one-site library/view semantics: '+path);
+for(const path of ['pre-alpha/workspace-store.mjs','pre-alpha/shared-save.mjs','pre-alpha/firebase-config.js','pre-alpha/model.mjs','pre-alpha/families.mjs','pre-alpha/modern-envelope.mjs','pre-alpha/modern-saver.mjs','pre-alpha/shared-library.mjs','pre-alpha/modern-view.mjs'])assert.equal(restoreBranding(path,text(path)),identity(git('show',base+':'+path)),'Preserved math/folding/parser/store/capture/one-site library/view semantics: '+path);
 const oldChildBoot="if ('serviceWorker' in navigator) {\n  navigator.serviceWorker.register('./service-worker.js?v='+BUILD,{scope:'./',updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{});\n}\n",newChildBoot="if ('serviceWorker' in navigator) {\n  const workerScope=new URL('./',location.href);\n  navigator.serviceWorker.getRegistration(workerScope.href)\n    .then(registration=>registration&&registration.scope===workerScope.href&&registration.active?.scriptURL===new URL('service-worker.js?v='+BUILD,workerScope).href\n      ? registration.update()\n      : navigator.serviceWorker.register(new URL('service-worker.js?v='+BUILD,workerScope).href,{scope:workerScope.pathname,updateViaCache:'none'}).then(registration=>registration.update()))\n    .catch(()=>{});\n}\n";
 assert.equal(restoreBranding('pre-alpha/workspace.mjs',text('pre-alpha/workspace.mjs')).replace(newChildBoot,oldChildBoot),git('show','3d34dcebd96dc00fa46765173351a31cc25a6a03:pre-alpha/workspace.mjs'),'Workspace module unchanged outside exact-scope worker boot; job/routing/store code preserved');
 // The worksheet is deferred; generic exports, root routing and worker ownership stay intact.
