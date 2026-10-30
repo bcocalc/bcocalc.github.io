@@ -233,7 +233,7 @@ function renderWorkspace() {
   let migrated=false;for(const item of active.operations)if(migratePipeSource(item))migrated=true;
   if(migrated)persist();
   $('job-title').textContent=active.title;
-  $('job-origin').textContent=active.modernOrigin?'LOCAL WORKING COPY / SHARED JOB':active.source==='shared'?'SHARED JOB / PRE-ALPHA WORKING COPY':active.source==='device'?'DEVICE JOB / PRE-ALPHA WORKING COPY':'PRE-ALPHA JOB';
+  $('job-origin').textContent=active.modernOrigin?'LOCAL WORKING COPY / SHARED JOB':active.source==='shared'?'SHARED JOB / LOCAL WORKING COPY':active.source==='device'?'DEVICE JOB / LOCAL WORKING COPY':'LOCAL WORKING COPY';
   $('job-meta').textContent=[active.sharedState.jobClient,active.sharedState.jobLocation,active.sharedState.jobNumber,active.sharedState.jobDate].filter(Boolean).join(' / ')||'Add the customer and location in Job details.';
   renderOperations();
   const op=operation();
@@ -325,7 +325,7 @@ function renderResults() {
     if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
     if(stage==='htp'||stage==='hiStop')$('results').insertAdjacentHTML('beforeend',familyContextMarkup(op,stage)+worksheetMarkup(op,stage,origins));
 
-    if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are still being connected in Pre-Alpha.</p>'+reviewMarkup(op.state);
+    if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are not available in this workspace.</p>'+reviewMarkup(op.state);
   } else if(stage==='setup') {
     const path=familyStage(op)==='htp'?'Exact HTP chart and distinct HTP measurements.':familyStage(op)==='hiStop'?'Pipe setup, then distinct Hi-Stop measurements.':operationType(op)==='Line Stop'?'Hot tap, line stop, then completion plug.':operationType(op)==='Tap & Complete'?'Hot tap, then completion plug.':operationType(op)==='Hot Tap'?'Hot tap only.':'Saved '+operationType(op)+' operation.';
     $('results').innerHTML='<p class="result-hint">'+escape(path)+' '+active.operations.length+' operation'+(active.operations.length===1?'':'s')+' in this job.</p>';
@@ -369,7 +369,7 @@ function renderLibrary() {
   const query=$('search').value.trim().toLowerCase();
   const entries=matchingJobs(source==='shared'?shared:source==='device'?device:jobs,query);
   $('library-summary').textContent=entries.length+' job'+(entries.length===1?'':'s')+' found';
-  $('job-list').innerHTML=jobRowsMarkup(entries.slice(0,visibleLimit),source)||'<p class="empty-state">'+(query?'No matching jobs. Try another search.':source==='shared'?'No shared jobs loaded. Use Refresh shared jobs to connect.':source==='device'?'There are no live/dev local saves in this browser. Shared jobs are available in the Shared jobs tab.':'Your experimental working copies will appear here.')+'</p>';
+  $('job-list').innerHTML=jobRowsMarkup(entries.slice(0,visibleLimit),source)||'<p class="empty-state">'+(query?'No matching jobs. Try another search.':source==='shared'?'No shared jobs loaded. Use Refresh shared jobs to connect.':source==='device'?'There are no live/dev local saves in this browser. Shared jobs are available in the Shared jobs tab.':'Your working copies will appear here.')+'</p>';
   $('more').hidden=entries.length<=visibleLimit;
   $('job-list').querySelectorAll('[data-job]').forEach(button=>button.addEventListener('click',()=>{const job=entries.find(job=>job.id===button.dataset.job);if(source==='shared'&&job?.sharedSnapshot){page('shared-view');void modernSharing.showSnapshot(job.sharedSnapshot);}else openJob(job);}));
 }
@@ -412,7 +412,7 @@ document.addEventListener('click',event=>{
   if(button.dataset.action==='add')$('add-dialog').showModal();
   if(button.dataset.action==='delete'&&operation()){
     pendingDeleteId=operation().id;
-    $('delete-operation-description').textContent='Delete "'+operation().label+'" and its measurements from this Pre-Alpha working copy?';
+    $('delete-operation-description').textContent='Delete "'+operation().label+'" and its measurements from this working copy?';
     $('delete-operation-dialog').showModal();
   }
   if(button.dataset.close)$(button.dataset.close).close();

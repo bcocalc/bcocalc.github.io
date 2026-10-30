@@ -159,3 +159,5 @@ await import('./runner-cleanup-test.mjs');
 await import('./root-runtime-cache-lifetime.mjs');
 
 await import('./pdf-cleanup-ownership.mjs');
+
+await import('./launch-branding.mjs');

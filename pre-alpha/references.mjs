@@ -3,6 +3,8 @@ import {number,geometry} from './model.mjs?v=pre-alpha26';
 import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha26';
 import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha26';
 import {helperFields,helperReference,PIVOT_NOTES,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha26';
+const fieldChecklistNote=SUPPLEMENT.fieldChecklistNote.replace('this pre-alpha study','this workspace').replace('pre-alpha edits','working-copy edits');
+const stopMathNote=SUPPLEMENT.stopMathNote.replace('the pre-alpha general','the general');
 
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 export const REFERENCE_CATEGORIES={glossary:'Glossary',cutters:'Hot Tap / Line Stop cutters',smartstop:'SmartStop',foldinghead:'Folding Head',fieldmanual:'Field manual',bolting:'Bolting',htp:'HTP chart',plant150:'150# Plant',plant600:'600# Plant',torque:'Graphonic torque',papergaskets:'Durlon Gaskets',stackups:'Machine Stack-Ups',manuals:'Manual index',pivothead:'Pivot Head Setup',uwire:'U-Wire calculator',fieldcheck:'Field checklists',fractions:'Decimal / fraction',formulas:'Calculation guide'};
@@ -25,8 +27,8 @@ export function referenceProvenance(category,values={}) {
   if(category==='manuals'){info.source=SUPPLEMENT.manuals.map(item=>item.source).join('; ');info.applicability='All five entries are index placeholders, not complete inline manuals. No missing contents or availability are implied.';}
   if(category==='pivothead'){info.source=PIVOT_NOTES[0];info.revision='Section 7 Line Stop Dims: Rev.1. Setup guide revision not recorded.';info.applicability=PIVOT_NOTES[1];}
   if(category==='uwire'){info.source=UWIRE_NOTES[0];info.revision='Form HTS-5400.1.20 Rev.3.';}
-  if(category==='fieldcheck'){info.source='Existing TapCalc workflow reminders.';info.applicability=SUPPLEMENT.fieldChecklistNote;}
-  if(category==='formulas'){info.source='Current TapCalc calculation guide and retained equipment-specific training formulas.';info.applicability=SUPPLEMENT.stopMathNote;}
+  if(category==='fieldcheck'){info.source='Existing TapCalc workflow reminders.';info.applicability=fieldChecklistNote;}
+  if(category==='formulas'){info.source='Current TapCalc calculation guide and retained equipment-specific training formulas.';info.applicability=stopMathNote;}
   if(category==='fractions'){info.source='Arithmetic conversion, not an equipment dimension table.';info.applicability='Selected rounding is approximate, not an exact conversion for every decimal.';}
   return info;
 }
@@ -95,7 +97,7 @@ export function referenceTables(category,filters={}) {
     result.tables=[objects('Garlock / GYLON source — Paper Gaskets '+rating+'# - compressed sheet / GYLON',SUPPLEMENT.paperGaskets[rating]||[],[['displaySize','Pipe size (in)'],['rfId','RF I.D. (in)'],['rfOd','RF O.D. (in)'],['area','Gasket area (sq in)'],['bolts','Bolts'],['boltSize','Bolt size (in)'],['torque60','Torque at 60,000 psi bolt stress (ft-lb)'],['compForce','Compression force (lb)'],['maxStressAvail','Maximum available gasket stress (psi)'],['internalPressure','Internal pressure (psi; source limit)'],['minGasketStress','Minimum gasket stress (psi)'],['minTorque','Minimum per bolt (ft-lb)'],['maxRecAvailStress','Maximum recommended available stress (psi)'],['preferredTorque','Preferred per bolt (ft-lb)'],['source','Source']])];
   }
   if(category==='stackups'){
-    result.note=note+' '+SUPPLEMENT.stackupNote+' Page previews and original PDFs require a connection; extracted reference text is available with the pre-alpha offline assets.';
+    result.note=note+' '+SUPPLEMENT.stackupNote+' Page previews and original PDFs require a connection; extracted reference text is available with the workspace offline assets.';
     result.lists=[{title:'Source-page reference',items:['Search across equipment, dimensions, weights, notes, source filename and extracted page text. Verify the original drawing: extracted dimensions are not labeled engineering inputs.']}];
     result.records=SUPPLEMENT.stackups.filter(row=>!filters.source||row.source===filters.source);
   }
@@ -103,7 +105,7 @@ export function referenceTables(category,filters={}) {
     result.note=note+' These five entries are source index placeholders, not complete inline manuals. No missing manual content or file availability is implied.';
     result.tables=[objects('Manual index — not yet converted',SUPPLEMENT.manuals,[['name','Manual'],['range','Equipment'],['source','Source filename'],['use','Status'],['text','Cross-check note']])];
   }
-  if(category==='fieldcheck'){result.note=note+' '+SUPPLEMENT.fieldChecklistNote;result.lists=SUPPLEMENT.fieldChecklists;}
+  if(category==='fieldcheck'){result.note=note+' '+fieldChecklistNote;result.lists=SUPPLEMENT.fieldChecklists;}
 
   if(category==='fractions'){
     const gcd=(a,b)=>b?gcd(b,a%b):a;
@@ -120,7 +122,7 @@ export function referenceTables(category,filters={}) {
     {title:'Completion Plug',items:['LI = Start + JBF + LD + PT. An active manual override replaces this calculated lower-in output, not the saved inputs.']},
     {title:'Cutting time',items:['ETA to BCO = current BCO / (RPM x 0.004 in/revolution). Setup, approach, and Line Stop / Completion Plug work are excluded.']}
   ];
-  if(category==='formulas'){result.note=note+' '+SUPPLEMENT.stopMathNote;result.lists.push(...SUPPLEMENT.stopMath);}
+  if(category==='formulas'){result.note=note+' '+stopMathNote;result.lists.push(...SUPPLEMENT.stopMath);}
   return result;
 }
 

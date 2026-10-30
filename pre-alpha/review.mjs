@@ -24,7 +24,7 @@ export function operationWarnings(operation,machineName='') {
   }
   const add=(stage,code,message,kind='warning')=>warnings.push({stage,code,message,kind});
   if(steps.includes('saved')) {
-    add('saved','unsupported','Equipment-specific calculations are not connected in Pre-Alpha. Saved values are for review only.');
+    add('saved','unsupported','Equipment-specific calculations are not connected in this workspace. Saved values are for review only.');
     return warnings;
   }
   const g=geometry(state);
@@ -66,7 +66,7 @@ export function operationWarnings(operation,machineName='') {
     if(!has(state.mt)) add('tap','travel-unchecked','Machine travel is not entered; Hot Tap travel has not been checked.','info');
     else if(finite(state.mt)&&number(state.mt)<=0) add('tap','invalid-mt','Machine travel must be greater than zero to check the travel limit.');
     if(resultsFor(operation,'tap').find(([label])=>label==='Lower in')[1]<0) add('tap','negative-lower-in','Lower in is negative. Recheck MD, LD, and its sign.');
-    if(has(state.htActualPop)) add('tap','actual-pop-retained','Saved actual POP is retained but is not applied in Pre-Alpha. Results use the setup measurements.','info');
+    if(has(state.htActualPop)) add('tap','actual-pop-retained','Saved actual POP is retained but is not applied in this workspace. Results use the setup measurements.','info');
   }
   if(steps.includes('stop')) {
     const travel=number(state.lsTravel),machine=number(state.lsMachineTravel);

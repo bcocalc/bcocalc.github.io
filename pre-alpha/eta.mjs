@@ -41,7 +41,7 @@ export function etaFor(operation,machineName='') {
   const rpm=manual?[number(state.etaRpmOverride)]:match.values;
   const distance=geometry(state).bco;
   let issue='';
-  if(!stepsFor(operation).includes('tap'))issue='Cutting-time ETA is only connected for standard Hot Tap stages in Pre-Alpha.';
+  if(!stepsFor(operation).includes('tap'))issue='Cutting-time ETA is only connected for standard Hot Tap stages.';
   else if(!(number(size)>0))issue='Enter a valid cutter size for the RPM lookup.';
   else if(!rpm.length)issue='No RPM chart is selected for this machine. Select a supported profile or enter a verified manual RPM.';
   else if(!rpm.every(value=>Number.isFinite(value)&&value>0))issue='Manual RPM must be a valid number greater than zero; it is not silently replaced by chart RPM.';

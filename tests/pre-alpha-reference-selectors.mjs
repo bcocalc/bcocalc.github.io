@@ -4,7 +4,7 @@ import {DATA} from '../pre-alpha/reference-data.mjs';
 import {BUILD} from '../pre-alpha/model.mjs';
 import {SUPPLEMENT} from '../pre-alpha/reference-supplement-data.mjs';
 import {referenceTables,referenceView,referenceSelectionFields,createReferences,REFERENCE_CATEGORIES} from '../pre-alpha/references.mjs';
-assert.match(readFileSync(new URL('../pre-alpha/index.html',import.meta.url),'utf8'),new RegExp('PRE-ALPHA '+BUILD.slice(-2)),'Visible masthead must match the versioned app and worker');
+assert.match(readFileSync(new URL('../pre-alpha/index.html',import.meta.url),'utf8'),new RegExp('BUILD '+BUILD.slice(-2)),'Visible masthead must match the versioned app and worker');
 const before=JSON.stringify({DATA,SUPPLEMENT});
 const rows=data=>data.tables.flatMap(table=>table.rows);
 let checks=0;

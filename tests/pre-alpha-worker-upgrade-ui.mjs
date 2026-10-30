@@ -129,7 +129,7 @@ try{
       const response=await page.goto(base+'/pre-alpha/#workspace');
       if(!response)await page.reload();
       await page.waitForSelector('[data-field="cpLiManual"]');await controlled(build);
-      assert.equal(await page.locator('.edition').textContent(),'PRE-ALPHA '+build.replace('pre-alpha',''));
+      assert.equal(await page.locator('.edition').textContent(),(build===BUILD?'BUILD ':'PRE-ALPHA ')+build.replace('pre-alpha',''));
     }
     const durableSnapshot=()=>readDurableWorkspace(page);
     const durableJob=raw=>JSON.parse(raw).entries.find(entry=>entry.job.id===fixture.id).job;

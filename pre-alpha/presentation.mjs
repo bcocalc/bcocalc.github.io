@@ -146,7 +146,7 @@ export function matchingJobs(jobs,query='') {
     .sort((a,b)=>String(b.updatedAt||b.savedAt).localeCompare(String(a.updatedAt||a.savedAt)));
 }
 export function jobRowsMarkup(jobs,source) {
-  const label=source==='shared'?'Shared':source==='device'?'Device save':'Pre-Alpha copy';
+  const label=source==='shared'?'Shared':source==='device'?'Device save':'Working copy';
   return jobs.map(job=>'<article class="job-row"><button class="job-card" data-job="'+escape(job.id)+'"><span class="job-row-heading"><strong>'+escape(job.title)+'</strong><small>'+label+'</small></span><span class="job-row-meta">'+escape([job.sharedState.jobClient,job.sharedState.jobLocation].filter(Boolean).join(' / ')||'Customer and location not recorded')+'</span><span class="job-row-footer">'+job.operations.length+' operation'+(job.operations.length===1?'':'s')+' / '+escape(job.sharedState.jobDate||String(job.savedAt||'').slice(0,10)||'No date')+' <span aria-hidden="true">&rarr;</span></span></button>'+
     '<details class="job-row-details"><summary aria-label="Details for '+escape(job.title)+'">Job details &amp; operations</summary><dl><div><dt>Job number</dt><dd>'+escape(job.sharedState.jobNumber||'Not recorded')+'</dd></div><div><dt>Machine</dt><dd>'+escape(job.sharedState.machineType||'Not recorded')+'</dd></div><div><dt>Technician</dt><dd>'+escape(job.sharedState.jobTechnician||'Not recorded')+'</dd></div></dl><ul>'+job.operations.map(op=>'<li>'+escape(op.label)+' <small>'+escape(op.operationType||'Saved operation')+'</small></li>').join('')+'</ul><p class="result-hint">Opening these details does not load or change the job. Select the job row to open it.</p></details></article>').join('');
 }

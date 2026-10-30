@@ -8,6 +8,7 @@ import {runNextChecks} from './pre-alpha-next-ui.mjs';
 import {runInlineEtaChecks} from './pre-alpha-inline-eta-ui.mjs';
 import {runPdfWorkerChecks} from './pre-alpha-pdf-worker-ui.mjs';
 import {runHomeChecks} from './pre-alpha-home-ui.mjs';
+import {runBrandingChecks} from './launch-branding-ui.mjs';
 import {installBrowserEvidence} from './browser-evidence.mjs';
 const require=createRequire(import.meta.url);
 let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
@@ -272,6 +273,7 @@ try{
     await runPdfWorkerChecks({browser,pw,base,mobile,engine});
     evidence.mark('Home',{device:mobile?'phone':'desktop'});
     await runHomeChecks({browser,pw,base,mobile,engine});
+    await runBrandingChecks({browser,pw,base,mobile,engine});
     console.log('PASS Pre-Alpha '+engine+'/'+(mobile?'phone':'desktop')+': Firebase read, 3 operations, separate drafts, original preservation, themes, details and blank steps');
   }
 }catch(error){evidence?.failure(error);throw error;}
