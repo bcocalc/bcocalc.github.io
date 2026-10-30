@@ -1,0 +1,77 @@
+{
+  "library": "PDF.js",
+  "version": "4.10.38",
+  "license": "Apache-2.0; original complete license notice retained verbatim.",
+  "originalGitBlob": "0d201af6b5ffdeaedd0ed5b1b12050e51335e3ee",
+  "originalNormalizedSha256": "a209a2124baa35cbb9015b809926f1bcec9dd1c247296290e205dd9d76cb9128",
+  "modifiedNormalizedSha256": "ff83b28e86afb9a598e52c9c0f989feec24830126687bebac8ae0261e1479165",
+  "scope": "Local fetch cancellation promise ownership only; no worker protocol/version, parsing, rendering or original load-error filtering. Independent defect, not proven CI91 root cause. Range readiness-before-read defect remains outside this patch.",
+  "updates": "Not an upstream release/backport. Rebase these explicit edits and repeat ownership tests before replacing the bundled API. Both root and pre-alpha import this shared API; pdf.worker.mjs and pre-alpha/vendor/pdf.worker.mjs unchanged. Existing source-map reference retained; no source map bundled.",
+  "edits": [
+    {
+      "label": "prominent local modification notice",
+      "oldText": " * @licend The above is the entire license notice for the\n * JavaScript code in this page\n */",
+      "newText": " * @licend The above is the entire license notice for the\n * JavaScript code in this page\n */\n\n// TapCalc local modification: own fetch-reader cancellation through document\n// destruction. PDF.js 4.10.38 protocol/version and license remain unchanged.\n// See pdf-api-provenance.json; this is not an upstream PDF.js release.",
+      "count": 1
+    },
+    {
+      "label": "collect every fetch-reader cancellation",
+      "oldText": "  cancelAllRequests(reason) {\n    this._fullRequestReader?.cancel(reason);\n    for (const reader of this._rangeRequestReaders.slice(0)) {\n      reader.cancel(reason);\n    }\n  }",
+      "newText": "  async cancelAllRequests(reason) {\n    const readers = [this._fullRequestReader, ...this._rangeRequestReaders].filter(Boolean);\n    const results = await Promise.allSettled(readers.map(async reader => reader.cancel(reason)));\n    const errors = results.filter(result => result.status === \"rejected\").map(result => result.reason);\n    if (errors.length === 1) {\n      throw errors[0];\n    }\n    if (errors.length > 1) {\n      throw new AggregateError(errors, \"PDF fetch cancellation failed.\");\n    }\n  }",
+      "count": 1,
+      "section": "fetch"
+    },
+    {
+      "label": "return native cancellation and always abort",
+      "oldText": "  cancel(reason) {\n    this._reader?.cancel(reason);\n    this._abortController.abort();\n  }",
+      "newText": "  cancel(reason) {\n    try {\n      return this._reader?.cancel(reason);\n    } finally {\n      this._abortController.abort();\n    }\n  }",
+      "count": 2,
+      "section": "fetch"
+    },
+    {
+      "label": "observe internal streaming-disable cancellation",
+      "oldText": "fetch(url, createFetchOptions(headers, this._withCredentials, this._abortController)).then(response => {\n      stream._responseOrigin",
+      "newText": "fetch(url, createFetchOptions(headers, this._withCredentials, this._abortController)).then(async response => {\n      stream._responseOrigin",
+      "count": 1,
+      "section": "fetch"
+    },
+    {
+      "label": "settle headers after optional cancellation",
+      "oldText": "      this._reader = response.body.getReader();\n      this._headersCapability.resolve();\n      const responseHeaders",
+      "newText": "      this._reader = response.body.getReader();\n      const responseHeaders",
+      "count": 1,
+      "section": "fetch"
+    },
+    {
+      "label": "propagate streaming-disable errors to original load",
+      "oldText": "        this.cancel(new AbortException(\"Streaming is disabled.\"));\n      }\n    }).catch(this._headersCapability.reject);",
+      "newText": "        await this.cancel(new AbortException(\"Streaming is disabled.\"));\n      }\n      this._headersCapability.resolve();\n    }).catch(this._headersCapability.reject);",
+      "count": 1,
+      "section": "fetch"
+    },
+    {
+      "label": "document destroy retains errors and releases owned worker",
+      "oldText": "    try {\n      if (this._worker?.port) {\n        this._worker._pendingDestroy = true;\n      }\n      await this._transport?.destroy();\n    } catch (ex) {\n      if (this._worker?.port) {\n        delete this._worker._pendingDestroy;\n      }\n      throw ex;\n    }\n    this._transport = null;\n    this._worker?.destroy();\n    this._worker = null;",
+      "newText": "    const errors = [];\n    try {\n      if (this._worker?.port) {\n        this._worker._pendingDestroy = true;\n      }\n      await this._transport?.destroy();\n    } catch (ex) {\n      if (this._worker?.port) {\n        delete this._worker._pendingDestroy;\n      }\n      errors.push(ex);\n    }\n    this._transport = null;\n    try {\n      this._worker?.destroy();\n    } catch (ex) {\n      errors.push(ex);\n    }\n    this._worker = null;\n    if (errors.length === 1) {\n      throw errors[0];\n    }\n    if (errors.length > 1) {\n      throw new AggregateError(errors, \"PDF document destruction failed.\");\n    }",
+      "count": 1
+    },
+    {
+      "label": "transport destruction owns cancellation and message teardown",
+      "oldText": "    Promise.all(waitOn).then(() => {\n      this.commonObjs.clear();\n      this.fontLoader.clear();\n      this.#methodPromises.clear();\n      this.filterFactory.destroy();\n      TextLayer.cleanup();\n      this._networkStream?.cancelAllRequests(new AbortException(\"Worker was terminated.\"));\n      this.messageHandler?.destroy();\n      this.messageHandler = null;\n      this.destroyCapability.resolve();\n    }, this.destroyCapability.reject);",
+      "newText": "    Promise.all(waitOn).then(async () => {\n      this.commonObjs.clear();\n      this.fontLoader.clear();\n      this.#methodPromises.clear();\n      this.filterFactory.destroy();\n      TextLayer.cleanup();\n      const errors = [];\n      try {\n        await this._networkStream?.cancelAllRequests(new AbortException(\"Worker was terminated.\"));\n      } catch (ex) {\n        errors.push(ex);\n      }\n      try {\n        this.messageHandler?.destroy();\n      } catch (ex) {\n        errors.push(ex);\n      }\n      this.messageHandler = null;\n      if (errors.length === 1) {\n        throw errors[0];\n      }\n      if (errors.length > 1) {\n        throw new AggregateError(errors, \"PDF transport destruction failed.\");\n      }\n      this.destroyCapability.resolve();\n    }).catch(this.destroyCapability.reject);",
+      "count": 1
+    },
+    {
+      "label": "return this._fullReader cancellation to message owner",
+      "oldText": "      sink.onCancel = reason => {\n        this._fullReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n      };",
+      "newText": "      sink.onCancel = reason => {\n        const cancellation = this._fullReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return cancellation;\n      };",
+      "count": 1
+    },
+    {
+      "label": "return rangeReader cancellation to message owner",
+      "oldText": "      sink.onCancel = reason => {\n        rangeReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n      };",
+      "newText": "      sink.onCancel = reason => {\n        const cancellation = rangeReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return cancellation;\n      };",
+      "count": 1
+    }
+  ]
+}

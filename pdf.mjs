@@ -20,6 +20,10 @@
  * JavaScript code in this page
  */
 
+// TapCalc local modification: own fetch-reader cancellation through document
+// destruction. PDF.js 4.10.38 protocol/version and license remain unchanged.
+// See pdf-api-provenance.json; this is not an upstream PDF.js release.
+
 /******/ // The require scope
 /******/ var __webpack_require__ = {};
 /******/ 
@@ -10102,10 +10106,15 @@ class PDFFetchStream {
     this._rangeRequestReaders.push(reader);
     return reader;
   }
-  cancelAllRequests(reason) {
-    this._fullRequestReader?.cancel(reason);
-    for (const reader of this._rangeRequestReaders.slice(0)) {
-      reader.cancel(reason);
+  async cancelAllRequests(reason) {
+    const readers = [this._fullRequestReader, ...this._rangeRequestReaders].filter(Boolean);
+    const results = await Promise.allSettled(readers.map(async reader => reader.cancel(reason)));
+    const errors = results.filter(result => result.status === "rejected").map(result => result.reason);
+    if (errors.length === 1) {
+      throw errors[0];
+    }
+    if (errors.length > 1) {
+      throw new AggregateError(errors, "PDF fetch cancellation failed.");
     }
   }
 }
@@ -10129,13 +10138,12 @@ class PDFFetchStreamReader {
     this._isRangeSupported = !source.disableRange;
     const headers = new Headers(stream.headers);
     const url = source.url;
-    fetch(url, createFetchOptions(headers, this._withCredentials, this._abortController)).then(response => {
+    fetch(url, createFetchOptions(headers, this._withCredentials, this._abortController)).then(async response => {
       stream._responseOrigin = getResponseOrigin(response.url);
       if (!validateResponseStatus(response.status)) {
         throw createResponseStatusError(response.status, url);
       }
       this._reader = response.body.getReader();
-      this._headersCapability.resolve();
       const responseHeaders = response.headers;
       const {
         allowRangeRequests,
@@ -10150,8 +10158,9 @@ class PDFFetchStreamReader {
       this._contentLength = suggestedLength || this._contentLength;
       this._filename = extractFilenameFromHeader(responseHeaders);
       if (!this._isStreamingSupported && this._isRangeSupported) {
-        this.cancel(new AbortException("Streaming is disabled."));
+        await this.cancel(new AbortException("Streaming is disabled."));
       }
+      this._headersCapability.resolve();
     }).catch(this._headersCapability.reject);
     this.onProgress = null;
   }
@@ -10193,8 +10202,11 @@ class PDFFetchStreamReader {
     };
   }
   cancel(reason) {
-    this._reader?.cancel(reason);
-    this._abortController.abort();
+    try {
+      return this._reader?.cancel(reason);
+    } finally {
+      this._abortController.abort();
+    }
   }
 }
 class PDFFetchStreamRangeReader {
@@ -10248,8 +10260,11 @@ class PDFFetchStreamRangeReader {
     };
   }
   cancel(reason) {
-    this._reader?.cancel(reason);
-    this._abortController.abort();
+    try {
+      return this._reader?.cancel(reason);
+    } finally {
+      this._abortController.abort();
+    }
   }
 }
 
@@ -11552,6 +11567,7 @@ class PDFDocumentLoadingTask {
   }
   async destroy() {
     this.destroyed = true;
+    const errors = [];
     try {
       if (this._worker?.port) {
         this._worker._pendingDestroy = true;
@@ -11561,11 +11577,21 @@ class PDFDocumentLoadingTask {
       if (this._worker?.port) {
         delete this._worker._pendingDestroy;
       }
-      throw ex;
+      errors.push(ex);
     }
     this._transport = null;
-    this._worker?.destroy();
+    try {
+      this._worker?.destroy();
+    } catch (ex) {
+      errors.push(ex);
+    }
     this._worker = null;
+    if (errors.length === 1) {
+      throw errors[0];
+    }
+    if (errors.length > 1) {
+      throw new AggregateError(errors, "PDF document destruction failed.");
+    }
   }
 }
 class PDFDataRangeTransport {
@@ -12542,17 +12568,32 @@ class WorkerTransport {
     }
     const terminated = this.messageHandler.sendWithPromise("Terminate", null);
     waitOn.push(terminated);
-    Promise.all(waitOn).then(() => {
+    Promise.all(waitOn).then(async () => {
       this.commonObjs.clear();
       this.fontLoader.clear();
       this.#methodPromises.clear();
       this.filterFactory.destroy();
       TextLayer.cleanup();
-      this._networkStream?.cancelAllRequests(new AbortException("Worker was terminated."));
-      this.messageHandler?.destroy();
+      const errors = [];
+      try {
+        await this._networkStream?.cancelAllRequests(new AbortException("Worker was terminated."));
+      } catch (ex) {
+        errors.push(ex);
+      }
+      try {
+        this.messageHandler?.destroy();
+      } catch (ex) {
+        errors.push(ex);
+      }
       this.messageHandler = null;
+      if (errors.length === 1) {
+        throw errors[0];
+      }
+      if (errors.length > 1) {
+        throw new AggregateError(errors, "PDF transport destruction failed.");
+      }
       this.destroyCapability.resolve();
-    }, this.destroyCapability.reject);
+    }).catch(this.destroyCapability.reject);
     return this.destroyCapability.promise;
   }
   setupMessageHandler() {
@@ -12585,13 +12626,14 @@ class WorkerTransport {
         });
       };
       sink.onCancel = reason => {
-        this._fullReader.cancel(reason);
+        const cancellation = this._fullReader.cancel(reason);
         sink.ready.catch(readyReason => {
           if (this.destroyed) {
             return;
           }
           throw readyReason;
         });
+        return cancellation;
       };
     });
     messageHandler.on("ReaderHeadersReady", async data => {
@@ -12641,13 +12683,14 @@ class WorkerTransport {
         });
       };
       sink.onCancel = reason => {
-        rangeReader.cancel(reason);
+        const cancellation = rangeReader.cancel(reason);
         sink.ready.catch(readyReason => {
           if (this.destroyed) {
             return;
           }
           throw readyReason;
         });
+        return cancellation;
       };
     });
     messageHandler.on("GetDoc", ({

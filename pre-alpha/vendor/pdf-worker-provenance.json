@@ -9,6 +9,7 @@
   "shared_api_git_blob_sha": "0d201af6b5ffdeaedd0ed5b1b12050e51335e3ee",
   "upstream_fix": "https://github.com/mozilla/pdf.js/commit/58ac273f1f36b3d01b21f2a07b19f5884eca1b2a",
   "backport": "Only WorkerMessageHandler.onFailure changes: return when terminated instead of throwing ensureNotTerminated again.",
-  "scope": "Pre-alpha preview worker only. Shared root/live API and worker remain unchanged. Original source-map reference is retained; no source map is bundled.",
-  "offline": "As before, original PDFs and previews require a connection. This worker does not expand the pre-alpha offline cache."
+  "scope": "Pre-alpha preview worker backport only. Shared root/live worker remains unchanged; the shared API now has the separate local cancellation ownership modification documented by pdf-api-provenance.json.",
+  "offline": "As before, original PDFs and previews require a connection. This worker does not expand the pre-alpha offline cache.",
+  "shared_api_local_modification": "../../pdf-api-provenance.json"
 }
