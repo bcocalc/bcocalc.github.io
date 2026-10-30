@@ -4,8 +4,8 @@
   "license": "Apache-2.0; original complete license notice retained verbatim.",
   "originalGitBlob": "0d201af6b5ffdeaedd0ed5b1b12050e51335e3ee",
   "originalNormalizedSha256": "a209a2124baa35cbb9015b809926f1bcec9dd1c247296290e205dd9d76cb9128",
-  "modifiedNormalizedSha256": "ff83b28e86afb9a598e52c9c0f989feec24830126687bebac8ae0261e1479165",
-  "scope": "Local fetch cancellation promise ownership only; no worker protocol/version, parsing, rendering or original load-error filtering. Independent defect, not proven CI91 root cause. Range readiness-before-read defect remains outside this patch.",
+  "modifiedNormalizedSha256": "9cda957c60e5f8200363913b7eda935978128af415c6e4ca03da8c9f871c73ed",
+  "scope": "Local fetch cancellation and readiness promise ownership only; no worker protocol/version, parsing, rendering or original load-error filtering. Readiness outcomes are retained before a first read and preserve the original reason through read/cancel/destruction. Independent defects, not proven CI91 root cause.",
   "updates": "Not an upstream release/backport. Rebase these explicit edits and repeat ownership tests before replacing the bundled API. Both root and pre-alpha import this shared API; pdf.worker.mjs and pre-alpha/vendor/pdf.worker.mjs unchanged. Existing source-map reference retained; no source map bundled.",
   "edits": [
     {
@@ -72,6 +72,34 @@
       "oldText": "      sink.onCancel = reason => {\n        rangeReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n      };",
       "newText": "      sink.onCancel = reason => {\n        const cancellation = rangeReader.cancel(reason);\n        sink.ready.catch(readyReason => {\n          if (this.destroyed) {\n            return;\n          }\n          throw readyReason;\n        });\n        return cancellation;\n      };",
       "count": 1
+    },
+    {
+      "label": "retain _headersCapability settlement before any consumer",
+      "oldText": "    this._headersCapability = Promise.withResolvers();",
+      "newText": "    this._headersCapability = Promise.withResolvers();\n    this._readiness = this._headersCapability.promise.then(\n      () => ({ ready: true }),\n      reason => ({ ready: false, reason })\n    );",
+      "count": 1,
+      "section": "fetch"
+    },
+    {
+      "label": "retain _readCapability settlement before any consumer",
+      "oldText": "    this._readCapability = Promise.withResolvers();",
+      "newText": "    this._readCapability = Promise.withResolvers();\n    this._readiness = this._readCapability.promise.then(\n      () => ({ ready: true }),\n      reason => ({ ready: false, reason })\n    );",
+      "count": 1,
+      "section": "fetch"
+    },
+    {
+      "label": "only resolve range readiness after a reader exists",
+      "oldText": "      this._readCapability.resolve();\n      this._reader = response.body.getReader();",
+      "newText": "      this._reader = response.body.getReader();\n      this._readCapability.resolve();",
+      "count": 1,
+      "section": "fetch"
+    },
+    {
+      "label": "own early cancellation through readiness settlement",
+      "oldText": "  cancel(reason) {\n    try {\n      return this._reader?.cancel(reason);\n    } finally {\n      this._abortController.abort();\n    }\n  }",
+      "newText": "  cancel(reason) {\n    if (!this._reader) {\n      const cancellation = this._readiness.then(result => {\n        if (!result.ready) {\n          throw result.reason;\n        }\n        return this._reader.cancel(reason);\n      });\n      this._abortController.abort();\n      return cancellation;\n    }\n    try {\n      return this._reader.cancel(reason);\n    } finally {\n      this._abortController.abort();\n    }\n  }",
+      "count": 2,
+      "section": "fetch"
     }
   ]
 }

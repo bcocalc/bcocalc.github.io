@@ -10128,6 +10128,10 @@ class PDFFetchStreamReader {
     this._withCredentials = source.withCredentials || false;
     this._contentLength = source.length;
     this._headersCapability = Promise.withResolvers();
+    this._readiness = this._headersCapability.promise.then(
+      () => ({ ready: true }),
+      reason => ({ ready: false, reason })
+    );
     this._disableRange = source.disableRange || false;
     this._rangeChunkSize = source.rangeChunkSize;
     if (!this._rangeChunkSize && !this._disableRange) {
@@ -10202,8 +10206,18 @@ class PDFFetchStreamReader {
     };
   }
   cancel(reason) {
+    if (!this._reader) {
+      const cancellation = this._readiness.then(result => {
+        if (!result.ready) {
+          throw result.reason;
+        }
+        return this._reader.cancel(reason);
+      });
+      this._abortController.abort();
+      return cancellation;
+    }
     try {
-      return this._reader?.cancel(reason);
+      return this._reader.cancel(reason);
     } finally {
       this._abortController.abort();
     }
@@ -10217,6 +10231,10 @@ class PDFFetchStreamRangeReader {
     const source = stream.source;
     this._withCredentials = source.withCredentials || false;
     this._readCapability = Promise.withResolvers();
+    this._readiness = this._readCapability.promise.then(
+      () => ({ ready: true }),
+      reason => ({ ready: false, reason })
+    );
     this._isStreamingSupported = !source.disableStream;
     this._abortController = new AbortController();
     const headers = new Headers(stream.headers);
@@ -10230,8 +10248,8 @@ class PDFFetchStreamRangeReader {
       if (!validateResponseStatus(response.status)) {
         throw createResponseStatusError(response.status, url);
       }
-      this._readCapability.resolve();
       this._reader = response.body.getReader();
+      this._readCapability.resolve();
     }).catch(this._readCapability.reject);
     this.onProgress = null;
   }
@@ -10260,8 +10278,18 @@ class PDFFetchStreamRangeReader {
     };
   }
   cancel(reason) {
+    if (!this._reader) {
+      const cancellation = this._readiness.then(result => {
+        if (!result.ready) {
+          throw result.reason;
+        }
+        return this._reader.cancel(reason);
+      });
+      this._abortController.abort();
+      return cancellation;
+    }
     try {
-      return this._reader?.cancel(reason);
+      return this._reader.cancel(reason);
     } finally {
       this._abortController.abort();
     }

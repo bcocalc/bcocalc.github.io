@@ -3,6 +3,7 @@ import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
 import {fileURLToPath} from 'node:url';
+import {spawnSync} from 'node:child_process';
 const root=fileURLToPath(new URL('../',import.meta.url)),read=path=>readFileSync(root+'/'+path,'utf8').replace(/\r\n/g,'\n'),source=read('pdf.mjs'),provenance=JSON.parse(read('pdf-api-provenance.json'));
 let original=source;
 for(const edit of [...provenance.edits].reverse()){
@@ -12,11 +13,12 @@ for(const edit of [...provenance.edits].reverse()){
 const sha=text=>createHash('sha256').update(text).digest('hex');assert.equal(sha(original),provenance.originalNormalizedSha256);assert.equal(sha(original),'a209a2124baa35cbb9015b809926f1bcec9dd1c247296290e205dd9d76cb9128');assert.equal(createHash('sha1').update('blob '+Buffer.byteLength(original)+'\0'+original).digest('hex'),provenance.originalGitBlob);assert.equal(sha(source),provenance.modifiedNormalizedSha256);assert.equal(source.slice(0,source.indexOf('// TapCalc local modification:')).trimEnd(),original.slice(0,original.indexOf('/******/ // The require scope')).trimEnd(),'Original entire license notice retained');
 const tick=()=>new Promise(resolve=>setImmediate(resolve)),deferred=()=>Promise.withResolvers();
 function section(text,start,end){const a=text.indexOf(start),b=text.indexOf(end,a);assert.ok(a>=0&&b>a);return text.slice(a,b);}
-function readers({failure,range=false,disableStream=false,cancelFailure,cancelGate}={}){
+function readers({failure,range=false,disableStream=false,cancelFailure,cancelGate,fetchGate,fetchError,readerError,abortFailure}={}){
   const nativeFailure=failure;let aborts=0,cancels=0;
   const nativeReader={read:async()=>{if(nativeFailure)throw nativeFailure;return {done:true};},cancel:()=>{cancels++;if(cancelFailure)return Promise.reject(cancelFailure);return cancelGate?.promise||Promise.resolve();}};
-  const context={Promise,Headers,Uint8Array,ArrayBuffer,AggregateError,AbortException:Error,AbortController:class{abort(){aborts++;}},fetch:async()=>({url:'https://fixture.invalid/synthetic.pdf',status:200,headers:new Headers(),body:{getReader:()=>nativeReader}}),assert:(condition,message)=>assert.ok(condition,message),createHeaders:()=>new Headers(),createFetchOptions:()=>({}),getResponseOrigin:url=>new URL(url).origin,validateResponseStatus:status=>status===200,createResponseStatusError:()=>Error('Unexpected status'),validateRangeRequestCapabilities:()=>({allowRangeRequests:range}),extractFilenameFromHeader:()=>null,getArrayBuffer:value=>value};
-  const api=vm.runInNewContext(section(source,'class PDFFetchStream {','\n;// ./src/display/network.js')+';({PDFFetchStream,PDFFetchStreamReader,PDFFetchStreamRangeReader});',context),stream=new api.PDFFetchStream({url:'https://fixture.invalid/synthetic.pdf',disableStream,rangeChunkSize:16});stream._responseOrigin="https://fixture.invalid";return {api,stream,nativeReader,stats:()=>({aborts,cancels})};
+  const response={url:'https://fixture.invalid/synthetic.pdf',status:200,headers:new Headers(),body:{getReader:()=>{if(readerError)throw readerError;return nativeReader;}}};
+  const context={Promise,Headers,Uint8Array,ArrayBuffer,AggregateError,AbortException:Error,AbortController:class{abort(){aborts++;if(abortFailure)fetchGate.reject(abortFailure);}},fetch:()=>fetchGate?fetchGate.promise:fetchError?Promise.reject(fetchError):Promise.resolve(response),assert:(condition,message)=>assert.ok(condition,message),createHeaders:()=>new Headers(),createFetchOptions:()=>({}),getResponseOrigin:url=>new URL(url).origin,validateResponseStatus:status=>status===200,createResponseStatusError:()=>Error('Unexpected status'),validateRangeRequestCapabilities:()=>({allowRangeRequests:range}),extractFilenameFromHeader:()=>null,getArrayBuffer:value=>value};
+  const api=vm.runInNewContext(section(source,'class PDFFetchStream {','\n;// ./src/display/network.js')+';({PDFFetchStream,PDFFetchStreamReader,PDFFetchStreamRangeReader});',context),stream=new api.PDFFetchStream({url:'https://fixture.invalid/synthetic.pdf',disableStream,rangeChunkSize:16});stream._responseOrigin="https://fixture.invalid";return {api,stream,nativeReader,response,stats:()=>({aborts,cancels})};
 }
 for(const kind of ['full','range']){
   const error=Error('Original failed-stream cancellation'),f=readers({failure:error,cancelFailure:error}),reader=kind==='full'?f.stream.getFullReader():f.stream.getRangeReader(16,32);if(kind==='full')await reader.headersReady;else await tick();await assert.rejects(reader.read(),e=>e===error);await assert.rejects(reader.cancel(Error('Departure')),e=>e===error);assert.deepEqual(f.stats(),{aborts:1,cancels:1});
@@ -31,24 +33,81 @@ for(const kind of ['full','range']){
 {
   const error=Error('Streaming-disable cancellation failed'),f=readers({disableStream:true,range:true,cancelFailure:error}),reader=f.stream.getFullReader();await assert.rejects(reader.headersReady,e=>e===error);await assert.rejects(reader.read(),e=>e===error);assert.deepEqual(f.stats(),{aborts:1,cancels:1});
 }
+
+
+// Strict subprocess control proves a failure before any first read was an
+// unhandled rejection in the exact upstream source, and is retained now.
+for(const [label,body,expected] of [['original',original,1],['corrected',source,0]]){
+  const range=section(body,'class PDFFetchStreamRangeReader {','\n;// ./src/display/network.js');
+  const script="import vm from 'node:vm';import assert from 'node:assert/strict';const failure=new TypeError('Synthetic early range fetch failure');const C=vm.runInNewContext("+JSON.stringify(range+';PDFFetchStreamRangeReader;')+",{Promise,Headers,AbortController,fetch:()=>Promise.reject(failure),createFetchOptions:()=>({})});const reader=new C({source:{url:'https://fixture.invalid/synthetic.pdf'},headers:new Headers()},0,1);await new Promise(resolve=>setImmediate(resolve));await assert.rejects(reader.read(),e=>e===failure);";
+  const result=spawnSync(process.execPath,['--unhandled-rejections=strict','--input-type=module'],{input:script,encoding:'utf8',timeout:5000});assert.equal(result.error,undefined);assert.equal(result.status,expected,label+' strict no-first-read control');if(expected)assert.match(result.stderr,/TypeError: Synthetic early range fetch failure/);
+}
+
+// No-first-read controls: readiness is owned immediately, not only after read().
+for(const kind of ['full','range']){
+  const make=f=>kind==='full'?f.stream.getFullReader():f.stream.getRangeReader(16,32);
+  for(const failureKind of ['fetch','reader-creation']){
+    const error=Error('Original '+kind+' '+failureKind+' failure'),f=readers(failureKind==='fetch'?{fetchError:error}:{readerError:error}),r=make(f);
+    await tick(); // Deliberately no read/cancel observer until after rejection.
+    await assert.rejects(r.cancel(Error('Departure')),e=>e===error);
+    await assert.rejects(r.read(),e=>e===error);
+    await assert.rejects(f.stream.cancelAllRequests(Error('Destruction')),e=>e===error);
+    assert.equal(f.stats().cancels,0,'No native reader exists after failed readiness');
+  }
+
+  {
+    const gate=deferred(),error=new DOMException('Synthetic fetch aborted before headers','AbortError'),f=readers({fetchGate:gate,abortFailure:error}),r=make(f);
+    await assert.rejects(r.cancel(Error('Departure')),e=>e===error);
+    await assert.rejects(r.read(),e=>e===error);await assert.rejects(f.stream.cancelAllRequests(Error('Destruction')),e=>e===error);assert.equal(f.stats().cancels,0);
+  }
+  for(const failedFetch of [false,true]){
+    const gate=deferred(),error=Error('Original '+kind+' late fetch failure'),f=readers({fetchGate:gate}),r=make(f);let settled=false;
+    const cancel=r.cancel(Error('Departure before headers'));const observation=failedFetch?assert.rejects(cancel,e=>e===error):cancel;cancel.then(()=>settled=true,()=>settled=true);
+    await tick();assert.equal(settled,false,'Early cancellation owns pending readiness');assert.deepEqual(f.stats(),{aborts:1,cancels:0},'Abort is immediate even without a native reader');
+    if(failedFetch)gate.reject(error);else gate.resolve(f.response);await observation;
+    if(failedFetch){await assert.rejects(r.read(),e=>e===error);await assert.rejects(f.stream.cancelAllRequests(Error('Destruction')),e=>e===error);}
+    else{assert.deepEqual(f.stats(),{aborts:1,cancels:1},'Late healthy response reader is cancelled instead of orphaned');assert.equal((await r.read()).done,true);await f.stream.cancelAllRequests(Error('Destruction'));}
+  }
+}
+// App callers do not disable ranges; the bundled capability check requires the
+// response headers that CI91's GET-only fixture does not advertise.
+{
+  const validate=vm.runInNewContext('('+section(source,'function validateRangeRequestCapabilities(', '\nfunction extractFilenameFromHeader')+')');
+  assert.equal(validate({responseHeaders:new Headers({'Content-Length':'1024','Accept-Ranges':'bytes'}),isHttp:true,rangeChunkSize:16,disableRange:false}).allowRangeRequests,true);
+  assert.equal(validate({responseHeaders:new Headers({'Content-Length':'1024'}),isHttp:true,rangeChunkSize:16,disableRange:false}).allowRangeRequests,false);
+  assert.match(read('measurement.js'),/getDocument\(\{ url: pdfUrl \}\)/);
+  assert.match(read('pre-alpha/references.mjs'),/getDocument\(\{url:new URL\(source.path,import.meta.url\).href,isEvalSupported:false\}\)/);
+  assert.doesNotMatch(read('tests/launch-worker-upgrade-ui.mjs'),/Accept-Ranges/,'The exact CI91 fixture does not enable ranges through this header');
+}
+
 function taskHarness({transportError,workerError}={}){
   const C=vm.runInNewContext(section(source,'class PDFDocumentLoadingTask {','\nclass PDFDataRangeTransport {')+';PDFDocumentLoadingTask;', {Promise,AggregateError});const task=new C(),calls=[];task._transport={async destroy(){calls.push('transport');if(transportError)throw transportError;}};task._worker={port:{},destroy(){calls.push('worker');if(workerError)throw workerError;}};return {task,calls};
 }
 for(const mode of ['healthy','transport-error','both-errors']){
   const first=Error('Original transport failure'),second=Error('Original worker failure'),f=taskHarness({transportError:mode==='healthy'?null:first,workerError:mode==='both-errors'?second:null});if(mode==='healthy')await f.task.destroy();else await assert.rejects(f.task.destroy(),e=>mode==='both-errors'?e instanceof AggregateError&&e.errors[0]===first&&e.errors[1]===second:e===first);assert.deepEqual(f.calls,['transport','worker']);assert.equal(f.task._transport,null);assert.equal(f.task._worker,null);assert.equal(f.task.destroyed,true);
 }
-function transportHarness({cancelError,messageError,gate}={}){
+function transportHarness({cancelError,messageError,gate,networkStream}={}){
   const method=section(source,'  destroy() {\n    if (this.destroyCapability)','\n  setupMessageHandler() {'),calls=[];
-  const C=vm.runInNewContext('class Fixture {#passwordCapability;#pageCache=new Map();#pagePromises=new Map();#pageRefCache=new Map();#methodPromises=new Map();'+method+'};Fixture;', {Promise,AggregateError,AbortException:Error,TextLayer:{cleanup:()=>calls.push('text')}}),transport=new C();transport.commonObjs={clear:()=>calls.push('objects')};transport.fontLoader={clear:()=>calls.push('fonts')};transport.filterFactory={destroy:()=>calls.push('filters')};transport.messageHandler={sendWithPromise:async()=>{calls.push('terminate');},destroy:()=>{calls.push('message');if(messageError)throw messageError;}};transport._networkStream={cancelAllRequests:async()=>{calls.push('cancel');if(gate)await gate.promise;if(cancelError)throw cancelError;}};return {transport,calls};
+  const C=vm.runInNewContext('class Fixture {#passwordCapability;#pageCache=new Map();#pagePromises=new Map();#pageRefCache=new Map();#methodPromises=new Map();'+method+'};Fixture;', {Promise,AggregateError,AbortException:Error,TextLayer:{cleanup:()=>calls.push('text')}}),transport=new C();transport.commonObjs={clear:()=>calls.push('objects')};transport.fontLoader={clear:()=>calls.push('fonts')};transport.filterFactory={destroy:()=>calls.push('filters')};transport.messageHandler={sendWithPromise:async()=>{calls.push('terminate');},destroy:()=>{calls.push('message');if(messageError)throw messageError;}};transport._networkStream=networkStream||{cancelAllRequests:async()=>{calls.push('cancel');if(gate)await gate.promise;if(cancelError)throw cancelError;}};return {transport,calls};
 }
 {
   const gate=deferred(),f=transportHarness({gate});let settled=false;const work=f.transport.destroy();assert.equal(f.transport.destroy(),work,'Duplicate destruction shares one owner');work.then(()=>settled=true);await tick();assert.equal(settled,false);assert.ok(f.calls.includes('cancel'));assert.ok(!f.calls.includes('message'));gate.resolve();await work;assert.equal(f.calls.filter(x=>x==='cancel').length,1);assert.equal(f.calls.filter(x=>x==='message').length,1);assert.equal(f.transport.messageHandler,null);
 }
 for(const multiple of [false,true]){const error=Error('Original cancellation failure'),other=Error('Original message cleanup failure'),f=transportHarness({cancelError:error,messageError:multiple?other:null});await assert.rejects(f.transport.destroy(),e=>multiple?e instanceof AggregateError&&e.errors[0]===error&&e.errors[1]===other:e===error);assert.equal(f.calls.at(-1),'message');assert.equal(f.transport.messageHandler,null);}
+
+// The real fetch stream is connected through the actual transport/task destroy
+// methods: cancellation before headers must settle at the final public owner.
+for(const kind of ['full','range'])for(const failedFetch of [false,true]){
+  const gate=deferred(),error=Error('Original '+kind+' early destruction failure'),f=readers({fetchGate:gate}),reader=kind==='full'?f.stream.getFullReader():f.stream.getRangeReader(16,32),transport=transportHarness({networkStream:f.stream}),loading=taskHarness();loading.task._transport=transport.transport;
+  let settled=false;const work=loading.task.destroy(),observation=failedFetch?assert.rejects(work,e=>e===error):work;work.then(()=>settled=true,()=>settled=true);await tick();assert.equal(settled,false);assert.equal(f.stats().aborts,1);assert.equal(f.stats().cancels,0);
+  if(failedFetch)gate.reject(error);else gate.resolve(f.response);await observation;assert.equal(loading.task._worker,null);assert.equal(loading.task._transport,null);assert.equal(transport.transport.messageHandler,null);assert.ok(transport.calls.includes('message'));assert.ok(loading.calls.includes('worker'));
+  if(failedFetch)await assert.rejects(reader.read(),e=>e===error);else assert.equal(f.stats().cancels,1);
+}
+
 for(const reader of ['this._fullReader','rangeReader']){
   const start='      sink.onCancel = reason => {\n        const cancellation = '+reader+'.cancel(reason);',callback=section(source,start,'\n    });').trim();
   const error=Error('Original message cancellation failure'),sink={ready:Promise.resolve()},owner={destroyed:false,_fullReader:{cancel:()=>Promise.reject(error)}};
   // Bind the full-reader callback's lexical this using a wrapper.
   const setup=vm.runInNewContext('(function(){'+callback+'})',{sink,rangeReader:owner._fullReader});setup.call(owner);await assert.rejects(sink.onCancel(Error('Departure')),e=>e===error);
 }
-console.log('PASS PDF cleanup ownership: exact upstream reconstruction and license; full/range cancellation returns original errors; all readers attempted/settled; headers own streaming-disable failure; transport/task destruction awaits cleanup, releases owners on failure, aggregates simultaneous errors; strict load and message cancellation errors retained. Not CI91 attribution.');
+console.log('PASS PDF cleanup ownership: exact upstream reconstruction and license; full/range cancellation returns original errors; all readers attempted/settled; headers own streaming-disable failure; transport/task destruction awaits cleanup, releases owners on failure, aggregates simultaneous errors; strict load and message cancellation errors retained; no-first-read failed/healthy readiness, immediate early abort, late reader cleanup, public task destruction and app capability reachability. Not CI91 attribution.');

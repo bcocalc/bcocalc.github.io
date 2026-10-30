@@ -9,9 +9,9 @@ const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replac
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
   "pre-alpha/vendor/pdf-worker-provenance.json": "1731bbbf7adf7e4bbd580f98360d45252bf05433a3dc12c18bc369c0416c4604",
-  "tests/pdf-cleanup-ownership.mjs": "835595d11afe241e3031dd4fcbd908be2ef5f4246ef9cc402890d0a42a86e743",
-  "pdf-api-provenance.json": "e44e0c2b339bbe532853e9d5be7027e8fb1558b965bc317df6160fca134ea9be",
-  "pdf.mjs": "ff83b28e86afb9a598e52c9c0f989feec24830126687bebac8ae0261e1479165",
+  "tests/pdf-cleanup-ownership.mjs": "8bfcf6a29e3e1ebff0b08bfd8fb1ef87c4cf95f16ff5b80b264faf6bdb209af7",
+  "pdf-api-provenance.json": "556c32d02df138c5002d7f9a54bfb5c57558367ab2c155c9b48dc22b9b54b7b6",
+  "pdf.mjs": "9cda957c60e5f8200363913b7eda935978128af415c6e4ca03da8c9f871c73ed",
   "tests/root-runtime-cache-lifetime.mjs": "13e3d3ae9611a2978eac3d6f5956271dda08a32be92682db336edac67f276ed7",
   "tests/pre-alpha-worksheet-deferred.mjs": "3c3154cba90c4c70028052bc132da4380b08560491946d2bb215923297172817",
   "tests/pre-alpha-worksheet-deferred-ui.mjs": "9eafca526c691d661aad86075e934fd42e53882e843c041c46cbe81a3f66fda8",
@@ -22,7 +22,7 @@ const functional={
   "tests/pre-alpha-release-identity.mjs": "8e16364f5c684342e656cc6c52aa2128fe3c6bb9d4f9c8f111bfe3b030a6dd0a",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
   "measurement.js": "788d7b370acf21fca7ef47f57ff2ec0ab7c76f415a63fa5fe33a2930fb36a87d",
-  "docs/pre-alpha26-local-launch-readiness.md": "044bd8c76cc3d671818e148de754761bf1da1def7121e4c1827311585daef4b1",
+  "docs/pre-alpha26-local-launch-readiness.md": "6733e8cb25ba7e06a705fc659190656f101f8b5f2cbd818bdab94b1462e61f8b",
   "tests/launch-worker-upgrade-ui.mjs": "80e0448a6549142a585e8f75dc37fc19637db1b3bb6ea449ec15df3100c482c7",
   "tests/launch-readiness.mjs": "ee72f2034f0b19e5a17e248914b82230c86b82ff09878500604af3e477b129c1",
   "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
