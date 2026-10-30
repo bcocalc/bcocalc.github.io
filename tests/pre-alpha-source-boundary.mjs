@@ -9,15 +9,16 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
+  "tests/legacy-pdf-render-ownership.mjs": "c1d2cd64abdd5b2f65d5c074bea923903909c9bf45ecd049dd1530c7eb84cdfb",
   "overlays/tapcalc-livefix11-workflow.js": "927c9a0dea50fb9e1739d5e027f833dbdfcc5221b03bac95f70bcc31b1bc75ad",
   "tests/legacy-operation-mode.mjs": "5774fb413cee871c6d0c01defeafb6317374eef0c434a445cba95a50d14f1fe3",
   "tests/fixtures/legacy-workflow-refresh-521c654.json": "07ba3b70b7e82c82ecf3f7796b342b5f346200e1f754f63ec2953e913a3fee99",
 
   "tests/sync-preview.mjs": "7de814cc01b3a5e4d3547ea50fd6661726851ae389c6745fc3d5c37b9286e27e",
-  "tests/legacy-pdf-lazy.mjs": "0d1493c80aee047e5158174129992ca6579e42fb80d8fb258f7868052e164bcd",
-  "tests/legacy-pdf-preview-ui.mjs": "2f200bb1c852709d2c5b21e30309eb8287f633c6b7508c1af7c7ac9168f419f8",
+  "tests/legacy-pdf-lazy.mjs": "3b02c8c1d7a828bb934598a2be89042e0af9bbaf0a4b84ad127d220117c63900",
+  "tests/legacy-pdf-preview-ui.mjs": "978a93b07651c30f30a03544112bec9e2187a3121bc1dada25977f2b037f7930",
 
-  "tests/controlled-handoff-source-reconstruction.mjs": "44f9d2a729acc9c53010f946a9c5b6702d3beb7a3d372933e0ca43563bafcf20",
+  "tests/controlled-handoff-source-reconstruction.mjs": "dd572ced1e5446b04af456db05e83bec01987de49b04c431e1d4ff1fa4af595f",
   "tests/fixtures/root-worker-916610b.txt": "c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f",
   "tests/root-partial-cache.mjs": "e594b9bba119b2948b548874401e7077b60198116b8671edac0d0330226a8546",
   "tests/controlled-rollback.mjs": "1e364b9b15982b802e79d312ec68d7320af09b1261140573a122b7ec8319a3ef",
@@ -47,10 +48,10 @@ const functional={
   "tests/runner-cleanup.mjs": "c25cb1b3eae4b354d19c15cf5caaa9c362780ece52479d21265dddbeb3fae565",
   "tests/pre-alpha-release-identity.mjs": "87d18da37b75118adacae81ec7b53110f7dddc6b83416f40d07ceb05b39210ed",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
-  "measurement.js": "4f38b975dc3b5bc03653a5605d2aa0b248d95827bd6e229025336830f1c69471",
+  "measurement.js": "79117b68363f569942f57f976505a822bf6750611bcb31f5fe7c3555f8594234",
   "docs/pre-alpha26-local-launch-readiness.md": "f67e88349668930e1131b4cff980b9c0e2fdf6dd45bb73122b12a112d631267a",
   "tests/launch-worker-upgrade-ui.mjs": "658f6cde1c62d77b4034332116ae215ce5fb9fddd25d1313240c41f32e1661f6",
-  "tests/launch-readiness.mjs": "660abb5541c738bc7b8f29b823a955c5bd4f63cbb971382b6b87f42726216350",
+  "tests/launch-readiness.mjs": "d0d01989db1144b8b62391dc698fa89cce1739ee6db3bf93aab4d1b4c0061990",
   "tests/library-release-guard.mjs": "d66ade69720db56d34e1774e654cd76522d47b615d02c25d8530744e69031374",
   "measurement-card.html": "733750937a218aa5ce1466712d5b54160ee3220b0fcaa8cd2478e6a7ab923402",
   "service-worker.js": "19035a045cec2ba074380b0cee81cc4df4bea01075e5fd4fb6592d17b2cad410",
@@ -200,7 +201,56 @@ const lazyPreviewInverse={
     }
   ]
 };
-let lazyPreviewOriginal=restoreWorkflowRefresh('measurement.js',text('measurement.js'));
+const renderOwnerInverse={
+  "reviewedSha256": "79117b68363f569942f57f976505a822bf6750611bcb31f5fe7c3555f8594234",
+  "restoredSha256": "4f38b975dc3b5bc03653a5605d2aa0b248d95827bd6e229025336830f1c69471",
+  "hunks": [
+    {
+      "offset": 61649,
+      "after": "let machineReferenceVisualRenderTask = null;\n\nfunction cancelMachineReferenceVisualRender() {\n  const entry = machineReferenceVisualRenderTask;\n  if (!entry) return Promise.resolve();\n  if (!entry.cancellation) {\n    entry.cancellation = (async () => {\n      let cancelError;\n      try { entry.task.cancel(); } catch (error) { cancelError = error; }\n      try {\n        await entry.task.promise;\n      } catch (error) {\n        if (error?.name !== 'RenderingCancelledException') {\n          if (cancelError && cancelError !== error) throw new AggregateError([cancelError, error], 'Stack-up render cancellation failed.');\n          throw error;\n        }\n      } finally {\n        if (machineReferenceVisualRenderTask === entry) machineReferenceVisualRenderTask = null;\n      }\n      if (cancelError) throw cancelError;\n    })();\n  }\n  return entry.cancellation;\n}\n\n",
+      "before": ""
+    },
+    {
+      "offset": 62651,
+      "after": "  const cleanup = [cancelMachineReferenceVisualRender(), ...entries.map((entry) => Promise.resolve().then(() => entry.task.destroy()))];\n  return Promise.allSettled(cleanup).then((results) => {\n    const failures = results.filter(result => result.status === 'rejected').map(result => result.reason);\n    if (failures.length === 1) throw failures[0];\n    if (failures.length) throw new AggregateError(failures, 'Stack-up preview cleanup failed.');\n  });\n",
+      "before": "  return Promise.all(entries.map((entry) => entry.task.destroy()));\n"
+    },
+    {
+      "offset": 64515,
+      "after": "  while (machineReferenceVisualRenderTask) await cancelMachineReferenceVisualRender();\n  if (!machineReferencePreviewIsActive() || machineReferencePageHidden || machineReferencePreviewPaused || token !== machineReferenceVisualRenderToken) return;\n",
+      "before": ""
+    },
+    {
+      "offset": 65146,
+      "after": "\n  // Await the previous owner before resizing or reusing the shared canvas.\n  while (machineReferenceVisualRenderTask) await cancelMachineReferenceVisualRender();\n  if (!machineReferencePreviewIsActive() || machineReferencePageHidden || machineReferencePreviewPaused || token !== machineReferenceVisualRenderToken) return;\n",
+      "before": ""
+    },
+    {
+      "offset": 66437,
+      "after": "  const entry = { task: page.render({ canvasContext: context, viewport, transform }), cancellation: null };\n  machineReferenceVisualRenderTask = entry;\n  try {\n    await entry.task.promise;\n  } finally {\n    if (machineReferenceVisualRenderTask === entry) machineReferenceVisualRenderTask = null;\n  }\n",
+      "before": "  await page.render({ canvasContext: context, viewport, transform }).promise;\n"
+    },
+    {
+      "offset": 68027,
+      "after": "    cancelMachineReferenceVisualRender().catch(error => console.error('Stack-up render cleanup failed.', error));\n",
+      "before": ""
+    },
+    {
+      "offset": 77569,
+      "after": "  if (previousScreen === 'ref' && activeScreen !== 'ref') {\n    machineReferenceVisualRenderToken += 1;\n    cancelMachineReferenceVisualRender().catch(error => console.error('Stack-up render cleanup failed.', error));\n  }\n",
+      "before": "  if (previousScreen === 'ref' && activeScreen !== 'ref') machineReferenceVisualRenderToken += 1;\n"
+    }
+  ]
+};
+function restoreRenderOwner(source,plan){
+ assert.equal(createHash('sha256').update(source).digest('hex'),plan.reviewedSha256,'Exact reviewed render owner source');
+ for(const h of [...plan.hunks].reverse()){
+  assert.equal(source.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible render ownership span');
+  source=source.slice(0,h.offset)+h.before+source.slice(h.offset+h.after.length);
+ }
+ assert.equal(createHash('sha256').update(source).digest('hex'),plan.restoredSha256,'Unchanged source before render ownership fix');return source;
+}
+let lazyPreviewOriginal=restoreWorkflowRefresh('measurement.js',restoreRenderOwner(text('measurement.js'),renderOwnerInverse));
 assert.equal(createHash('sha256').update(lazyPreviewOriginal).digest('hex'),lazyPreviewInverse.reviewedSha256,'Exact reviewed legacy lazy-preview source');
 for(const h of [...lazyPreviewInverse.hunks].reverse()){
  assert.equal(lazyPreviewOriginal.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible legacy lazy-preview span');

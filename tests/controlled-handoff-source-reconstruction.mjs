@@ -145,7 +145,32 @@ const lazyPreviewReleaseInverse={
   "restoredSha256": "ef108043651a153388462d488689ea240d192ec95438a95ccc2d25038298717b",
   "enrollment": "    checks.push(['legacy-pdf-preview-ui.mjs', { TAPCALC_BROWSER: browser }]);\n"
 };
+const renderOwnerUnitInverse={
+  "reviewedSha256": "d0d01989db1144b8b62391dc698fa89cce1739ee6db3bf93aab4d1b4c0061990",
+  "restoredSha256": "660abb5541c738bc7b8f29b823a955c5bd4f63cbb971382b6b87f42726216350",
+  "hunks": [
+    {
+      "offset": 15466,
+      "after": "const previewCleanup=visualSource.slice(visualSource.indexOf('let machineReferenceVisualRenderTask = null;'),visualSource.indexOf('async function getStackupPdfDocument('));\n",
+      "before": "const previewCleanup=visualSource.slice(visualSource.indexOf('function stopMachineReferenceVisualLoads()'),visualSource.indexOf('async function getStackupPdfDocument('));\n"
+    },
+    {
+      "offset": 21638,
+      "after": "const loaderStart=visualSource.indexOf('let machineReferenceVisualRenderTask = null;'),loaderEnd=visualSource.indexOf('function hideMachineReferenceNativePreview()',loaderStart);\n",
+      "before": "const loaderStart=visualSource.indexOf('function stopMachineReferenceVisualLoads()'),loaderEnd=visualSource.indexOf('function hideMachineReferenceNativePreview()',loaderStart);\n"
+    }
+  ]
+};
+function restoreRenderOwner(source,plan){
+ assert.equal(digest(source),plan.reviewedSha256,'Exact reviewed render owner source');
+ for(const h of [...plan.hunks].reverse()){
+  assert.equal(source.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible render ownership span');
+  source=source.slice(0,h.offset)+h.before+source.slice(h.offset+h.after.length);
+ }
+ assert.equal(digest(source),plan.restoredSha256,'Unchanged source before render ownership fix');return source;
+}
 export function restoreControlledHandoff(path,source){
+ if(path==='tests/launch-readiness.mjs')source=restoreRenderOwner(source,renderOwnerUnitInverse);
  if(path==='tests/launch-readiness.mjs'){
   assert.equal(digest(source),lazyPreviewUnitInverse.reviewedSha256,'Exact reviewed lazy-preview unit source');
   for(const h of [...lazyPreviewUnitInverse.hunks].reverse()){

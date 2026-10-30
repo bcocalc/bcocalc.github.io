@@ -1378,10 +1378,40 @@ async function getStackupPdfJs() {
   return stackupPdfJsPromise;
 }
 
+let machineReferenceVisualRenderTask = null;
+
+function cancelMachineReferenceVisualRender() {
+  const entry = machineReferenceVisualRenderTask;
+  if (!entry) return Promise.resolve();
+  if (!entry.cancellation) {
+    entry.cancellation = (async () => {
+      let cancelError;
+      try { entry.task.cancel(); } catch (error) { cancelError = error; }
+      try {
+        await entry.task.promise;
+      } catch (error) {
+        if (error?.name !== 'RenderingCancelledException') {
+          if (cancelError && cancelError !== error) throw new AggregateError([cancelError, error], 'Stack-up render cancellation failed.');
+          throw error;
+        }
+      } finally {
+        if (machineReferenceVisualRenderTask === entry) machineReferenceVisualRenderTask = null;
+      }
+      if (cancelError) throw cancelError;
+    })();
+  }
+  return entry.cancellation;
+}
+
 function stopMachineReferenceVisualLoads() {
   const entries = [...stackupPdfDocumentCache.values()];
   stackupPdfDocumentCache.clear();
-  return Promise.all(entries.map((entry) => entry.task.destroy()));
+  const cleanup = [cancelMachineReferenceVisualRender(), ...entries.map((entry) => Promise.resolve().then(() => entry.task.destroy()))];
+  return Promise.allSettled(cleanup).then((results) => {
+    const failures = results.filter(result => result.status === 'rejected').map(result => result.reason);
+    if (failures.length === 1) throw failures[0];
+    if (failures.length) throw new AggregateError(failures, 'Stack-up preview cleanup failed.');
+  });
 }
 
 async function getStackupPdfDocument(pdfUrl, token) {
@@ -1417,12 +1447,18 @@ function showMachineReferenceNativePreview(source) {
 
 async function renderMachineReferenceVisualPage(source, token) {
   if (!machineReferenceVisualCanvasEl || !machineReferenceVisualWrapEl || !source) return;
+  while (machineReferenceVisualRenderTask) await cancelMachineReferenceVisualRender();
+  if (!machineReferencePreviewIsActive() || machineReferencePageHidden || machineReferencePreviewPaused || token !== machineReferenceVisualRenderToken) return;
   hideMachineReferenceNativePreview();
   const pdf = await getStackupPdfDocument(source.pdfUrl, token);
   if (!pdf || !machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;
 
   const page = await pdf.getPage(Math.min(source.pageNumber, pdf.numPages));
   if (!machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;
+
+  // Await the previous owner before resizing or reusing the shared canvas.
+  while (machineReferenceVisualRenderTask) await cancelMachineReferenceVisualRender();
+  if (!machineReferencePreviewIsActive() || machineReferencePageHidden || machineReferencePreviewPaused || token !== machineReferenceVisualRenderToken) return;
 
   const baseViewport = page.getViewport({ scale: 1 });
   const availableWidth = Math.max(320, machineReferenceVisualWrapEl.clientWidth - 28);
@@ -1442,7 +1478,13 @@ async function renderMachineReferenceVisualPage(source, token) {
   context.fillRect(0, 0, canvas.width, canvas.height);
 
   const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
-  await page.render({ canvasContext: context, viewport, transform }).promise;
+  const entry = { task: page.render({ canvasContext: context, viewport, transform }), cancellation: null };
+  machineReferenceVisualRenderTask = entry;
+  try {
+    await entry.task.promise;
+  } finally {
+    if (machineReferenceVisualRenderTask === entry) machineReferenceVisualRenderTask = null;
+  }
   if (!machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;
   hideMachineReferenceNativePreview();
   canvas.hidden = false;
@@ -1473,6 +1515,7 @@ function updateMachineReferenceVisual(row) {
     return;
   }
   if (!visualSource) {
+    cancelMachineReferenceVisualRender().catch(error => console.error('Stack-up render cleanup failed.', error));
     machineReferenceVisualCanvasEl.hidden = true;
     hideMachineReferenceNativePreview();
     setMachineReferenceVisualMessage('This reference is indexed only; no stack-up drawing is bundled for this entry yet.', true);
@@ -1653,7 +1696,10 @@ if (machineReferenceBodyEl) {
 initMachineReference();
 
 function syncMachineReferencePreviewScreen(previousScreen, activeScreen) {
-  if (previousScreen === 'ref' && activeScreen !== 'ref') machineReferenceVisualRenderToken += 1;
+  if (previousScreen === 'ref' && activeScreen !== 'ref') {
+    machineReferenceVisualRenderToken += 1;
+    cancelMachineReferenceVisualRender().catch(error => console.error('Stack-up render cleanup failed.', error));
+  }
   if (activeScreen === 'ref') updateMachineReferenceSummary();
 }
 window.tapCalcReferencePreviewScreenChanged = syncMachineReferencePreviewScreen;

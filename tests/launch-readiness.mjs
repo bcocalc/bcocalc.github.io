@@ -88,7 +88,7 @@ console.log('PASS root worker owner: exact scope, existing registration update, 
 // No timer can prove cancellation: recovery requires explicit intent or persisted restore.
 const visualSource=read('measurement.js'),visualStart=visualSource.indexOf('function updateMachineReferenceVisual(row) {'),visualEnd=visualSource.indexOf('function updateMachineReferenceDetail(row) {',visualStart);assert.ok(visualStart>=0&&visualEnd>visualStart);
 const visualFunction=visualSource.slice(visualStart,visualEnd),previewLifecycle="let machineReferencePageHidden=false;\nlet machineReferencePreviewPaused=false;\nwindow.addEventListener('beforeunload',()=>{\n  const pausedToken=++machineReferenceVisualRenderToken;\n  machineReferencePreviewPaused=true;\n  stopMachineReferenceVisualLoads().catch(error=>console.error('Stack-up preview cleanup failed.',error));\n  if(!machineReferenceVisualFallbackEl)return;\n  setMachineReferenceVisualMessage('Preview paused. ',true);\n  const resume=document.createElement('button');\n  resume.type='button';resume.className='secondary-btn';resume.textContent='Resume preview';\n  resume.addEventListener('click',()=>{\n    if(machineReferencePageHidden||resume.disabled||pausedToken!==machineReferenceVisualRenderToken)return;\n    resume.disabled=true;machineReferencePreviewPaused=false;updateMachineReferenceSummary();\n  });\n  machineReferenceVisualFallbackEl.appendChild(resume);\n});\nwindow.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferencePreviewPaused=true;machineReferenceVisualRenderToken+=1;stopMachineReferenceVisualLoads().catch(error=>console.error('Stack-up preview cleanup failed.',error));});\nwindow.addEventListener('pageshow',(event)=>{machineReferencePageHidden=false;if(event.persisted){machineReferencePreviewPaused=false;updateMachineReferenceSummary();}});\n";assert.ok(visualSource.includes(previewLifecycle));
-const previewCleanup=visualSource.slice(visualSource.indexOf('function stopMachineReferenceVisualLoads()'),visualSource.indexOf('async function getStackupPdfDocument('));
+const previewCleanup=visualSource.slice(visualSource.indexOf('let machineReferenceVisualRenderTask = null;'),visualSource.indexOf('async function getStackupPdfDocument('));
 function previewHarness({destroyError}={}){
  let fallbacks=0,resumes=0,timerId=0,run;const events={},timers=new Map(),requests=[],fallback={textContent:'',hidden:false,children:[],appendChild:node=>fallback.children.push(node)};
  const diagnostics=[],cleanupCache=new Map(destroyError?[['/synthetic.pdf',{task:{destroy:()=>Promise.reject(destroyError)}}]]:[]);
@@ -108,7 +108,7 @@ console.log('PASS cleanup rejection: actual loading-task destroy rejects through
 console.log('PASS preview recovery: exact unload/timer/later-pagehide race; no automatic restart; explicit retained-page resume; stale/duplicate action guards; normal fallback and persisted restore; no job access.');
 
 // A delayed module must not start a PDF task after pause, departure, or a newer render.
-const loaderStart=visualSource.indexOf('function stopMachineReferenceVisualLoads()'),loaderEnd=visualSource.indexOf('function hideMachineReferenceNativePreview()',loaderStart);
+const loaderStart=visualSource.indexOf('let machineReferenceVisualRenderTask = null;'),loaderEnd=visualSource.indexOf('function hideMachineReferenceNativePreview()',loaderStart);
 assert.ok(loaderStart>=0&&loaderEnd>loaderStart);
 function pdfOwnerHarness(){
  let resolveModule;const modulePromise=new Promise(resolve=>resolveModule=resolve),tasks=[];
