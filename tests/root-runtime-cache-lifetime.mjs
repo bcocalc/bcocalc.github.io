@@ -6,8 +6,11 @@ import vm from 'node:vm';
 const source=readFileSync(new URL('../service-worker.js',import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const original=source.replace('function cacheFresh(request, event)','function cacheFresh(request)').replaceAll('cacheFresh(event.request, event)','cacheFresh(event.request)').replace('event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));','caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));').replace('event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)));','caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));');
 // The handoff adds a route-specific partial-cache fallback. Prove event-owned fetch writes remain byte-identical to the reviewed base.
-import {execFileSync} from 'node:child_process';
-const base=execFileSync('git',['show','916610b:service-worker.js'],{encoding:'utf8'}).replace(/\r\n/g,'\n');
+// Vendored immutable public source fixture: no runtime Git-history dependency.
+const base=readFileSync(new URL('./fixtures/root-worker-916610b.txt',import.meta.url),'utf8').replace(/\r\n/g,'\n');
+assert.equal(createHash('sha256').update(base).digest('hex'),'c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f','Exact normalized 916610b worker fixture');
+const frozenUnowned=base.replace('function cacheFresh(request, event)','function cacheFresh(request)').replaceAll('cacheFresh(event.request, event)','cacheFresh(event.request)').replace('event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));','caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));').replace('event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)));','caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));');
+assert.equal(createHash('sha256').update(frozenUnowned).digest('hex'),'1970e7c4f8be9fa2d0fe069ad4be5ef6b2c4c4d26fd3dbe74057ee6e0cb1bc96','Preserve immutable pre-ownership source proof');
 const section=(text,start,end)=>text.slice(text.indexOf(start),text.indexOf(end,text.indexOf(start)));
 assert.equal(section(source,'function cacheFresh(','async function matchCurrentCache('),section(base,'function cacheFresh(','async function matchCurrentCache('));
 assert.equal(source.slice(source.indexOf("self.addEventListener('fetch'")),base.slice(base.indexOf("self.addEventListener('fetch'")));
