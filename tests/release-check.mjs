@@ -62,6 +62,7 @@ if (!args.includes('--unit-only')) {
     checks.push(['pre-alpha-offline-control.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-cache-context-control.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pre-alpha-worker-upgrade-ui.mjs', { TAPCALC_BROWSER: browser }]);
+    checks.push(['legacy-pdf-preview-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['launch-worker-upgrade-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['launch-worker-upgrade-ui.mjs', { TAPCALC_BROWSER: browser, TAPCALC_LAUNCH_ORIGIN_UNAVAILABLE: '1' }]);
     checks.push(['hot-tap-field-reading-ui.mjs', { TAPCALC_BROWSER: browser }]);

@@ -117,7 +117,49 @@ const changes={
     ]
   }
 };
+
+const lazyPreviewUnitInverse={
+  "reviewedSha256": "660abb5541c738bc7b8f29b823a955c5bd4f63cbb971382b6b87f42726216350",
+  "restoredSha256": "c5b79efc1e2b5b6b1212f6bbc341e125e1b67877ce707f3ac2d9130e746d2b89",
+  "hunks": [
+    {
+      "offset": 41,
+      "after": "import './legacy-pdf-lazy.mjs';\n",
+      "before": ""
+    },
+    {
+      "offset": 15998,
+      "after": " const context={machineReferencePreviewIsActive:()=>true,stackupPdfDocumentCache:cleanupCache,console:{error:(...args)=>diagnostics.push(args)},window:{addEventListener:(name,callback)=>events[name]=callback},document:{createElement:tag=>({tagName:tag,type:'',textContent:'',disabled:false,events:{},addEventListener(name,callback){this.events[name]=callback;},click(){this.events.click?.();}})},setTimeout:callback=>{timers.set(++timerId,callback);return timerId;},clearTimeout:id=>timers.delete(id),getMachineReferenceVisualSource:()=>({openUrl:'/synthetic.pdf',pageNumber:1}),machineReferenceVisualOpenEl:null,machineReferenceVisualFallbackEl:fallback,machineReferenceVisualCanvasEl:{hidden:true},setMachineReferenceVisualMessage:(message,show)=>{fallback.textContent=message;fallback.hidden=!show;fallback.children=[];},showMachineReferenceNativePreview:()=>{fallbacks++;return true;},renderMachineReferenceVisualPage:()=>new Promise((_,reject)=>requests.push(reject)),updateMachineReferenceSummary:()=>{resumes++;run({source:'Synthetic'});}};\n",
+      "before": " const context={stackupPdfDocumentCache:cleanupCache,console:{error:(...args)=>diagnostics.push(args)},window:{addEventListener:(name,callback)=>events[name]=callback},document:{createElement:tag=>({tagName:tag,type:'',textContent:'',disabled:false,events:{},addEventListener(name,callback){this.events[name]=callback;},click(){this.events.click?.();}})},setTimeout:callback=>{timers.set(++timerId,callback);return timerId;},clearTimeout:id=>timers.delete(id),getMachineReferenceVisualSource:()=>({openUrl:'/synthetic.pdf',pageNumber:1}),machineReferenceVisualOpenEl:null,machineReferenceVisualFallbackEl:fallback,machineReferenceVisualCanvasEl:{hidden:true},setMachineReferenceVisualMessage:(message,show)=>{fallback.textContent=message;fallback.hidden=!show;fallback.children=[];},showMachineReferenceNativePreview:()=>{fallbacks++;return true;},renderMachineReferenceVisualPage:()=>new Promise((_,reject)=>requests.push(reject)),updateMachineReferenceSummary:()=>{resumes++;run({source:'Synthetic'});}};\n"
+    },
+    {
+      "offset": 22281,
+      "after": " const ctx={machineReferencePreviewIsActive:()=>true,getStackupPdfJs:()=>modulePromise,stackupPdfDocumentCache:new Map(),machineReferencePageHidden:false,machineReferencePreviewPaused:false,machineReferenceVisualRenderToken:1};\n",
+      "before": " const ctx={getStackupPdfJs:()=>modulePromise,stackupPdfDocumentCache:new Map(),machineReferencePageHidden:false,machineReferencePreviewPaused:false,machineReferenceVisualRenderToken:1};\n"
+    }
+  ]
+};
+
+const lazyPreviewReleaseInverse={
+  "reviewedSha256": "43ad97b66e622d05bbe782f88095f76e5ffe2ac2ca49cdd32ca8202ad8b74c27",
+  "restoredSha256": "ef108043651a153388462d488689ea240d192ec95438a95ccc2d25038298717b",
+  "enrollment": "    checks.push(['legacy-pdf-preview-ui.mjs', { TAPCALC_BROWSER: browser }]);\n"
+};
 export function restoreControlledHandoff(path,source){
+ if(path==='tests/launch-readiness.mjs'){
+  assert.equal(digest(source),lazyPreviewUnitInverse.reviewedSha256,'Exact reviewed lazy-preview unit source');
+  for(const h of [...lazyPreviewUnitInverse.hunks].reverse()){
+   assert.equal(source.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible lazy-preview unit span');
+   source=source.slice(0,h.offset)+h.before+source.slice(h.offset+h.after.length);
+  }
+  assert.equal(digest(source),lazyPreviewUnitInverse.restoredSha256,'Unchanged 521c654 unit source before immutable handoff reconstruction');
+ }
+ if(path==='tests/release-check.mjs'){
+  assert.equal(digest(source),lazyPreviewReleaseInverse.reviewedSha256,'Exact reviewed lazy-preview release enrollment');
+  assert.equal(source.split(lazyPreviewReleaseInverse.enrollment).length-1,1,'One exact additional legacy preview check');
+  source=source.replace(lazyPreviewReleaseInverse.enrollment,'');
+  assert.equal(digest(source),lazyPreviewReleaseInverse.restoredSha256,'Unchanged frozen release runner before existing worksheet inverse');
+ }
  const change=changes[path];if(!change)return source;
  assert.equal(digest(source),change.reviewedSha256,'Exact independently reviewed handoff source required: '+path);
  for(const h of [...change.hunks].reverse()){

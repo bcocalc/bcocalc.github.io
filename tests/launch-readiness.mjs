@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import './legacy-pdf-lazy.mjs';
 import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
@@ -91,7 +92,7 @@ const previewCleanup=visualSource.slice(visualSource.indexOf('function stopMachi
 function previewHarness({destroyError}={}){
  let fallbacks=0,resumes=0,timerId=0,run;const events={},timers=new Map(),requests=[],fallback={textContent:'',hidden:false,children:[],appendChild:node=>fallback.children.push(node)};
  const diagnostics=[],cleanupCache=new Map(destroyError?[['/synthetic.pdf',{task:{destroy:()=>Promise.reject(destroyError)}}]]:[]);
- const context={stackupPdfDocumentCache:cleanupCache,console:{error:(...args)=>diagnostics.push(args)},window:{addEventListener:(name,callback)=>events[name]=callback},document:{createElement:tag=>({tagName:tag,type:'',textContent:'',disabled:false,events:{},addEventListener(name,callback){this.events[name]=callback;},click(){this.events.click?.();}})},setTimeout:callback=>{timers.set(++timerId,callback);return timerId;},clearTimeout:id=>timers.delete(id),getMachineReferenceVisualSource:()=>({openUrl:'/synthetic.pdf',pageNumber:1}),machineReferenceVisualOpenEl:null,machineReferenceVisualFallbackEl:fallback,machineReferenceVisualCanvasEl:{hidden:true},setMachineReferenceVisualMessage:(message,show)=>{fallback.textContent=message;fallback.hidden=!show;fallback.children=[];},showMachineReferenceNativePreview:()=>{fallbacks++;return true;},renderMachineReferenceVisualPage:()=>new Promise((_,reject)=>requests.push(reject)),updateMachineReferenceSummary:()=>{resumes++;run({source:'Synthetic'});}};
+ const context={machineReferencePreviewIsActive:()=>true,stackupPdfDocumentCache:cleanupCache,console:{error:(...args)=>diagnostics.push(args)},window:{addEventListener:(name,callback)=>events[name]=callback},document:{createElement:tag=>({tagName:tag,type:'',textContent:'',disabled:false,events:{},addEventListener(name,callback){this.events[name]=callback;},click(){this.events.click?.();}})},setTimeout:callback=>{timers.set(++timerId,callback);return timerId;},clearTimeout:id=>timers.delete(id),getMachineReferenceVisualSource:()=>({openUrl:'/synthetic.pdf',pageNumber:1}),machineReferenceVisualOpenEl:null,machineReferenceVisualFallbackEl:fallback,machineReferenceVisualCanvasEl:{hidden:true},setMachineReferenceVisualMessage:(message,show)=>{fallback.textContent=message;fallback.hidden=!show;fallback.children=[];},showMachineReferenceNativePreview:()=>{fallbacks++;return true;},renderMachineReferenceVisualPage:()=>new Promise((_,reject)=>requests.push(reject)),updateMachineReferenceSummary:()=>{resumes++;run({source:'Synthetic'});}};
  for(const name of ['localStorage','indexedDB','sessionStorage'])Object.defineProperty(context,name,{get(){throw Error('Preview recovery must not access jobs');}});
  run=vm.runInNewContext('let machineReferenceVisualRenderToken=0;'+previewCleanup+previewLifecycle+visualFunction+';updateMachineReferenceVisual;',context);run({source:'Synthetic'});
  return {events,requests,fallback,diagnostics,cleanupCache,render:()=>run({source:'Synthetic'}),advanceTimers(){for(const [id,callback]of [...timers]){timers.delete(id);callback();}},stats:()=>({fallbacks,resumes,requests:requests.length,timers:timers.size})};
@@ -112,7 +113,7 @@ assert.ok(loaderStart>=0&&loaderEnd>loaderStart);
 function pdfOwnerHarness(){
  let resolveModule;const modulePromise=new Promise(resolve=>resolveModule=resolve),tasks=[];
  const pdfjs={getDocument:()=>{let resolve,reject;const promise=new Promise((yes,no)=>{resolve=yes;reject=no;});const task={promise,destroyCalls:0,destroy(){task.destroyCalls++;reject(Error('Synthetic task destroyed'));return Promise.resolve();}};tasks.push({task,resolve,reject});return task;}};
- const ctx={getStackupPdfJs:()=>modulePromise,stackupPdfDocumentCache:new Map(),machineReferencePageHidden:false,machineReferencePreviewPaused:false,machineReferenceVisualRenderToken:1};
+ const ctx={machineReferencePreviewIsActive:()=>true,getStackupPdfJs:()=>modulePromise,stackupPdfDocumentCache:new Map(),machineReferencePageHidden:false,machineReferencePreviewPaused:false,machineReferenceVisualRenderToken:1};
  for(const name of ['localStorage','indexedDB','sessionStorage'])Object.defineProperty(ctx,name,{get(){throw Error('PDF owner must not access jobs');}});
  const owner=vm.runInNewContext(visualSource.slice(loaderStart,loaderEnd)+';({load:getStackupPdfDocument,stop:stopMachineReferenceVisualLoads});',ctx);
  return {ctx,owner,tasks,ready:()=>resolveModule(pdfjs)};

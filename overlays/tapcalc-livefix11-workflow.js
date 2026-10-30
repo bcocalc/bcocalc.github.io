@@ -56,10 +56,16 @@
   }
 
   function dispatchRefreshEvents() {
-    document.querySelectorAll('#cardScreen input, #cardScreen select, #cardScreen textarea, #calcScreen input, #calcScreen select, #calcScreen textarea, #jobScreen input, #jobScreen select, #jobScreen textarea').forEach((el) => {
-      try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
-      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
-    });
+    const previousRefresh = window.__tapcalcWorkflowRefreshActive;
+    window.__tapcalcWorkflowRefreshActive = true;
+    try {
+      document.querySelectorAll('#cardScreen input, #cardScreen select, #cardScreen textarea, #calcScreen input, #calcScreen select, #calcScreen textarea, #jobScreen input, #jobScreen select, #jobScreen textarea').forEach((el) => {
+        try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}
+        try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}
+      });
+    } finally {
+      window.__tapcalcWorkflowRefreshActive = previousRefresh;
+    }
   }
 
   function operationType(operation = {}) {

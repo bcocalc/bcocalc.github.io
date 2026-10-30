@@ -9,7 +9,15 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
-  "tests/controlled-handoff-source-reconstruction.mjs": "9260440e2a4b0292a513e1d05432b555fdbd3c51bf7a001f08b4a06e3e283aef",
+  "overlays/tapcalc-livefix11-workflow.js": "927c9a0dea50fb9e1739d5e027f833dbdfcc5221b03bac95f70bcc31b1bc75ad",
+  "tests/legacy-operation-mode.mjs": "5774fb413cee871c6d0c01defeafb6317374eef0c434a445cba95a50d14f1fe3",
+  "tests/fixtures/legacy-workflow-refresh-521c654.json": "07ba3b70b7e82c82ecf3f7796b342b5f346200e1f754f63ec2953e913a3fee99",
+
+  "tests/sync-preview.mjs": "7de814cc01b3a5e4d3547ea50fd6661726851ae389c6745fc3d5c37b9286e27e",
+  "tests/legacy-pdf-lazy.mjs": "0d1493c80aee047e5158174129992ca6579e42fb80d8fb258f7868052e164bcd",
+  "tests/legacy-pdf-preview-ui.mjs": "2f200bb1c852709d2c5b21e30309eb8287f633c6b7508c1af7c7ac9168f419f8",
+
+  "tests/controlled-handoff-source-reconstruction.mjs": "44f9d2a729acc9c53010f946a9c5b6702d3beb7a3d372933e0ca43563bafcf20",
   "tests/fixtures/root-worker-916610b.txt": "c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f",
   "tests/root-partial-cache.mjs": "e594b9bba119b2948b548874401e7077b60198116b8671edac0d0330226a8546",
   "tests/controlled-rollback.mjs": "1e364b9b15982b802e79d312ec68d7320af09b1261140573a122b7ec8319a3ef",
@@ -39,10 +47,10 @@ const functional={
   "tests/runner-cleanup.mjs": "c25cb1b3eae4b354d19c15cf5caaa9c362780ece52479d21265dddbeb3fae565",
   "tests/pre-alpha-release-identity.mjs": "87d18da37b75118adacae81ec7b53110f7dddc6b83416f40d07ceb05b39210ed",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
-  "measurement.js": "788d7b370acf21fca7ef47f57ff2ec0ab7c76f415a63fa5fe33a2930fb36a87d",
+  "measurement.js": "4f38b975dc3b5bc03653a5605d2aa0b248d95827bd6e229025336830f1c69471",
   "docs/pre-alpha26-local-launch-readiness.md": "f67e88349668930e1131b4cff980b9c0e2fdf6dd45bb73122b12a112d631267a",
   "tests/launch-worker-upgrade-ui.mjs": "658f6cde1c62d77b4034332116ae215ce5fb9fddd25d1313240c41f32e1661f6",
-  "tests/launch-readiness.mjs": "c5b79efc1e2b5b6b1212f6bbc341e125e1b67877ce707f3ac2d9130e746d2b89",
+  "tests/launch-readiness.mjs": "660abb5541c738bc7b8f29b823a955c5bd4f63cbb971382b6b87f42726216350",
   "tests/library-release-guard.mjs": "d66ade69720db56d34e1774e654cd76522d47b615d02c25d8530744e69031374",
   "measurement-card.html": "733750937a218aa5ce1466712d5b54160ee3220b0fcaa8cd2478e6a7ab923402",
   "service-worker.js": "19035a045cec2ba074380b0cee81cc4df4bea01075e5fd4fb6592d17b2cad410",
@@ -73,7 +81,7 @@ const functional={
   "pre-alpha/workspace.mjs": "a57f91ade0c45b9b0f76d94eb7f542a97f963958695e03bd88a04dd3a2500327",
   "tests/pre-alpha-production-binding.mjs": "bb79b42a7dd60fba2cc8e0ad1e871b497f996fbd046ff6a5f12bff23cf43f44c",
   "tests/pre-alpha-modern-sharing-ui.mjs": "8616f8be0a7004de14c5419edec493bfbd4486c1e951b80e783df7bbcba3c743",
-  "tests/release-check.mjs": "ef108043651a153388462d488689ea240d192ec95438a95ccc2d25038298717b",
+  "tests/release-check.mjs": "43ad97b66e622d05bbe782f88095f76e5ffe2ac2ca49cdd32ca8202ad8b74c27",
   "docs/pre-alpha-production-policy-proposal.rules": "5b2d23015f192cb41016d95936eea6febd9d48fcd64c6096b5968a8f5415ee50"
 };
 const paths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().split('\n').filter(path=>/^pre-alpha\/[^/]+\.(?:mjs|js|html|css)$/.test(path)||/^tests\/pre-alpha[^/]+\.mjs$/.test(path));
@@ -87,7 +95,119 @@ for(const path of ['cloud-sync.js','firestore.rules','dev','pre-alpha/workspace-
 const duplicateWorkerOwner="if ('serviceWorker' in navigator) {\n  window.addEventListener('load', async () => {\nnavigator.serviceWorker.register('service-worker.js?v=3.0.0-livefix21', { updateViaCache: 'none' }).then((registration) => registration.update()).catch(() => {});\n  });\n}\n";
 const previewLifecycle="let machineReferencePageHidden=false;\nlet machineReferencePreviewPaused=false;\nwindow.addEventListener('beforeunload',()=>{\n  const pausedToken=++machineReferenceVisualRenderToken;\n  machineReferencePreviewPaused=true;\n  stopMachineReferenceVisualLoads().catch(error=>console.error('Stack-up preview cleanup failed.',error));\n  if(!machineReferenceVisualFallbackEl)return;\n  setMachineReferenceVisualMessage('Preview paused. ',true);\n  const resume=document.createElement('button');\n  resume.type='button';resume.className='secondary-btn';resume.textContent='Resume preview';\n  resume.addEventListener('click',()=>{\n    if(machineReferencePageHidden||resume.disabled||pausedToken!==machineReferenceVisualRenderToken)return;\n    resume.disabled=true;machineReferencePreviewPaused=false;updateMachineReferenceSummary();\n  });\n  machineReferenceVisualFallbackEl.appendChild(resume);\n});\nwindow.addEventListener('pagehide',()=>{machineReferencePageHidden=true;machineReferencePreviewPaused=true;machineReferenceVisualRenderToken+=1;stopMachineReferenceVisualLoads().catch(error=>console.error('Stack-up preview cleanup failed.',error));});\nwindow.addEventListener('pageshow',(event)=>{machineReferencePageHidden=false;if(event.persisted){machineReferencePreviewPaused=false;updateMachineReferenceSummary();}});\n";
 const previewLoader="function stopMachineReferenceVisualLoads() {\n  const entries = [...stackupPdfDocumentCache.values()];\n  stackupPdfDocumentCache.clear();\n  return Promise.all(entries.map((entry) => entry.task.destroy()));\n}\n\nasync function getStackupPdfDocument(pdfUrl, token) {\n  const current = () => !machineReferencePageHidden && !machineReferencePreviewPaused && token === machineReferenceVisualRenderToken;\n  if (!current()) return null;\n  const pdfjsLib = await getStackupPdfJs();\n  if (!current()) return null;\n  if (!stackupPdfDocumentCache.has(pdfUrl)) {\n    const task = pdfjsLib.getDocument({ url: pdfUrl });\n    const entry = { task, promise: null };\n    entry.promise = task.promise.catch((error) => {\n      if (stackupPdfDocumentCache.get(pdfUrl) === entry) stackupPdfDocumentCache.delete(pdfUrl);\n      throw error;\n    });\n    stackupPdfDocumentCache.set(pdfUrl, entry);\n  }\n  return stackupPdfDocumentCache.get(pdfUrl).promise;\n}\n\n", frozenPreviewLoader="async function getStackupPdfDocument(pdfUrl) {\n  if (!stackupPdfDocumentCache.has(pdfUrl)) {\n    const pdfjsLib = await getStackupPdfJs();\n    const docPromise = pdfjsLib.getDocument({ url: pdfUrl }).promise.catch((error) => {\n      stackupPdfDocumentCache.delete(pdfUrl);\n      throw error;\n    });\n    stackupPdfDocumentCache.set(pdfUrl, docPromise);\n  }\n  return stackupPdfDocumentCache.get(pdfUrl);\n}\n\n";
-assert.equal(text('measurement.js').replace(previewLifecycle,'').replace(previewLoader,frozenPreviewLoader).replace('getStackupPdfDocument(source.pdfUrl, token)','getStackupPdfDocument(source.pdfUrl)').replace('  if (machineReferencePageHidden || machineReferencePreviewPaused) return;\n',''),git('show',base+':measurement.js').replace(duplicateWorkerOwner,''),'Calculator source unchanged except worker duplicate removal and owned preview load lifetime');
+const workflowRefreshInverse={
+  "measurement.js": {
+    "reviewedSha256": "4f38b975dc3b5bc03653a5605d2aa0b248d95827bd6e229025336830f1c69471",
+    "restoredSha256": "33c13903b646adc46d6243f3831699d11c7ddfd10b559008d87c9c9a0b6764d3",
+    "hunks": [
+      {
+        "offset": 189944,
+        "after": "    if (window.__tapcalcWorkflowRefreshActive) return;\n",
+        "before": ""
+      },
+      {
+        "offset": 190091,
+        "after": "    if (window.__tapcalcWorkflowRefreshActive) return;\n",
+        "before": ""
+      },
+      {
+        "offset": 567588,
+        "after": "    if (explicit) return explicit;\n",
+        "before": "    if (explicit === 'completionPlug' || explicit === 'lineStop') return explicit;\n"
+      },
+      {
+        "offset": 570097,
+        "after": "    if (liveStage) return liveStage;\n",
+        "before": "    if (liveStage === 'completionPlug' || liveStage === 'lineStop') return liveStage;\n"
+      },
+      {
+        "offset": 570484,
+        "after": "    if (selectedStage) return selectedStage;\n",
+        "before": "    if (selectedStage === 'completionPlug' || selectedStage === 'lineStop') return selectedStage;\n"
+      }
+    ]
+  },
+  "overlays/tapcalc-livefix11-workflow.js": {
+    "reviewedSha256": "927c9a0dea50fb9e1739d5e027f833dbdfcc5221b03bac95f70bcc31b1bc75ad",
+    "restoredSha256": "23a05a65f6e738a5af564ffaf6f0612f6cd9a07b36225259c95f5eecc2975aca",
+    "hunks": [
+      {
+        "offset": 2303,
+        "after": "    const previousRefresh = window.__tapcalcWorkflowRefreshActive;\n    window.__tapcalcWorkflowRefreshActive = true;\n    try {\n      document.querySelectorAll('#cardScreen input, #cardScreen select, #cardScreen textarea, #calcScreen input, #calcScreen select, #calcScreen textarea, #jobScreen input, #jobScreen select, #jobScreen textarea').forEach((el) => {\n        try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}\n        try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}\n      });\n    } finally {\n      window.__tapcalcWorkflowRefreshActive = previousRefresh;\n    }\n",
+        "before": "    document.querySelectorAll('#cardScreen input, #cardScreen select, #cardScreen textarea, #calcScreen input, #calcScreen select, #calcScreen textarea, #jobScreen input, #jobScreen select, #jobScreen textarea').forEach((el) => {\n      try { el.dispatchEvent(new Event('input', { bubbles: true })); } catch {}\n      try { el.dispatchEvent(new Event('change', { bubbles: true })); } catch {}\n    });\n"
+      }
+    ]
+  }
+};
+function restoreWorkflowRefresh(path,source){
+ const plan=workflowRefreshInverse[path];assert.ok(plan);
+ assert.equal(createHash('sha256').update(source).digest('hex'),plan.reviewedSha256,'Exact reviewed scoped refresh source: '+path);
+ for(const h of [...plan.hunks].reverse()){
+  assert.equal(source.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible scoped refresh span: '+path);
+  source=source.slice(0,h.offset)+h.before+source.slice(h.offset+h.after.length);
+ }
+ assert.equal(createHash('sha256').update(source).digest('hex'),plan.restoredSha256,'Unchanged source before scoped refresh fix: '+path);return source;
+}
+assert.equal(restoreWorkflowRefresh('overlays/tapcalc-livefix11-workflow.js',text('overlays/tapcalc-livefix11-workflow.js')),git('show',base+':overlays/tapcalc-livefix11-workflow.js'),'Workflow overlay unchanged except the scoped synthetic refresh marker');
+const lazyPreviewInverse={
+  "reviewedSha256": "33c13903b646adc46d6243f3831699d11c7ddfd10b559008d87c9c9a0b6764d3",
+  "restoredSha256": "788d7b370acf21fca7ef47f57ff2ec0ab7c76f415a63fa5fe33a2930fb36a87d",
+  "hunks": [
+    {
+      "offset": 45637,
+      "after": "function machineReferencePreviewIsActive() {\n  return document.body.dataset.activeScreen === 'ref';\n}\n",
+      "before": ""
+    },
+    {
+      "offset": 61911,
+      "after": "  const current = () => machineReferencePreviewIsActive() && !machineReferencePageHidden && !machineReferencePreviewPaused && token === machineReferenceVisualRenderToken;\n",
+      "before": "  const current = () => !machineReferencePageHidden && !machineReferencePreviewPaused && token === machineReferenceVisualRenderToken;\n"
+    },
+    {
+      "offset": 63369,
+      "after": "  if (!pdf || !machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;\n",
+      "before": "  if (token !== machineReferenceVisualRenderToken) return;\n"
+    },
+    {
+      "offset": 63552,
+      "after": "  if (!machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;\n",
+      "before": "  if (token !== machineReferenceVisualRenderToken) return;\n"
+    },
+    {
+      "offset": 64694,
+      "after": "  if (!machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;\n",
+      "before": "  if (token !== machineReferenceVisualRenderToken) return;\n"
+    },
+    {
+      "offset": 64950,
+      "after": "  if (!machineReferencePreviewIsActive() || machineReferencePageHidden || machineReferencePreviewPaused) return;\n",
+      "before": "  if (machineReferencePageHidden || machineReferencePreviewPaused) return;\n"
+    },
+    {
+      "offset": 66447,
+      "after": "    if (!machineReferencePreviewIsActive() || renderToken !== machineReferenceVisualRenderToken) return;\n",
+      "before": "    if (renderToken !== machineReferenceVisualRenderToken) return;\n"
+    },
+    {
+      "offset": 75335,
+      "after": "\nfunction syncMachineReferencePreviewScreen(previousScreen, activeScreen) {\n  if (previousScreen === 'ref' && activeScreen !== 'ref') machineReferenceVisualRenderToken += 1;\n  if (activeScreen === 'ref') updateMachineReferenceSummary();\n}\nwindow.tapCalcReferencePreviewScreenChanged = syncMachineReferencePreviewScreen;\n",
+      "before": ""
+    },
+    {
+      "offset": 556764,
+      "after": "    window.tapCalcReferencePreviewScreenChanged?.(previousScreen, activeScreen);\n",
+      "before": ""
+    }
+  ]
+};
+let lazyPreviewOriginal=restoreWorkflowRefresh('measurement.js',text('measurement.js'));
+assert.equal(createHash('sha256').update(lazyPreviewOriginal).digest('hex'),lazyPreviewInverse.reviewedSha256,'Exact reviewed legacy lazy-preview source');
+for(const h of [...lazyPreviewInverse.hunks].reverse()){
+ assert.equal(lazyPreviewOriginal.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible legacy lazy-preview span');
+ lazyPreviewOriginal=lazyPreviewOriginal.slice(0,h.offset)+h.before+lazyPreviewOriginal.slice(h.offset+h.after.length);
+}
+assert.equal(createHash('sha256').update(lazyPreviewOriginal).digest('hex'),lazyPreviewInverse.restoredSha256,'Unchanged 521c654 calculator before frozen baseline reconstruction');
+assert.equal(lazyPreviewOriginal.replace(previewLifecycle,'').replace(previewLoader,frozenPreviewLoader).replace('getStackupPdfDocument(source.pdfUrl, token)','getStackupPdfDocument(source.pdfUrl)').replace('  if (machineReferencePageHidden || machineReferencePreviewPaused) return;\n',''),git('show',base+':measurement.js').replace(duplicateWorkerOwner,''),'Calculator source unchanged except worker duplicate removal and owned preview load lifetime');
 const rootConfig=text('firebase-config.js'),frozenRootConfig=git('show',base+':firebase-config.js'),oldOwnerStart=frozenRootConfig.indexOf('  function registerFreshServiceWorker(){'),oldOwnerEnd=frozenRootConfig.indexOf('  function bootTapCalcShell(){',oldOwnerStart),newOwnerStart=rootConfig.indexOf('  let rootWorkerPreparation;'),newOwnerEnd=rootConfig.indexOf('  function bootTapCalcShell(){',newOwnerStart);
 assert.ok(oldOwnerStart>=0&&oldOwnerEnd>oldOwnerStart&&newOwnerStart>=0&&newOwnerEnd>newOwnerStart);
 assert.equal(rootConfig.slice(0,newOwnerStart)+frozenRootConfig.slice(oldOwnerStart,oldOwnerEnd)+rootConfig.slice(newOwnerEnd),frozenRootConfig,'Root config credentials/build/backend/overlay setup unchanged outside worker owner');

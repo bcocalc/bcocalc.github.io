@@ -1057,6 +1057,9 @@ const STACKUP_PDFJS_URL = './pdf.mjs?v=3.0.0-livefix21';
 const STACKUP_PDFJS_WORKER_URL = './pdf.worker.mjs?v=3.0.0-livefix21';
 let stackupPdfJsPromise = null;
 let machineReferenceVisualRenderToken = 0;
+function machineReferencePreviewIsActive() {
+  return document.body.dataset.activeScreen === 'ref';
+}
 let machineReferencePageHidden=false;
 let machineReferencePreviewPaused=false;
 window.addEventListener('beforeunload',()=>{
@@ -1382,7 +1385,7 @@ function stopMachineReferenceVisualLoads() {
 }
 
 async function getStackupPdfDocument(pdfUrl, token) {
-  const current = () => !machineReferencePageHidden && !machineReferencePreviewPaused && token === machineReferenceVisualRenderToken;
+  const current = () => machineReferencePreviewIsActive() && !machineReferencePageHidden && !machineReferencePreviewPaused && token === machineReferenceVisualRenderToken;
   if (!current()) return null;
   const pdfjsLib = await getStackupPdfJs();
   if (!current()) return null;
@@ -1416,10 +1419,10 @@ async function renderMachineReferenceVisualPage(source, token) {
   if (!machineReferenceVisualCanvasEl || !machineReferenceVisualWrapEl || !source) return;
   hideMachineReferenceNativePreview();
   const pdf = await getStackupPdfDocument(source.pdfUrl, token);
-  if (token !== machineReferenceVisualRenderToken) return;
+  if (!pdf || !machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;
 
   const page = await pdf.getPage(Math.min(source.pageNumber, pdf.numPages));
-  if (token !== machineReferenceVisualRenderToken) return;
+  if (!machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;
 
   const baseViewport = page.getViewport({ scale: 1 });
   const availableWidth = Math.max(320, machineReferenceVisualWrapEl.clientWidth - 28);
@@ -1440,14 +1443,14 @@ async function renderMachineReferenceVisualPage(source, token) {
 
   const transform = outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null;
   await page.render({ canvasContext: context, viewport, transform }).promise;
-  if (token !== machineReferenceVisualRenderToken) return;
+  if (!machineReferencePreviewIsActive() || token !== machineReferenceVisualRenderToken) return;
   hideMachineReferenceNativePreview();
   canvas.hidden = false;
   setMachineReferenceVisualMessage('', false);
 }
 
 function updateMachineReferenceVisual(row) {
-  if (machineReferencePageHidden || machineReferencePreviewPaused) return;
+  if (!machineReferencePreviewIsActive() || machineReferencePageHidden || machineReferencePreviewPaused) return;
   const visualSource = getMachineReferenceVisualSource(row);
   const visualUrl = visualSource?.openUrl || '';
   machineReferenceVisualRenderToken += 1;
@@ -1478,7 +1481,7 @@ function updateMachineReferenceVisual(row) {
   machineReferenceVisualCanvasEl.hidden = false;
   setMachineReferenceVisualMessage(`Loading ${row.source} page ${visualSource.pageNumber}...`, true);
   renderMachineReferenceVisualPage(visualSource, renderToken).catch(() => {
-    if (renderToken !== machineReferenceVisualRenderToken) return;
+    if (!machineReferencePreviewIsActive() || renderToken !== machineReferenceVisualRenderToken) return;
     machineReferenceVisualCanvasEl.hidden = true;
     if (!showMachineReferenceNativePreview(visualSource)) {
       setMachineReferenceVisualMessage('The inline preview could not load. Use Open PDF to view the drawing.', true);
@@ -1648,6 +1651,12 @@ if (machineReferenceBodyEl) {
   });
 }
 initMachineReference();
+
+function syncMachineReferencePreviewScreen(previousScreen, activeScreen) {
+  if (previousScreen === 'ref' && activeScreen !== 'ref') machineReferenceVisualRenderToken += 1;
+  if (activeScreen === 'ref') updateMachineReferenceSummary();
+}
+window.tapCalcReferencePreviewScreenChanged = syncMachineReferencePreviewScreen;
 
 function formatPivotFraction(value, denominator = 64) {
   if (!Number.isFinite(value)) return '-';
@@ -3630,11 +3639,13 @@ if (mdEl && lsMdEl) {
   };
 
   mdEl.addEventListener('input', () => {
+    if (window.__tapcalcWorkflowRefreshActive) return;
     syncLineStopMd();
     calcLineStop();
   });
 
   lsMdEl.addEventListener('input', () => {
+    if (window.__tapcalcWorkflowRefreshActive) return;
     lsMdEl.dataset.userEdited = 'true';
   });
 
@@ -11496,6 +11507,7 @@ const VERSION = '3.0.0-livefix21';
     const activeScreen = normalizeScreen(name);
     syncVisibleScreens(activeScreen);
     syncTabs(activeScreen);
+    window.tapCalcReferencePreviewScreenChanged?.(previousScreen, activeScreen);
 
     if (activeScreen === 'calc') {
       applyCalcMode(options.mode);
@@ -11764,7 +11776,7 @@ const VERSION = '3.0.0-livefix21';
   function operationWorkflowStage(operation = {}) {
     const state = operation?.state || operation || {};
     const explicit = stageFromWords(operation?.operationType, operation?.mode, state?.activeMode, state?.operationType);
-    if (explicit === 'completionPlug' || explicit === 'lineStop') return explicit;
+    if (explicit) return explicit;
     if (stateHasCompletionPlugData(state)) return 'completionPlug';
     if (stateHasLineStopData(state)) return 'lineStop';
     if (explicit === 'hotTap' || stateHasHotTapData(state)) return 'hotTap';
@@ -11828,7 +11840,7 @@ const VERSION = '3.0.0-livefix21';
       try { return typeof window.tapCalcGetSelectedOperation === 'function' ? window.tapCalcGetSelectedOperation() : null; } catch { return null; }
     })();
     const liveStage = operationWorkflowStage(liveOperation);
-    if (liveStage === 'completionPlug' || liveStage === 'lineStop') return liveStage;
+    if (liveStage) return liveStage;
 
     const operations = getRecordOperations(record || {});
     const selectedId = String(record?.jobBundle?.selectedOperationId || '').trim();
@@ -11836,7 +11848,7 @@ const VERSION = '3.0.0-livefix21';
       ? operations.find((operation) => String(operation?.id || '') === selectedId)
       : null;
     const selectedStage = operationWorkflowStage(selectedOperation);
-    if (selectedStage === 'completionPlug' || selectedStage === 'lineStop') return selectedStage;
+    if (selectedStage) return selectedStage;
 
     if (operations.some((operation) => operationWorkflowStage(operation) === 'completionPlug')) return 'completionPlug';
     if (operations.some((operation) => operationWorkflowStage(operation) === 'lineStop')) return 'lineStop';

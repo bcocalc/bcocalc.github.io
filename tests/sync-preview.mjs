@@ -24,7 +24,7 @@ const server = createServer((request, response) => {
   const path = decodeURIComponent(url.pathname);
   // Additive PDF-worker fixture only: same-origin workers, never external traffic.
   // All ordinary tests retain worker-src 'none'; browser contexts still block service workers.
-  const workerPolicy=path==='/pre-alpha/'&&url.searchParams.get('fixture')==='pdf-worker'?"'self'":"'none'";
+  const workerPolicy=(path==='/pre-alpha/'&&url.searchParams.get('fixture')==='pdf-worker'||path==='/measurement-card.html'&&url.searchParams.get('fixture')==='legacy-pdf-preview')?"'self'":"'none'";
   response.setHeader('Content-Security-Policy', "default-src 'self' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self'; worker-src "+workerPolicy+"; object-src 'none'");
   response.setHeader('Cache-Control', 'no-store');
   if (path.startsWith('/v1/')) {
