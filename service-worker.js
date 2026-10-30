@@ -77,11 +77,11 @@ function isShellAsset(url) {
   );
 }
 
-function cacheFresh(request) {
+function cacheFresh(request, event) {
   return fetch(request, { cache: 'no-store' }).then((response) => {
     if (response && response.ok) {
       const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+      event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(request, copy)));
     }
     return response;
   });
@@ -111,12 +111,12 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin && url.hostname !== 'www.gstatic.com') return;
 
   if (event.request.mode === 'navigate') {
-    event.respondWith(cacheFresh(event.request).catch(() => cacheFallback(event.request)));
+    event.respondWith(cacheFresh(event.request, event).catch(() => cacheFallback(event.request)));
     return;
   }
 
   if (isShellAsset(url)) {
-    event.respondWith(cacheFresh(event.request).catch(() => cacheFallback(event.request)));
+    event.respondWith(cacheFresh(event.request, event).catch(() => cacheFallback(event.request)));
     return;
   }
 
@@ -125,7 +125,7 @@ self.addEventListener('fetch', (event) => {
       .then((cached) => cached || fetch(event.request).then((response) => {
         if (response && response.ok) {
           const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)));
         }
         return response;
       }))

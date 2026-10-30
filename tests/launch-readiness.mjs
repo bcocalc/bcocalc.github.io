@@ -155,3 +155,5 @@ for(const stage of ['lookup','register','update'])await boundedPreparation(stage
 console.log('PASS preparation deadline: never-settling lookup/register/update restore Retry; busy calls coalesce; stale settlement cannot continue or navigate; explicit retry succeeds.');
 
 await import('./runner-cleanup-test.mjs');
+
+await import('./root-runtime-cache-lifetime.mjs');
