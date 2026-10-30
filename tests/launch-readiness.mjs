@@ -3,15 +3,15 @@ import {readFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
 import vm from 'node:vm';
 import {MessageChannel} from 'node:worker_threads';
-const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replaceAll('\r\n','\n'),source=read('launch.js'),APP='pre-alpha26',VERSION='launch-'+APP+'-1';
+const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replaceAll('\r\n','\n'),source=read('launch.js'),APP='pre-alpha26',VERSION='launch-'+APP+'-2';
 async function launch({path='/',standalone=false,flag=false,ready=true,fail=false,noServiceWorker=false,fresh=false,noRoot=false}={}){
  let replaced='',stopped=0,registers=0,rootRegistered=false,childRegistered=false,rootUpdates=0;const status={textContent:''},retry={disabled:false,addEventListener(){}};
- const rootWorker={state:'activated',postMessage:(message,ports)=>{if((ready||rootRegistered)&&message.type==='tapcalc-launch-version'){ports[0].postMessage({version:VERSION});ports[0].close();}}};
- const modern={state:'activated',postMessage:(message,ports)=>{if((ready||childRegistered)&&message.type==='tapcalc-pre-alpha-version'){ports[0].postMessage({build:APP});ports[0].close();}}};
+ const rootWorker={scriptURL:'https://fixture.invalid/service-worker.js?v='+VERSION,state:'activated',postMessage:(message,ports)=>{if((ready||rootRegistered)&&message.type==='tapcalc-launch-version'){ports[0].postMessage({version:VERSION});ports[0].close();}}};
+ const modern={scriptURL:'https://fixture.invalid/pre-alpha/service-worker.js?v='+APP,state:'activated',postMessage:(message,ports)=>{if((ready||childRegistered)&&message.type==='tapcalc-pre-alpha-version'){ports[0].postMessage({build:APP});ports[0].close();}}};
  const rootRegistration={scope:'https://fixture.invalid/',active:rootWorker,update:async()=>{rootUpdates++;if(fail)throw Error('Synthetic root update failure');if(fresh)rootRegistered=true;}};
- const sw={controller:rootWorker,getRegistration:async url=>new URL(url).pathname.startsWith('/pre-alpha/')?{scope:'https://fixture.invalid/pre-alpha/',active:modern}:noRoot?undefined:rootRegistration,register:async url=>{registers++;if(fail)throw Error('Synthetic network failure');const child=url.includes('/pre-alpha/');if(fresh){if(child)childRegistered=true;else rootRegistered=true;}return {active:child?modern:rootWorker,update:async()=>{throw Error('Duplicate update after registration');}};}};
+ const sw={controller:rootWorker,getRegistration:async url=>new URL(url).pathname.startsWith('/pre-alpha/')?{scope:'https://fixture.invalid/pre-alpha/',active:modern,update:async()=>{if(fail)throw Error('Synthetic child failure');childRegistered=true;}}:noRoot&&!rootRegistered?undefined:rootRegistration,register:async url=>{registers++;if(fail)throw Error('Synthetic network failure');const child=url.includes('/pre-alpha/');if(fresh){if(child)childRegistered=true;else rootRegistered=true;}return {scope:child?'https://fixture.invalid/pre-alpha/':'https://fixture.invalid/',active:child?modern:rootWorker,update:async()=>{throw Error('Duplicate update after registration');}};}};
  const location={href:'https://fixture.invalid'+path+(flag?'?legacy=1':''),replace:url=>replaced=url},navigator={standalone,...noServiceWorker?{}:{serviceWorker:sw}};
- const context={URL,MessageChannel,setTimeout,clearTimeout,Date,Promise,location,navigator,matchMedia:()=>({matches:standalone}),window:{stop:()=>stopped++},document:{currentScript:{src:'https://fixture.invalid/launch.js?v='+VERSION},getElementById:id=>id==='launch-status'?status:retry}};
+ const context={URL,MessageChannel,setTimeout,clearTimeout,Date,Promise,location,navigator,matchMedia:()=>({matches:standalone}),console:{error(){}},window:{stop:()=>stopped++,addEventListener(){}},document:{currentScript:{src:'https://fixture.invalid/launch.js?v='+VERSION},getElementById:id=>id==='launch-status'?status:id==='launch-retry'?retry:null}};
  Object.defineProperty(context,'localStorage',{get(){throw Error('Launcher must not access storage');}});vm.runInNewContext(source,context);
  for(let i=0;i<100&&!replaced&&!status.textContent.includes('could not');i++)await new Promise(resolve=>setTimeout(resolve,10));
  return {replaced,stopped,registers,rootUpdates,status:status.textContent};
@@ -20,14 +20,14 @@ assert.deepEqual(await launch({path:'/measurement-card.html'}),{replaced:'',stop
 assert.deepEqual(await launch({path:'/measurement-card.html',standalone:true,flag:true}),{replaced:'',stopped:0,registers:0,rootUpdates:0,status:''});
 const installed=await launch({path:'/measurement-card.html',standalone:true});assert.equal(installed.stopped,1);assert.equal(installed.replaced,'https://fixture.invalid/?from=installed');
 const cached=await launch();assert.equal(cached.replaced,'https://fixture.invalid/pre-alpha/?v='+APP);assert.equal(cached.registers,0,'Trusted activated workers work without network update');assert.equal(cached.rootUpdates,0);
-const prepared=await launch({ready:false,fresh:true});assert.equal(prepared.registers,1);assert.equal(prepared.rootUpdates,1);assert.equal(prepared.replaced,'https://fixture.invalid/pre-alpha/?v='+APP);
-const coldRoot=await launch({ready:false,fresh:true,noRoot:true});assert.equal(coldRoot.registers,2);assert.equal(coldRoot.rootUpdates,0);assert.equal(coldRoot.replaced,'https://fixture.invalid/pre-alpha/?v='+APP);
-const unsupported=await launch({noServiceWorker:true});assert.equal(unsupported.replaced,'https://fixture.invalid/pre-alpha/?v='+APP);
+const prepared=await launch({ready:false,fresh:true});assert.equal(prepared.registers,0);assert.equal(prepared.rootUpdates,1);assert.equal(prepared.replaced,'https://fixture.invalid/pre-alpha/?v='+APP);
+const coldRoot=await launch({ready:false,fresh:true,noRoot:true});assert.equal(coldRoot.registers,1);assert.equal(coldRoot.rootUpdates,0);assert.equal(coldRoot.replaced,'https://fixture.invalid/pre-alpha/?v='+APP);
+const unsupported=await launch({noServiceWorker:true});assert.equal(unsupported.replaced,'');assert.match(unsupported.status,/saved jobs have not been changed/);
 const held=await launch({ready:false,fail:true});assert.equal(held.replaced,'');assert.match(held.status,/saved jobs have not been changed/);
 assert.doesNotMatch(source,/localStorage|indexedDB|sessionStorage|\.delete\(/);
 const manifest=JSON.parse(read('manifest.json')),oldManifest=JSON.parse(execFileSync('git',['show','cdf8471:manifest.json'],{encoding:'utf8'}));
-assert.equal(manifest.start_url,'./pre-alpha/?v='+APP);assert.equal(manifest.id,oldManifest.start_url);assert.equal(manifest.scope,oldManifest.scope);assert.deepEqual(manifest.icons,oldManifest.icons);
-assert.match(read('index.html'),/legacy=1/);assert.doesNotMatch(read('index.html'),/http-equiv="refresh"|<iframe/);assert.match(read('measurement-card.html'),/launch\.js\?v=launch-pre-alpha26-1/);
+assert.equal(manifest.start_url,'./?v='+VERSION);assert.equal(manifest.id,oldManifest.start_url);assert.equal(manifest.scope,oldManifest.scope);assert.deepEqual(manifest.icons,oldManifest.icons);
+assert.match(read('index.html'),/legacy=1/);assert.doesNotMatch(read('index.html'),/http-equiv="refresh"|<iframe/);assert.match(read('measurement-card.html'),/launch\.js\?v=launch-pre-alpha26-2/);
 const listeners={},worker={URL,Request,self:{location:{href:'https://fixture.invalid/service-worker.js',origin:'https://fixture.invalid'},addEventListener:(type,fn)=>listeners[type]=fn}};
 vm.runInNewContext(read('service-worker.js'),worker);
 for(const path of ['/pre-alpha/','/pre-alpha/reference-helpers.mjs','/dev/measurement-card.html']){
@@ -38,15 +38,15 @@ assert.match(read('service-worker.js'),/cache\.addAll\(CRITICAL/);assert.match(r
 // Readiness observation must not wake an outgoing worker while its replacement is pending.
 const rootReadyStart=source.indexOf(' const rootReady='),rootReadyEnd=source.indexOf(' const modernReady=',rootReadyStart);assert.ok(rootReadyStart>=0&&rootReadyEnd>rootReadyStart);
 for(const pending of ['installing','waiting']){
- let priorProbes=0;const priorContext={VERSION,navigator:{serviceWorker:{controller:{}}},ask:async()=>{priorProbes++;return 'outgoing-build';}};
+ let priorProbes=0;const outgoing={state:'activated',scriptURL:'https://fixture.invalid/service-worker.js'},priorContext={VERSION,root:{href:'https://fixture.invalid/'},navigator:{serviceWorker:{controller:outgoing}},ask:async()=>{priorProbes++;return 'outgoing-build';}};
  const priorReady=vm.runInNewContext(source.slice(rootReadyStart,rootReadyEnd).replace('!reg?.installing&&!reg?.waiting&&','')+';rootReady;',priorContext);
- for(let turn=0;turn<3;turn++)assert.equal(await priorReady({[pending]:{},active:{}}),false);
+ for(let turn=0;turn<3;turn++)assert.equal(await priorReady({scope:'https://fixture.invalid/',[pending]:{},active:outgoing}),false);
  assert.equal(priorProbes,3,'Regression control: the prior readiness code repeatedly messages the outgoing worker while '+pending);
 }
 for(const pending of ['installing','waiting']){
- let probes=0;const nextWorker={},pendingRegistration={[pending]:{state:pending==='installing'?'installing':'installed'}};
+ let probes=0;const nextWorker={state:'activated',scriptURL:'https://fixture.invalid/service-worker.js'},pendingRegistration={scope:'https://fixture.invalid/',[pending]:{state:pending==='installing'?'installing':'installed'}};
  Object.defineProperty(pendingRegistration,'active',{get(){throw Error('Pending replacement must not probe outgoing worker');},configurable:true});
- const readyContext={VERSION,navigator:{serviceWorker:{controller:nextWorker}},ask:async()=>{probes++;return VERSION;}};
+ const readyContext={VERSION,root:{href:'https://fixture.invalid/'},navigator:{serviceWorker:{controller:nextWorker}},ask:async()=>{probes++;return VERSION;}};
  const rootReady=vm.runInNewContext(source.slice(rootReadyStart,rootReadyEnd)+';rootReady;',readyContext);
  assert.equal(await rootReady(pendingRegistration),false);assert.equal(probes,0);
  delete pendingRegistration[pending];Object.defineProperty(pendingRegistration,'active',{value:nextWorker});assert.equal(await rootReady(pendingRegistration),true);assert.equal(probes,2,'Exact active and controller identity checks resume after pending state clears');
@@ -142,13 +142,13 @@ console.log('PASS install policy: synchronous skip-waiting request; installation
 // Deterministic deadline tests cover native APIs that never settle and stale continuations.
 async function boundedPreparation(stage,{retryAfterTimeout=false}={}){
  let retryHandler,deadline,lateResolve,entered=false,rootReadyNow=false,rootUpdates=0,registers=0,lookups=0;const navigations=[],status={textContent:''},retry={disabled:false,addEventListener:(type,callback)=>{retryHandler=callback;}},pending=new Promise(resolve=>lateResolve=resolve),timers=new Set();
- const worker={state:'activated',postMessage:(message,ports)=>{ports[0].postMessage({version:rootReadyNow?VERSION:'previous-build'});ports[0].close();}},child={state:'activated',postMessage:(message,ports)=>{ports[0].postMessage({build:APP});ports[0].close();}};
+ const worker={scriptURL:'https://fixture.invalid/service-worker.js?v='+VERSION,state:'activated',postMessage:(message,ports)=>{ports[0].postMessage({version:rootReadyNow?VERSION:'previous-build'});ports[0].close();}},child={scriptURL:'https://fixture.invalid/pre-alpha/service-worker.js?v='+APP,state:'activated',postMessage:(message,ports)=>{ports[0].postMessage({build:APP});ports[0].close();}};
  const registration={scope:'https://fixture.invalid/',active:worker,update:()=>{rootUpdates++;if(stage==='update'&&rootUpdates===1){entered=true;return pending;}rootReadyNow=true;return Promise.resolve();}};
- const sw={controller:worker,getRegistration:url=>{lookups++;if(stage==='lookup'&&lookups===1){entered=true;return pending;}return Promise.resolve(new URL(url).pathname.startsWith('/pre-alpha/')?{active:child}:stage==='register'&&!rootReadyNow?undefined:registration);},register:()=>{registers++;if(stage==='register'&&registers===1){entered=true;return pending;}rootReadyNow=true;return Promise.resolve(registration);}};
- const context={URL,MessageChannel,Date,Promise,navigator:{serviceWorker:sw},matchMedia:()=>({matches:false}),location:{href:'https://fixture.invalid/',replace:url=>navigations.push(url)},window:{},document:{currentScript:{src:'https://fixture.invalid/launch.js?v='+VERSION},getElementById:id=>id==='launch-status'?status:retry},setTimeout:(callback,delay)=>{if(delay===20000){deadline=callback;return {deadline:true};}const id=setTimeout(()=>{timers.delete(id);callback();},delay);timers.add(id);return id;},clearTimeout:id=>{if(!id?.deadline){clearTimeout(id);timers.delete(id);}}};
+ const sw={controller:worker,getRegistration:url=>{lookups++;if(stage==='lookup'&&lookups===1){entered=true;return pending;}return Promise.resolve(new URL(url).pathname.startsWith('/pre-alpha/')?{scope:'https://fixture.invalid/pre-alpha/',active:child}:stage==='register'&&!rootReadyNow?undefined:registration);},register:()=>{registers++;if(stage==='register'&&registers===1){entered=true;return pending;}rootReadyNow=true;return Promise.resolve(registration);}};
+ const context={URL,MessageChannel,Date,Promise,navigator:{serviceWorker:sw},matchMedia:()=>({matches:false}),location:{href:'https://fixture.invalid/',replace:url=>navigations.push(url)},console:{error(){}},window:{addEventListener(){},stop(){}},document:{currentScript:{src:'https://fixture.invalid/launch.js?v='+VERSION},getElementById:id=>id==='launch-status'?status:id==='launch-retry'?retry:null},setTimeout:(callback,delay)=>{if(delay===20000){deadline=callback;return {deadline:true};}const id=setTimeout(()=>{timers.delete(id);callback();},delay);timers.add(id);return id;},clearTimeout:id=>{if(!id?.deadline){clearTimeout(id);timers.delete(id);}}};
  for(const name of ['localStorage','indexedDB','sessionStorage'])Object.defineProperty(context,name,{get(){throw Error('Timed-out preparation must not access jobs');}});
- vm.runInNewContext(source,context);for(let n=0;n<100&&!entered;n++)await new Promise(resolve=>setImmediate(resolve));assert.equal(entered,true,'Reached never-settling '+stage);assert.equal(typeof deadline,'function');assert.equal(retry.disabled,true);const before={rootUpdates,registers,lookups};await retryHandler();assert.deepEqual({rootUpdates,registers,lookups},before,'Busy attempt cannot stack preparation');deadline();await new Promise(resolve=>setImmediate(resolve));assert.match(status.textContent,/saved jobs have not been changed/);assert.equal(retry.disabled,false,'Deadline restores Retry');assert.deepEqual(navigations,[]);
- if(retryAfterTimeout){await retryHandler();assert.equal(retry.disabled,false);assert.deepEqual(navigations,['https://fixture.invalid/pre-alpha/?v='+APP]);}
+ vm.runInNewContext(source,context);for(let n=0;n<100&&!entered;n++)await new Promise(resolve=>setImmediate(resolve));assert.equal(entered,true,'Reached never-settling '+stage);assert.equal(typeof deadline,'function');assert.equal(retry.disabled,true);const before={rootUpdates,registers,lookups};const coalescedRetry=retryHandler();assert.deepEqual({rootUpdates,registers,lookups},before,'Busy attempt cannot stack preparation');deadline();await coalescedRetry;await new Promise(resolve=>setImmediate(resolve));assert.match(status.textContent,/saved jobs have not been changed/);assert.equal(retry.disabled,false,'Deadline restores Retry');assert.deepEqual(navigations,[]);
+ if(retryAfterTimeout){await retryHandler();assert.equal(retry.disabled,true,'Accepted navigation remains pending until pagehide or explicit recovery');assert.deepEqual(navigations,['https://fixture.invalid/pre-alpha/?v='+APP]);}
  const settled={rootUpdates,registers,lookups,navigations:navigations.length};lateResolve(registration);await new Promise(resolve=>setImmediate(resolve));assert.deepEqual({rootUpdates,registers,lookups,navigations:navigations.length},settled,'Expired attempt cannot continue lookup/register/update/navigation after late settlement');for(const id of timers)clearTimeout(id);
 }
 for(const stage of ['lookup','register','update'])await boundedPreparation(stage);await boundedPreparation('update',{retryAfterTimeout:true});
@@ -161,3 +161,9 @@ await import('./root-runtime-cache-lifetime.mjs');
 await import('./pdf-cleanup-ownership.mjs');
 
 await import('./launch-branding.mjs');
+
+await import('./controlled-handoff.mjs');
+await import('./controlled-rollback-test.mjs');
+await import('./root-partial-cache.mjs');
+
+await import('./controlled-handoff-dom.mjs');

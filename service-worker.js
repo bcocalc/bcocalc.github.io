@@ -1,7 +1,9 @@
-const LAUNCH_VERSION = 'launch-pre-alpha26-1';
+const LAUNCH_VERSION = 'launch-pre-alpha26-2';
 const CACHE_NAME = 'tapcalc-cache-3.0.0-livefix21-' + LAUNCH_VERSION;
 const CACHE_PREFIX = 'tapcalc-cache-';
-const SHELL_FALLBACK = './measurement-card.html?legacy=1&v=3.0.0-livefix21';
+// A partial root cache must never masquerade as a complete legacy shell.
+const HOLD_HTML = '<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TapCalc V.3 — recovery</title><h1>TapCalc V.3</h1><p>The offline calculator files are incomplete. Your saved jobs have not been changed. Reconnect and reload this page.</p><p><a href="./">Reload launch page</a></p><p><a href="./measurement-card.html?legacy=1&amp;v=3.0.0-livefix21#bco">Open legacy calculator directly</a></p></html>';
+const holdResponse=()=>new Response(HOLD_HTML.replaceAll('href="./','href="'+new URL('./',self.location.href).href),{status:503,headers:{'Content-Type':'text/html; charset=utf-8','Content-Security-Policy':"default-src 'none'; script-src 'none'; style-src 'none'; base-uri 'none'; form-action 'none'",'Cache-Control':'no-store'}});
 const ASSETS = [
   './',
   './index.html',
@@ -64,6 +66,7 @@ function isShellAsset(url) {
     url.pathname.endsWith('/measurement-card.html') ||
     url.pathname.endsWith('/styles.css') ||
     url.pathname.endsWith('/measurement.js') ||
+    url.pathname.endsWith('/launch.js') ||
     url.pathname.endsWith('/cloud-sync.js') ||
     url.pathname.endsWith('/tapcalc-overlays.css') ||
     url.pathname.endsWith('/tapcalc-overlays.js') ||
@@ -93,10 +96,16 @@ async function matchCurrentCache(request) {
 }
 
 async function cacheFallback(request) {
-  const cached = await matchCurrentCache(request);
-  if (cached) return cached;
-  if (request.mode === 'navigate') return matchCurrentCache(SHELL_FALLBACK);
-  return Response.error();
+  if(request.mode!=='navigate')return await matchCurrentCache(request)||new Response('',{status:503});
+  const url=new URL(request.url),base=new URL('./',self.location.href);
+  const isRoot=url.pathname===base.pathname||url.pathname===new URL('index.html',base).pathname;
+  const isLegacy=url.pathname===new URL('measurement-card.html',base).pathname;
+  if(!isRoot&&!isLegacy)return holdResponse();
+  const cache=await caches.open(CACHE_NAME),required=isRoot?CRITICAL:CRITICAL.slice(4);
+  const complete=await Promise.all(required.map(asset=>cache.match(new URL(asset,base).href)));
+  if(complete.some(response=>!response?.ok))return holdResponse();
+  // Read only the correct page for this route, never a different cached shell.
+  return await cache.match(new URL(isRoot?'index.html':'measurement-card.html',base).href)||holdResponse();
 }
 
 self.addEventListener('fetch', (event) => {

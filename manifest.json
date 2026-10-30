@@ -2,7 +2,7 @@
   "name": "TapCalc V.3",
   "short_name": "TapCalc V.3",
   "description": "TapCalc V.3, build 26; legacy calculator available",
-  "start_url": "./pre-alpha/?v=pre-alpha26",
+  "start_url": "./?v=launch-pre-alpha26-2",
   "display": "standalone",
   "background_color": "#00468b",
   "theme_color": "#00468b",
