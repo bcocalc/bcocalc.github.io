@@ -32,7 +32,7 @@ for(const rounding of ['16','32','64']){const result=referenceTables('fractions'
 assert.ok(referenceTables('fractions',{decimal:'garbage'}).issue);
 const assets=JSON.parse(vm.runInNewContext(read('pre-alpha/service-worker.js')+';JSON.stringify(ASSETS)',{URL,self:{location:{href:'https://example.test/pre-alpha/service-worker.js'},addEventListener(){}}}));
 for(const path of ['reference-helpers.mjs','reference-supplement-data.mjs'])assert.ok(assets.includes('./'+path+'?v='+BUILD));
-assert.match(read('pre-alpha/index.html'),/<title>TapCalc<\/title>/);
+assert.match(read('pre-alpha/index.html'),/<title>TapCalc V\.3<\/title>/);
 assert.equal(JSON.stringify({DATA,SUPPLEMENT}),before,'Lookups cannot mutate source data');
 for(const path of ['pre-alpha/reference-helpers.mjs','pre-alpha/references.mjs'])assert.doesNotMatch(read(path),/localStorage\.(setItem|removeItem|clear)|sessionStorage\.|uploadJob|commitJob|deleteJob|addDoc\(/);
 console.log('PASS reference migration integration: all classes, placeholders, qualifications, helpers, source filters, rounding, cache and read-only boundaries');

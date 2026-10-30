@@ -9,7 +9,7 @@ const root=new URL('../pre-alpha/',import.meta.url);
 const text=name=>readFileSync(new URL(name,root),'utf8');
 assert.equal(BUILD,'pre-alpha26');
 const html=text('index.html');
-assert.match(html,/<title>TapCalc<\/title>/);
+assert.match(html,/<title>TapCalc V\.3<\/title>/);
 assert.match(html,/<span class="edition">BUILD 26<\/span>/);
 for(const asset of ['workspace.css','firebase-config.js','workspace.mjs'])assert.ok(html.includes('./'+asset+'?v='+BUILD));
 const config={window:{}};vm.runInNewContext(text('firebase-config.js'),config);

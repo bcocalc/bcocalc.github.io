@@ -11,11 +11,11 @@ const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('
 const functional={
   "pre-alpha/modern-view.mjs": "2c78f4d8d885dc283a12543c4db47dd9d5fd221bff044fe808dc4d882dc63fa0",
   "tests/pre-alpha-ui.mjs": "bd9dddbb3a5ddf546d94519a7758f4562aaf9672db0263e338b409f22277e0fa",
-  "tests/launch-branding-ui.mjs": "2ec885058f53a9f67ce44ba36599c8e25abb629bd3eb166cc1a31389b4e9bd47",
+  "tests/launch-branding-ui.mjs": "f5cb1eacd8e6f0446a27bc3576bdbf9df267edf74af3cd6b3065173e84ae9b58",
   "tests/pre-alpha-worker-upgrade-ui.mjs": "30e88d9295e13b19a0de11b148910a4bfd831cd00e12fcc1d32da8e2dc0cce2c",
-  "tests/pre-alpha-reference-migration.mjs": "56166db3bf919caf64e7172f4bec84983189017c2a674e214ffcb5c028e91927",
+  "tests/pre-alpha-reference-migration.mjs": "2d3f69c01ee0cbed97712ea83d02a602fcb501bf2ab1cd53f98331575ba882ca",
   "tests/pre-alpha-measurement-help-ui.mjs": "5a0783d9758bd2d175afb49657f9b44680d716429b6fe2874d2a102e883cb9ad",
-  "tests/launch-branding.mjs": "1b5e1740c06603f953fa2562b05c41f51aa2a2a385d3e965ca1dd64ee7bfa1dd",
+  "tests/launch-branding.mjs": "599459ae94605e0cb7b8ba646f2c151d257a1a47b19ab8b24d85c44899847392",
   "pre-alpha/review.mjs": "8d6f7024396b60f3a8cc4369a7c90d02150fdea13e98fa6e535deb684db6c048",
   "pre-alpha/eta.mjs": "9e3b69e4b4cedaf0f5bb575217736813ef886ed4d6adaf6caf76ce682befcfd9",
   "pre-alpha/presentation.mjs": "9840bf6b4cba752af1cef5b5f7ed5c792c644f4b149b33bdf0a204ee0daf75d9",
@@ -24,30 +24,30 @@ const functional={
   "pdf-api-provenance.json": "556c32d02df138c5002d7f9a54bfb5c57558367ab2c155c9b48dc22b9b54b7b6",
   "pdf.mjs": "9cda957c60e5f8200363913b7eda935978128af415c6e4ca03da8c9f871c73ed",
   "tests/root-runtime-cache-lifetime.mjs": "13e3d3ae9611a2978eac3d6f5956271dda08a32be92682db336edac67f276ed7",
-  "tests/pre-alpha-worksheet-deferred.mjs": "3c3154cba90c4c70028052bc132da4380b08560491946d2bb215923297172817",
+  "tests/pre-alpha-worksheet-deferred.mjs": "c44487e852619d3a8316ce70ad33689dae4a151650226d4dd02edd1614f6c647",
   "tests/pre-alpha-worksheet-deferred-ui.mjs": "9eafca526c691d661aad86075e934fd42e53882e843c041c46cbe81a3f66fda8",
   "docs/pre-alpha-worksheet-local-draft.md": "919d74bb78523087159ba211015af3e2af01dc8b6fd0fdec3aac69ab12b6fbb0",
   "tests/pre-alpha-exports-ui.mjs": "ec522552727976091d2f80229ab34bc5b3d564200602d138c9cb2959e738b7e5",
-  "tests/runner-cleanup-test.mjs": "5d5a9ee80dbc5a20afb65b2f60ec6be475a395cfca89cd47636778e96523655d",
+  "tests/runner-cleanup-test.mjs": "b8423d6fd98ee42ed4c0174149925839da458b74df08c7bdbc82959c8440d6d3",
   "tests/runner-cleanup.mjs": "c25cb1b3eae4b354d19c15cf5caaa9c362780ece52479d21265dddbeb3fae565",
-  "tests/pre-alpha-release-identity.mjs": "e1ad04b713d69942accb29424603dd5c1b36c19ad4dc29bb51697f0456d6876c",
+  "tests/pre-alpha-release-identity.mjs": "87d18da37b75118adacae81ec7b53110f7dddc6b83416f40d07ceb05b39210ed",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
   "measurement.js": "788d7b370acf21fca7ef47f57ff2ec0ab7c76f415a63fa5fe33a2930fb36a87d",
-  "docs/pre-alpha26-local-launch-readiness.md": "b4cd0dc6e61c3073cb1c7c64996571992a3eec71f98215207bcc299d27dd1a8c",
-  "tests/launch-worker-upgrade-ui.mjs": "3ad2996625b51ca0568f8336cee89894785a0d523ddf1b82b302b3faece59899",
+  "docs/pre-alpha26-local-launch-readiness.md": "f626967eaf8d7c2fd15422da878b7677fd31362ee4dd211d7616722d1d29bd40",
+  "tests/launch-worker-upgrade-ui.mjs": "a94e3a50b636877ec25f11866ab6b6a4093ae560f8c1be5c6507d539f6f52848",
   "tests/launch-readiness.mjs": "22ab63972950c4d20135ba494bb1001d3fbef9a3edec10bb3379e58e6f8e9400",
   "tests/library-release-guard.mjs": "4ec9c07c40176a82f741f4a846623a58abe5f72e73f169948a3e7387ed2324cb",
   "measurement-card.html": "2b275fbc59d07a6258163248504167f16cc55b3f3d16973e7f6edda7228a69a1",
   "service-worker.js": "c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f",
-  "manifest.json": "2287a375ff8f0deb8b6b031c19c104a6430f98e22f7bcf6a062c74e0f837b1ca",
-  "index.html": "0bd867f99dab99483894b03289b02c8f0230f8818df3eaf2736c8bd352d1f008",
+  "manifest.json": "d5b7eaf3c25d5385473f999798d32bf145ddd99fb675cd2f4fb2e87478b0b18a",
+  "index.html": "39f44fea9a2d54c6081e956b6529c1841cb93de26467032fa9d810f599778b10",
   "launch.js": "0a69df1dcb9c0a6a3d9c4078223e773a83013403e54714027089fbaae4748b08",
   "pre-alpha/worksheet-print.css": "04de166fd4e01709797e08fb0ba2a1b0ecd1afbd33a7c8c2a3abcb5af080763c",
   "tests/pre-alpha-worksheet-ui.mjs": "3303c501a9df1945fa905e85327df6ab2da9684361ef3bca39f9abbb92e352a4",
   "tests/pre-alpha-worksheet.mjs": "11bd35a79abe20dd53b735d1d438c5c77da2589c60f37d11847e04cce4b63be6",
   "pre-alpha/service-worker.js": "f12a1c3ca926da59889ae2e4c6a6c0c2146e14959bae3bb88bdfd27276d3f1f4",
-  "pre-alpha/index.html": "ab0f8dcf47cacfde5e79f83e86714503e2c7ab97a8db2e6da97fc3a0eda71109",
-  "pre-alpha/exports.mjs": "746b0e28292dd874a714899b0971eb0638ad7e503efff9ce6dd833ff535c54a0",
+  "pre-alpha/index.html": "114989aa513eb34034bf5254230373eecdf46d13f97a9812324609c8777cd85b",
+  "pre-alpha/exports.mjs": "838514bba4df5fff44213b9323143ab61ac1e7b2b459f9645062fb765196be15",
   "pre-alpha/worksheet-draft.css": "9eb896be0b20e2c8d1fb7f7621606f7c89c346002b8147e0c5d99a6a70f6dd07",
   "pre-alpha/worksheet-draft.html": "2177cf8d2b3fffc67878137244d84e529f20c4678f2ea26090862d694a1ecdd6",
   "pre-alpha/worksheet-draft-ui.mjs": "53c5426b7273716c84a679348ccc8262e152f4e4e8a8707de1e555e898a74bdd",
@@ -92,7 +92,7 @@ assert.equal(text('measurement-card.html').replace('<link rel="manifest" href=".
 assert.doesNotMatch(text('pre-alpha/index.html'),/data-job-export="worksheet"/);
 assert.doesNotMatch(text('pre-alpha/service-worker.js'),/\.\/worksheet-/);
 const oldExport=identity(git('show',base+':pre-alpha/exports.mjs'));
-assert.equal(text('pre-alpha/exports.mjs'),oldExport,'Generic print/PNG export code unchanged; worksheet dispatch removed');
+assert.equal(restoreBranding('pre-alpha/exports.mjs',text('pre-alpha/exports.mjs')),oldExport,'Generic print/PNG export code unchanged; worksheet dispatch removed');
 assert.equal(restoreBranding('pre-alpha/index.html',text('pre-alpha/index.html')).replace('  <link rel="manifest" href="../manifest.json">\n  <meta name="apple-mobile-web-app-capable" content="yes">\n  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n  <meta name="apple-mobile-web-app-title" content="TapCalc">\n','').replace('<p><a data-legacy-fallback href="../measurement-card.html?legacy=1&amp;v=3.0.0-livefix21">Open legacy calculator</a></p>','').replace('aria-label="Export job or selected-operation worksheet"','aria-label="Export complete job"').replace('<button type="button" data-job-export="worksheet">Draft HTS-5201 worksheet</button>',''),identity(git('show',base+':pre-alpha/index.html')),'Only the explicit draft export button changes the existing shell');
 assert.equal(text('pre-alpha/service-worker.js').replace("cache.addAll(ASSETS.map(asset=>new Request(asset,{cache:'no-store'})))",'cache.addAll(ASSETS)').replace("\n// Launch readiness reports only build identity; never touches jobs or cache contents.\nself.addEventListener('message',event=>{if(event.data?.type==='tapcalc-pre-alpha-version')event.ports?.[0]?.postMessage({build:BUILD});});\n",''),identity(git('show',base+':pre-alpha/service-worker.js')),'Worksheet precache excluded; worker scope, build and cache ownership unchanged');
 // The approved Head Assembly move changes only helper presentation and wheel wording.

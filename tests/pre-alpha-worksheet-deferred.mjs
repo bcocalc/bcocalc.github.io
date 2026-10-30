@@ -1,3 +1,4 @@
+import {restoreBranding} from './launch-branding.mjs';
 // Worksheet is intentionally outside this launch scope; archived implementation remains intact.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -17,6 +18,6 @@ const guard="// User deferred this feature until after launch. Fixed source gate
 const document={title:'',body:{innerHTML:''},getElementById(){throw Error('Deferred picker must never initialize');}},window={WORKSHEET_LAUNCH_ENABLED:true};
 vm.runInNewContext(ui.slice(ui.indexOf('\n')+1).replaceAll('import.meta.url',JSON.stringify('https://fixture.invalid/pre-alpha/worksheet-draft-ui.mjs')),{document,window},{timeout:1000});assert.equal(document.title,'Worksheet deferred');assert.match(document.body.innerHTML,/worksheet-deferred/);assert.doesNotMatch(document.body.innerHTML,/<input|type=.file|<canvas/);
 assert.doesNotMatch(read('pre-alpha/index.html'),/data-job-export="worksheet"/);assert.match(read('pre-alpha/index.html'),/data-job-export="pdf"/);assert.match(read('pre-alpha/index.html'),/data-job-export="png"/);
-assert.equal(hash(read('pre-alpha/exports.mjs')),"746b0e28292dd874a714899b0971eb0638ad7e503efff9ce6dd833ff535c54a0",'Generic exports unchanged after removing worksheet dispatch only');
+assert.equal(hash(restoreBranding('pre-alpha/exports.mjs',read('pre-alpha/exports.mjs'))),"746b0e28292dd874a714899b0971eb0638ad7e503efff9ce6dd833ff535c54a0",'Generic exports unchanged after removing worksheet dispatch only');
 const assets="'./worksheet-draft.mjs?v='+BUILD,'./worksheet-draft-ui.mjs?v='+BUILD,'./worksheet-draft.html?v='+BUILD,'./worksheet-draft.css?v='+BUILD,'./worksheet-print.css?v='+BUILD,",worker=read('pre-alpha/service-worker.js');assert.equal(worker.includes('./worksheet-'),false);assert.equal(hash(worker.replace("'./exports.mjs?v='+BUILD,","'./exports.mjs?v='+BUILD,"+assets)),"0de5991ac41f201ba7b53c338c3e0b17470ae810943f7347f1712e374d6d33af",'Only worksheet precache entries removed; scope, cache and lifecycle unchanged');
 console.log('PASS worksheet deferred: hidden entry, inert direct route before picker/listener setup, no runtime opt-in, archived source/tests intact, generic exports and worker lifecycle preserved.');

@@ -5,13 +5,21 @@ export const brandingChanges={
   "manifest.json": [
     [
       "TapCalc workspace pre-alpha26; legacy calculator retained",
-      "TapCalc build 26; legacy calculator available"
+      "TapCalc V.3, build 26; legacy calculator available"
+    ],
+    [
+      "\"name\": \"TapCalc\"",
+      "\"name\": \"TapCalc V.3\""
+    ],
+    [
+      "\"short_name\": \"TapCalc\"",
+      "\"short_name\": \"TapCalc V.3\""
     ]
   ],
   "pre-alpha/index.html": [
     [
       "<title>TapCalc Pre-Alpha 26</title>",
-      "<title>TapCalc</title>"
+      "<title>TapCalc V.3</title>"
     ],
     [
       "<span class=\"edition\">PRE-ALPHA 26</span>",
@@ -40,6 +48,18 @@ export const brandingChanges={
     [
       "Open a past job and try it in the new workspace.",
       "Open a saved job or continue a working copy."
+    ],
+    [
+      "name=\"apple-mobile-web-app-title\" content=\"TapCalc\"",
+      "name=\"apple-mobile-web-app-title\" content=\"TapCalc V.3\""
+    ],
+    [
+      "aria-label=\"TapCalc Home\"",
+      "aria-label=\"TapCalc V.3 Home\""
+    ],
+    [
+      "</span>TapCalc<span class=\"edition\">",
+      "</span>TapCalc V.3<span class=\"edition\">"
     ]
   ],
   "pre-alpha/workspace.mjs": [
@@ -119,6 +139,38 @@ export const brandingChanges={
       "escape(item.record.meta?.version||'an unrecorded build')",
       "escape(String(item.record.meta?.version||'an unrecorded build').replace(/^pre-alpha(\\d+)$/,'TapCalc build $1'))"
     ]
+  ],
+  "index.html": [
+    [
+      "<title>TapCalc</title>",
+      "<title>TapCalc V.3</title>"
+    ],
+    [
+      "name=\"apple-mobile-web-app-title\" content=\"TapCalc\"",
+      "name=\"apple-mobile-web-app-title\" content=\"TapCalc V.3\""
+    ],
+    [
+      "<h1>TapCalc</h1>",
+      "<h1>TapCalc V.3</h1>"
+    ]
+  ],
+  "pre-alpha/exports.mjs": [
+    [
+      "const lines=['TapCalc','Job: '",
+      "const lines=['TapCalc V.3','Job: '"
+    ],
+    [
+      "<title>TapCalc</title>",
+      "<title>TapCalc V.3</title>"
+    ],
+    [
+      "<h1>TapCalc</h1>",
+      "<h1>TapCalc V.3</h1>"
+    ],
+    [
+      "ctx.fillText('TapCalc',50,68)",
+      "ctx.fillText('TapCalc V.3',50,68)"
+    ]
   ]
 };
 const originalHashes={
@@ -129,12 +181,16 @@ const originalHashes={
   "pre-alpha/eta.mjs": "4965f21715256b1999f4196f372d4f6131177c35c503c86a8edef46f40cb105f",
   "pre-alpha/review.mjs": "d7ad56dec76c203d679e6348c32ea8c214f594d734e9d1b90b4a67b4f75d3a03",
   "pre-alpha/references.mjs": "63c47ac3a690033ab6fa28ec7be3f45c3ebc1c2c31904e468732a059dda2d885",
-  "pre-alpha/modern-view.mjs": "461ee6a9e6de0644f792ef6c1bc5126446a21c92bf132d965464f81d300a5daa"
+  "pre-alpha/modern-view.mjs": "461ee6a9e6de0644f792ef6c1bc5126446a21c92bf132d965464f81d300a5daa",
+  "index.html": "0bd867f99dab99483894b03289b02c8f0230f8818df3eaf2736c8bd352d1f008",
+  "pre-alpha/exports.mjs": "746b0e28292dd874a714899b0971eb0638ad7e503efff9ce6dd833ff535c54a0"
 };
 export function restoreBranding(path,source){for(const [before,after,count=1]of [...(brandingChanges[path]||[])].reverse()){assert.equal(source.split(after).length,count+1,'Exact approved display-only branding: '+path);source=source.split(after).join(before);}return source;}
 for(const [path,pin]of Object.entries(originalHashes)){const source=readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');assert.equal(createHash('sha256').update(restoreBranding(path,source)).digest('hex'),pin,'Preserve every nonbranding byte from passed60e0546: '+path);}
-const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));assert.equal(manifest.name,'TapCalc');assert.equal(manifest.short_name,'TapCalc');assert.equal(manifest.id,'./measurement-card.html?v=3.0.0-livefix21');assert.equal(manifest.start_url,'./pre-alpha/?v=pre-alpha26');assert.equal(manifest.scope,'./');
+const manifest=JSON.parse(readFileSync(new URL('../manifest.json',import.meta.url),'utf8'));assert.equal(manifest.name,'TapCalc V.3');assert.equal(manifest.short_name,'TapCalc V.3');assert.equal(manifest.id,'./measurement-card.html?v=3.0.0-livefix21');assert.equal(manifest.start_url,'./pre-alpha/?v=pre-alpha26');assert.equal(manifest.scope,'./');
 console.log('PASS launch branding: exact reversible display-only labels against passed60e0546; build token, routes, installed identity, data/working-copy identifiers, warnings and legacy fallback preserved.');
 
 const {modernSnapshotMarkup}=await import('../pre-alpha/modern-view.mjs');
 for(const version of ['pre-alpha26','pre-alpha17','old-build<&>']){const item={record:{meta:{version},preAlphaCapture:{job:{title:'Synthetic branding',operations:[]},operations:[]}}},before=JSON.stringify(item),markup=modernSnapshotMarkup({item});assert.equal(JSON.stringify(item),before,'Captured record bytes stay unchanged');assert.ok(markup.includes(version.startsWith('pre-alpha')?'Captured with TapCalc build '+version.slice(9):'Captured with old-build&lt;&amp;&gt;'),'Format only known build branding; escape unknown provenance');assert.ok(markup.includes('Complete preserved snapshot'),'Raw original record remains available');}
+
+const {buildExportText,printDocument}=await import('../pre-alpha/exports.mjs');assert.equal(buildExportText({title:'Synthetic V.3',operations:[]}).split('\n')[0],'TapCalc V.3');assert.match(printDocument('Synthetic only'),/<title>TapCalc V\.3<\/title>/);assert.match(printDocument('Synthetic only'),/<h1>TapCalc V\.3<\/h1>/);

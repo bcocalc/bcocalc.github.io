@@ -21,7 +21,7 @@ function originalMeasurements(job,operation){
 
 export function buildExportText(job){
   if(!job||!Array.isArray(job.operations))throw new Error('Open a job before exporting.');
-  const lines=['TapCalc','Job: '+String(job.title||'Untitled job'),''],info=job.sharedState||{},original=job.original?.record||job.original||{};
+  const lines=['TapCalc V.3','Job: '+String(job.title||'Untitled job'),''],info=job.sharedState||{},original=job.original?.record||job.original||{};
   for(const [label,key,oldKey]of INFO){
     const value=Object.hasOwn(info,key)?info[key]:original.job?.[oldKey];
     if(String(value??'').trim())lines.push(label+': '+String(value));
@@ -63,7 +63,7 @@ export function buildExportText(job){
 }
 
 export function printDocument(text){
-  return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>TapCalc</title><style>@page{margin:18mm}body{font:12pt/1.45 Arial,sans-serif;color:#111}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}h1{font-size:20pt}</style></head><body><h1>TapCalc</h1><pre>'+escape(text)+'</pre></body></html>';
+  return '<!doctype html><html><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'"><title>TapCalc V.3</title><style>@page{margin:18mm}body{font:12pt/1.45 Arial,sans-serif;color:#111}pre{font:inherit;white-space:pre-wrap;overflow-wrap:anywhere}h1{font-size:20pt}</style></head><body><h1>TapCalc V.3</h1><pre>'+escape(text)+'</pre></body></html>';
 }
 
 export async function printJob(job,open=()=>window.open('','_blank','width=900,height=700')){
@@ -96,7 +96,7 @@ export function downloadJobImage(job,document,now=new Date()){
   ctx.font='28px Arial';const lines=wrapLines(text,t=>ctx.measureText(t).width,width-100),height=Math.max(900,200+lines.length*lineHeight);
   if(height>6000)throw new Error('This job is too long for one safe PNG. Use Print / Save PDF to include every operation and note. Nothing was omitted or changed.');
   canvas.height=height;ctx.fillStyle='#fff';ctx.fillRect(0,0,width,height);ctx.fillStyle='#0b2e52';ctx.fillRect(0,0,width,110);
-  ctx.fillStyle='#fff';ctx.font='bold 40px Arial';ctx.fillText('TapCalc',50,68);ctx.fillStyle='#111';ctx.font='28px Arial';
+  ctx.fillStyle='#fff';ctx.font='bold 40px Arial';ctx.fillText('TapCalc V.3',50,68);ctx.fillStyle='#111';ctx.font='28px Arial';
   lines.forEach((line,index)=>ctx.fillText(line||' ',50,160+index*lineHeight));
   const href=canvas.toDataURL('image/png');if(!href.startsWith('data:image/png;'))throw new Error('PNG export failed. Use Print / Save PDF; your job is unchanged.');
   const link=document.createElement('a');link.href=href;link.download='tapcalc-'+now.toISOString().replace(/[:.]/g,'-')+'.png';link.click();
