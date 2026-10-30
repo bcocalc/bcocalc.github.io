@@ -435,3 +435,7 @@ re-upgrade direction; they establish a matching lifecycle problem class,
 not the exact unrecorded internal ordering of Linux's rollback failure.
 No further push, dispatch, deployment, production save or private source
 transfer occurred. Next revision requires review and exact upload approval.
+
+## Worksheet deferred by user on 2026-10-30
+
+The user shelved the autofilled HTS-5201 worksheet until after launch. Its entry and initialization are excluded from the current launch candidate; implementation, mapping and original tests are retained for later clarification. No private PDF selection, alignment or print work is pending for this launch scope. Historical worksheet gate/status notes above remain historical evidence, not current launch requirements. Generic job Print / Save PDF and Download PNG, all operation/data/math behavior and Head Assembly remain in scope unchanged. Strict root/child upgrade, rollback, offline, page-error, full Linux release and physical-iPhone gates remain required; shelving does not resolve CI88 or waive any unrelated failure. No publication is authorized.

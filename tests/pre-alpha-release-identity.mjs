@@ -32,6 +32,9 @@ for(const asset of worker.identity.ASSETS){
   assert.ok(url.pathname.startsWith('/pre-alpha/'));
   if(!['./','./index.html'].includes(asset))assert.equal(url.searchParams.get('v'),BUILD,'Every cached module/config/style uses the release token');
 }
+// Explicitly retained, dormant worksheet sources are excluded from offline launch assets.
+const deferredAssets=new Set(['worksheet-draft.mjs','worksheet-draft-ui.mjs','worksheet-draft.html','worksheet-draft.css','worksheet-print.css']);
+for(const name of deferredAssets){assert.ok(existsSync(new URL(name,root)));assert.ok(!worker.identity.ASSETS.some(asset=>new URL(asset,worker.identity.scope).pathname===new URL(name,worker.identity.scope).pathname),'Deferred worksheet must not be precached');}
 let tokens=0;
 const cachedPaths=new Set(worker.identity.ASSETS.map(asset=>new URL(asset,worker.identity.scope).pathname));
 for(const name of readdirSync(root).filter(name=>/\.(?:mjs|js|html|css)$/.test(name))){
@@ -42,7 +45,7 @@ for(const name of readdirSync(root).filter(name=>/\.(?:mjs|js|html|css)$/.test(n
   for(const [,specifier] of source.matchAll(/\bfrom\s+['"](\.\/[^'"]+)['"]/g)){
     const url=new URL(specifier,new URL(name,worker.identity.scope));
     assert.equal(url.searchParams.get('v'),BUILD,'Unversioned local module in '+name);
-    assert.ok(cachedPaths.has(url.pathname),'Imported module must be available to the installed offline app: '+specifier);
+    if(!deferredAssets.has(name))assert.ok(cachedPaths.has(url.pathname),'Active imported module must be available to the installed offline app: '+specifier);
   }
 }
 assert.ok(tokens>30,'Check actual module, CSS, configuration and worker identities, not just a label');

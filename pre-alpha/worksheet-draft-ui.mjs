@@ -1,4 +1,10 @@
 import {WORKSHEET_SOURCE,WORKSHEET_FIELDS,createWorksheetDraft,applyHotTapCandidates,setWorksheetValue,worksheetLayout,worksheetPrintDocument} from './worksheet-draft.mjs?v=pre-alpha26';
+// User deferred this feature until after launch. Fixed source gate; no runtime opt-in.
+const WORKSHEET_LAUNCH_ENABLED=false;
+if(!WORKSHEET_LAUNCH_ENABLED){
+ document.title='Worksheet deferred';
+ document.body.innerHTML='<main><h1 id="worksheet-deferred">Worksheet deferred until after launch</h1><p>This draft feature is on hold. Generic Print / Save PDF and Download PNG remain available from the job.</p><a href="./#home">Return to calculator</a></main>';
+}else{
 const $=id=>document.getElementById(id),escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let draft=null,background='',backgroundImage=null,loadingTask=null,renderTask=null,generation=0,closed=false;
 const measureCanvas=document.createElement('canvas'),measureContext=measureCanvas.getContext('2d');
@@ -47,3 +53,4 @@ window.addEventListener('message',event=>{
  catch(error){$('operation').textContent=error.message;}
 });
 if(window.opener)window.opener.postMessage({type:'tapcalc-worksheet-ready'},location.origin);else $('operation').textContent='Open this local draft from a selected calculator operation.';
+}

@@ -75,3 +75,7 @@ No PDF output using the original source has been created or certified.
 
 No additional units question is required. Source/background proof, remaining
 field semantics and publication approval are separate gates.
+
+## Worksheet deferred by user on 2026-10-30
+
+The user shelved the autofilled HTS-5201 worksheet until after launch. Its entry and initialization are excluded from the current launch candidate; implementation, mapping and original tests are retained for later clarification. No private PDF selection, alignment or print work is pending for this launch scope. Historical worksheet gate/status notes above remain historical evidence, not current launch requirements. Generic job Print / Save PDF and Download PNG, all operation/data/math behavior and Head Assembly remain in scope unchanged. Strict root/child upgrade, rollback, offline, page-error, full Linux release and physical-iPhone gates remain required; shelving does not resolve CI88 or waive any unrelated failure. No publication is authorized.
