@@ -9,6 +9,8 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
+  "tests/legacy-pdf-initialization.mjs": "d9991209a307bfaa077c61be0074187d3144ff3c2edc7942361c1eb2080d5e1e",
+  "tests/legacy-eta-refresh.mjs": "d9f275e373a9548b43f4b25d7ef37ca6ed7edc667ef4a2731785fbee6d575193",
   "tests/legacy-measurement-refresh.mjs": "a7fde85b2080600ff0381779c576726cf2a485b53c34bc35607c578320c8ca3d",
   "tests/legacy-pdf-render-ownership.mjs": "c1d2cd64abdd5b2f65d5c074bea923903909c9bf45ecd049dd1530c7eb84cdfb",
   "overlays/tapcalc-livefix11-workflow.js": "927c9a0dea50fb9e1739d5e027f833dbdfcc5221b03bac95f70bcc31b1bc75ad",
@@ -16,8 +18,8 @@ const functional={
   "tests/fixtures/legacy-workflow-refresh-521c654.json": "07ba3b70b7e82c82ecf3f7796b342b5f346200e1f754f63ec2953e913a3fee99",
 
   "tests/sync-preview.mjs": "7de814cc01b3a5e4d3547ea50fd6661726851ae389c6745fc3d5c37b9286e27e",
-  "tests/legacy-pdf-lazy.mjs": "64eea19587dd8e0f57ca5e9477103bf4a996c18914a8adcfbf75bbe91c587e09",
-  "tests/legacy-pdf-preview-ui.mjs": "8493487001c8a4a21b7b72ef4c05481ffcde9d7e477137342b498965fecb22ca",
+  "tests/legacy-pdf-lazy.mjs": "69aeecb13714be0e46f74daed2f6129b19471c270c32536ab1887c93a7a22608",
+  "tests/legacy-pdf-preview-ui.mjs": "ca4153e32ce1676e349221094af889a54cf8e3381a500c3853b1a0033ea5663a",
 
   "tests/controlled-handoff-source-reconstruction.mjs": "dd572ced1e5446b04af456db05e83bec01987de49b04c431e1d4ff1fa4af595f",
   "tests/fixtures/root-worker-916610b.txt": "c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f",
@@ -49,7 +51,7 @@ const functional={
   "tests/runner-cleanup.mjs": "c25cb1b3eae4b354d19c15cf5caaa9c362780ece52479d21265dddbeb3fae565",
   "tests/pre-alpha-release-identity.mjs": "87d18da37b75118adacae81ec7b53110f7dddc6b83416f40d07ceb05b39210ed",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
-  "measurement.js": "24dfa3b67f078b845f63faa4330fc308bb4efa09cee8b8bf53095c7f54ba1cfc",
+  "measurement.js": "f639e5e5c4a7227503862a5d6a08cf7674fe577d3b0a9554755a2d54e1475d61",
   "docs/pre-alpha26-local-launch-readiness.md": "f67e88349668930e1131b4cff980b9c0e2fdf6dd45bb73122b12a112d631267a",
   "tests/launch-worker-upgrade-ui.mjs": "658f6cde1c62d77b4034332116ae215ce5fb9fddd25d1313240c41f32e1661f6",
   "tests/launch-readiness.mjs": "d0d01989db1144b8b62391dc698fa89cce1739ee6db3bf93aab4d1b4c0061990",
@@ -202,6 +204,22 @@ const lazyPreviewInverse={
     }
   ]
 };
+const etaRefreshInverse={
+  "reviewedSha256": "f639e5e5c4a7227503862a5d6a08cf7674fe577d3b0a9554755a2d54e1475d61",
+  "restoredSha256": "24dfa3b67f078b845f63faa4330fc308bb4efa09cee8b8bf53095c7f54ba1cfc",
+  "hunks": [
+    {
+      "offset": 110647,
+      "after": "    if (etaBcoEl && !window.__tapcalcWorkflowRefreshActive) etaBcoEl.dataset.autoSync = 'false';\n",
+      "before": "    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';\n"
+    },
+    {
+      "offset": 110822,
+      "after": "    if (etaBcoEl && !window.__tapcalcWorkflowRefreshActive) etaBcoEl.dataset.autoSync = 'false';\n",
+      "before": "    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';\n"
+    }
+  ]
+};
 const measurementRefreshInverse={
   "reviewedSha256": "24dfa3b67f078b845f63faa4330fc308bb4efa09cee8b8bf53095c7f54ba1cfc",
   "restoredSha256": "79117b68363f569942f57f976505a822bf6750611bcb31f5fe7c3555f8594234",
@@ -262,7 +280,7 @@ function restoreRenderOwner(source,plan){
  }
  assert.equal(createHash('sha256').update(source).digest('hex'),plan.restoredSha256,'Unchanged source before render ownership fix');return source;
 }
-let lazyPreviewOriginal=restoreWorkflowRefresh('measurement.js',restoreRenderOwner(restoreRenderOwner(text('measurement.js'),measurementRefreshInverse),renderOwnerInverse));
+let lazyPreviewOriginal=restoreWorkflowRefresh('measurement.js',restoreRenderOwner(restoreRenderOwner(restoreRenderOwner(text('measurement.js'),etaRefreshInverse),measurementRefreshInverse),renderOwnerInverse));
 assert.equal(createHash('sha256').update(lazyPreviewOriginal).digest('hex'),lazyPreviewInverse.reviewedSha256,'Exact reviewed legacy lazy-preview source');
 for(const h of [...lazyPreviewInverse.hunks].reverse()){
  assert.equal(lazyPreviewOriginal.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible legacy lazy-preview span');

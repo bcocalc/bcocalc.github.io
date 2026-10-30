@@ -2356,11 +2356,11 @@ function initEtaCalculator() {
   etaCutterSizeEl.addEventListener('input', updateEtaEstimate);
   etaCutterSizeEl.addEventListener('change', updateEtaEstimate);
   etaBcoEl?.addEventListener('input', () => {
-    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';
+    if (etaBcoEl && !window.__tapcalcWorkflowRefreshActive) etaBcoEl.dataset.autoSync = 'false';
     updateEtaEstimate();
   });
   etaBcoEl?.addEventListener('change', () => {
-    if (etaBcoEl) etaBcoEl.dataset.autoSync = 'false';
+    if (etaBcoEl && !window.__tapcalcWorkflowRefreshActive) etaBcoEl.dataset.autoSync = 'false';
     updateEtaEstimate();
   });
   etaRpmOverrideEl?.addEventListener('input', updateEtaEstimate);

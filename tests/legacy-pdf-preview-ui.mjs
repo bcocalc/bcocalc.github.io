@@ -4,6 +4,7 @@ import {spawn} from 'node:child_process';
 import {createRequire} from 'node:module';
 import {dirname,join} from 'node:path';
 import {cleanupExports,observeChildClose} from './runner-cleanup.mjs';
+import {referenceInitialization} from './legacy-pdf-initialization.mjs';
 const require=createRequire(import.meta.url);let pw;try{pw=require('playwright');}catch{pw=require(join(dirname(dirname(process.execPath)),'node_modules/playwright'));}
 const engine=process.env.TAPCALC_BROWSER||'chromium',server=spawn(process.execPath,['tests/sync-preview.mjs'],{stdio:['ignore','pipe','inherit']}),preview=observeChildClose(server);
 let context,browser,evidencePage,evidencePaths=[],evidenceRequests=[],evidenceDevice;const errors=[],external=[],writes=[];
@@ -35,16 +36,7 @@ try{
   }),{bcoCutterOD:'4',md:'12',ptc:'1/4',mt:'52'},'Synthetic initialization/refresh preserves exact raw measurement strings');
   await assertRawSeed();
   // Positive ordinary initialization evidence, not a sleep, polling for stability or PDF/network warmup.
-  await page.waitForFunction(() => {
-    const bundle=JSON.parse(localStorage.getItem('measurementCardStateV1'));
-    const state=bundle?.operations?.find(op=>op.id===bundle.selectedOperationId)?.state;
-    const ids=['pod','lsLiManual','etaBco'];
-    return document.readyState==='complete' && state &&
-      ids.every(id=>state[id]===document.getElementById(id)?.value) &&
-      Number(state.pod)===6.625 && Number(state.lsLiManual)===6.345 && Number(state.etaBco)===1.033 &&
-      !document.getElementById('lsLiManualToggle')?.checked &&
-      document.getElementById('etaBco')?.dataset.autoSync==='true';
-  });
+  await page.waitForFunction(referenceInitialization);
   await assertRawSeed();
   const stored=await snapshot();
   await activate(page.locator('.screen-nav [data-screen="ref"]'));await activate(page.locator('#referenceLibraryToggle'));await activate(page.locator('#referenceLibraryOptions [data-reference-target="machines"]'));
@@ -59,7 +51,7 @@ try{
   console.log('PASS legacy PDF '+engine+'/'+(mobile?'phone':'desktop')+': no background request on BCO, real worker render on References entry, explicit selection, cached offline reopen and local data preservation');
  }
 }catch(error){
- try{const route=await evidencePage?.evaluate(()=>{const canvas=document.getElementById('machineReferenceVisualCanvas'),frame=document.getElementById('machineReferenceVisualFrame'),message=document.getElementById('machineReferenceVisualFallback');return {observation:'after failure only',canvas:{hidden:canvas?.hidden,width:canvas?.width,height:canvas?.height,rects:canvas?.getClientRects().length,visibility:canvas?getComputedStyle(canvas).visibility:null},iframe:{hidden:frame?.hidden,src:frame?.getAttribute('src')||null},message:{hidden:message?.hidden,text:message?.textContent?.slice(0,160)},selection:document.getElementById('machineReferenceSelect')?.value};});console.error('LEGACY_PDF_FAILURE_EVIDENCE',JSON.stringify({engine,device:evidenceDevice,count:evidencePaths.length,paths:evidencePaths.slice(0,128),requests:evidenceRequests,truncated:evidencePaths.length>128,route}));}catch(evidenceError){console.error('LEGACY_PDF_FAILURE_EVIDENCE_UNAVAILABLE',evidenceError.name);}
+ try{const route=await evidencePage?.evaluate(()=>{const canvas=document.getElementById('machineReferenceVisualCanvas'),frame=document.getElementById('machineReferenceVisualFrame'),message=document.getElementById('machineReferenceVisualFallback');return {observation:'after failure only',canvas:{hidden:canvas?.hidden,width:canvas?.width,height:canvas?.height,rects:canvas?.getClientRects().length,visibility:canvas?getComputedStyle(canvas).visibility:null},iframe:{hidden:frame?.hidden,src:frame?.getAttribute('src')||null},message:{hidden:message?.hidden,text:message?.textContent?.slice(0,160)},selection:document.getElementById('machineReferenceSelect')?.value};});const initialization=await evidencePage?.evaluate(referenceInitialization,true);console.error('LEGACY_PDF_FAILURE_EVIDENCE',JSON.stringify({engine,device:evidenceDevice,count:evidencePaths.length,paths:evidencePaths.slice(0,128),requests:evidenceRequests,truncated:evidencePaths.length>128,route,initialization}));}catch(evidenceError){console.error('LEGACY_PDF_FAILURE_EVIDENCE_UNAVAILABLE',evidenceError.name);}
  throw error;
 }finally{
  await cleanupExports(context,preview,{report:({owner,phase,error})=>{process.exitCode=1;console.error('LEGACY_PDF_CLEANUP_FAILURE',JSON.stringify({owner,phase,message:error.message}));}});await browser?.close();if(errors.length||external.length||writes.length){process.exitCode=1;console.error('LEGACY_PDF_STRICT_FAILURE',JSON.stringify({errors,external,writes}));}

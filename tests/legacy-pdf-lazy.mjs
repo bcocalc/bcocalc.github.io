@@ -26,3 +26,5 @@ await import('./legacy-operation-mode.mjs');
 await import('./legacy-pdf-render-ownership.mjs');
 
 await import('./legacy-measurement-refresh.mjs');
+
+await import('./legacy-eta-refresh.mjs');
