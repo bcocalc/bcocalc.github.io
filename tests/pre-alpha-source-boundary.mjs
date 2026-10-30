@@ -9,14 +9,15 @@ const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer
 const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
+  "tests/legacy-measurement-refresh.mjs": "a7fde85b2080600ff0381779c576726cf2a485b53c34bc35607c578320c8ca3d",
   "tests/legacy-pdf-render-ownership.mjs": "c1d2cd64abdd5b2f65d5c074bea923903909c9bf45ecd049dd1530c7eb84cdfb",
   "overlays/tapcalc-livefix11-workflow.js": "927c9a0dea50fb9e1739d5e027f833dbdfcc5221b03bac95f70bcc31b1bc75ad",
   "tests/legacy-operation-mode.mjs": "5774fb413cee871c6d0c01defeafb6317374eef0c434a445cba95a50d14f1fe3",
   "tests/fixtures/legacy-workflow-refresh-521c654.json": "07ba3b70b7e82c82ecf3f7796b342b5f346200e1f754f63ec2953e913a3fee99",
 
   "tests/sync-preview.mjs": "7de814cc01b3a5e4d3547ea50fd6661726851ae389c6745fc3d5c37b9286e27e",
-  "tests/legacy-pdf-lazy.mjs": "3b02c8c1d7a828bb934598a2be89042e0af9bbaf0a4b84ad127d220117c63900",
-  "tests/legacy-pdf-preview-ui.mjs": "978a93b07651c30f30a03544112bec9e2187a3121bc1dada25977f2b037f7930",
+  "tests/legacy-pdf-lazy.mjs": "64eea19587dd8e0f57ca5e9477103bf4a996c18914a8adcfbf75bbe91c587e09",
+  "tests/legacy-pdf-preview-ui.mjs": "8493487001c8a4a21b7b72ef4c05481ffcde9d7e477137342b498965fecb22ca",
 
   "tests/controlled-handoff-source-reconstruction.mjs": "dd572ced1e5446b04af456db05e83bec01987de49b04c431e1d4ff1fa4af595f",
   "tests/fixtures/root-worker-916610b.txt": "c8226496043a7f42657d96011334361d82bd1a9fc81e1511397d9f7f2170cf4f",
@@ -48,7 +49,7 @@ const functional={
   "tests/runner-cleanup.mjs": "c25cb1b3eae4b354d19c15cf5caaa9c362780ece52479d21265dddbeb3fae565",
   "tests/pre-alpha-release-identity.mjs": "87d18da37b75118adacae81ec7b53110f7dddc6b83416f40d07ceb05b39210ed",
   "firebase-config.js": "403777e4aad8ed946fbfa0418286b32c13517f15f659051a859b73f97499725d",
-  "measurement.js": "79117b68363f569942f57f976505a822bf6750611bcb31f5fe7c3555f8594234",
+  "measurement.js": "24dfa3b67f078b845f63faa4330fc308bb4efa09cee8b8bf53095c7f54ba1cfc",
   "docs/pre-alpha26-local-launch-readiness.md": "f67e88349668930e1131b4cff980b9c0e2fdf6dd45bb73122b12a112d631267a",
   "tests/launch-worker-upgrade-ui.mjs": "658f6cde1c62d77b4034332116ae215ce5fb9fddd25d1313240c41f32e1661f6",
   "tests/launch-readiness.mjs": "d0d01989db1144b8b62391dc698fa89cce1739ee6db3bf93aab4d1b4c0061990",
@@ -201,6 +202,17 @@ const lazyPreviewInverse={
     }
   ]
 };
+const measurementRefreshInverse={
+  "reviewedSha256": "24dfa3b67f078b845f63faa4330fc308bb4efa09cee8b8bf53095c7f54ba1cfc",
+  "restoredSha256": "79117b68363f569942f57f976505a822bf6750611bcb31f5fe7c3555f8594234",
+  "hunks": [
+    {
+      "offset": 25750,
+      "after": "  if (window.__tapcalcWorkflowRefreshActive) return;\n",
+      "before": ""
+    }
+  ]
+};
 const renderOwnerInverse={
   "reviewedSha256": "79117b68363f569942f57f976505a822bf6750611bcb31f5fe7c3555f8594234",
   "restoredSha256": "4f38b975dc3b5bc03653a5605d2aa0b248d95827bd6e229025336830f1c69471",
@@ -250,7 +262,7 @@ function restoreRenderOwner(source,plan){
  }
  assert.equal(createHash('sha256').update(source).digest('hex'),plan.restoredSha256,'Unchanged source before render ownership fix');return source;
 }
-let lazyPreviewOriginal=restoreWorkflowRefresh('measurement.js',restoreRenderOwner(text('measurement.js'),renderOwnerInverse));
+let lazyPreviewOriginal=restoreWorkflowRefresh('measurement.js',restoreRenderOwner(restoreRenderOwner(text('measurement.js'),measurementRefreshInverse),renderOwnerInverse));
 assert.equal(createHash('sha256').update(lazyPreviewOriginal).digest('hex'),lazyPreviewInverse.reviewedSha256,'Exact reviewed legacy lazy-preview source');
 for(const h of [...lazyPreviewInverse.hunks].reverse()){
  assert.equal(lazyPreviewOriginal.slice(h.offset,h.offset+h.after.length),h.after,'Exact reversible legacy lazy-preview span');

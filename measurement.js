@@ -681,6 +681,7 @@ function getMeasurementValue(inputOrValue) {
 }
 
 function normalizeMeasurementField(field, options = {}) {
+  if (window.__tapcalcWorkflowRefreshActive) return;
   if (!field || field.disabled) return;
   const rawValue = String(field.value ?? '').trim();
   if (!rawValue) return;

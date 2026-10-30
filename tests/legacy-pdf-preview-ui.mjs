@@ -28,6 +28,24 @@ try{
   await page.waitForFunction(()=>{const state=JSON.parse(localStorage.getItem('measurementCardStateV1'));const active=state?.operations?.find(op=>op.id===state.selectedOperationId);return active?.state?.bcoPipeOD==='6.0'&&Number(active.state.bcoPipeID)>0;});
   // Existing active-draft autosave updates operation timestamps on navigation. Preserve all measurements, IDs, raw fields and saved history.
   const snapshot=()=>page.evaluate(()=>{const state=JSON.parse(localStorage.getItem('measurementCardStateV1'));for(const operation of state.operations)delete operation.updatedAtIso;return {history:localStorage.getItem('measurementCardHistoryV1'),state};});
+  const assertRawSeed = async () => assert.deepEqual(await page.evaluate(() => {
+    const state=JSON.parse(localStorage.getItem('measurementCardStateV1'));
+    const operation=state.operations.find(op=>op.id===state.selectedOperationId);
+    return Object.fromEntries(['bcoCutterOD','md','ptc','mt'].map(id=>[id,operation.state[id]]));
+  }),{bcoCutterOD:'4',md:'12',ptc:'1/4',mt:'52'},'Synthetic initialization/refresh preserves exact raw measurement strings');
+  await assertRawSeed();
+  // Positive ordinary initialization evidence, not a sleep, polling for stability or PDF/network warmup.
+  await page.waitForFunction(() => {
+    const bundle=JSON.parse(localStorage.getItem('measurementCardStateV1'));
+    const state=bundle?.operations?.find(op=>op.id===bundle.selectedOperationId)?.state;
+    const ids=['pod','lsLiManual','etaBco'];
+    return document.readyState==='complete' && state &&
+      ids.every(id=>state[id]===document.getElementById(id)?.value) &&
+      Number(state.pod)===6.625 && Number(state.lsLiManual)===6.345 && Number(state.etaBco)===1.033 &&
+      !document.getElementById('lsLiManualToggle')?.checked &&
+      document.getElementById('etaBco')?.dataset.autoSync==='true';
+  });
+  await assertRawSeed();
   const stored=await snapshot();
   await activate(page.locator('.screen-nav [data-screen="ref"]'));await activate(page.locator('#referenceLibraryToggle'));await activate(page.locator('#referenceLibraryOptions [data-reference-target="machines"]'));
   await ready();
