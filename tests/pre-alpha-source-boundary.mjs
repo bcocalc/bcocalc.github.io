@@ -2,7 +2,7 @@ import {restoreBranding} from './launch-branding.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
-import {readFileSync} from 'node:fs';
+import {readFileSync,lstatSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url)),base='fcdb3d7d5b9bca5ecce0d6050d1577ff315b52d5';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer:30*1024*1024}).replace(/\r\n/g,'\n');
@@ -89,9 +89,22 @@ const functional={
   "docs/pre-alpha-production-policy-proposal.rules": "5b2d23015f192cb41016d95936eea6febd9d48fcd64c6096b5968a8f5415ee50"
 };
 const paths=git('ls-tree','-r','--name-only',base,'pre-alpha','tests').trim().split('\n').filter(path=>/^pre-alpha\/[^/]+\.(?:mjs|js|html|css)$/.test(path)||/^tests\/pre-alpha[^/]+\.mjs$/.test(path));
-const allowed=new Set([...Object.keys(functional),...paths,'tests/pre-alpha-source-boundary.mjs']);
+// Only these four unused root overlays may be removed; pin their immutable original bytes.
+const approvedCleanup = Object.freeze({
+  'tapcalc-alpha201.css': Object.freeze({blob:'ef6bd841571f34e1e30b6459ccd665fcca6f8c10',sha256:'aecc0ba3043c142a6ec43bd4ff92c0f96d5f2d2d700a0db7d32a628c36067df6'}),
+  'tapcalc-alpha201.js': Object.freeze({blob:'80938b28aa70bd45e5aac6a11162aaabf8aa0dc6',sha256:'d184334820ed0c1fcdc7daa16c0aa8af685c5b370076d1632b56d36125efc8a4'}),
+  'tapcalc-alpha202.css': Object.freeze({blob:'ba90e1514d286d2418e116ae18f229ca0a58714d',sha256:'a7468298894621342794d796a494911be24e62e0adec3bd8daee26e02b003e25'}),
+  'tapcalc-alpha202.js': Object.freeze({blob:'11197d8d03163f55a36f6bbcce872e13f9ec0c6d',sha256:'9cc277f4225b8691bbff068545f4f808a6c8706d575c182299eb6cdb8aec6c2a'}),
+});
+for(const [path,pin]of Object.entries(approvedCleanup)){
+  assert.equal(git('rev-parse',base+':'+path).trim(),pin.blob,'Immutable cleanup baseline blob: '+path);
+  const originalBytes=execFileSync('git',['show',base+':'+path],{cwd:root,maxBuffer:30*1024*1024});
+  assert.equal(createHash('sha256').update(originalBytes).digest('hex'),pin.sha256,'Immutable cleanup baseline bytes: '+path);
+  assert.equal(lstatSync(new URL('../'+path,import.meta.url),{throwIfNoEntry:false}),undefined,'Approved obsolete overlay must be absent: '+path);
+}
+const allowed=new Set([...Object.keys(functional),...paths,'tests/pre-alpha-source-boundary.mjs',...Object.keys(approvedCleanup)]);
 for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))assert.ok(allowed.has(path),'Outside reviewed production activation: '+path);
-assert.equal(git('diff','--name-only','--diff-filter=D',base,'--').trim(),'');
+assert.deepEqual(git('diff','--name-only','--diff-filter=D',base,'--').split('\n').filter(Boolean).sort(),Object.keys(approvedCleanup).sort(),'Only the four reviewed obsolete root overlays may be deleted');
 for(const [path,pin]of Object.entries(functional))assert.equal(createHash('sha256').update(text(path)).digest('hex'),pin,'Exact reviewed production activation, Head Assembly UI and local worksheet: '+path);
 for(const path of paths.filter(path=>!functional[path]&&path!=='tests/pre-alpha-source-boundary.mjs'))assert.equal(text(path),identity(git('show',base+':'+path)),'Identity-only outside preparation: '+path);
 for(const path of ['cloud-sync.js','firestore.rules','dev','pre-alpha/workspace-database.mjs'])assert.equal(git('diff',base,'--',path),'','Protected root/dev/backend/CI/database authority: '+path);
