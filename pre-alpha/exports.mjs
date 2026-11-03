@@ -1,4 +1,4 @@
-import {geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha26';
+import {actualPopFor,calculatedPop,geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha26';
 import {operationWarnings,STAGE_TITLES} from './review.mjs?v=pre-alpha26';
 import {historicalMcoFor,historicalRodMcoFor,historicalFamilyFor} from './presentation.mjs?v=pre-alpha26';
 import {htpChartRow} from './families.mjs?v=pre-alpha26';
@@ -31,6 +31,7 @@ export function buildExportText(job){
     const g=geometry(operation.state),steps=stepsFor(operation),tap=Object.fromEntries(resultsFor(operation,'tap'));
     const family=familyStage(operation),chart=family==='htp'?htpChartRow(operation.state):null;
     lines.push('','Operation '+(index+1)+' of '+job.operations.length+': '+String(operation.label||operation.id)+' ('+operationType(operation)+')');
+    if(actualPopFor(operation)!==null)lines.push('Applied actual POP: '+display(actualPopFor(operation))+' | Calculated POP: '+display(calculatedPop(operation))+' | Downstream Hot Tap results use the applied reading.');
     lines.push('Pipe: '+(family==='htp'?'Saved setup (not used for HTP) - ':'')+'OD '+display(g.od)+' | Wall '+display(g.wall),'Cutter: '+(family==='htp'?display(chart?.cutter)+' (HTP chart)':family==='hiStop'?display(g.cutter)+' (saved O.D.; not used for Hi-Stop)':display(g.cutter)),'BCO: '+(family==='htp'?display(chart?.bco)+' (HTP chart; not cutter-shell geometry)':family==='hiStop'?'Not applicable to Hi-Stop formulas':steps.includes('tap')?display(g.bco):'Not recalculated for this operation'));
     lines.push('Hot Tap: '+(steps.includes('tap')?'MD '+display(number(operation.state.md))+' | LI '+display(tap['Lower in'])+' | TTD '+display(tap['Total travel']):'Not applicable to this operation'));
     lines.push('Line Stop LI: '+(steps.includes('stop')?display(resultsFor(operation,'stop')[0][1]):'Not applicable to this operation'));
@@ -58,7 +59,7 @@ export function buildExportText(job){
     lines.push('Warnings: '+(warnings.length?warnings.map(w=>(STAGE_TITLES[w.stage]||w.stage)+': '+w.message).join(' | '):'None'));
   }
   if(!job.operations.length)lines.push('','No operations in this job.');
-  lines.push('','Calculated from setup, not field verification. Retained saved values are not current calculations.','Generated from the field calculator.');
+  lines.push('','Calculated from setup except explicitly applied actual POP readings. Retained saved values are not current calculations.','Generated from the field calculator.');
   return lines.join('\n');
 }
 

@@ -11,7 +11,7 @@ import {etaResultPanel,etaSummary} from './eta-view.mjs?v=pre-alpha26';
 import {createOriginTracker,worksheetMarkup,historicalMcoMarkup,historicalRodMcoMarkup,historicalFamilyMarkup,matchingJobs,jobRowsMarkup} from './presentation.mjs?v=pre-alpha26';
 import {HTP_CHART,HTP_INPUTS,HISTOP_INPUTS,htpChartRow} from './families.mjs?v=pre-alpha26';
 import {operationWarnings,reviewSections,STAGE_TITLES} from './review.mjs?v=pre-alpha26';
-import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha26';
+import {actualPopEligible,actualPopFor,calculatedPop,applyActualPop,resetActualPop,BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha26';
 const $ = id => document.getElementById(id);
 installMeasurementFigures(document);
 const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
@@ -256,7 +256,7 @@ function renderWorkspace() {
     if((key==='lsLiManual'||key==='cpLiManual') && ![true,'true'].includes(op.state[key+'Toggle']))return '';
     const value=key==='operationType'?operationType(op):key==='machineType'?active.sharedState.machineType:key==='htpMachine'?op.state.htpMachine??'360':key==='preAlphaPipeOD'?format(pipeOD(op.state)).replace('--',''):key==='bcoSchedule'?(op.state.bcoSchedule || (String(op.state.bcoPipeID??'').trim()?'custom':'')):op.state[key];
     return fieldMarkup(field,value);
-  }).join('')+measurementHelpMarkup(op,stage);
+  }).join('')+(stage==='tap'&&actualPopEligible(op)?fieldMarkup(['v3ActualPopInput','Actual pilot on pipe (POP)','text','Optional measured rod reading. Apply below to use it; typing alone does not change results.'],op.state.v3ActualPopInput):'')+measurementHelpMarkup(op,stage);
   $('back').disabled=steps.indexOf(stage)===0;
   $('next').textContent=stage==='review'?'Open job library':'Next: '+stages[steps[steps.indexOf(stage)+1]][0]+' \u2192';
   renderResults();
@@ -305,6 +305,11 @@ function operationReviewMarkup(op) {
   }).join('');
   return '<p class="review-scope">Current operation: <strong>'+escape(op.label)+'</strong>. Other operations keep their own measurements.</p>'+checklist+sections;
 }
+function actualPopMarkup(op) {
+  if(!actualPopEligible(op))return '';
+  const actual=actualPopFor(op),draft=number(op.state.v3ActualPopInput);
+  return '<section class="result-panel" aria-label="Actual POP adjustment"><p>Calculated POP: <strong data-calculated-pop>'+format(calculatedPop(op))+' in</strong></p><p data-actual-pop-status role="status">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type="button" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type="button" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role="alert">Actual POP must be a valid number or fraction.</p>':'')+'</section>';
+}
 function renderResults() {
   const op=operation(); if(!op)return;
   if(stage==='htp'){
@@ -315,14 +320,15 @@ function renderResults() {
     const [main,...rest]=results;
     $('results').innerHTML=stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{primary:true,secondary:rest}):'<div class="result-panel"><p class="eyebrow">'+escape(main[0])+'</p><strong class="big-value">'+format(main[1])+' <small>in</small></strong><div class="result-subgrid">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+format(value)+' <small>in</small></strong></div>').join('')+'</div></div>';
     const optional=stage==='pipe'?['Coupon free']:stage==='stop'?['Travel margin']:[];
-    $('results').insertAdjacentHTML('beforeend','<p class="value-origin" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':'Calculated from setup - not field verified')+'</p>');
+    $('results').insertAdjacentHTML('beforeend','<p class="value-origin" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':(stage==='tap'&&actualPopFor(op)!==null?'Using applied actual POP; remaining values calculated from setup':'Calculated from setup - not field verified'))+'</p>');
     const missing=results.some(([label,value])=>!optional.includes(label)&&!Number.isFinite(value));
     if(missing)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">'+(stage==='tap'?'Enter the required measurements for a result. Blank Hot Tap LD uses 0; other empty inputs are not assumed to be zero.':'Enter the measurements for a result. Empty fields are left blank rather than assumed to be zero.')+'</p>');
     if(stage==='pipe'&&familyStage(op)!=='hiStop')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">BCO uses cutter O.D.; coupon free uses cutter I.D. Both show cutter-shell distance, excluding pilot projection.</p>');
     if(stage==='pipe'&&op.state.bcoPipeOD&&!String(op.state.bcoPipeID??'').trim())$('results').insertAdjacentHTML('beforeend','<p class="result-hint">Choose chart dimensions or enter a measured Pipe I.D. Unlisted dimensions are left blank.</p>');
 
     if(stage==='tap')$('results').insertAdjacentHTML('beforeend','<p class="result-hint">MCO uses actual pipe O.D. / 2 + PTC. It is not a rod position. Rod MCO is the rod reading at maximum cut out: Pilot on pipe + MCO.</p>'+historicalMcoMarkup(active,op)+historicalRodMcoMarkup(active,op));
-    if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');
+    if(stage==='tap')$('results').insertAdjacentHTML('beforeend',actualPopMarkup(op));
+    if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class="result-hint">The imported actual POP reading and its legacy adjustment settings are retained under Other saved inputs; they do not activate the new actual POP control.</p>');
     if(stage==='htp'||stage==='hiStop')$('results').insertAdjacentHTML('beforeend',familyContextMarkup(op,stage)+worksheetMarkup(op,stage,origins));
 
     if(stage==='stop'&&!op.workflowType&&op.state.lineStopVariant&&op.state.lineStopVariant!=='standard')$('results').innerHTML='<p class="result-hint">This operation uses '+escape(op.state.lineStopVariant)+'. Review its saved inputs below; equipment-specific calculations are not available in this workspace.</p>'+reviewMarkup(op.state);
@@ -401,6 +407,8 @@ document.addEventListener('click',event=>{
     event.preventDefault();page(link.dataset.page);return;
   }
   const button=event.target.closest('button');if(!button)return;
+  if(button.dataset.actualPopApply!==undefined){if(applyActualPop(operation())){persist();renderResults();}return;}
+  if(button.dataset.actualPopReset!==undefined){if(resetActualPop(operation())){persist();renderResults();}return;}
   if(button.dataset.page)page(button.dataset.page);
   if(button.dataset.action==='resume'){
     if(active)page('workspace');else if(jobs[0])openJob(jobs[0]);

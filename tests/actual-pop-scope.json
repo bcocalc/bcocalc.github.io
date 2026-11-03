@@ -1,0 +1,286 @@
+{
+  "base": "2972089ac1b17b90f2bc0dae9f069d0ca9746018",
+  "files": {
+    ".github/workflows/library-safeguard.yml": {
+      "beforeSha256": "30c7a346a8d47ff087ee1a0442b127871884e77aa4f7dee84e5212adbcb7454c",
+      "afterSha256": "17375ef5d550c06118fcaa01498ad5b85ee94b1ff8246e44fe1c8471979755a6",
+      "hunks": [
+        {
+          "offset": 37,
+          "before": "    branches: [candidate/pre-alpha25-production-activation-test]\n",
+          "after": "    branches: [candidate/pre-alpha25-production-activation-test, test/v3-actual-pop]\n"
+        },
+        {
+          "offset": 398,
+          "before": "",
+          "after": "      - name: Fetch immutable actual POP upgrade and scope baseline\n        run: git fetch --no-tags --depth=1 origin 2972089ac1b17b90f2bc0dae9f069d0ca9746018\n"
+        },
+        {
+          "offset": 1740,
+          "before": "",
+          "after": "      - name: Fetch immutable actual POP upgrade and scope baseline\n        run: git fetch --no-tags --depth=1 origin 2972089ac1b17b90f2bc0dae9f069d0ca9746018\n"
+        },
+        {
+          "offset": 3293,
+          "before": "",
+          "after": "      - name: Check V3 actual POP with upgrade and offline restart\n        run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n"
+        },
+        {
+          "offset": 7420,
+          "before": "",
+          "after": "      - name: Fetch immutable actual POP upgrade and scope baseline\n        run: git fetch --no-tags --depth=1 origin 2972089ac1b17b90f2bc0dae9f069d0ca9746018\n"
+        }
+      ]
+    },
+    "pre-alpha/exports.mjs": {
+      "beforeSha256": "838514bba4df5fff44213b9323143ab61ac1e7b2b459f9645062fb765196be15",
+      "afterSha256": "d2c50dcc7c19c5aae646fa0892ec258d92770f1245edd5b9f2dc3df8529ad40e",
+      "hunks": [
+        {
+          "offset": 0,
+          "before": "import {geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha26';\n",
+          "after": "import {actualPopFor,calculatedPop,geometry,number,operationType,stepsFor,resultsFor,familyStage} from './model.mjs?v=pre-alpha26';\n"
+        },
+        {
+          "offset": 2826,
+          "before": "",
+          "after": "    if(actualPopFor(operation)!==null)lines.push('Applied actual POP: '+display(actualPopFor(operation))+' | Calculated POP: '+display(calculatedPop(operation))+' | Downstream Hot Tap results use the applied reading.');\n"
+        },
+        {
+          "offset": 6424,
+          "before": "  lines.push('','Calculated from setup, not field verification. Retained saved values are not current calculations.','Generated from the field calculator.');\n",
+          "after": "  lines.push('','Calculated from setup except explicitly applied actual POP readings. Retained saved values are not current calculations.','Generated from the field calculator.');\n"
+        }
+      ]
+    },
+    "pre-alpha/model.mjs": {
+      "beforeSha256": "3d7ffb518519e2a2c014a210b74b5a3dac761f545643762fcf1a0f538f0f7af2",
+      "afterSha256": "24d2f986c86e1df3bb74451bb202a0c050266ed366f2db7e712092d04a4fbf3c",
+      "hunks": [
+        {
+          "offset": 10191,
+          "before": "",
+          "after": "// The new control is deliberately scoped to Hot Tap operations. Imported legacy\n// htActualPop/htFieldBasis remain untouched and do not silently activate it.\nexport const actualPopEligible = operation => operationType(operation)==='Hot Tap' && stepsFor(operation).includes('tap');\nexport const calculatedPop = operation => number(operation.state.start)+(number(operation.state.md)+hotTapLostDistance(operation.state)*(operation.state.ldSign==='-'?-1:1));\nexport function actualPopFor(operation) {\n  const saved=operation.state.v3ActualPop;\n  return actualPopEligible(operation)&&saved?.version===1&&typeof saved.reading==='string'&&Number.isFinite(number(saved.reading)) ? number(saved.reading) : null;\n}\nexport function applyActualPop(operation) {\n  if(!actualPopEligible(operation)||!Number.isFinite(number(operation.state.v3ActualPopInput)))return false;\n  operation.state.v3ActualPop={version:1,reading:operation.state.v3ActualPopInput};\n  return true;\n}\nexport function resetActualPop(operation) {\n  if(!actualPopEligible(operation))return false;\n  delete operation.state.v3ActualPop;\n  return true;\n}\n"
+        },
+        {
+          "offset": 11896,
+          "before": "    const li = n('md') + hotTapLostDistance(s) * (s.ldSign === '-' ? -1 : 1);\n    const pop = n('start') + li;\n",
+          "after": "    const actual = actualPopFor(operation);\n    const pop = actual ?? calculatedPop(operation);\n    const li = actual === null ? n('md') + hotTapLostDistance(s) * (s.ldSign === '-' ? -1 : 1) : actual - n('start');\n"
+        }
+      ]
+    },
+    "pre-alpha/presentation.mjs": {
+      "beforeSha256": "9840bf6b4cba752af1cef5b5f7ed5c792c644f4b149b33bdf0a204ee0daf75d9",
+      "afterSha256": "c31d907ef7a6326cdc25b6efcc9569a75b5424b535ad479eb7c7cb2e19137f6b",
+      "hunks": [
+        {
+          "offset": 0,
+          "before": "import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance,stepsFor,familyStage} from './model.mjs?v=pre-alpha26';\n",
+          "after": "import {actualPopFor,geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance,stepsFor,familyStage} from './model.mjs?v=pre-alpha26';\n"
+        },
+        {
+          "offset": 4957,
+          "before": "    row('Lower in',[term('Hot Tap MD','md'),term('Hot Tap LD','ld',has(state.ld)?state.ld:hotTapLostDistance(state),state.ldSign==='-'?'-':'+')]),\n    row('Pilot on pipe',[term('Rod start','start'),term('Hot Tap lower in','',out('Lower in'))]),\n",
+          "after": "    actualPopFor(operation)!==null?row('Lower in',[term('Applied actual POP','',actualPopFor(operation)),term('Rod start','start',state.start,'-')],'Actual POP - Rod start'):row('Lower in',[term('Hot Tap MD','md'),term('Hot Tap LD','ld',has(state.ld)?state.ld:hotTapLostDistance(state),state.ldSign==='-'?'-':'+')]),\n    actualPopFor(operation)!==null?row('Pilot on pipe',[term('Applied actual POP','',actualPopFor(operation))],'Applied actual POP'):row('Pilot on pipe',[term('Rod start','start'),term('Hot Tap lower in','',out('Lower in'))]),\n"
+        }
+      ]
+    },
+    "pre-alpha/review.mjs": {
+      "beforeSha256": "8d6f7024396b60f3a8cc4369a7c90d02150fdea13e98fa6e535deb684db6c048",
+      "afterSha256": "a03e90b74a0474098fe4f4cadd105a53f5eedcd57ad861a2046f92177773de00",
+      "hunks": [
+        {
+          "offset": 48,
+          "before": "import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance,familyStage} from './model.mjs?v=pre-alpha26';\n",
+          "after": "import {actualPopFor,calculatedPop,geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance,familyStage} from './model.mjs?v=pre-alpha26';\n"
+        },
+        {
+          "offset": 5874,
+          "before": "    if(resultsFor(operation,'tap').find(([label])=>label==='Lower in')[1]<0) add('tap','negative-lower-in','Lower in is negative. Recheck MD, LD, and its sign.');\n    if(has(state.htActualPop)) add('tap','actual-pop-retained','Saved actual POP is retained but is not applied in this workspace. Results use the setup measurements.','info');\n",
+          "after": "    if(resultsFor(operation,'tap').find(([label])=>label==='Lower in')[1]<0) add('tap','negative-lower-in',actualPopFor(operation)!==null?'Lower in is negative. Recheck actual POP and Rod start.':'Lower in is negative. Recheck MD, LD, and its sign.');\n    if(actualPopFor(operation)!==null)add('tap','actual-pop-active','Actual POP '+actualPopFor(operation).toFixed(4)+' in is applied. Downstream Hot Tap results use it until reset.','info');\n    if(has(state.htActualPop)) add('tap','actual-pop-retained','Saved actual POP is retained but is not applied in this workspace. It does not activate the new actual POP control.','info');\n"
+        },
+        {
+          "offset": 9734,
+          "before": "    return {stage,title:STAGE_TITLES[stage],mode:override?'Manual override':'Calculated from setup',\n",
+          "after": "    if(stage==='tap'&&actualPopFor(operation)!==null){inputs.push({key:'applied-actual-pop',label:'Applied actual POP',value:actualPopFor(operation),note:'Used for downstream Hot Tap calculations until reset'},{key:'calculated-pop',label:'Calculated POP',value:calculatedPop(operation),note:'Retained setup calculation'});}\n    return {stage,title:STAGE_TITLES[stage],mode:stage==='tap'&&actualPopFor(operation)!==null?'Applied actual POP':override?'Manual override':'Calculated from setup',\n"
+        }
+      ]
+    },
+    "pre-alpha/service-worker.js": {
+      "beforeSha256": "f12a1c3ca926da59889ae2e4c6a6c0c2146e14959bae3bb88bdfd27276d3f1f4",
+      "afterSha256": "e93087050e28ff6711df6086747649803d92a3beca853fe6ef1640ce3aa6e14f",
+      "hunks": [
+        {
+          "offset": 66,
+          "before": "const CACHE = PREFIX + BUILD;\n",
+          "after": "const CACHE = PREFIX + BUILD + '-actual-pop1';\n"
+        }
+      ]
+    },
+    "pre-alpha/workspace.mjs": {
+      "beforeSha256": "a57f91ade0c45b9b0f76d94eb7f542a97f963958695e03bd88a04dd3a2500327",
+      "afterSha256": "b0cd921885a3f23dd3033f36ae8d6134fe58e4b42e5daf9fe6525bfdc44291e8",
+      "hunks": [
+        {
+          "offset": 1092,
+          "before": "import {BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha26';\n",
+          "after": "import {actualPopEligible,actualPopFor,calculatedPop,applyActualPop,resetActualPop,BUILD,STORAGE_KEY,THEME_KEY,OPERATION_CHOICES,MACHINE_OPTIONS,lineStopMdIsManual,setOperationMeasurement,initializeLineStopMd,hotTapWarnings,migratePipeSource,stageFor,rememberStage,chooseOperationType,deleteOperation,pipeSizes,pipeSchedules,choosePipeSelection,normalizeJob,getDeviceJobs,newJob,operationType,stepsFor,resultsFor,geometry,pipeOD,number,familyStage} from './model.mjs?v=pre-alpha26';\n"
+        },
+        {
+          "offset": 20414,
+          "before": "  }).join('')+measurementHelpMarkup(op,stage);\n",
+          "after": "  }).join('')+(stage==='tap'&&actualPopEligible(op)?fieldMarkup(['v3ActualPopInput','Actual pilot on pipe (POP)','text','Optional measured rod reading. Apply below to use it; typing alone does not change results.'],op.state.v3ActualPopInput):'')+measurementHelpMarkup(op,stage);\n"
+        },
+        {
+          "offset": 27011,
+          "before": "",
+          "after": "function actualPopMarkup(op) {\n  if(!actualPopEligible(op))return '';\n  const actual=actualPopFor(op),draft=number(op.state.v3ActualPopInput);\n  return '<section class=\"result-panel\" aria-label=\"Actual POP adjustment\"><p>Calculated POP: <strong data-calculated-pop>'+format(calculatedPop(op))+' in</strong></p><p data-actual-pop-status role=\"status\">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type=\"button\" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type=\"button\" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role=\"alert\">Actual POP must be a valid number or fraction.</p>':'')+'</section>';\n}\n"
+        },
+        {
+          "offset": 28740,
+          "before": "    $('results').insertAdjacentHTML('beforeend','<p class=\"value-origin\" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':'Calculated from setup - not field verified')+'</p>');\n",
+          "after": "    $('results').insertAdjacentHTML('beforeend','<p class=\"value-origin\" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':(stage==='tap'&&actualPopFor(op)!==null?'Using applied actual POP; remaining values calculated from setup':'Calculated from setup - not field verified'))+'</p>');\n"
+        },
+        {
+          "offset": 30367,
+          "before": "    if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class=\"result-hint\">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');\n",
+          "after": "    if(stage==='tap')$('results').insertAdjacentHTML('beforeend',actualPopMarkup(op));\n    if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class=\"result-hint\">The imported actual POP reading and its legacy adjustment settings are retained under Other saved inputs; they do not activate the new actual POP control.</p>');\n"
+        },
+        {
+          "offset": 37758,
+          "before": "",
+          "after": "  if(button.dataset.actualPopApply!==undefined){if(applyActualPop(operation())){persist();renderResults();}return;}\n  if(button.dataset.actualPopReset!==undefined){if(resetActualPop(operation())){persist();renderResults();}return;}\n"
+        }
+      ]
+    },
+    "tests/launch-branding.mjs": {
+      "beforeSha256": "01a26466b16f1934e0f2cd5eb19e310b25f530b7e742df9feba62efabb25325d",
+      "afterSha256": "da993828921390122691a69d7298f6ae762ff67589c7e2ee168a7218e6c8ffb4",
+      "hunks": [
+        {
+          "offset": 0,
+          "before": "",
+          "after": "import {restoreActualPop} from './actual-pop-scope.mjs';\n"
+        },
+        {
+          "offset": 7392,
+          "before": "for(const [path,pin]of Object.entries(originalHashes)){let source=readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\\r\\n/g,'\\n');if(path==='manifest.json'){assert.equal(source.split('\\\"start_url\\\": \\\"./?v=launch-pre-alpha26-2\\\"').length,2);source=source.replace('\\\"start_url\\\": \\\"./?v=launch-pre-alpha26-2\\\"','\\\"start_url\\\": \\\"./pre-alpha/?v=pre-alpha26\\\"');}if(path==='index.html')for(const [before,after]of [...rootHandoffChanges].reverse()){assert.equal(source.split(after).length,2,'Exact handoff landing delta');source=source.replace(after,before);}assert.equal(createHash('sha256').update(restoreBranding(path,source)).digest('hex'),pin,'Preserve every byte outside exact branding/handoff changes: '+path);}\n",
+          "after": "for(const [path,pin]of Object.entries(originalHashes)){let source=restoreActualPop(path,readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\\r\\n/g,'\\n'));if(path==='manifest.json'){assert.equal(source.split('\\\"start_url\\\": \\\"./?v=launch-pre-alpha26-2\\\"').length,2);source=source.replace('\\\"start_url\\\": \\\"./?v=launch-pre-alpha26-2\\\"','\\\"start_url\\\": \\\"./pre-alpha/?v=pre-alpha26\\\"');}if(path==='index.html')for(const [before,after]of [...rootHandoffChanges].reverse()){assert.equal(source.split(after).length,2,'Exact handoff landing delta');source=source.replace(after,before);}assert.equal(createHash('sha256').update(restoreBranding(path,source)).digest('hex'),pin,'Preserve every byte outside exact branding/handoff changes: '+path);}\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-original-figures-ui.mjs": {
+      "beforeSha256": "69ecd7d3164a9cb7d26811fff63cf4530182a381c8a521191bdffb057bab1ac3",
+      "afterSha256": "4edc71e24196ee15ef8046b90b2ed27159d2a9624491e07b0037f7ac1db7ea8e",
+      "hunks": [
+        {
+          "offset": 14867,
+          "before": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n",
+          "after": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-release-identity.mjs": {
+      "beforeSha256": "87d18da37b75118adacae81ec7b53110f7dddc6b83416f40d07ceb05b39210ed",
+      "afterSha256": "36baeb197f07d7f5fc37a9a735cef0c1fff26c07bdc0bd3e0682558e7ad6093d",
+      "hunks": [
+        {
+          "offset": 1248,
+          "before": "assert.equal(worker.identity.CACHE,'tapcalc-pre-alpha-'+BUILD);\n",
+          "after": "assert.equal(worker.identity.CACHE,'tapcalc-pre-alpha-'+BUILD+'-actual-pop1');\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-worker-upgrade-ui.mjs": {
+      "beforeSha256": "30e88d9295e13b19a0de11b148910a4bfd831cd00e12fcc1d32da8e2dc0cce2c",
+      "afterSha256": "f012f7c757a210c68c7afcdbf7a7cb557a0815706a2314daeca8a7aa6f8049d2",
+      "hunks": [
+        {
+          "offset": 11523,
+          "before": "      assert.equal(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).filter(r=>r.url.includes('/measurement-figures/')).length,BUILD),0,'Installing17 does not prefetch original figures');\n",
+          "after": "      assert.equal(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length,BUILD),0,'Installing17 does not prefetch original figures');\n"
+        },
+        {
+          "offset": 12460,
+          "before": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n",
+          "after": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n"
+        },
+        {
+          "offset": 14595,
+          "before": "      assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD));\n",
+          "after": "      assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD+'-actual-pop1'));\n"
+        },
+        {
+          "offset": 14915,
+          "before": "        !!await (await caches.open('tapcalc-pre-alpha-'+build)).match(new URL('./'+asset+'?v='+build,location.href).href),\n",
+          "after": "        !!await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).match(new URL('./'+asset+'?v='+build,location.href).href),\n"
+        },
+        {
+          "offset": 15375,
+          "before": "      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build)).keys()).some(request=>request.url.includes('/measurement-help.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>!!await (await caches.open('tapcalc-pre-alpha-'+build)).match(location.href,{ignoreSearch:true}),BUILD),'Navigation is cached before disconnecting');\n",
+          "after": "      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/measurement-help.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>!!await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).match(location.href,{ignoreSearch:true}),BUILD),'Navigation is cached before disconnecting');\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-worksheet-deferred.mjs": {
+      "beforeSha256": "c44487e852619d3a8316ce70ad33689dae4a151650226d4dd02edd1614f6c647",
+      "afterSha256": "7d27bf9feeb6de6858da629d5600ef2634ecf560846d6f7090a4498140da9436",
+      "hunks": [
+        {
+          "offset": 0,
+          "before": "",
+          "after": "import {restoreActualPop} from './actual-pop-scope.mjs';\n"
+        },
+        {
+          "offset": 354,
+          "before": "const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8').replace(/\\r\\n/g,'\\n'),hash=s=>createHash('sha256').update(s).digest('hex');\n",
+          "after": "const read=p=>restoreActualPop(p,readFileSync(new URL('../'+p,import.meta.url),'utf8').replace(/\\r\\n/g,'\\n')),hash=s=>createHash('sha256').update(s).digest('hex');\n"
+        }
+      ]
+    },
+    "tests/release-check.mjs": {
+      "beforeSha256": "43ad97b66e622d05bbe782f88095f76e5ffe2ac2ca49cdd32ca8202ad8b74c27",
+      "afterSha256": "31f17aabf6d406955aabd76c22432c23808f69e4720d65dddfd37182aa0f8a53",
+      "hunks": [
+        {
+          "offset": 719,
+          "before": "",
+          "after": "  ['pre-alpha-actual-pop.mjs', {}],\n"
+        },
+        {
+          "offset": 1642,
+          "before": "",
+          "after": "    checks.push(['pre-alpha-actual-pop-ui.mjs', { TAPCALC_BROWSER: browser }]);\n"
+        }
+      ]
+    },
+    "tests/runner-cleanup-test.mjs": {
+      "beforeSha256": "6eea55ec4f695857cb72ca95e3fddc70ff60728477251ef2c9393e1a8338e30d",
+      "afterSha256": "d46bbf6830ba4f3294bb0bb78b16a7a6d79b9555e9d94d9c50dd14f80d8a831d",
+      "hunks": [
+        {
+          "offset": 0,
+          "before": "",
+          "after": "import {restoreActualPop} from './actual-pop-scope.mjs';\n"
+        },
+        {
+          "offset": 7259,
+          "before": "const read=path=>restoreControlledHandoff(path,readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\\r\\n/g,'\\n')),sourceHash=text=>createHash('sha256').update(text).digest('hex');\n",
+          "after": "const read=path=>restoreControlledHandoff(path,restoreActualPop(path,readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\\r\\n/g,'\\n'))),sourceHash=text=>createHash('sha256').update(text).digest('hex');\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-actual-pop.mjs": {
+      "added": true,
+      "afterSha256": "930db0252d1734b82414c60637a5aca4e53723c53992c338c69100adc5b654a3"
+    },
+    "tests/pre-alpha-actual-pop-ui.mjs": {
+      "added": true,
+      "afterSha256": "e519f35c45dd96e20d1751aab1a969d86679271fd0788d9fdb43a28a7a67c6e2"
+    },
+    "docs/v3-actual-pop-test.md": {
+      "added": true,
+      "afterSha256": "564c212ffe6799e31ef480ae2d532d33a98c4e0e1f968bd8e498c0070b50f4b6"
+    }
+  }
+}

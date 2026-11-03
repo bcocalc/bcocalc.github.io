@@ -182,6 +182,24 @@ export function stepsFor(operation) {
   if (type === 'Hi-Stop' || type === 'HTP') return ['setup','pipe','saved','review'];
   return type === 'Hot Tap' ? ['setup','pipe','tap','review'] : ['setup','saved','review'];
 }
+// The new control is deliberately scoped to Hot Tap operations. Imported legacy
+// htActualPop/htFieldBasis remain untouched and do not silently activate it.
+export const actualPopEligible = operation => operationType(operation)==='Hot Tap' && stepsFor(operation).includes('tap');
+export const calculatedPop = operation => number(operation.state.start)+(number(operation.state.md)+hotTapLostDistance(operation.state)*(operation.state.ldSign==='-'?-1:1));
+export function actualPopFor(operation) {
+  const saved=operation.state.v3ActualPop;
+  return actualPopEligible(operation)&&saved?.version===1&&typeof saved.reading==='string'&&Number.isFinite(number(saved.reading)) ? number(saved.reading) : null;
+}
+export function applyActualPop(operation) {
+  if(!actualPopEligible(operation)||!Number.isFinite(number(operation.state.v3ActualPopInput)))return false;
+  operation.state.v3ActualPop={version:1,reading:operation.state.v3ActualPopInput};
+  return true;
+}
+export function resetActualPop(operation) {
+  if(!actualPopEligible(operation))return false;
+  delete operation.state.v3ActualPop;
+  return true;
+}
 export function resultsFor(operation, stage) {
   if(stepsFor(operation).includes('saved'))return [];
   const s = operation.state;
@@ -196,8 +214,9 @@ export function resultsFor(operation, stage) {
   const signed = (key,sign) => n(key) * (s[sign] === '-' ? -1 : 1);
   if (stage === 'pipe') return [['BCO',g.bco],['Coupon free',g.coupon],['Wall thickness',g.wall]];
   if (stage === 'tap') {
-    const li = n('md') + hotTapLostDistance(s) * (s.ldSign === '-' ? -1 : 1);
-    const pop = n('start') + li;
+    const actual = actualPopFor(operation);
+    const pop = actual ?? calculatedPop(operation);
+    const li = actual === null ? n('md') + hotTapLostDistance(s) * (s.ldSign === '-' ? -1 : 1) : actual - n('start');
     const cop = pop + n('ptc');
     // Established calcHotTap basis in measurement.js: const mco = (pod / 2) + ptc.
     const mco = g.od / 2 + n('ptc');

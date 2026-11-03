@@ -1,5 +1,5 @@
 import {etaFor} from './eta.mjs?v=pre-alpha26';
-import {geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance,familyStage} from './model.mjs?v=pre-alpha26';
+import {actualPopFor,calculatedPop,geometry,pipeOD,number,stepsFor,resultsFor,hotTapWarnings,pipeSourceWarning,hotTapLostDistance,familyStage} from './model.mjs?v=pre-alpha26';
 import {HTP_INPUTS,HISTOP_INPUTS,familyWarnings,hiStopPipeOD,htpChartRow} from './families.mjs?v=pre-alpha26';
 
 export const STAGE_TITLES={pipe:'Pipe & cutter',tap:'Hot Tap',stop:'Line Stop',plug:'Completion Plug',htp:'HTP',hiStop:'Hi-Stop',saved:'Saved measurements',eta:'Cutting time (ETA)'};
@@ -65,8 +65,9 @@ export function operationWarnings(operation,machineName='') {
     if(number(state.ptc)<0) add('tap','negative-ptc','PTC cannot be negative. Recheck the pilot-to-cutter measurement.');
     if(!has(state.mt)) add('tap','travel-unchecked','Machine travel is not entered; Hot Tap travel has not been checked.','info');
     else if(finite(state.mt)&&number(state.mt)<=0) add('tap','invalid-mt','Machine travel must be greater than zero to check the travel limit.');
-    if(resultsFor(operation,'tap').find(([label])=>label==='Lower in')[1]<0) add('tap','negative-lower-in','Lower in is negative. Recheck MD, LD, and its sign.');
-    if(has(state.htActualPop)) add('tap','actual-pop-retained','Saved actual POP is retained but is not applied in this workspace. Results use the setup measurements.','info');
+    if(resultsFor(operation,'tap').find(([label])=>label==='Lower in')[1]<0) add('tap','negative-lower-in',actualPopFor(operation)!==null?'Lower in is negative. Recheck actual POP and Rod start.':'Lower in is negative. Recheck MD, LD, and its sign.');
+    if(actualPopFor(operation)!==null)add('tap','actual-pop-active','Actual POP '+actualPopFor(operation).toFixed(4)+' in is applied. Downstream Hot Tap results use it until reset.','info');
+    if(has(state.htActualPop)) add('tap','actual-pop-retained','Saved actual POP is retained but is not applied in this workspace. It does not activate the new actual POP control.','info');
   }
   if(steps.includes('stop')) {
     const travel=number(state.lsTravel),machine=number(state.lsMachineTravel);
@@ -103,7 +104,8 @@ export function reviewSections(operation) {
       ? [{key:manualKey,label:'Inactive saved manual lower in',value:state[manualKey]}] : [];
     if(stage==='stop'&&operation.retiredLineStopOD)retained.push({key:'previous-pipe-od',label:'Archived Line Stop O.D. (not used)',value:operation.retiredLineStopOD.value});
     if(stage==='hiStop'&&has(state.hsPod))retained.push({key:'hsPod',label:'Saved Hi-Stop POD (not used)',value:state.hsPod});
-    return {stage,title:STAGE_TITLES[stage],mode:override?'Manual override':'Calculated from setup',
+    if(stage==='tap'&&actualPopFor(operation)!==null){inputs.push({key:'applied-actual-pop',label:'Applied actual POP',value:actualPopFor(operation),note:'Used for downstream Hot Tap calculations until reset'},{key:'calculated-pop',label:'Calculated POP',value:calculatedPop(operation),note:'Retained setup calculation'});}
+    return {stage,title:STAGE_TITLES[stage],mode:stage==='tap'&&actualPopFor(operation)!==null?'Applied actual POP':override?'Manual override':'Calculated from setup',
       results:resultsFor(operation,stage),inputs,retained,override};
   });
 }

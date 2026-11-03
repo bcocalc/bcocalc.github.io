@@ -18,7 +18,7 @@ const worker={URL,self:{location:{href:'https://fixture.invalid/pre-alpha/servic
 vm.runInNewContext(text('service-worker.js').split("self.addEventListener('install'")[0]+'\nglobalThis.identity={BUILD,PREFIX,CACHE,scope,ASSETS,FIGURES};',worker);
 assert.equal(worker.identity.BUILD,BUILD);
 assert.equal(worker.identity.PREFIX,'tapcalc-pre-alpha-');
-assert.equal(worker.identity.CACHE,'tapcalc-pre-alpha-'+BUILD);
+assert.equal(worker.identity.CACHE,'tapcalc-pre-alpha-'+BUILD+'-actual-pop1');
 assert.equal(worker.identity.FIGURES.length,5);
 assert.ok(worker.identity.FIGURES.every(asset=>!worker.identity.ASSETS.includes(asset)),'Original figures are not installation downloads');
 for(const asset of worker.identity.FIGURES){

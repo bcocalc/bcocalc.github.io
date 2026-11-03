@@ -17,6 +17,7 @@ const checks = [
   ['pre-alpha-model.mjs', {}],
   ['pre-alpha-mco.mjs', {}],
   ['pre-alpha-rod-mco.mjs', {}],
+  ['pre-alpha-actual-pop.mjs', {}],
   ['pre-alpha-exports.mjs', {}],
   ['pre-alpha-worksheet-deferred.mjs', {}],
   ['pre-alpha-shared-save.mjs', {}],
@@ -41,6 +42,7 @@ const checks = [
 ];
 if (!args.includes('--unit-only')) {
   for (const browser of ['chromium', 'webkit']) {
+    checks.push(['pre-alpha-actual-pop-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['library-touch.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['pipe-sizes-ui.mjs', { TAPCALC_BROWSER: browser }]);
     checks.push(['tools-mode-reload-ui.mjs', { TAPCALC_BROWSER: browser }]);

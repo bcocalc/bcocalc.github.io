@@ -1,10 +1,11 @@
+import {restoreActualPop} from './actual-pop-scope.mjs';
 import {restoreBranding} from './launch-branding.mjs';
 // Worksheet is intentionally outside this launch scope; archived implementation remains intact.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import vm from 'node:vm';
-const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8').replace(/\r\n/g,'\n'),hash=s=>createHash('sha256').update(s).digest('hex');
+const read=p=>restoreActualPop(p,readFileSync(new URL('../'+p,import.meta.url),'utf8').replace(/\r\n/g,'\n')),hash=s=>createHash('sha256').update(s).digest('hex');
 const archived={
   "pre-alpha/worksheet-draft.mjs": "bd04ed1661b0d1f2daaa748f216ef7f50d36d6acbf4ea5190f508c5f2b5ba982",
   "pre-alpha/worksheet-draft.html": "2177cf8d2b3fffc67878137244d84e529f20c4678f2ea26090862d694a1ecdd6",

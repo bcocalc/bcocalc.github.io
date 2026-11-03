@@ -1,4 +1,4 @@
-import {geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance,stepsFor,familyStage} from './model.mjs?v=pre-alpha26';
+import {actualPopFor,geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTapLostDistance,stepsFor,familyStage} from './model.mjs?v=pre-alpha26';
 import {htpChartRow,hiStopPipeOD} from './families.mjs?v=pre-alpha26';
 import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha26';
 
@@ -61,8 +61,8 @@ export function worksheetFor(operation,stage) {
     row('Wall thickness',[term('Pipe O.D.','preAlphaPipeOD',g.od),term('Pipe I.D.','bcoPipeID')],'(Pipe O.D. - Pipe I.D.) / 2')
   ];
   if(stage==='tap')return [
-    row('Lower in',[term('Hot Tap MD','md'),term('Hot Tap LD','ld',has(state.ld)?state.ld:hotTapLostDistance(state),state.ldSign==='-'?'-':'+')]),
-    row('Pilot on pipe',[term('Rod start','start'),term('Hot Tap lower in','',out('Lower in'))]),
+    actualPopFor(operation)!==null?row('Lower in',[term('Applied actual POP','',actualPopFor(operation)),term('Rod start','start',state.start,'-')],'Actual POP - Rod start'):row('Lower in',[term('Hot Tap MD','md'),term('Hot Tap LD','ld',has(state.ld)?state.ld:hotTapLostDistance(state),state.ldSign==='-'?'-':'+')]),
+    actualPopFor(operation)!==null?row('Pilot on pipe',[term('Applied actual POP','',actualPopFor(operation))],'Applied actual POP'):row('Pilot on pipe',[term('Rod start','start'),term('Hot Tap lower in','',out('Lower in'))]),
     row('Cutter on pipe',[term('Pilot on pipe','',out('Pilot on pipe')),term('PTC','ptc')]),
     row('Rod BCO',[term('Cutter on pipe','',out('Cutter on pipe')),term('BCO','',g.bco)]),
     row('Total travel',[term('Hot Tap lower in','',out('Lower in')),term('PTC','ptc'),term('BCO','',g.bco)]),

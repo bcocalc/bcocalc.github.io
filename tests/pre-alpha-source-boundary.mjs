@@ -1,3 +1,4 @@
+import {restoreActualPop,actualPopPaths} from './actual-pop-scope.mjs';
 import {restoreBranding} from './launch-branding.mjs';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
@@ -6,7 +7,7 @@ import {readFileSync,lstatSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 const root=fileURLToPath(new URL('../',import.meta.url)),base='fcdb3d7d5b9bca5ecce0d6050d1577ff315b52d5';
 const git=(...args)=>execFileSync('git',args,{cwd:root,encoding:'utf8',maxBuffer:30*1024*1024}).replace(/\r\n/g,'\n');
-const text=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n');
+const text=path=>restoreActualPop(path,readFileSync(new URL('../'+path,import.meta.url),'utf8').replace(/\r\n/g,'\n'));
 const identity=value=>value.replaceAll('pre-alpha24','pre-alpha26').replaceAll('Pre-Alpha 24','Pre-Alpha 26').replaceAll('PRE-ALPHA 24','PRE-ALPHA 26').replaceAll('Pre-Alpha24','Pre-Alpha26');
 const functional={
   "tests/legacy-pdf-initialization.mjs": "d9991209a307bfaa077c61be0074187d3144ff3c2edc7942361c1eb2080d5e1e",
@@ -102,7 +103,7 @@ for(const [path,pin]of Object.entries(approvedCleanup)){
   assert.equal(createHash('sha256').update(originalBytes).digest('hex'),pin.sha256,'Immutable cleanup baseline bytes: '+path);
   assert.equal(lstatSync(new URL('../'+path,import.meta.url),{throwIfNoEntry:false}),undefined,'Approved obsolete overlay must be absent: '+path);
 }
-const allowed=new Set([...Object.keys(functional),...paths,'tests/pre-alpha-source-boundary.mjs',...Object.keys(approvedCleanup)]);
+const allowed=new Set([...actualPopPaths,'tests/actual-pop-scope.json','tests/actual-pop-scope.mjs',...Object.keys(functional),...paths,'tests/pre-alpha-source-boundary.mjs',...Object.keys(approvedCleanup)]);
 for(const path of [...git('diff','--name-only',base,'--').split('\n'),...git('ls-files','--others','--exclude-standard').split('\n')].filter(Boolean))assert.ok(allowed.has(path),'Outside reviewed production activation: '+path);
 assert.deepEqual(git('diff','--name-only','--diff-filter=D',base,'--').split('\n').filter(Boolean).sort(),Object.keys(approvedCleanup).sort(),'Only the four reviewed obsolete root overlays may be deleted');
 for(const [path,pin]of Object.entries(functional))assert.equal(createHash('sha256').update(text(path)).digest('hex'),pin,'Exact reviewed production activation, Head Assembly UI and local worksheet: '+path);
