@@ -308,7 +308,7 @@ function operationReviewMarkup(op) {
 function actualPopMarkup(op) {
   if(!actualPopEligible(op))return '';
   const actual=actualPopFor(op),draft=number(op.state.v3ActualPopInput);
-  return '<section class="result-panel" aria-label="Actual POP adjustment"><p>Calculated POP: <strong data-calculated-pop>'+format(calculatedPop(op))+' in</strong></p><p data-actual-pop-status role="status">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type="button" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type="button" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role="alert">Actual POP must be a valid number or fraction.</p>':'')+'</section>';
+  return '<section class="actual-pop-panel" aria-label="Actual POP adjustment"><p>Calculated POP: <strong data-calculated-pop>'+format(calculatedPop(op))+' in</strong></p><p data-actual-pop-status role="status">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type="button" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type="button" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role="alert">Actual POP must be a valid number or fraction.</p>':'')+'</section>';
 }
 function renderResults() {
   const op=operation(); if(!op)return;

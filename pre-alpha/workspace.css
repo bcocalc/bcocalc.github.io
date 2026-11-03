@@ -85,3 +85,5 @@ dialog{width:min(550px,calc(100% - 28px));max-height:90dvh;border:1px solid var(
 /* Preserved source records remain readable when expanded inside a working copy. */
 #modern-working-origin-content{min-width:0;max-width:100%;overflow-wrap:anywhere}#modern-working-origin-content pre{max-width:100%;max-height:24rem;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;padding:12px;background:var(--input);border:1px solid var(--line);font-size:13px}#modern-working-origin-content summary{cursor:pointer;min-height:44px;padding:10px 0;font-weight:600}
 #modern-sync-status:empty{display:none}
+
+.actual-pop-panel{padding:18px;border:1px solid var(--line);border-radius:9px;margin-top:16px}.actual-pop-panel p{font-size:13px;line-height:1.5}.actual-pop-panel button{margin:4px 4px 0 0}

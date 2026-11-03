@@ -117,9 +117,20 @@
         }
       ]
     },
+    "pre-alpha/workspace.css": {
+      "beforeSha256": "ee87026f47263337aeb56637078a9860c6e192f26a7fc7d38d6be97e98619a5f",
+      "afterSha256": "6ac883d2af4fa526ec90f4415ceace8f6a084e9e58c1db6e10a0e6134fdb4180",
+      "hunks": [
+        {
+          "offset": 32327,
+          "before": "",
+          "after": "\n.actual-pop-panel{padding:18px;border:1px solid var(--line);border-radius:9px;margin-top:16px}.actual-pop-panel p{font-size:13px;line-height:1.5}.actual-pop-panel button{margin:4px 4px 0 0}\n"
+        }
+      ]
+    },
     "pre-alpha/workspace.mjs": {
       "beforeSha256": "a57f91ade0c45b9b0f76d94eb7f542a97f963958695e03bd88a04dd3a2500327",
-      "afterSha256": "b0cd921885a3f23dd3033f36ae8d6134fe58e4b42e5daf9fe6525bfdc44291e8",
+      "afterSha256": "4d4d6d14945cfd1692725647d55be9d1ee7851ed1ae58e73c8497ab276ae7667",
       "hunks": [
         {
           "offset": 1092,
@@ -134,20 +145,20 @@
         {
           "offset": 27011,
           "before": "",
-          "after": "function actualPopMarkup(op) {\n  if(!actualPopEligible(op))return '';\n  const actual=actualPopFor(op),draft=number(op.state.v3ActualPopInput);\n  return '<section class=\"result-panel\" aria-label=\"Actual POP adjustment\"><p>Calculated POP: <strong data-calculated-pop>'+format(calculatedPop(op))+' in</strong></p><p data-actual-pop-status role=\"status\">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type=\"button\" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type=\"button\" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role=\"alert\">Actual POP must be a valid number or fraction.</p>':'')+'</section>';\n}\n"
+          "after": "function actualPopMarkup(op) {\n  if(!actualPopEligible(op))return '';\n  const actual=actualPopFor(op),draft=number(op.state.v3ActualPopInput);\n  return '<section class=\"actual-pop-panel\" aria-label=\"Actual POP adjustment\"><p>Calculated POP: <strong data-calculated-pop>'+format(calculatedPop(op))+' in</strong></p><p data-actual-pop-status role=\"status\">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type=\"button\" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type=\"button\" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role=\"alert\">Actual POP must be a valid number or fraction.</p>':'')+'</section>';\n}\n"
         },
         {
-          "offset": 28740,
+          "offset": 28744,
           "before": "    $('results').insertAdjacentHTML('beforeend','<p class=\"value-origin\" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':'Calculated from setup - not field verified')+'</p>');\n",
           "after": "    $('results').insertAdjacentHTML('beforeend','<p class=\"value-origin\" data-result-origin>'+((stage==='stop'&&[true,'true'].includes(op.state.lsLiManualToggle))||(stage==='plug'&&[true,'true'].includes(op.state.cpLiManualToggle))?'Active manual override':(stage==='tap'&&actualPopFor(op)!==null?'Using applied actual POP; remaining values calculated from setup':'Calculated from setup - not field verified'))+'</p>');\n"
         },
         {
-          "offset": 30367,
+          "offset": 30371,
           "before": "    if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class=\"result-hint\">These are setup-based results. The saved actual POP reading and its adjustment settings are retained under Other saved inputs.</p>');\n",
           "after": "    if(stage==='tap')$('results').insertAdjacentHTML('beforeend',actualPopMarkup(op));\n    if(stage==='tap'&&op.state.htActualPop)$('results').insertAdjacentHTML('beforeend','<p class=\"result-hint\">The imported actual POP reading and its legacy adjustment settings are retained under Other saved inputs; they do not activate the new actual POP control.</p>');\n"
         },
         {
-          "offset": 37758,
+          "offset": 37762,
           "before": "",
           "after": "  if(button.dataset.actualPopApply!==undefined){if(applyActualPop(operation())){persist();renderResults();}return;}\n  if(button.dataset.actualPopReset!==undefined){if(resetActualPop(operation())){persist();renderResults();}return;}\n"
         }
