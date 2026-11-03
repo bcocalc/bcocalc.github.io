@@ -297,7 +297,7 @@
     },
     "tests/pre-alpha-actual-pop-ui.mjs": {
       "added": true,
-      "afterSha256": "07bfe2ddb06bd48040a14a212b067f32d7c0a8087f5e469a460c9985ca24dbab"
+      "afterSha256": "fbb0c3eaee491d2218b7959640affd02af46778da7c940f23e7082aedc1e1d3e"
     },
     "docs/v3-actual-pop-test.md": {
       "added": true,
