@@ -3,7 +3,7 @@
   "files": {
     ".github/workflows/library-safeguard.yml": {
       "beforeSha256": "30c7a346a8d47ff087ee1a0442b127871884e77aa4f7dee84e5212adbcb7454c",
-      "afterSha256": "17375ef5d550c06118fcaa01498ad5b85ee94b1ff8246e44fe1c8471979755a6",
+      "afterSha256": "f656815fb09b86911332f96bb9d20af7f366108f2a8d64e8fbf7752de29df321",
       "hunks": [
         {
           "offset": 37,
@@ -26,9 +26,19 @@
           "after": "      - name: Check V3 actual POP with upgrade and offline restart\n        run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n"
         },
         {
-          "offset": 7420,
+          "offset": 6930,
+          "before": "          path: /tmp/pre-alpha-*.png\n",
+          "after": "          path: |\n            /tmp/pre-alpha-*.png\n            /tmp/tapcalc-pop-evidence/*\n"
+        },
+        {
+          "offset": 7474,
           "before": "",
           "after": "      - name: Fetch immutable actual POP upgrade and scope baseline\n        run: git fetch --no-tags --depth=1 origin 2972089ac1b17b90f2bc0dae9f069d0ca9746018\n"
+        },
+        {
+          "offset": 9849,
+          "before": "          path: /tmp/pre-alpha-*.png\n",
+          "after": "          path: |\n            /tmp/pre-alpha-*.png\n            /tmp/tapcalc-pop-evidence/*\n"
         }
       ]
     },
@@ -287,7 +297,7 @@
     },
     "tests/pre-alpha-actual-pop-ui.mjs": {
       "added": true,
-      "afterSha256": "e519f35c45dd96e20d1751aab1a969d86679271fd0788d9fdb43a28a7a67c6e2"
+      "afterSha256": "07bfe2ddb06bd48040a14a212b067f32d7c0a8087f5e469a460c9985ca24dbab"
     },
     "docs/v3-actual-pop-test.md": {
       "added": true,

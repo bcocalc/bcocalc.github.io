@@ -156,7 +156,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: pre-alpha-diagnostics-${{ matrix.browser }}
-          path: /tmp/pre-alpha-*.png
+          path: |
+            /tmp/pre-alpha-*.png
+            /tmp/tapcalc-pop-evidence/*
           if-no-files-found: ignore
           retention-days: 7
 
@@ -211,7 +213,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: full-release-diagnostics
-          path: /tmp/pre-alpha-*.png
+          path: |
+            /tmp/pre-alpha-*.png
+            /tmp/tapcalc-pop-evidence/*
           if-no-files-found: ignore
           retention-days: 7
 

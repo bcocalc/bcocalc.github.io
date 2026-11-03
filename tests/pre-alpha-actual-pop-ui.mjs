@@ -41,8 +41,10 @@ try{for(const mobile of [true,false]){
  await launch(false);await page.goto(base+'/__seed');await page.evaluate(({fixture})=>{localStorage.setItem('tapcalcPreAlpha01Workspace',JSON.stringify({build:'pre-alpha26',activeId:fixture.id,jobs:[fixture]}));localStorage.setItem('measurementCardStateV1','live sentinel');localStorage.setItem('measurementCardHistoryV1','[]');},{fixture});
  await page.goto(base+'/pre-alpha/#workspace');await page.locator('[data-field="md"]').waitFor();await page.waitForFunction(()=>navigator.serviceWorker.controller);await waitForWorkspaceSave(page);
  await result('Pilot on pipe',17);const before=await readDurableWorkspace(page);
- phase='new';await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();await r.update();});
- await page.waitForFunction(async()=> (await caches.keys()).includes('tapcalc-pre-alpha-pre-alpha26-actual-pop1'),null,{timeout:30000});
+ phase='new';await page.evaluate(async()=>{window.__popPreviousController=navigator.serviceWorker.controller;const r=await navigator.serviceWorker.getRegistration();await r.update();});
+ // Cache creation begins installation; it is not evidence of activation or a complete offline cache.
+ await page.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return !r.installing&&!r.waiting&&r.active?.state==='activated'&&navigator.serviceWorker.controller&&navigator.serviceWorker.controller!==window.__popPreviousController;},null,{timeout:30000});
+ await page.waitForFunction(async()=>{const cache=await caches.open('tapcalc-pre-alpha-pre-alpha26-actual-pop1');return (await Promise.all(['index.html','workspace.mjs?v=pre-alpha26','model.mjs?v=pre-alpha26','workspace.css?v=pre-alpha26'].map(file=>cache.match(new URL(file,location.href).href)))).every(Boolean);},null,{timeout:30000});
  await page.reload();await page.locator('[data-field="v3ActualPopInput"]').waitFor();assert.equal(await readDurableWorkspace(page),before,'Opening upgrade preserves exact stored bytes');
  assert.equal(await page.locator('[data-actual-pop-apply]').isDisabled(),true);await result('Pilot on pipe',17);
  await page.locator('[data-field="v3ActualPopInput"]').fill('18 1/2');await result('Pilot on pipe',17);
@@ -60,5 +62,9 @@ try{for(const mobile of [true,false]){
  assert.deepEqual(durableJob(await readDurableWorkspace(page)).original,fixture.original);assert.equal(await page.evaluate(()=>localStorage.getItem('measurementCardStateV1')),'live sentinel');
  assert.deepEqual(errors,[]);assert.deepEqual(writes,[]);
  console.log('PASS actual POP '+engine+'/'+device+': real touch/click, original26 upgrade, exact formula outputs, explicit apply/reset, invalid drafts, Review, themes, offline reload/edit/disk restart, original and other-operation preservation; profile '+profile);
+ }catch(error){
+ console.error('ACTUAL_POP_ORIGINAL_FAILURE',JSON.stringify({engine,device,message:error.message}));
+ try{console.error('ACTUAL_POP_WORKER_DIAGNOSTIC',JSON.stringify(await page.evaluate(async()=>{const r=await navigator.serviceWorker.getRegistration();return {url:location.href,online:navigator.onLine,controller:navigator.serviceWorker.controller?.state,installing:r?.installing?.state,waiting:r?.waiting?.state,active:r?.active?.state,caches:await Promise.all((await caches.keys()).map(async key=>({key,urls:(await (await caches.open(key)).keys()).map(request=>request.url)})))};})));await page.screenshot({path:join(artifact,engine+'-'+device+'-failure.png'),fullPage:true});}catch(diagnosticError){console.error('ACTUAL_POP_DIAGNOSTIC_FAILURE',diagnosticError.message);}
+ throw error;
  }finally{await context?.close();}
 }}finally{await new Promise(r=>server.close(r));}
