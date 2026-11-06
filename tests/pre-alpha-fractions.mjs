@@ -5,7 +5,7 @@ import {resultsFor,normalizeJob,applyActualPop} from '../pre-alpha/model.mjs';
 import {worksheetMarkup,createOriginTracker} from '../pre-alpha/presentation.mjs';
 import {etaPresentation,etaResultPanel} from '../pre-alpha/eta-view.mjs';
 import {buildExportText} from '../pre-alpha/exports.mjs';
-import {helperReference} from '../pre-alpha/reference-helpers.mjs';
+import {helperReference,calculateFoldingDimensions} from '../pre-alpha/reference-helpers.mjs';
 
 for(const [value,text,approximate] of [
   [0,'0',false],[-0,'0',false],[.5,'1/2',false],[.375,'3/8',false],
@@ -55,6 +55,16 @@ assert.match(etaResultPanel(current,'HTM660'),/result-fraction/);
 assert.deepEqual(helperReference('foldinghelper',{pod:'6 5/8',wall:'1/4'}).tables[1].rows.map(row=>row[1]),
   ['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);
 assert.equal(helperReference('foldinghelper',{pod:'1.00001',wall:'.25'}).tables[1].rows[1][1],'<0.0001 in','Existing positive sub-resolution dimension guard is preserved');
+// Decimal arithmetic may land beside an exact sixteenth. Keep the raw result
+// and mark the fraction rounded even when the four-decimal display looks exact.
+const boundaryInput=Object.freeze({pod:'1.1',wall:'.3'});
+const boundaryBefore=calculateFoldingDimensions(boundaryInput);
+assert.equal(boundaryBefore.pipeId,1.1-2*.3);
+assert.notEqual(boundaryBefore.pipeId,.5);
+assert.deepEqual(helperReference('foldinghelper',boundaryInput).tables[1].rows.map(row=>row[1]),
+  ['0.5000 in (≈ 1/2 in)','Not available','0.2500 in (≈ 1/4 in)','0.1250 in (≈ 1/8 in)']);
+assert.deepEqual(calculateFoldingDimensions(boundaryInput),boundaryBefore,'Formatting preserves decimal arithmetic and the invalid backing-ring guard');
+
 assert.equal(JSON.stringify(job),before);
 assert.deepEqual(resultsFor(current,'tap'),results,'Formatting never rounds calculation values');
 current.state.v3ActualPopInput='18.53125';assert.equal(applyActualPop(current),true);

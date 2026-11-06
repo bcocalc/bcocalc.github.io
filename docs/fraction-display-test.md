@@ -55,5 +55,14 @@ in this partial snapshot. Complete repository history is also required for
 the source-boundary tests. Run the full `node tests/release-check.mjs` in the
 complete checkout before release. Do not remove or bypass failed checks.
 
-This patch has not been pushed, published, or deployed. Publication requires
-the user's approval after the remaining release gates pass.
+CI run 108 passed the complete unit/contract/sync job and both Chromium and
+WebKit component jobs, including the fraction upgrade/offline test. The final
+aggregate exposed a Folding Head boundary assertion that omitted the rounded
+marker for decimal arithmetic slightly above an exact sixteenth. Its exact
+expected labels are corrected and a pure regression test verifies unchanged
+raw results and the unavailable backing-ring guard. The full aggregate must
+pass on the corrected commit before release.
+
+The candidate is published only on the separate test branch and draft PR #1.
+It is not merged or deployed; the live app remains unchanged. Deployment still
+requires the user's approval after the remaining release gates pass.

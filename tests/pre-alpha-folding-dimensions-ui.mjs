@@ -45,7 +45,7 @@ try{
   await field('md').fill('bad');assert.equal(await setpoint.locator('tbody tr td:nth-child(2)').first().textContent(),'Not available');await field('topic').selectOption('assembly');await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);assert.doesNotMatch(await page.locator('#reference-content').innerText(),/calculate the set point/);await field('topic').selectOption('helper');await field('md').fill('12 1/2');await field('topic').selectOption('assembly');
   step='invalid and impossible input clears stale results';
   for(const [pod,wall]of [['','1/4'],['6 5/8',''],['-6','1/4'],['6 5/8','-1/4'],['6 5/8','1/0'],['1','1/2']]){await field('pod').fill(pod);await field('wall').fill(wall);await expectDimensions(['Not available','Not available','Not available','Not available']);}
-  await field('pod').fill('1.1');await field('wall').fill('.3');await expectDimensions(['0.5000 in (1/2 in)','Not available','0.2500 in (1/4 in)','0.1250 in (1/8 in)']);
+  await field('pod').fill('1.1');await field('wall').fill('.3');await expectDimensions(['0.5000 in (≈ 1/2 in)','Not available','0.2500 in (≈ 1/4 in)','0.1250 in (≈ 1/8 in)']);
   await field('pod').fill('.75');await field('wall').fill('.25');await expectDimensions(['0.2500 in (1/4 in)','Not available','0.1250 in (1/8 in)','Not available']);
   await field('pod').fill('6 5/8');await field('wall').fill('1/4"');
   step='reference navigation retains exact raw inputs; pivot unchanged';await page.locator('#reference-category').selectOption('pivothead');await field('pipeSize').selectOption('16.0');await field('pressureBand').selectOption('under500');await field('wall').fill('3/8');await field('measuredNose').fill('14');
