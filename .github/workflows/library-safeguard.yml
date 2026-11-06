@@ -19,6 +19,8 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch immutable fraction display upgrade and scope baseline
+        run: git fetch --no-tags --depth=1 origin ffacd8f8cf48cfc9c442f5e652394af79f123809
       - name: Fetch immutable actual POP upgrade and scope baseline
         run: git fetch --no-tags --depth=1 origin 2972089ac1b17b90f2bc0dae9f069d0ca9746018
       - uses: actions/setup-node@v4
@@ -47,6 +49,8 @@ jobs:
         browser: [chromium, webkit]
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch immutable fraction display upgrade and scope baseline
+        run: git fetch --no-tags --depth=1 origin ffacd8f8cf48cfc9c442f5e652394af79f123809
       - name: Fetch immutable actual POP upgrade and scope baseline
         run: git fetch --no-tags --depth=1 origin 2972089ac1b17b90f2bc0dae9f069d0ca9746018
       - uses: actions/setup-node@v4
@@ -82,6 +86,10 @@ jobs:
           TAPCALC_BROWSER: ${{ matrix.browser }}
       - name: Check V3 actual POP with upgrade and offline restart
         run: node tests/pre-alpha-actual-pop-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Fraction display and offline upgrade
+        run: node tests/pre-alpha-fractions-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
       - name: Check actual POP preview, apply, undo and saved state
@@ -159,6 +167,7 @@ jobs:
           path: |
             /tmp/pre-alpha-*.png
             /tmp/tapcalc-pop-evidence/*
+            /tmp/tapcalc-fraction-evidence/*
           if-no-files-found: ignore
           retention-days: 7
 
@@ -172,6 +181,8 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch immutable fraction display upgrade and scope baseline
+        run: git fetch --no-tags --depth=1 origin ffacd8f8cf48cfc9c442f5e652394af79f123809
       - name: Fetch immutable actual POP upgrade and scope baseline
         run: git fetch --no-tags --depth=1 origin 2972089ac1b17b90f2bc0dae9f069d0ca9746018
       - uses: actions/setup-node@v4
@@ -216,6 +227,7 @@ jobs:
           path: |
             /tmp/pre-alpha-*.png
             /tmp/tapcalc-pop-evidence/*
+            /tmp/tapcalc-fraction-evidence/*
           if-no-files-found: ignore
           retention-days: 7
 

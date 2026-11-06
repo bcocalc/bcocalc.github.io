@@ -4,8 +4,10 @@ import {historicalMcoFor,historicalRodMcoFor,historicalFamilyFor} from './presen
 import {htpChartRow} from './families.mjs?v=pre-alpha26';
 import {etaPresentation} from './eta-view.mjs?v=pre-alpha26';
 
+import {inchText,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';
+
 const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const display=value=>Number.isFinite(value)?value.toFixed(4)+' in':'Not calculated';
+const display=inchText;
 const savedText=value=>typeof value==='object'?JSON.stringify(value):String(value);
 const INFO=[['Client','jobClient','client'],['Job Description','jobDescription','description'],['Job Number','jobNumber','jobNumber'],['Pressure','jobPressure','pressure'],['Temperature','jobTemperature','temperature'],['Date','jobDate','date'],['Product','jobProduct','product'],['Location','jobLocation','location'],['Technician','jobTechnician','technician'],['Notes','jobNotes','notes']];
 
@@ -21,7 +23,7 @@ function originalMeasurements(job,operation){
 
 export function buildExportText(job){
   if(!job||!Array.isArray(job.operations))throw new Error('Open a job before exporting.');
-  const lines=['TapCalc V.3','Job: '+String(job.title||'Untitled job'),''],info=job.sharedState||{},original=job.original?.record||job.original||{};
+  const lines=['TapCalc V.3',FRACTION_NOTE,'Job: '+String(job.title||'Untitled job'),''],info=job.sharedState||{},original=job.original?.record||job.original||{};
   for(const [label,key,oldKey]of INFO){
     const value=Object.hasOwn(info,key)?info[key]:original.job?.[oldKey];
     if(String(value??'').trim())lines.push(label+': '+String(value));

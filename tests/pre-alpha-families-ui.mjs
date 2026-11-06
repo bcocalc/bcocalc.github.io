@@ -34,7 +34,7 @@ try{
   const activeJob=async()=>{const snapshot=await readWorkspaceSnapshot(page);return snapshot.jobs.find(job=>job.id===snapshot.activeId);};
   const openJob=async(source,id)=>{await activate(page.locator('.main-nav [data-page="library"]'));await activate(page.locator('[data-source="'+source+'"]'));await activate(page.locator('[data-job="'+id+'"]'));await waitForWorkspaceSave(page);};
   const checkResults=async expected=>{
-   const panel=page.locator('#results > .result-panel').first();const actual=await panel.evaluate(node=>Object.fromEntries([[node.querySelector('.eyebrow')?.textContent,node.querySelector('.big-value')?.textContent],...[...node.querySelectorAll('.result-subgrid > div')].map(row=>[row.querySelector('span').textContent,row.querySelector('strong').textContent])].map(([key,value])=>[key.trim(),value.trim()])));
+   const panel=page.locator('#results > .result-panel').first();const actual=await panel.evaluate(node=>Object.fromEntries([[node.querySelector('.eyebrow')?.textContent,node.querySelector('.big-value')?.textContent],...[...node.querySelectorAll('.result-subgrid > div')].map(row=>[row.querySelector('span').textContent,row.querySelector('strong').textContent])].map(([key,value])=>[key.trim(),value.replace(/ \((?:≈ )?-?[0-9 /]+ in\)/g,'').trim()])));
    assert.deepEqual(actual,expected);
   };
   step='new HTP';await launch();await page.goto(base+'/pre-alpha/');await page.waitForFunction(()=>document.getElementById('connection').textContent.includes('Connected'));

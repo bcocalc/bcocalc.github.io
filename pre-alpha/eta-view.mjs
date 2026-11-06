@@ -1,6 +1,8 @@
 import {ETA_MACHINES,etaFor,formatEta} from './eta.mjs?v=pre-alpha26';
 import {number} from './model.mjs?v=pre-alpha26';
 
+import {inchText,inchMarkup} from './measurement-format.mjs?v=pre-alpha26';
+
 const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 
 // Presentation only: every estimate still comes from the existing etaFor calculation.
@@ -12,7 +14,7 @@ export function etaPresentation(operation,machineName='') {
   const savedNote=eta.family==='htp'?retainedStandard?'Standard Hot Tap ETA overrides are retained but not used for HTP. HTP uses its exact chart cutter, chart BCO and separate RPM profile.':'':eta.family==='hiStop'?retainedStandard?'Standard Hot Tap ETA settings are retained but not used for Hi-Stop.':'':String(operation.state.etaBco??'').trim()&&number(operation.state.etaBco)!==eta.distance?'Saved ETA distance '+operation.state.etaBco+' is retained but not used. This estimate follows current Pipe & cutter BCO.':'';
   return {eta,
     time:eta.issue?'Not calculated':formatEta(eta.lowMinutes)+(eta.lowMinutes===eta.highMinutes?'':' to '+formatEta(eta.highMinutes)),
-    distance:Number.isFinite(eta.distance)?eta.distance.toFixed(4)+' in':'Not calculated',
+    distance:inchText(eta.distance),
     rpm:eta.rpm.map(value=>Number.isFinite(value)?String(value):'invalid').join(' / ')||'Not available',
     chartRpm:eta.match.values.join(' / ')||'Not available',
     profile:ETA_MACHINES[eta.profile]||'No supported chart',
@@ -34,13 +36,13 @@ export function etaResultPanel(operation,machineName='',{primary=false,secondary
   const lookupOverride=String(operation.state.etaCutterSize??'').trim()!=='';
   const profileSource=operation.state.etaMachine==null?'follows job machine':'saved profile selection';
   const metric=(label,value,key,className='')=>'<div><dt class="eyebrow">'+label+'</dt><dd data-eta-value="'+key+'" class="'+className+'">'+value+'</dd></div>';
-  const bco=Number.isFinite(eta.distance)?eta.distance.toFixed(4)+' <small>in</small>':'-- <small>Not calculated</small>';
+  const bco=inchMarkup(eta.distance,'-- <small>Not calculated</small>');
   const warnings=[eta.issue,eta.manual?'Manual RPM override is active for ETA. Verify the speed and cutting conditions.':'',eta.match.basis==='nearest'?'The chart recommendation uses the nearest charted cutter size because this size is outside the selected RPM chart. Confirm the equipment speed chart.':''].filter(Boolean);
   return '<section class="bco-eta-summary" aria-label="BCO and Hot Tap cutting estimate" data-help-context="eta"><div class="result-panel bco-eta-panel"><dl class="bco-eta-metrics">'+
     metric('BCO',bco,'bco',primary?'big-value':'eta-bco-value')+
     metric('Recommended RPM <span>(chart)</span>',escape(view.chartRpm),'chart-rpm')+
     metric('Cutting ETA <span>to BCO</span>',escape(view.time),'time','eta-time')+'</dl>'+
-    (secondary.length?'<div class="result-subgrid">'+secondary.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+(Number.isFinite(value)?value.toFixed(4):'--')+' <small>in</small></strong></div>').join('')+'</div>':'')+
+    (secondary.length?'<div class="result-subgrid">'+secondary.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+inchMarkup(value)+'</strong></div>').join('')+'</div>':'')+
     '<div class="eta-assumptions"><p><strong>Machine:</strong> '+escape(machineName||'Not selected')+' · <strong>RPM chart profile:</strong> '+escape(view.profile)+' ('+profileSource+').</p>'+
     '<p data-eta-basis><strong>Chart source:</strong> '+escape(view.chartBasis)+'. <strong>RPM lookup cutter size:</strong> '+escape(eta.size||'Not entered')+' in ('+(lookupOverride?'saved lookup override':'follows cutter O.D.')+').</p>'+
     '<p><strong>ETA RPM used:</strong> <span data-eta-value="used-rpm">'+escape(view.rpm)+'</span> ('+(eta.manual?'manual override; chart above is reference only':'chart')+'). <strong>Feed speed:</strong> '+escape(view.feed)+'.</p>'+

@@ -87,3 +87,10 @@ dialog{width:min(550px,calc(100% - 28px));max-height:90dvh;border:1px solid var(
 #modern-sync-status:empty{display:none}
 
 .actual-pop-panel{padding:18px;border:1px solid var(--line);border-radius:9px;margin-top:16px}.actual-pop-panel p{font-size:13px;line-height:1.5}.actual-pop-panel button{margin:4px 4px 0 0}
+
+/* Display-only fractions wrap beside the unchanged decimal, including on phones. */
+.result-fraction{display:inline-block;font-size:.8em;font-weight:500;letter-spacing:0;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+.result-panel .big-value .result-fraction{font-size:18px;opacity:1}
+.result-panel .result-subgrid .result-fraction{font-size:14px}
+.result-decimal{overflow-wrap:anywhere}
+.worksheet-total strong{min-width:0}
