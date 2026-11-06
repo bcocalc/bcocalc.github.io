@@ -299,7 +299,11 @@ export function createReferences(root,{getOperation=()=>null}={}) {
       const saved=states.get(category);for(const key of Object.keys(values))delete values[key];Object.assign(values,saved?.values||{});query=saved?.query||'';page=saved?.page||0;tablePages.clear();for(const [key,value]of saved?.tablePages||[])tablePages.set(key,value);root.querySelector('#reference-query').value=query;controls();render();
     }
     else if(event.target.dataset.refFilter){
-      const key=event.target.dataset.refFilter;values[key]=event.target.value;page=0;tablePages.clear();
+      const key=event.target.dataset.refFilter;
+      // Input already rendered this Pivot value. A blur/change must not replace
+      // the summary being tapped between pointerdown and its default click.
+      if(category==='pivothead'&&event.target.tagName==='INPUT'&&values[key]===event.target.value)return;
+      values[key]=event.target.value;page=0;tablePages.clear();
       if(category==='foldinghead'&&key==='foldingPipe'&&values.foldingPipe!=='custom'){const [material,size]=values.foldingPipe.split(':');const od=TRUE_OD[material]?.[size];values.pod=Number.isFinite(od)?String(od):'';}
       if(key==='topic'){for(const name of ['size','machine','cutter','manualPart','item','boringOd'])delete values[name];}
       if(key==='manualPart')delete values.item;

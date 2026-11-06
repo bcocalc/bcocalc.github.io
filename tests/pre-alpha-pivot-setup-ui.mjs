@@ -18,11 +18,18 @@ try {
   assert.equal(await page.locator('.pivot-result').count(),4);assert.deepEqual(await page.locator('.pivot-seal-options dt').allTextContents(),['Exact Pipe I.D.','+1/16 in','+1/8 in']);assert.match(await card('seals').innerText(),/15\.3750 in/);assert.match(await card('seals').innerText(),/not an approved seal tolerance/);
   assert.match(await card('load-pad').innerText(),/7\.6250 in/);assert.match(await card('backing').innerText(),/STOP: nose O.D. is below range/);
   assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),false);
+  await page.evaluate(()=>{window.__pivotSummary=document.querySelector('[data-pivot-details]>summary');document.querySelector('[data-ref-filter=measuredNose]').dispatchEvent(new Event('change',{bubbles:true}));});
+  assert.equal(await page.evaluate(()=>window.__pivotSummary===document.querySelector('[data-pivot-details]>summary')),true,'An unchanged blur/change preserves the pending tap target');
+  // No manual blur, second tap, timing retry or click substitution here.
   await page.locator('[data-pivot-details]>summary').tap();assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),true);
   await field('wall').fill('.375');assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),true,'Expanded source stays open through edits');
   await page.locator('[data-pivot-details]>summary').tap();
   await field('measuredNose').fill('14.75001');assert.match(await card('backing').innerText(),/above range/);
   await field('measuredNose').fill('14.5');assert.match(await card('backing').innerText(),/within range/);
+  await page.evaluate(()=>{const input=document.querySelector('[data-ref-filter=measuredNose]');input.value='14.74999';input.dispatchEvent(new Event('change',{bubbles:true}));});
+  assert.match(await card('backing').innerText(),/within range/,'A changed-value change without an input event still updates results');
+  await page.evaluate(()=>{const input=document.querySelector('[data-ref-filter=measuredNose]');input.value='14.75001';input.dispatchEvent(new Event('change',{bubbles:true}));});
+  assert.match(await card('backing').innerText(),/above range/);
   assert.equal(await field('pressureBand').count(),0);
   await field('headType').selectOption('hotstop');assert.match(await card('backing').innerText(),/not supported/);assert.doesNotMatch(await card('load-pad').innerText(),/7\.6250 in/);
   await field('headType').selectOption('conventional');await field('wall').fill('1/');assert.match(await card('seals').innerText(),/Enter valid pipe dimensions/);
