@@ -111,8 +111,9 @@ try{
     assert.match(await provenance.innerText(),/Not recorded/);
     assert.equal(await page.locator('#reference-content tbody tr').count(),5);
     await page.locator('#reference-category').selectOption('pivothead');
+    await activate(page.locator('[data-pivot-details]>summary'));
     await activate(page.locator('[data-reference-provenance] summary'));
-    assert.match(await page.locator('[data-reference-provenance]').innerText(),/Rev.1/);
+    assert.match(await page.locator('[data-reference-provenance]').innerText(),/Rev\. 2, July 29, 2025/);
     await page.locator('#reference-category').selectOption('papergaskets');
     assert.ok(await page.locator('[data-reference-qualification]').isVisible());
     assert.match(await page.locator('[data-reference-qualification]').textContent(),/not verified/);

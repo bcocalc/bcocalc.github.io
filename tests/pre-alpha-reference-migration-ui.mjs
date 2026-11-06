@@ -52,10 +52,10 @@ export async function runReferenceMigrationChecks(page,activate){
   await category('fractions');await filter('decimal','-1 1/2');for(const rounding of ['16','32','64']){await select('rounding',rounding);assert.match(await text(),new RegExp('Nearest 1/'+rounding+' in: -1 1/2'));assert.match(await text(),/Decimal inches: -1.5/);}
   await activate(page.locator('[data-ref-clear]'));assert.equal(await page.locator('[data-ref-filter="decimal"]').inputValue(),'');
   await activate(page.locator('[data-ref-decimal="0.1250"]'));assert.match(await text(),/Decimal inches: 0.125/);
-  await category('pivothead');await activate(page.locator('[data-ref-current-pipe]'));assert.match(await text(),/custom outside diameter is not represented/);await select('pipeSize','14.0');await filter('wall','.375');await select('pressureBand','at500');assert.match(await text(),/Exactly 500 psi is not defined/);
-  await select('pressureBand','under500');assert.match(await text(),/12.5000 in/);
+  await category('pivothead');await activate(page.locator('[data-ref-current-pipe]'));assert.match(await text(),/custom outside diameter is not represented/);await select('pipeSize','14.0');await filter('wall','.375');await select('headType','conventional');assert.equal(await page.locator('[data-ref-filter="pressureBand"]').count(),0);
+  assert.match(await text(),/12.5000 in/);assert.match(await text(),/12.7500 in/);await filter('measuredNose','12.5');assert.match(await text(),/Nose O.D. is within range/);await filter('measuredNose','12.75001');assert.match(await text(),/nose O.D. is above range/);
   await select('material','DuctileIron');const displayed=await page.locator('[data-ref-filter="pipeSize"]').inputValue();assert.ok(displayed,'The displayed material-dependent size and calculated selection stay aligned');
-  await filter('wall','1"2');assert.match(await text(),/complete decimal or fraction/);
+  await filter('wall','1"2');assert.match(await text(),/complete positive decimal or fraction/);
   await category('foldinghead');await select('topic','helper');for(const [key,value]of Object.entries({md:'10',ld:'1',pod:'12',wall:'.5',start:'2'}))await filter(key,value);
   assert.match(await text(),/22.5000 in/);assert.match(await text(),/24.5000 in/);await select('ldSign','subtract');assert.match(await text(),/20.5000 in/);
   await activate(page.locator('[data-ref-clear]'));assert.equal(await page.locator('[data-ref-filter="md"]').inputValue(),'');assert.equal(await page.locator('[data-ref-filter="topic"]').inputValue(),'helper');

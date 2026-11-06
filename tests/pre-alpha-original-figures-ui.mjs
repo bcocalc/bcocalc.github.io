@@ -157,7 +157,7 @@ try{
       }
       assert.equal(hits.length-start,5,'Repeated large views use runtime cache instead of downloading again');
       assert.equal(hits.slice(start).reduce((n,item)=>n+item.bytes,0),87242);
-      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);
+      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-pivot-setup1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);
       await waitForWorkspaceSave(page);const saved=await readDurableWorkspace(page),job=JSON.parse(saved).entries[0].job;
       assert.equal(job.operations.length,2);assert.deepEqual(job.operations.map(o=>o.state),entry.record.jobBundle.operations.map(o=>o.state));assert.deepEqual(job.original.record,entry.record);
       await context.setOffline(true);await page.reload();await guide().waitFor({state:'visible'});

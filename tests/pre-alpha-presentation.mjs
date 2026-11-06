@@ -64,7 +64,7 @@ for(const category of Object.keys(REFERENCE_CATEGORIES)){
   assert.ok(info.source&&info.revision&&info.applicability);
   if(!['pivothead','uwire'].includes(category))assert.match(info.revision,/Not recorded/);
 }
-assert.match(referenceProvenance('pivothead').revision,/Rev.1/);
+assert.match(referenceProvenance('pivothead').revision,/Rev\. 2, July 29, 2025/);
 assert.match(referenceProvenance('uwire').revision,/Rev.3/);
 assert.match(referenceProvenance('cutters',{kind:'floStopHotTap'}).applicability,/FloStop/);
 assert.match(referenceProvenance('papergaskets').applicability,/not verified/);

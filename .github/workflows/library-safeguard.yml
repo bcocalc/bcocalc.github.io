@@ -92,6 +92,10 @@ jobs:
         run: node tests/pre-alpha-fractions-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check Pivot Head setup dimensions and source qualifications
+        run: node tests/pre-alpha-pivot-setup-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
       - name: Check actual POP preview, apply, undo and saved state
         run: node tests/hot-tap-field-reading-ui.mjs
         env:
