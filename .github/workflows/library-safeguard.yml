@@ -85,11 +85,21 @@ jobs:
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
       - name: Check V3 actual POP with upgrade and offline restart
+        timeout-minutes: 5
         run: node tests/pre-alpha-actual-pop-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
       - name: Fraction display and offline upgrade
         run: node tests/pre-alpha-fractions-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check Pivot Head setup dimensions and source qualifications
+        timeout-minutes: 5
+        run: node tests/pre-alpha-pivot-setup-ui.mjs
+        env:
+          TAPCALC_BROWSER: ${{ matrix.browser }}
+      - name: Check Folding Head and Pivot reference navigation
+        run: node tests/pre-alpha-folding-dimensions-ui.mjs
         env:
           TAPCALC_BROWSER: ${{ matrix.browser }}
       - name: Check actual POP preview, apply, undo and saved state

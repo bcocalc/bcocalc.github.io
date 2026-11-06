@@ -1,12 +1,14 @@
-// Reversible display-only addition, preserving all previous frozen-source checks.
+import {restorePivotSetup,pivotSetupPaths} from './pivot-setup-scope.mjs';
+// Reversible scoped Pivot addition, preserving all previous frozen-source checks.
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 const root=new URL('../',import.meta.url),plan=JSON.parse(readFileSync(new URL('./fractions-scope.json',import.meta.url),'utf8'));
 const hash=s=>createHash('sha256').update(s).digest('hex');
-export const fractionPaths=Object.keys(plan.files);
+export const fractionPaths=[...Object.keys(plan.files),...pivotSetupPaths,'tests/pivot-setup-scope.mjs','tests/pivot-setup-scope.json'];
 export function restoreFractions(path,source) {
+  source=restorePivotSetup(path,source);
   const p=plan.files[path];if(!p||p.added)return source;
   assert.equal(hash(source),p.afterSha256,'Exact fractional display candidate: '+path);
   let before=source;
@@ -18,11 +20,11 @@ export function restoreFractions(path,source) {
   return before;
 }
 for(const [path,p] of Object.entries(plan.files)) {
-  const current=readFileSync(new URL(path,root),'utf8').replaceAll('\r\n','\n');
+  const raw=readFileSync(new URL(path,root),'utf8').replaceAll('\r\n','\n'),current=restorePivotSetup(path,raw);
   assert.equal(hash(current),p.afterSha256,'Pinned fractional display scope: '+path);
   if(!p.added) {
     const original=execFileSync('git',['show',plan.base+':'+path],{cwd:root,encoding:'utf8',maxBuffer:30e6}).replaceAll('\r\n','\n');
-    assert.equal(restoreFractions(path,current),original,'Fraction patch restores exact current live baseline: '+path);
+    assert.equal(restoreFractions(path,raw),original,'Fraction patch restores exact current live baseline: '+path);
   }
 }
 console.log('PASS exact reversible fraction display scope; original math, storage and frozen-source checks remain active');

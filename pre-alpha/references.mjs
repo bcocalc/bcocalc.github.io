@@ -2,7 +2,9 @@ import {DATA} from './reference-data.mjs?v=pre-alpha26';
 import {number,geometry} from './model.mjs?v=pre-alpha26';
 import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha26';
 import {SUPPLEMENT} from './reference-supplement-data.mjs?v=pre-alpha26';
-import {helperFields,helperReference,PIVOT_NOTES,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha26';
+import {helperFields,helperReference,FOLDING_NOTES,UWIRE_NOTES} from './reference-helpers.mjs?v=pre-alpha26';
+import {pivotSetupFields,pivotSetupReference,PIVOT_5014_NOTES,PIVOT_5014_SOURCE} from './pivot-head-5014.mjs?v=pre-alpha26';
+import {renderPivotSetup,pivotSetupSummary} from './pivot-setup-view.mjs?v=pre-alpha26';
 const fieldChecklistNote=SUPPLEMENT.fieldChecklistNote.replace('this pre-alpha study','this workspace').replace('pre-alpha edits','working-copy edits');
 const stopMathNote=SUPPLEMENT.stopMathNote.replace('the pre-alpha general','the general');
 
@@ -25,7 +27,7 @@ export function referenceProvenance(category,values={}) {
   if(category==='papergaskets'){info.source=SUPPLEMENT.paperGasketNote;info.applicability='Garlock/GYLON source data; applicability to a Durlon grade is not verified.';}
   if(category==='stackups'){info.source=values.source||'Multiple supplied source documents; each page record names its source.';info.applicability=SUPPLEMENT.stackupNote;}
   if(category==='manuals'){info.source=SUPPLEMENT.manuals.map(item=>item.source).join('; ');info.applicability='All five entries are index placeholders, not complete inline manuals. No missing contents or availability are implied.';}
-  if(category==='pivothead'){info.source=PIVOT_NOTES[0];info.revision='Section 7 Line Stop Dims: Rev.1. Setup guide revision not recorded.';info.applicability=PIVOT_NOTES[1];}
+  if(category==='pivothead'){info.source=PIVOT_5014_NOTES[0];info.revision=PIVOT_5014_SOURCE.revision;info.applicability=PIVOT_5014_NOTES[1];}
   if(category==='uwire'){info.source=UWIRE_NOTES[0];info.revision='Form HTS-5400.1.20 Rev.3.';}
   if(category==='fieldcheck'){info.source='Existing TapCalc workflow reminders.';info.applicability=fieldChecklistNote;}
   if(category==='formulas'){info.source='Current TapCalc calculation guide and retained equipment-specific training formulas.';info.applicability=stopMathNote;}
@@ -44,7 +46,8 @@ export function positiveDecimal(value) {
 export function referenceTables(category,filters={}) {
   const note='Reference only. Confirm the applicable equipment, source chart, and approved procedure. These lookups do not change job measurements.';
   const result={note,tables:[],lists:[]};
-  if(category==='pivothead'||category==='uwire')return helperReference(category,filters);
+  if(category==='pivothead')return pivotSetupReference(filters);
+  if(category==='uwire')return helperReference(category,filters);
   if(category==='glossary')result.tables=[table('Terms from the existing TapCalc glossary',['Term','Meaning'],DATA.glossary)];
   if(category==='cutters'){
     const key=filters.kind||'hotTap',chart=DATA.cutters[key];
@@ -266,7 +269,7 @@ export function createReferences(root,{getOperation=()=>null}={}) {
     const helper=category==='foldinghead'&&['helper','assembly'].includes(values.topic)?'foldinghelper':['pivothead','uwire'].includes(category)?category:'';
     if(helper){
       if(category==='foldinghead'&&values.topic==='assembly'){const [material,size]=String(values.foldingPipe||'').split(':');const selected=TRUE_OD[material]?.[size];if(String(values.pod??'').trim()&&values.foldingPipe!=='custom'&&String(selected??'')!==String(values.pod))values.foldingPipe='custom';}
-      const fields=helperFields(helper,values);
+      const fields=helper==='pivothead'?pivotSetupFields(values):helperFields(helper,values);
       for(const field of fields){
         if(field.options&&!field.options.some(([value])=>value===values[field.key]))values[field.key]=field.options[0][0];
         else if(values[field.key]===undefined&&field.defaultValue!==undefined)values[field.key]=field.defaultValue;
@@ -281,12 +284,14 @@ export function createReferences(root,{getOperation=()=>null}={}) {
   function render(){
     for(const stop of previews)stop();previews.clear();
     const data=referenceView(category,values,query);content.dataset.helpContext=category;
-    content.innerHTML=(data.qualification?'<p class="warning" data-reference-qualification role="note">'+escape(data.qualification)+'</p>':'')+provenanceMarkup(category,values)+'<p class="result-hint">'+escape(data.note)+'</p>'+(transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
+    const pivot=category==='pivothead',detailsOpen=pivot&&(!!query||content.querySelector('[data-pivot-details]')?.open);
+    if(pivot&&pivotSetupSummary(values).held)data.tables=[];
+    content.innerHTML=(pivot?(transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+renderPivotSetup(values)+'<details class="pivot-source-details" data-pivot-details'+(detailsOpen?' open':'')+'><summary>Full source comparisons &amp; limitations</summary>':'')+(data.qualification?'<p class="warning" data-reference-qualification role="note">'+escape(data.qualification)+'</p>':'')+provenanceMarkup(category,values)+'<p class="result-hint">'+escape(data.note)+'</p>'+(!pivot&&transferNote?'<p class="result-hint" role="status">'+escape(transferNote)+'</p>':'')+(data.issue?'<p class="warning" role="status">'+escape(data.issue)+'</p>':'')+
       (data.resolvedPipeOd?'<p class="result-hint" data-folding-actual-od>Actual pipe O.D.: '+escape(data.resolvedPipeOd)+'</p>':'')+
       (data.prompt?'<p class="reference-prompt" role="status">'+escape(data.prompt)+'</p>':'')+
       (data.records&&!data.prompt?stackupCards(data.records,page):'')+
       data.tables.map((item,index)=>{const rows=item.rows,current=Math.min(tablePages.get(index)||0,Math.max(0,Math.ceil(rows.length/20)-1)),visible=rows.slice(current*20,current*20+20);return '<section class="reference-section"><h3>'+escape(item.title)+'</h3><p class="reference-count" role="status" tabindex="-1">'+rows.length+' matching rows'+(rows.length>20?'; showing '+(current*20+1)+'–'+(current*20+visible.length):'')+'</p>'+pagination(current,rows.length,'data-ref-table-page',index)+'<div class="reference-table-wrap" tabindex="0" role="region" aria-label="'+escape(item.title)+' table; scroll horizontally if needed"><table><thead><tr>'+item.columns.map(label=>'<th scope="col">'+escape(label)+'</th>').join('')+'</tr></thead><tbody>'+visible.map(row=>'<tr>'+row.map(value=>'<td>'+escape(value===''?'Not listed':value)+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'+referenceCards(item,visible)+(rows.length?'':'<p class="result-hint">No listed match. Do not substitute a different size, class or equipment.</p>')+'</section>';}).join('')+
-      data.lists.map(list=>'<section class="reference-section"><h3>'+escape(list.title)+'</h3><ul>'+list.items.map(item=>'<li>'+escape(item)+'</li>').join('')+'</ul></section>').join('');
+      data.lists.map(list=>'<section class="reference-section"><h3>'+escape(list.title)+'</h3><ul>'+list.items.map(item=>'<li>'+escape(item)+'</li>').join('')+'</ul></section>').join('')+(pivot?'</details>':'');
   }
   root.addEventListener('change',event=>{
     if(event.target.id==='reference-category'){
@@ -294,7 +299,11 @@ export function createReferences(root,{getOperation=()=>null}={}) {
       const saved=states.get(category);for(const key of Object.keys(values))delete values[key];Object.assign(values,saved?.values||{});query=saved?.query||'';page=saved?.page||0;tablePages.clear();for(const [key,value]of saved?.tablePages||[])tablePages.set(key,value);root.querySelector('#reference-query').value=query;controls();render();
     }
     else if(event.target.dataset.refFilter){
-      const key=event.target.dataset.refFilter;values[key]=event.target.value;page=0;tablePages.clear();
+      const key=event.target.dataset.refFilter;
+      // Input already rendered this Pivot value. A blur/change must not replace
+      // the summary being tapped between pointerdown and its default click.
+      if(category==='pivothead'&&event.target.tagName==='INPUT'&&values[key]===event.target.value)return;
+      values[key]=event.target.value;page=0;tablePages.clear();
       if(category==='foldinghead'&&key==='foldingPipe'&&values.foldingPipe!=='custom'){const [material,size]=values.foldingPipe.split(':');const od=TRUE_OD[material]?.[size];values.pod=Number.isFinite(od)?String(od):'';}
       if(key==='topic'){for(const name of ['size','machine','cutter','manualPart','item','boringOd'])delete values[name];}
       if(key==='manualPart')delete values.item;
