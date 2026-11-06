@@ -4,12 +4,12 @@
   "files": {
     ".github/workflows/library-safeguard.yml": {
       "beforeSha256": "a630c5f6b340b507917be7a4bff75e99a7c2b75f621a40d119478731917f038b",
-      "afterSha256": "1330811af3a73955139c537bbb5220bc29d98f5444a5fbd974bc13f8ccc04c8c",
+      "afterSha256": "ad3dd920f7057f4597d331769c8f748a82efdf772e8be6e99d4f43d1dc308606",
       "hunks": [
         {
           "offset": 3698,
-          "before": "run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Fraction display and offline upgrade\n        run: node tests/pre-alpha-fractions",
-          "after": "timeout-minutes: 5\n        run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Fraction display and offline upgrade\n        run: node tests/pre-alpha-fractions-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Check Pivot Head setup dimensions and source qualifications\n        timeout-minutes: 5\n        run: node tests/pre-alpha-pivot-setup"
+          "before": "run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Fraction display and offline upgrade\n        run: node tests/pre-alpha-fract",
+          "after": "timeout-minutes: 5\n        run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Fraction display and offline upgrade\n        run: node tests/pre-alpha-fractions-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Check Pivot Head setup dimensions and source qualifications\n        timeout-minutes: 5\n        run: node tests/pre-alpha-pivot-setup-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Check Folding Head and Pivot reference navigation\n        run: node tests/pre-alpha-folding-dimens"
         }
       ]
     },
@@ -158,6 +158,17 @@
           "offset": 804,
           "before": "exports.mjs', {}],\n  ['pre-alpha-worksheet-deferred.mjs', {}],\n  ['pre-alpha-shared-save.mjs', {}],\n  ['pre-alpha-modern-sharing.mjs', {}],\n  ['pre-alpha-production-binding.mjs', {}],\n  ['pre-alpha-families.mjs', {}],\n  ['pre-alpha-folding-dimensions.mjs', {}],\n  ['pre-alpha-release-identity.mjs', {}],\n  ['pre-alpha-source-boundary.mjs', {}],\n  ['pre-alpha-measurement-help.mjs', {}],\n  ['pre-alpha-measurement-figures.mjs', {}],\n  ['pre-alpha-home.mjs', {}],\n  ['pre-alpha-presentation.mjs', {}],\n  ['pre-alpha-hot-tap-ld.mjs', {}],\n  ['pre-alpha-workspace-store.mjs', {}],\n  ['pre-alpha-workspace-controller.mjs', {}],\n  ['smartstop-reference.mjs', {}],\n  ['hot-tap-field-reading.mjs', {}],\n  ['library-tap-unit.mjs', {}],\n  ['cloud-sync.mjs', {}],\n  ['sync-local-jobs.mjs', {}]\n];\nif (!args.includes('--unit-only')) {\n  for (const browser of ['chromium', 'webkit']) {\n    checks.push(['pre-alpha-actual-pop-ui.mjs', { TAPCALC_BROWSER: browser }]);\n    checks.push(['pre-alpha-fractions",
           "after": "pivot-setup.mjs', {}],\n  ['pre-alpha-exports.mjs', {}],\n  ['pre-alpha-worksheet-deferred.mjs', {}],\n  ['pre-alpha-shared-save.mjs', {}],\n  ['pre-alpha-modern-sharing.mjs', {}],\n  ['pre-alpha-production-binding.mjs', {}],\n  ['pre-alpha-families.mjs', {}],\n  ['pre-alpha-folding-dimensions.mjs', {}],\n  ['pre-alpha-release-identity.mjs', {}],\n  ['pre-alpha-source-boundary.mjs', {}],\n  ['pre-alpha-measurement-help.mjs', {}],\n  ['pre-alpha-measurement-figures.mjs', {}],\n  ['pre-alpha-home.mjs', {}],\n  ['pre-alpha-presentation.mjs', {}],\n  ['pre-alpha-hot-tap-ld.mjs', {}],\n  ['pre-alpha-workspace-store.mjs', {}],\n  ['pre-alpha-workspace-controller.mjs', {}],\n  ['smartstop-reference.mjs', {}],\n  ['hot-tap-field-reading.mjs', {}],\n  ['library-tap-unit.mjs', {}],\n  ['cloud-sync.mjs', {}],\n  ['sync-local-jobs.mjs', {}]\n];\nif (!args.includes('--unit-only')) {\n  for (const browser of ['chromium', 'webkit']) {\n    checks.push(['pre-alpha-actual-pop-ui.mjs', { TAPCALC_BROWSER: browser }]);\n    checks.push(['pre-alpha-fractions-ui.mjs', { TAPCALC_BROWSER: browser }]);\n    checks.push(['pre-alpha-pivot-setup"
+        }
+      ]
+    },
+    "tests/pre-alpha-folding-dimensions-ui.mjs": {
+      "beforeSha256": "21983088ddebf41db60722f48a90ac7eb17ad935d9e6aae2c9302f9f4811f814",
+      "afterSha256": "b3eedef611bf5a6f9e8ba8ba95653821474db9e07e22e35c37e3717553169ee2",
+      "hunks": [
+        {
+          "offset": 8289,
+          "before": "pivot unchanged';await page.locator('#reference-category').selectOption('pivothead');await field('pipeSize').selectOption('16.0');await field('pressureBand').selectOption('under500');await field('wall').fill('3/8');await field('measuredNose').fill('14');\n  const pivotText=await page.locator('#reference-content').innerText();assert.match(pivotText,/14\\.5000 in/);assert.match(pivotText,/0\\.5000 i",
+          "after": "selected Pivot5014 ranges';await page.locator('#reference-category').selectOption('pivothead');await field('pipeSize').selectOption('16.0');await field('headType').selectOption('conventional');assert.equal(await field('pressureBand').count(),0);await field('wall').fill('3/8');await field('measuredNose').fill('14');\n  const pivotText=await page.locator('#reference-content').innerText();assert.match(pivotText,/14\\.5000 in/);assert.match(pivotText,/14\\.7500 in/);assert.match(pivotText,/Not determined; obtain the plate specificatio"
         }
       ]
     }
