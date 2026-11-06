@@ -17,7 +17,7 @@ assert.equal(calculatedPop(op),17);
 assert.equal(worksheetFor(op,'tap').find(r=>r.label==='Lower in').formula,'Actual POP - Rod start');
 assert.equal(reviewSections(op).find(s=>s.stage==='tap').mode,'Applied actual POP');
 assert.ok(operationWarnings(op).some(w=>w.code==='actual-pop-active'));
-const job={title:'Synthetic',sharedState:{},operations:[op]};assert.match(buildExportText(job),/Applied actual POP: 18\.5000 in \| Calculated POP: 17\.0000 in/);
+const job={title:'Synthetic',sharedState:{},operations:[op]};assert.match(buildExportText(job),/Applied actual POP: 18\.5000 in \(18 1\/2 in\) \| Calculated POP: 17\.0000 in \(17 in\)/);
 assert.equal(actualPopFor(JSON.parse(JSON.stringify(op))),18.5,'Saved object reopens applied');
 for(const invalid of ['', 'bad','1/0','Infinity','12oops']){op.state.v3ActualPopInput=invalid;assert.equal(applyActualPop(op),false);assert.equal(actualPopFor(op),18.5,'Invalid draft cannot replace applied reading');}
 op.state.ptc='2';assert.equal(values()['Cutter on pipe'],20.5,'Downstream inputs continue recalculating');

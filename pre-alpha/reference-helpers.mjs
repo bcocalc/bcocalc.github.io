@@ -2,12 +2,14 @@
 // No storage, job mutation, cloud transport, or generic Hot Tap fallback.
 import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha26';
 
-const REFERENCE_NOTE = 'Read-only reference helper. Confirm the source, physical equipment, and approved procedure before use. Results do not change job measurements and are not setup approval.';
+import {inchText,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';
+
+const REFERENCE_NOTE = 'Read-only reference helper. Confirm the source, physical equipment, and approved procedure before use. Results do not change job measurements and are not setup approval. '+FRACTION_NOTE;
 const finite = Number.isFinite;
 const all = (...values) => values.every(finite);
 const root = value => finite(value) && value >= 0 ? Math.sqrt(value) : NaN;
 const blank = value => !String(value ?? '').trim();
-const inches = value => finite(value) ? value.toFixed(4) + ' in' : 'Not available';
+const inches = value => inchText(value,'Not available');
 const table = (title, columns, rows) => ({title, columns, rows});
 const pairs = (title, rows) => table(title, ['Reference output', 'Value'], rows);
 

@@ -2,6 +2,8 @@ import {actualPopFor,geometry,pipeOD,number,resultsFor,lineStopMdIsManual,hotTap
 import {htpChartRow,hiStopPipeOD} from './families.mjs?v=pre-alpha26';
 import {TRUE_OD} from './pipe-data.mjs?v=pre-alpha26';
 
+import {inchMarkup,inchText,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';
+
 export const escape=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const has=value=>String(value??'').trim()!=='';
 const manual=(state,key)=>[true,'true'].includes(state[key]);
@@ -83,12 +85,12 @@ export function worksheetMarkup(operation,stage,origins) {
   const rows=worksheetFor(operation,stage);
   if(!rows.length)return '';
   return '<details class="review-worksheet"><summary>Calculation worksheet</summary>'+
-    '<p class="result-hint">Current operation and active calculation mode only. Input signs are retained; row operators are shown separately. No field verification is implied.</p>'+
+    '<p class="result-hint">Current operation and active calculation mode only. Input signs are retained; row operators are shown separately. No field verification is implied.</p><p class="result-hint fraction-note">'+FRACTION_NOTE+'</p>'+
     (stage==='plug'?'<p class="result-hint">General plug calculation only. Pipeline and side-outlet reference methods are separate; plug-family applicability is not verified here.</p>':'')+
     rows.map(row=>'<section class="worksheet-result"><h4>'+escape(row.label)+'</h4>'+
       (row.formula?'<p class="worksheet-formula">'+escape(row.formula)+'</p>':'')+
-      '<ol>'+row.terms.map((term,index)=>'<li><span class="worksheet-operator" aria-label="'+(row.formula?'Input':index===0?'Starting value':term.operator==='-'?'Subtract':'Add')+'">'+(row.formula?'':index?escape(term.operator):'=')+'</span><span>'+escape(term.label)+'<small class="value-origin">'+escape(term.key?origins.label(operation,term.key):'Calculated from setup')+'</small></span><strong>'+escape(term.key==='hsPtp'&&Number.isFinite(number(term.value))?number(term.value).toFixed(4):displayMeasurement(term.value))+'</strong></li>').join('')+'</ol>'+
-      '<p class="worksheet-total"><span>'+escape(row.label)+'</span><strong>'+escape(Number.isFinite(row.result)?row.result.toFixed(4)+' in':'Not calculated')+'</strong></p></section>').join('')+'</details>';
+      '<ol>'+row.terms.map((term,index)=>'<li><span class="worksheet-operator" aria-label="'+(row.formula?'Input':index===0?'Starting value':term.operator==='-'?'Subtract':'Add')+'">'+(row.formula?'':index?escape(term.operator):'=')+'</span><span>'+escape(term.label)+'<small class="value-origin">'+escape(term.key?origins.label(operation,term.key):'Calculated from setup')+'</small></span><strong>'+escape(term.key==='hsPtp'&&Number.isFinite(number(term.value))?number(term.value).toFixed(4):term.key?displayMeasurement(term.value):inchText(number(term.value)))+'</strong></li>').join('')+'</ol>'+
+      '<p class="worksheet-total"><span>'+escape(row.label)+'</span><strong>'+inchMarkup(row.result,'Not calculated')+'</strong></p></section>').join('')+'</details>';
 }
 
 function historicalHotTapValue(job,operation,key) {

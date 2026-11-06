@@ -1,3 +1,4 @@
+import {inchText} from '../pre-alpha/measurement-format.mjs';
 // Fresh persistent localhost profiles only. No production records or cloud writes.
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
@@ -51,7 +52,7 @@ try{
     const tapOutput=()=>page.locator('#results .result-subgrid > div').filter({has:page.locator('span',{hasText:label})}).locator('strong');
     async function checkTap(expected,historical,pilot=12){
       await tapOutput().waitFor({state:'visible'});
-      assert.equal((await tapOutput().textContent()).trim(),Number.isFinite(expected)?expected.toFixed(4)+' in':'-- in');
+      assert.equal((await tapOutput().textContent()).replace(/ \((?:≈ )?-?[0-9 /]+ in\)/g,'').trim(),Number.isFinite(expected)?expected.toFixed(4)+' in':'-- in');
       const old=page.locator('#results [data-historical-mco]');
       assert.equal(await old.count(),historical==null?0:1);
       if(historical!=null){
@@ -60,7 +61,7 @@ try{
       }
       assert.match(await page.locator('#results [data-result-origin]').first().textContent(),/Calculated from setup - not field verified/);
       const rod=page.locator('#results .result-subgrid > div').filter({has:page.locator('span',{hasText:/^Rod MCO$/})}).locator('strong');
-      assert.equal((await rod.textContent()).trim(),Number.isFinite(expected)&&Number.isFinite(pilot)?(expected+pilot).toFixed(4)+' in':'-- in');
+      assert.equal((await rod.textContent()).replace(/ \((?:≈ )?-?[0-9 /]+ in\)/g,'').trim(),Number.isFinite(expected)&&Number.isFinite(pilot)?(expected+pilot).toFixed(4)+' in':'-- in');
       const snapshot={'55':'67','88':'89','99':'111'}[historical],oldRod=page.locator('#results [data-historical-rod-mco]');
       assert.equal(await oldRod.count(),snapshot?1:0);
       if(snapshot)assert.equal(await oldRod.locator('dd').textContent(),Number(snapshot).toFixed(4)+' in');
@@ -77,20 +78,20 @@ try{
       const section=page.locator('[data-review-stage="tap"]');
       const row=section.locator('.review-results > div').filter({has:page.locator('dt',{hasText:label})});
       await row.waitFor({state:'visible'});
-      assert.equal((await row.locator('dd').textContent()).trim(),expected.toFixed(4)+' in');
+      assert.equal((await row.locator('dd').textContent()).trim(),inchText(expected));
       await activate(section.locator('.review-worksheet > summary'));
       const worksheet=section.locator('.worksheet-result').filter({has:page.locator('h4',{hasText:label})});
       assert.equal(await worksheet.locator('.worksheet-formula').textContent(),'Actual pipe O.D. / 2 + PTC');
-      assert.equal(await worksheet.locator('.worksheet-total strong').textContent(),expected.toFixed(4)+' in');
+      assert.equal(await worksheet.locator('.worksheet-total strong').textContent(),inchText(expected));
       assert.match(await worksheet.locator('li').first().innerText(),/Actual pipe O.D./);
       assert.match(await worksheet.locator('li').nth(1).innerText(),/PTC/);
       assert.doesNotMatch(await worksheet.innerText(),/Historical|888|99\.0000/);
       const rod=section.locator('.review-results > div').filter({has:page.locator('dt',{hasText:/^Rod MCO$/})});
-      assert.equal((await rod.locator('dd').textContent()).trim(),(expected+12).toFixed(4)+' in');
+      assert.equal((await rod.locator('dd').textContent()).trim(),inchText(expected+12));
       const rodSheet=section.locator('.worksheet-result').filter({has:page.locator('h4',{hasText:/^Rod MCO$/})});
       assert.equal(await rodSheet.locator('.worksheet-formula').textContent(),'Pilot on pipe + MCO');
-      assert.equal(await rodSheet.locator('.worksheet-total strong').textContent(),(expected+12).toFixed(4)+' in');
-      assert.deepEqual(await rodSheet.locator('li strong').allTextContents(),['12.0000 in',expected.toFixed(4)+' in']);
+      assert.equal(await rodSheet.locator('.worksheet-total strong').textContent(),inchText(expected+12));
+      assert.deepEqual(await rodSheet.locator('li strong').allTextContents(),[inchText(12),inchText(expected)]);
       assert.doesNotMatch(await rodSheet.innerText(),/111\.0000|89\.0000|67\.0000|Historical/);
     }
     async function activeJob(){const view=await readWorkspaceSnapshot(page);return view.jobs.find(job=>job.id===view.activeId);}

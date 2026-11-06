@@ -1,0 +1,446 @@
+{
+  "base": "ffacd8f8cf48cfc9c442f5e652394af79f123809",
+  "files": {
+    ".github/workflows/library-safeguard.yml": {
+      "beforeSha256": "f656815fb09b86911332f96bb9d20af7f366108f2a8d64e8fbf7752de29df321",
+      "afterSha256": "a630c5f6b340b507917be7a4bff75e99a7c2b75f621a40d119478731917f038b",
+      "hunks": [
+        {
+          "offset": 398,
+          "before": "",
+          "after": "      - name: Fetch immutable fraction display upgrade and scope baseline\n        run: git fetch --no-tags --depth=1 origin ffacd8f8cf48cfc9c442f5e652394af79f123809\n"
+        },
+        {
+          "offset": 1905,
+          "before": "",
+          "after": "      - name: Fetch immutable fraction display upgrade and scope baseline\n        run: git fetch --no-tags --depth=1 origin ffacd8f8cf48cfc9c442f5e652394af79f123809\n"
+        },
+        {
+          "offset": 3742,
+          "before": "",
+          "after": "        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Fraction display and offline upgrade\n        run: node tests/pre-alpha-fractions-ui.mjs\n"
+        },
+        {
+          "offset": 7515,
+          "before": "",
+          "after": "            /tmp/tapcalc-fraction-evidence/*\n"
+        },
+        {
+          "offset": 8013,
+          "before": "",
+          "after": "      - name: Fetch immutable fraction display upgrade and scope baseline\n        run: git fetch --no-tags --depth=1 origin ffacd8f8cf48cfc9c442f5e652394af79f123809\n"
+        },
+        {
+          "offset": 10644,
+          "before": "",
+          "after": "            /tmp/tapcalc-fraction-evidence/*\n"
+        }
+      ]
+    },
+    "pre-alpha/eta-view.mjs": {
+      "beforeSha256": "7c1aaa4ac7a73842bd61ea8043460617c379f3ace9e6df695bf4d015f1f1bdcc",
+      "afterSha256": "baa049a0b1ac0596df79e3f15dd915936c631c45deddc0a60ce28ad4ec923ce3",
+      "hunks": [
+        {
+          "offset": 121,
+          "before": "",
+          "after": "\nimport {inchText,inchMarkup} from './measurement-format.mjs?v=pre-alpha26';\n"
+        },
+        {
+          "offset": 1711,
+          "before": "    distance:Number.isFinite(eta.distance)?eta.distance.toFixed(4)+' in':'Not calculated',\n",
+          "after": "    distance:inchText(eta.distance),\n"
+        },
+        {
+          "offset": 4265,
+          "before": "  const bco=Number.isFinite(eta.distance)?eta.distance.toFixed(4)+' <small>in</small>':'-- <small>Not calculated</small>';\n",
+          "after": "  const bco=inchMarkup(eta.distance,'-- <small>Not calculated</small>');\n"
+        },
+        {
+          "offset": 5089,
+          "before": "    (secondary.length?'<div class=\"result-subgrid\">'+secondary.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+(Number.isFinite(value)?value.toFixed(4):'--')+' <small>in</small></strong></div>').join('')+'</div>':'')+\n",
+          "after": "    (secondary.length?'<div class=\"result-subgrid\">'+secondary.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+inchMarkup(value)+'</strong></div>').join('')+'</div>':'')+\n"
+        }
+      ]
+    },
+    "pre-alpha/exports.mjs": {
+      "beforeSha256": "d2c50dcc7c19c5aae646fa0892ec258d92770f1245edd5b9f2dc3df8529ad40e",
+      "afterSha256": "7e7e6f91e2b85f72a90e392a4899a724a50e9f0bb92ec07ded94748a7ea47f54",
+      "hunks": [
+        {
+          "offset": 435,
+          "before": "",
+          "after": "import {inchText,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';\n\n"
+        },
+        {
+          "offset": 639,
+          "before": "const display=value=>Number.isFinite(value)?value.toFixed(4)+' in':'Not calculated';\n",
+          "after": "const display=inchText;\n"
+        },
+        {
+          "offset": 2004,
+          "before": "  const lines=['TapCalc V.3','Job: '+String(job.title||'Untitled job'),''],info=job.sharedState||{},original=job.original?.record||job.original||{};\n",
+          "after": "  const lines=['TapCalc V.3',FRACTION_NOTE,'Job: '+String(job.title||'Untitled job'),''],info=job.sharedState||{},original=job.original?.record||job.original||{};\n"
+        }
+      ]
+    },
+    "pre-alpha/presentation.mjs": {
+      "beforeSha256": "c31d907ef7a6326cdc25b6efcc9569a75b5424b535ad479eb7c7cb2e19137f6b",
+      "afterSha256": "9a6238846fdc5f823a95e32dd4bcecfab2744eba9bb656f8abd8642cabcdadf0",
+      "hunks": [
+        {
+          "offset": 275,
+          "before": "",
+          "after": "\nimport {inchMarkup,inchText,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';\n"
+        },
+        {
+          "offset": 7150,
+          "before": "    '<p class=\"result-hint\">Current operation and active calculation mode only. Input signs are retained; row operators are shown separately. No field verification is implied.</p>'+\n",
+          "after": "    '<p class=\"result-hint\">Current operation and active calculation mode only. Input signs are retained; row operators are shown separately. No field verification is implied.</p><p class=\"result-hint fraction-note\">'+FRACTION_NOTE+'</p>'+\n"
+        },
+        {
+          "offset": 7749,
+          "before": "      '<ol>'+row.terms.map((term,index)=>'<li><span class=\"worksheet-operator\" aria-label=\"'+(row.formula?'Input':index===0?'Starting value':term.operator==='-'?'Subtract':'Add')+'\">'+(row.formula?'':index?escape(term.operator):'=')+'</span><span>'+escape(term.label)+'<small class=\"value-origin\">'+escape(term.key?origins.label(operation,term.key):'Calculated from setup')+'</small></span><strong>'+escape(term.key==='hsPtp'&&Number.isFinite(number(term.value))?number(term.value).toFixed(4):displayMeasurement(term.value))+'</strong></li>').join('')+'</ol>'+\n      '<p class=\"worksheet-total\"><span>'+escape(row.label)+'</span><strong>'+escape(Number.isFinite(row.result)?row.result.toFixed(4)+' in':'Not calculated')+'</strong></p></section>').join('')+'</details>';\n",
+          "after": "      '<ol>'+row.terms.map((term,index)=>'<li><span class=\"worksheet-operator\" aria-label=\"'+(row.formula?'Input':index===0?'Starting value':term.operator==='-'?'Subtract':'Add')+'\">'+(row.formula?'':index?escape(term.operator):'=')+'</span><span>'+escape(term.label)+'<small class=\"value-origin\">'+escape(term.key?origins.label(operation,term.key):'Calculated from setup')+'</small></span><strong>'+escape(term.key==='hsPtp'&&Number.isFinite(number(term.value))?number(term.value).toFixed(4):term.key?displayMeasurement(term.value):inchText(number(term.value)))+'</strong></li>').join('')+'</ol>'+\n      '<p class=\"worksheet-total\"><span>'+escape(row.label)+'</span><strong>'+inchMarkup(row.result,'Not calculated')+'</strong></p></section>').join('')+'</details>';\n"
+        }
+      ]
+    },
+    "pre-alpha/reference-helpers.mjs": {
+      "beforeSha256": "280e70af15cfd6410b01a04c589928512cde08d034a857153f9703c206856908",
+      "afterSha256": "3bdcefe680b912b97f52d4e14090742048301aed634d1d33664fa42c4261fbe4",
+      "hunks": [
+        {
+          "offset": 206,
+          "before": "const REFERENCE_NOTE = 'Read-only reference helper. Confirm the source, physical equipment, and approved procedure before use. Results do not change job measurements and are not setup approval.';\n",
+          "after": "import {inchText,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';\n\nconst REFERENCE_NOTE = 'Read-only reference helper. Confirm the source, physical equipment, and approved procedure before use. Results do not change job measurements and are not setup approval. '+FRACTION_NOTE;\n"
+        },
+        {
+          "offset": 706,
+          "before": "const inches = value => finite(value) ? value.toFixed(4) + ' in' : 'Not available';\n",
+          "after": "const inches = value => inchText(value,'Not available');\n"
+        }
+      ]
+    },
+    "pre-alpha/service-worker.js": {
+      "beforeSha256": "e93087050e28ff6711df6086747649803d92a3beca853fe6ef1640ce3aa6e14f",
+      "afterSha256": "862e0fee30a30810b24ad9d3b0a33d1b6aa196baf2e48ffffac20aa8b26e6a23",
+      "hunks": [
+        {
+          "offset": 66,
+          "before": "const CACHE = PREFIX + BUILD + '-actual-pop1';\n",
+          "after": "const CACHE = PREFIX + BUILD + '-fractions1';\n"
+        },
+        {
+          "offset": 161,
+          "before": "const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?v='+BUILD,'./exports.mjs?v='+BUILD,'./shared-save.mjs?v='+BUILD,'./modern-sharing-config.mjs?v='+BUILD,'./modern-envelope.mjs?v='+BUILD,'./modern-transport.mjs?v='+BUILD,'./modern-saver.mjs?v='+BUILD,'./modern-view.mjs?v='+BUILD,'./modern-ui.mjs?v='+BUILD,'./shared-library.mjs?v='+BUILD,'./workspace-store.mjs?v='+BUILD,'./workspace-database.mjs?v='+BUILD,'./model.mjs?v='+BUILD,'./families.mjs?v='+BUILD,'./review.mjs?v='+BUILD,'./presentation.mjs?v='+BUILD,'./help.mjs?v='+BUILD,'./measurement-help.mjs?v='+BUILD,'./measurement-figures.mjs?v='+BUILD,'./eta.mjs?v='+BUILD,'./eta-view.mjs?v='+BUILD,'./auxiliary.mjs?v='+BUILD,'./references.mjs?v='+BUILD,'./reference-data.mjs?v='+BUILD,'./reference-supplement-data.mjs?v='+BUILD,'./reference-helpers.mjs?v='+BUILD,'./pipe-data.mjs?v='+BUILD,'./firebase-config.js?v='+BUILD];\n",
+          "after": "const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?v='+BUILD,'./exports.mjs?v='+BUILD,'./shared-save.mjs?v='+BUILD,'./modern-sharing-config.mjs?v='+BUILD,'./modern-envelope.mjs?v='+BUILD,'./modern-transport.mjs?v='+BUILD,'./modern-saver.mjs?v='+BUILD,'./modern-view.mjs?v='+BUILD,'./modern-ui.mjs?v='+BUILD,'./shared-library.mjs?v='+BUILD,'./workspace-store.mjs?v='+BUILD,'./workspace-database.mjs?v='+BUILD,'./model.mjs?v='+BUILD,'./families.mjs?v='+BUILD,'./review.mjs?v='+BUILD,'./presentation.mjs?v='+BUILD,'./measurement-format.mjs?v='+BUILD,'./help.mjs?v='+BUILD,'./measurement-help.mjs?v='+BUILD,'./measurement-figures.mjs?v='+BUILD,'./eta.mjs?v='+BUILD,'./eta-view.mjs?v='+BUILD,'./auxiliary.mjs?v='+BUILD,'./references.mjs?v='+BUILD,'./reference-data.mjs?v='+BUILD,'./reference-supplement-data.mjs?v='+BUILD,'./reference-helpers.mjs?v='+BUILD,'./pipe-data.mjs?v='+BUILD,'./firebase-config.js?v='+BUILD];\n"
+        }
+      ]
+    },
+    "pre-alpha/workspace.css": {
+      "beforeSha256": "6ac883d2af4fa526ec90f4415ceace8f6a084e9e58c1db6e10a0e6134fdb4180",
+      "afterSha256": "e115d69598c4ee20de4798ecc89ebdcfdb0d923f22854d34628518ce41b6afba",
+      "hunks": [
+        {
+          "offset": 32518,
+          "before": "",
+          "after": "\n/* Display-only fractions wrap beside the unchanged decimal, including on phones. */\n.result-fraction{display:inline-block;font-size:.8em;font-weight:500;letter-spacing:0;line-height:1.5;white-space:normal;overflow-wrap:anywhere}\n.result-panel .big-value .result-fraction{font-size:18px;opacity:1}\n.result-panel .result-subgrid .result-fraction{font-size:14px}\n.result-decimal{overflow-wrap:anywhere}\n.worksheet-total strong{min-width:0}\n"
+        }
+      ]
+    },
+    "pre-alpha/workspace.mjs": {
+      "beforeSha256": "4d4d6d14945cfd1692725647d55be9d1ee7851ed1ae58e73c8497ab276ae7667",
+      "afterSha256": "e551beb34dbea2a9cd4cb5c9769ac8f8e8a52ede2cd76206851cc23f98285551",
+      "hunks": [
+        {
+          "offset": 1575,
+          "before": "",
+          "after": "import {inchMarkup,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';\n"
+        },
+        {
+          "offset": 25284,
+          "before": "    const results=section.stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{secondary:section.results.slice(1)}):'<dl class=\"review-results\">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+format(value)+(Number.isFinite(value)?' <small>in</small>':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';\n",
+          "after": "    const results=section.stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{secondary:section.results.slice(1)}):'<dl class=\"review-results\">'+section.results.map(([label,value])=>'<div><dt>'+escape(label)+'</dt><dd>'+inchMarkup(value,'--')+(Number.isFinite(value)?'':' <small>'+(label==='Travel margin'?'Not checked':'Not calculated')+'</small>')+'</dd></div>').join('')+'</dl>';\n"
+        },
+        {
+          "offset": 27226,
+          "before": "  return '<section class=\"actual-pop-panel\" aria-label=\"Actual POP adjustment\"><p>Calculated POP: <strong data-calculated-pop>'+format(calculatedPop(op))+' in</strong></p><p data-actual-pop-status role=\"status\">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type=\"button\" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type=\"button\" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role=\"alert\">Actual POP must be a valid number or fraction.</p>':'')+'</section>';\n",
+          "after": "  return '<section class=\"actual-pop-panel\" aria-label=\"Actual POP adjustment\"><p>Calculated POP: <strong data-calculated-pop>'+inchMarkup(calculatedPop(op))+'</strong></p><p data-actual-pop-status role=\"status\">'+(actual===null?'Using calculated POP.':'Applied actual POP: '+format(actual)+' in. Downstream Hot Tap results use this reading until reset.')+'</p><button type=\"button\" data-actual-pop-apply'+(!Number.isFinite(draft)?' disabled':'')+'>Apply actual POP</button> <button type=\"button\" data-actual-pop-reset'+(actual===null?' disabled':'')+'>Use calculated POP</button>'+(String(op.state.v3ActualPopInput??'').trim()&&!Number.isFinite(draft)?'<p role=\"alert\">Actual POP must be a valid number or fraction.</p>':'')+'</section>';\n"
+        },
+        {
+          "offset": 28259,
+          "before": "    $('results').innerHTML=stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{primary:true,secondary:rest}):'<div class=\"result-panel\"><p class=\"eyebrow\">'+escape(main[0])+'</p><strong class=\"big-value\">'+format(main[1])+' <small>in</small></strong><div class=\"result-subgrid\">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+format(value)+' <small>in</small></strong></div>').join('')+'</div></div>';\n",
+          "after": "    $('results').innerHTML=stage==='pipe'&&stepsFor(op).includes('tap')?etaResultPanel(op,active.sharedState.machineType,{primary:true,secondary:rest}):'<div class=\"result-panel\"><p class=\"eyebrow\">'+escape(main[0])+'</p><strong class=\"big-value\">'+inchMarkup(main[1])+'</strong><div class=\"result-subgrid\">'+rest.map(([label,value])=>'<div><span>'+escape(label)+'</span><strong>'+inchMarkup(value)+'</strong></div>').join('')+'</div></div>';\n"
+        },
+        {
+          "offset": 29209,
+          "before": "",
+          "after": "    $('results').insertAdjacentHTML('beforeend','<p class=\"result-hint fraction-note\">'+FRACTION_NOTE+'</p>');\n"
+        }
+      ]
+    },
+    "tests/actual-pop-scope.mjs": {
+      "beforeSha256": "b7f2c57bbc84b0ea02b6238b061cf8fb75ee3c2b5599cd63520a50df97540d7a",
+      "afterSha256": "f087f7d057d355be19b5683987b10e04fd97a8981c566f89d14f8317343dcddd",
+      "hunks": [
+        {
+          "offset": 0,
+          "before": "",
+          "after": "import {restoreFractions,fractionPaths} from './fractions-scope.mjs';\n"
+        },
+        {
+          "offset": 496,
+          "before": "const read=p=>readFileSync(new URL(p,root),'utf8').replaceAll('\\r\\n','\\n');\nexport const actualPopPaths=Object.keys(plan.files);\n",
+          "after": "const raw=p=>readFileSync(new URL(p,root),'utf8').replaceAll('\\r\\n','\\n');\nconst read=p=>restoreFractions(p,raw(p));\nexport const actualPopPaths=[...Object.keys(plan.files),...fractionPaths,'tests/fractions-scope.mjs','tests/fractions-scope.json'];\n"
+        },
+        {
+          "offset": 792,
+          "before": "",
+          "after": " source=restoreFractions(path,source);\n"
+        },
+        {
+          "offset": 1455,
+          "before": " if(!p.added){const original=execFileSync('git',['show',plan.base+':'+path],{encoding:'utf8',maxBuffer:30e6}).replaceAll('\\r\\n','\\n');assert.equal(restoreActualPop(path,current),original,'POP patch restores exact public baseline: '+path);}\n",
+          "after": " if(!p.added){const original=execFileSync('git',['show',plan.base+':'+path],{encoding:'utf8',maxBuffer:30e6}).replaceAll('\\r\\n','\\n');assert.equal(restoreActualPop(path,raw(path)),original,'POP patch restores exact public baseline: '+path);}\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-actual-pop-ui.mjs": {
+      "beforeSha256": "fbb0c3eaee491d2218b7959640affd02af46778da7c940f23e7082aedc1e1d3e",
+      "afterSha256": "45db70498e5dd67474e4e18686b9cd0515b81fb434487d1b724149987e934b93",
+      "hunks": [
+        {
+          "offset": 3798,
+          "before": " const result=async(label,expected)=>{const selector=label==='Pilot on pipe'?page.locator('.big-value'):page.locator('.result-subgrid > div').filter({has:page.locator('span',{hasText:new RegExp('^'+label+'$')})}).locator('strong');assert.equal((await selector.textContent()).replace(/\\s+/g,' ').trim(),expected.toFixed(4)+' in',label);};\n",
+          "after": " const result=async(label,expected)=>{const selector=label==='Pilot on pipe'?page.locator('.big-value'):page.locator('.result-subgrid > div').filter({has:page.locator('span',{hasText:new RegExp('^'+label+'$')})}).locator('strong');assert.equal((await selector.textContent()).replace(/ \\((?:≈ )?-?[0-9 /]+ in\\)/g,'').replace(/\\s+/g,' ').trim(),expected.toFixed(4)+' in',label);};\n"
+        },
+        {
+          "offset": 5548,
+          "before": " await page.waitForFunction(async()=>{const cache=await caches.open('tapcalc-pre-alpha-pre-alpha26-actual-pop1');return (await Promise.all(['index.html','workspace.mjs?v=pre-alpha26','model.mjs?v=pre-alpha26','workspace.css?v=pre-alpha26'].map(file=>cache.match(new URL(file,location.href).href)))).every(Boolean);},null,{timeout:30000});\n",
+          "after": " await page.waitForFunction(async()=>{const cache=await caches.open('tapcalc-pre-alpha-pre-alpha26-fractions1');return (await Promise.all(['index.html','workspace.mjs?v=pre-alpha26','model.mjs?v=pre-alpha26','workspace.css?v=pre-alpha26'].map(file=>cache.match(new URL(file,location.href).href)))).every(Boolean);},null,{timeout:30000});\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-actual-pop.mjs": {
+      "beforeSha256": "930db0252d1734b82414c60637a5aca4e53723c53992c338c69100adc5b654a3",
+      "afterSha256": "3452ef864528f3a2448f91a5c01c367504540b5584325df5ba0e0ae716c12d1e",
+      "hunks": [
+        {
+          "offset": 1695,
+          "before": "const job={title:'Synthetic',sharedState:{},operations:[op]};assert.match(buildExportText(job),/Applied actual POP: 18\\.5000 in \\| Calculated POP: 17\\.0000 in/);\n",
+          "after": "const job={title:'Synthetic',sharedState:{},operations:[op]};assert.match(buildExportText(job),/Applied actual POP: 18\\.5000 in \\(18 1\\/2 in\\) \\| Calculated POP: 17\\.0000 in \\(17 in\\)/);\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-families-ui.mjs": {
+      "beforeSha256": "2e1308c1f597f1e8e3153c9927ebc3dd297563d5f7384d542a066cfa1692da26",
+      "afterSha256": "5ec506a61df312548e423470308484343177d75578a5d462a2ca910ad6a6b26d",
+      "hunks": [
+        {
+          "offset": 4179,
+          "before": "   const panel=page.locator('#results > .result-panel').first();const actual=await panel.evaluate(node=>Object.fromEntries([[node.querySelector('.eyebrow')?.textContent,node.querySelector('.big-value')?.textContent],...[...node.querySelectorAll('.result-subgrid > div')].map(row=>[row.querySelector('span').textContent,row.querySelector('strong').textContent])].map(([key,value])=>[key.trim(),value.trim()])));\n",
+          "after": "   const panel=page.locator('#results > .result-panel').first();const actual=await panel.evaluate(node=>Object.fromEntries([[node.querySelector('.eyebrow')?.textContent,node.querySelector('.big-value')?.textContent],...[...node.querySelectorAll('.result-subgrid > div')].map(row=>[row.querySelector('span').textContent,row.querySelector('strong').textContent])].map(([key,value])=>[key.trim(),value.replace(/ \\((?:≈ )?-?[0-9 /]+ in\\)/g,'').trim()])));\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-folding-dimensions-ui.mjs": {
+      "beforeSha256": "fc25e379a1e576b221ba1201a72df60dd0d6cd15ea4c222d1123cfcaf6ad4591",
+      "afterSha256": "21983088ddebf41db60722f48a90ac7eb17ad935d9e6aae2c9302f9f4811f814",
+      "hunks": [
+        {
+          "offset": 3771,
+          "before": "  step='standalone Head Assembly without an active job';await page.goto(base+'/pre-alpha/#references');await page.waitForFunction(()=>document.getElementById('connection')?.textContent.startsWith('Connected'));await folding();assert.equal(await readDurableWorkspace(page),null);await field('foldingPipe').selectOption('CarbonSteel:6.0');await field('wall').fill('1/4');await expectDimensions(['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);assert.match(await page.locator('[data-folding-actual-od]').innerText(),/6\\.6250 in/);assert.equal(await field('pod').count(),0);await field('foldingPipe').selectOption('custom');await field('pod').fill('12 3/4');await field('wall').fill('3/8');await expectDimensions(['12.0000 in','11.5000 in','6.0000 in','5.8750 in']);await activate(page.locator('[data-ref-current-pipe]'));assert.match(await page.locator('#reference-content').innerText(),/Open a job first/);assert.equal(await field('pod').inputValue(),'12 3/4');assert.equal(await readDurableWorkspace(page),null);\n",
+          "after": "  step='standalone Head Assembly without an active job';await page.goto(base+'/pre-alpha/#references');await page.waitForFunction(()=>document.getElementById('connection')?.textContent.startsWith('Connected'));await folding();assert.equal(await readDurableWorkspace(page),null);await field('foldingPipe').selectOption('CarbonSteel:6.0');await field('wall').fill('1/4');await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);assert.match(await page.locator('[data-folding-actual-od]').innerText(),/6\\.6250 in/);assert.equal(await field('pod').count(),0);await field('foldingPipe').selectOption('custom');await field('pod').fill('12 3/4');await field('wall').fill('3/8');await expectDimensions(['12.0000 in (12 in)','11.5000 in (11 1/2 in)','6.0000 in (6 in)','5.8750 in (5 7/8 in)']);await activate(page.locator('[data-ref-current-pipe]'));assert.match(await page.locator('#reference-content').innerText(),/Open a job first/);assert.equal(await field('pod').inputValue(),'12 3/4');assert.equal(await readDurableWorkspace(page),null);\n"
+        },
+        {
+          "offset": 5615,
+          "before": "  await expectDimensions(['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);\n",
+          "after": "  await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);\n"
+        },
+        {
+          "offset": 6708,
+          "before": "  const setpoint=page.locator('.reference-section').filter({has:page.locator('h3',{hasText:'Folding Head set-point helper'})});assert.deepEqual(await setpoint.locator('tbody tr td:nth-child(2)').allTextContents(),['18.6250 in','18.1250 in']);\n  await field('md').fill('bad');assert.equal(await setpoint.locator('tbody tr td:nth-child(2)').first().textContent(),'Not available');await field('topic').selectOption('assembly');await expectDimensions(['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);assert.doesNotMatch(await page.locator('#reference-content').innerText(),/calculate the set point/);await field('topic').selectOption('helper');await field('md').fill('12 1/2');await field('topic').selectOption('assembly');\n",
+          "after": "  const setpoint=page.locator('.reference-section').filter({has:page.locator('h3',{hasText:'Folding Head set-point helper'})});assert.deepEqual(await setpoint.locator('tbody tr td:nth-child(2)').allTextContents(),['18.6250 in (18 5/8 in)','18.1250 in (18 1/8 in)']);\n  await field('md').fill('bad');assert.equal(await setpoint.locator('tbody tr td:nth-child(2)').first().textContent(),'Not available');await field('topic').selectOption('assembly');await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);assert.doesNotMatch(await page.locator('#reference-content').innerText(),/calculate the set point/);await field('topic').selectOption('helper');await field('md').fill('12 1/2');await field('topic').selectOption('assembly');\n"
+        },
+        {
+          "offset": 7823,
+          "before": "  await field('pod').fill('1.1');await field('wall').fill('.3');await expectDimensions(['0.5000 in','Not available','0.2500 in','0.1250 in']);\n  await field('pod').fill('.75');await field('wall').fill('.25');await expectDimensions(['0.2500 in','Not available','0.1250 in','Not available']);\n",
+          "after": "  await field('pod').fill('1.1');await field('wall').fill('.3');await expectDimensions(['0.5000 in (≈ 1/2 in)','Not available','0.2500 in (≈ 1/4 in)','0.1250 in (≈ 1/8 in)']);\n  await field('pod').fill('.75');await field('wall').fill('.25');await expectDimensions(['0.2500 in (1/4 in)','Not available','0.1250 in (1/8 in)','Not available']);\n"
+        },
+        {
+          "offset": 8691,
+          "before": "  await folding();assert.equal(await field('pod').inputValue(),'6 5/8');assert.equal(await field('wall').inputValue(),'1/4\"');await field('topic').selectOption('helper');assert.equal(await field('start').inputValue(),'-0 1/2');assert.equal(await field('md').inputValue(),'12 1/2');assert.deepEqual(await setpoint.locator('tbody tr td:nth-child(2)').allTextContents(),['18.6250 in','18.1250 in']);await field('topic').selectOption('assembly');\n",
+          "after": "  await folding();assert.equal(await field('pod').inputValue(),'6 5/8');assert.equal(await field('wall').inputValue(),'1/4\"');await field('topic').selectOption('helper');assert.equal(await field('start').inputValue(),'-0 1/2');assert.equal(await field('md').inputValue(),'12 1/2');assert.deepEqual(await setpoint.locator('tbody tr td:nth-child(2)').allTextContents(),['18.6250 in (18 5/8 in)','18.1250 in (18 1/8 in)']);await field('topic').selectOption('assembly');\n"
+        },
+        {
+          "offset": 9339,
+          "before": "  await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('pod').inputValue(),'6.625');assert.equal(await field('wall').inputValue(),'0.25');await field('topic').selectOption('helper');assert.equal(await field('md').inputValue(),'12 1/2');assert.equal(await field('start').inputValue(),'-0 1/2');await field('topic').selectOption('assembly');await expectDimensions(['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);\n",
+          "after": "  await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('pod').inputValue(),'6.625');assert.equal(await field('wall').inputValue(),'0.25');await field('topic').selectOption('helper');assert.equal(await field('md').inputValue(),'12 1/2');assert.equal(await field('start').inputValue(),'-0 1/2');await field('topic').selectOption('assembly');await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);\n"
+        },
+        {
+          "offset": 11039,
+          "before": "  step='online reload and persistent-profile restart';await page.reload();await page.waitForFunction(()=>document.getElementById('connection')?.textContent.startsWith('Connected'));assert.equal(await readDurableWorkspace(page),durable);await folding();assert.equal(await field('wall').inputValue(),'','Reference scratch inputs retain their existing reset-on-reload behavior');await activate(page.locator('[data-ref-current-pipe]'));await expectDimensions(['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);\n  await context.close();await launch();await page.goto(base+'/pre-alpha/#references');await page.waitForFunction(()=>document.getElementById('connection')?.textContent.startsWith('Connected'));assert.equal(await readDurableWorkspace(page),durable);await folding();await activate(page.locator('[data-ref-current-pipe]'));await expectDimensions(['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);\n  step='optional BCO copy, independent operation changes and custom actual OD';await field('pod').fill('8 5/8');await field('wall').fill('1/4');await activate(page.locator('.main-nav [data-page=\"workspace\"]'));await activate(page.locator('[data-operation=\"stop\"]'));await waitForWorkspaceSave(page);await openReference();await folding();assert.equal(await field('pod').inputValue(),'8 5/8','Operation changes do not overwrite manual reference inputs');const beforeStopCopy=await readDurableWorkspace(page);await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('pod').inputValue(),'12.75');assert.equal(await field('wall').inputValue(),'0.375');await expectDimensions(['12.0000 in','11.5000 in','6.0000 in','5.8750 in']);assert.equal(await readDurableWorkspace(page),beforeStopCopy);\n  await activate(page.locator('.main-nav [data-page=\"workspace\"]'));await activate(page.locator('[data-operation=\"tap\"]'));await activate(page.locator('[data-step=\"pipe\"]'));await page.locator('[data-field=\"bcoPipeOD\"]').selectOption('6.0');await page.locator('[data-field=\"bcoSchedule\"]').selectOption('custom');await page.locator('[data-field=\"bcoPipeID\"]').fill('6 1/8');await waitForWorkspaceSave(page);const beforeStandardCopy=await readDurableWorkspace(page);await openReference();await folding();assert.equal(await field('pod').inputValue(),'12.75','BCO edits do not silently follow into references');await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('foldingPipe').inputValue(),'CarbonSteel:6.0');assert.equal(await field('pod').count(),0);assert.equal(await field('wall').inputValue(),'0.25');await expectDimensions(['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);assert.equal(await readDurableWorkspace(page),beforeStandardCopy);\n  await activate(page.locator('.main-nav [data-page=\"workspace\"]'));await page.locator('[data-field=\"preAlphaPipeOD\"]').fill('8 5/8');await page.locator('[data-field=\"bcoPipeID\"]').fill('8 1/8');await waitForWorkspaceSave(page);const beforeCustomCopy=await readDurableWorkspace(page);await openReference();await folding();assert.equal(await field('foldingPipe').inputValue(),'CarbonSteel:6.0');await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('foldingPipe').inputValue(),'custom');assert.equal(await field('pod').inputValue(),'8.625');assert.equal(await field('wall').inputValue(),'0.25');await field('pod').fill('9 1/2');await field('wall').fill('3/8');await expectDimensions(['8.7500 in','8.2500 in','4.3750 in','4.2500 in']);assert.equal(await readDurableWorkspace(page),beforeCustomCopy);await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('pod').inputValue(),'8.625');assert.equal(await field('wall').inputValue(),'0.25');assert.equal(await readDurableWorkspace(page),beforeCustomCopy);\n",
+          "after": "  step='online reload and persistent-profile restart';await page.reload();await page.waitForFunction(()=>document.getElementById('connection')?.textContent.startsWith('Connected'));assert.equal(await readDurableWorkspace(page),durable);await folding();assert.equal(await field('wall').inputValue(),'','Reference scratch inputs retain their existing reset-on-reload behavior');await activate(page.locator('[data-ref-current-pipe]'));await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);\n  await context.close();await launch();await page.goto(base+'/pre-alpha/#references');await page.waitForFunction(()=>document.getElementById('connection')?.textContent.startsWith('Connected'));assert.equal(await readDurableWorkspace(page),durable);await folding();await activate(page.locator('[data-ref-current-pipe]'));await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);\n  step='optional BCO copy, independent operation changes and custom actual OD';await field('pod').fill('8 5/8');await field('wall').fill('1/4');await activate(page.locator('.main-nav [data-page=\"workspace\"]'));await activate(page.locator('[data-operation=\"stop\"]'));await waitForWorkspaceSave(page);await openReference();await folding();assert.equal(await field('pod').inputValue(),'8 5/8','Operation changes do not overwrite manual reference inputs');const beforeStopCopy=await readDurableWorkspace(page);await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('pod').inputValue(),'12.75');assert.equal(await field('wall').inputValue(),'0.375');await expectDimensions(['12.0000 in (12 in)','11.5000 in (11 1/2 in)','6.0000 in (6 in)','5.8750 in (5 7/8 in)']);assert.equal(await readDurableWorkspace(page),beforeStopCopy);\n  await activate(page.locator('.main-nav [data-page=\"workspace\"]'));await activate(page.locator('[data-operation=\"tap\"]'));await activate(page.locator('[data-step=\"pipe\"]'));await page.locator('[data-field=\"bcoPipeOD\"]').selectOption('6.0');await page.locator('[data-field=\"bcoSchedule\"]').selectOption('custom');await page.locator('[data-field=\"bcoPipeID\"]').fill('6 1/8');await waitForWorkspaceSave(page);const beforeStandardCopy=await readDurableWorkspace(page);await openReference();await folding();assert.equal(await field('pod').inputValue(),'12.75','BCO edits do not silently follow into references');await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('foldingPipe').inputValue(),'CarbonSteel:6.0');assert.equal(await field('pod').count(),0);assert.equal(await field('wall').inputValue(),'0.25');await expectDimensions(['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);assert.equal(await readDurableWorkspace(page),beforeStandardCopy);\n  await activate(page.locator('.main-nav [data-page=\"workspace\"]'));await page.locator('[data-field=\"preAlphaPipeOD\"]').fill('8 5/8');await page.locator('[data-field=\"bcoPipeID\"]').fill('8 1/8');await waitForWorkspaceSave(page);const beforeCustomCopy=await readDurableWorkspace(page);await openReference();await folding();assert.equal(await field('foldingPipe').inputValue(),'CarbonSteel:6.0');await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('foldingPipe').inputValue(),'custom');assert.equal(await field('pod').inputValue(),'8.625');assert.equal(await field('wall').inputValue(),'0.25');await field('pod').fill('9 1/2');await field('wall').fill('3/8');await expectDimensions(['8.7500 in (8 3/4 in)','8.2500 in (8 1/4 in)','4.3750 in (4 3/8 in)','4.2500 in (4 1/4 in)']);assert.equal(await readDurableWorkspace(page),beforeCustomCopy);await activate(page.locator('[data-ref-current-pipe]'));assert.equal(await field('pod').inputValue(),'8.625');assert.equal(await field('wall').inputValue(),'0.25');assert.equal(await readDurableWorkspace(page),beforeCustomCopy);\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-folding-dimensions.mjs": {
+      "beforeSha256": "bc66befff6e8f596aaa9322160cd903f59817ad228aeacb030895b87c324c3b5",
+      "afterSha256": "2b81e0cfb2fc218ff5ab2585509e64b56fa0a199bd51b023c6b0040cbd223c6b",
+      "hunks": [
+        {
+          "offset": 4590,
+          "before": "const view=helperReference('foldinghelper',{pod:'6 5/8',wall:'1/4'});equal(view.tables[0].rows[0][1],'Not available');equal(view.tables[1].rows.map(row=>row[1]),['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);\n",
+          "after": "const view=helperReference('foldinghelper',{pod:'6 5/8',wall:'1/4'});equal(view.tables[0].rows[0][1],'Not available');equal(view.tables[1].rows.map(row=>row[1]),['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);\n"
+        },
+        {
+          "offset": 4950,
+          "before": "const assembly=referenceTables('foldinghead',{topic:'assembly',pod:'6 5/8',wall:'1/4',md:'bad'});equal(assembly.tables.length,1);equal(assembly.tables[0].rows.map(row=>row[1]),['6.1250 in','5.6250 in','3.0625 in','2.9375 in']);equal(assembly.tables[0].title,'Folding Head backing ring and wheel positions');equal(assembly.lists.some(list=>list.title==='Head Assembly - source reminders'),true);equal(assembly.issue,'');equal(assembly.tables[0].rows.slice(2).every(row=>row[0].includes('wheel position from center mark')),true);\nconst setup=referenceTables('foldinghead',{topic:'helper',md:'12 1/2',ld:'1/4',ldSign:'subtract',pod:'6 5/8',wall:'1/4',start:'-0 1/2'});equal(setup.tables.length,1);equal(setup.tables[0].rows.map(row=>row[1]),['18.6250 in','18.1250 in']);\nconst standalone=helperFields('foldinghelper',{topic:'assembly'});equal(standalone.map(field=>field.key),['foldingPipe','wall']);equal(standalone[0].options.some(([key,label])=>key==='CarbonSteel:6.0'&&label.includes('6.625 in actual O.D.')),true);equal(helperFields('foldinghelper',{topic:'assembly',foldingPipe:'custom'}).map(field=>field.key),['foldingPipe','pod','wall']);equal(referenceTables('foldinghead',{topic:'assembly',pod:'6 5/8'}).resolvedPipeOd,'6.6250 in');equal(referenceTables('foldinghead',{topic:'assembly',pod:'bad'}).resolvedPipeOd,'Not available');\n",
+          "after": "const assembly=referenceTables('foldinghead',{topic:'assembly',pod:'6 5/8',wall:'1/4',md:'bad'});equal(assembly.tables.length,1);equal(assembly.tables[0].rows.map(row=>row[1]),['6.1250 in (6 1/8 in)','5.6250 in (5 5/8 in)','3.0625 in (3 1/16 in)','2.9375 in (2 15/16 in)']);equal(assembly.tables[0].title,'Folding Head backing ring and wheel positions');equal(assembly.lists.some(list=>list.title==='Head Assembly - source reminders'),true);equal(assembly.issue,'');equal(assembly.tables[0].rows.slice(2).every(row=>row[0].includes('wheel position from center mark')),true);\nconst setup=referenceTables('foldinghead',{topic:'helper',md:'12 1/2',ld:'1/4',ldSign:'subtract',pod:'6 5/8',wall:'1/4',start:'-0 1/2'});equal(setup.tables.length,1);equal(setup.tables[0].rows.map(row=>row[1]),['18.6250 in (18 5/8 in)','18.1250 in (18 1/8 in)']);\nconst standalone=helperFields('foldinghelper',{topic:'assembly'});equal(standalone.map(field=>field.key),['foldingPipe','wall']);equal(standalone[0].options.some(([key,label])=>key==='CarbonSteel:6.0'&&label.includes('6.625 in actual O.D.')),true);equal(helperFields('foldinghelper',{topic:'assembly',foldingPipe:'custom'}).map(field=>field.key),['foldingPipe','pod','wall']);equal(referenceTables('foldinghead',{topic:'assembly',pod:'6 5/8'}).resolvedPipeOd,'6.6250 in (6 5/8 in)');equal(referenceTables('foldinghead',{topic:'assembly',pod:'bad'}).resolvedPipeOd,'Not available');\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-hot-tap-ld-ui.mjs": {
+      "beforeSha256": "c17eae0dbcde18f25040dbc00d7f9a11c03c6873c8d959351a571655330da891",
+      "afterSha256": "cd27fe4abb061858ba6bea0159bf80326da6f7b466739df0324573681a498e74",
+      "hunks": [
+        {
+          "offset": 3325,
+          "before": "    const output=async()=>page.locator('#results .result-panel:not(.bco-eta-panel)').evaluate(node=>[node.querySelector('.big-value').textContent,...[...node.querySelectorAll('.result-subgrid strong')].map(n=>n.textContent)].map(text=>text.trim()));\n",
+          "after": "    const output=async()=>page.locator('#results .result-panel:not(.bco-eta-panel)').evaluate(node=>[node.querySelector('.big-value').textContent,...[...node.querySelectorAll('.result-subgrid strong')].map(n=>n.textContent)].map(text=>text.replace(/ \\((?:≈ )?-?[0-9 /]+ in\\)/g,'').trim()));\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-mco-ui.mjs": {
+      "beforeSha256": "65d7ae5506c8eda3b1f199e0c5fc20c30a4f8e1bce639c30ef177a5e5a86a26c",
+      "afterSha256": "7895975d409e337a5b6604fba60adf3441a4496a8f96d25d215e2f36234d1d47",
+      "hunks": [
+        {
+          "offset": 0,
+          "before": "",
+          "after": "import {inchText} from '../pre-alpha/measurement-format.mjs';\n"
+        },
+        {
+          "offset": 4543,
+          "before": "      assert.equal((await tapOutput().textContent()).trim(),Number.isFinite(expected)?expected.toFixed(4)+' in':'-- in');\n",
+          "after": "      assert.equal((await tapOutput().textContent()).replace(/ \\((?:≈ )?-?[0-9 /]+ in\\)/g,'').trim(),Number.isFinite(expected)?expected.toFixed(4)+' in':'-- in');\n"
+        },
+        {
+          "offset": 5331,
+          "before": "      assert.equal((await rod.textContent()).trim(),Number.isFinite(expected)&&Number.isFinite(pilot)?(expected+pilot).toFixed(4)+' in':'-- in');\n",
+          "after": "      assert.equal((await rod.textContent()).replace(/ \\((?:≈ )?-?[0-9 /]+ in\\)/g,'').trim(),Number.isFinite(expected)&&Number.isFinite(pilot)?(expected+pilot).toFixed(4)+' in':'-- in');\n"
+        },
+        {
+          "offset": 6660,
+          "before": "      assert.equal((await row.locator('dd').textContent()).trim(),expected.toFixed(4)+' in');\n",
+          "after": "      assert.equal((await row.locator('dd').textContent()).trim(),inchText(expected));\n"
+        },
+        {
+          "offset": 7036,
+          "before": "      assert.equal(await worksheet.locator('.worksheet-total strong').textContent(),expected.toFixed(4)+' in');\n",
+          "after": "      assert.equal(await worksheet.locator('.worksheet-total strong').textContent(),inchText(expected));\n"
+        },
+        {
+          "offset": 7502,
+          "before": "      assert.equal((await rod.locator('dd').textContent()).trim(),(expected+12).toFixed(4)+' in');\n",
+          "after": "      assert.equal((await rod.locator('dd').textContent()).trim(),inchText(expected+12));\n"
+        },
+        {
+          "offset": 7808,
+          "before": "      assert.equal(await rodSheet.locator('.worksheet-total strong').textContent(),(expected+12).toFixed(4)+' in');\n      assert.deepEqual(await rodSheet.locator('li strong').allTextContents(),['12.0000 in',expected.toFixed(4)+' in']);\n",
+          "after": "      assert.equal(await rodSheet.locator('.worksheet-total strong').textContent(),inchText(expected+12));\n      assert.deepEqual(await rodSheet.locator('li strong').allTextContents(),[inchText(12),inchText(expected)]);\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-original-figures-ui.mjs": {
+      "beforeSha256": "4edc71e24196ee15ef8046b90b2ed27159d2a9624491e07b0037f7ac1db7ea8e",
+      "afterSha256": "c8873f568a1190ffc49d7ff0bfb869a927cb1ca5bee42d403068aa89536210b8",
+      "hunks": [
+        {
+          "offset": 14867,
+          "before": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n",
+          "after": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-release-identity.mjs": {
+      "beforeSha256": "36baeb197f07d7f5fc37a9a735cef0c1fff26c07bdc0bd3e0682558e7ad6093d",
+      "afterSha256": "e916ed9ffe265e1967881b1c3f795da45954a6e1e77b9f190a0cc2fa4b321024",
+      "hunks": [
+        {
+          "offset": 1248,
+          "before": "assert.equal(worker.identity.CACHE,'tapcalc-pre-alpha-'+BUILD+'-actual-pop1');\n",
+          "after": "assert.equal(worker.identity.CACHE,'tapcalc-pre-alpha-'+BUILD+'-fractions1');\n"
+        }
+      ]
+    },
+    "tests/pre-alpha-worker-upgrade-ui.mjs": {
+      "beforeSha256": "f012f7c757a210c68c7afcdbf7a7cb557a0815706a2314daeca8a7aa6f8049d2",
+      "afterSha256": "22328f7744ad471f622cfdd6c72bf1489c0968b16dcf7808d71287f111cdacdb",
+      "hunks": [
+        {
+          "offset": 11082,
+          "before": "        assert.equal(await page.locator('#results .result-panel:not(.bco-eta-panel) .big-value').textContent(),'12.0000 in');\n",
+          "after": "        assert.equal(await page.locator('#results .result-panel:not(.bco-eta-panel) .big-value').textContent(),'12.0000 in (12 in)');\n"
+        },
+        {
+          "offset": 11531,
+          "before": "      assert.equal(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length,BUILD),0,'Installing17 does not prefetch original figures');\n",
+          "after": "      assert.equal(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length,BUILD),0,'Installing17 does not prefetch original figures');\n"
+        },
+        {
+          "offset": 12467,
+          "before": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n",
+          "after": "      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);\n"
+        },
+        {
+          "offset": 14601,
+          "before": "      assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD+'-actual-pop1'));\n",
+          "after": "      assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD+'-fractions1'));\n"
+        },
+        {
+          "offset": 14920,
+          "before": "        !!await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).match(new URL('./'+asset+'?v='+build,location.href).href),\n",
+          "after": "        !!await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).match(new URL('./'+asset+'?v='+build,location.href).href),\n"
+        },
+        {
+          "offset": 15379,
+          "before": "      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/measurement-help.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>!!await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).match(location.href,{ignoreSearch:true}),BUILD),'Navigation is cached before disconnecting');\n",
+          "after": "      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).some(request=>request.url.includes('/measurement-help.mjs?v='+build)),BUILD));\n      assert.ok(await page.evaluate(async build=>!!await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).match(location.href,{ignoreSearch:true}),BUILD),'Navigation is cached before disconnecting');\n"
+        }
+      ]
+    },
+    "tests/release-check.mjs": {
+      "beforeSha256": "31f17aabf6d406955aabd76c22432c23808f69e4720d65dddfd37182aa0f8a53",
+      "afterSha256": "3c43021ba51734755829eace8ebced746b068aabe2a21c8fa0701ca37d0c974a",
+      "hunks": [
+        {
+          "offset": 755,
+          "before": "",
+          "after": "  ['pre-alpha-fractions.mjs', {}],\n"
+        },
+        {
+          "offset": 1757,
+          "before": "",
+          "after": "    checks.push(['pre-alpha-fractions-ui.mjs', { TAPCALC_BROWSER: browser }]);\n"
+        }
+      ]
+    },
+    "pre-alpha/measurement-format.mjs": {
+      "added": true,
+      "afterSha256": "b0bcaf1ec9221f7a9007e364b30215da288b6ab673a687362c13a1cacc5a75b2"
+    },
+    "tests/pre-alpha-fractions.mjs": {
+      "added": true,
+      "afterSha256": "a99afc79c3d499880851906f5034516b536d4acaa2189620cee398c478972816"
+    },
+    "tests/pre-alpha-fractions-ui.mjs": {
+      "added": true,
+      "afterSha256": "e118300b141da93ed4c21edf8128aa6f6ed4a819b62b069a01ad031977ed80d3"
+    },
+    "docs/fraction-display-test.md": {
+      "added": true,
+      "afterSha256": "236d0a7b689b372dd4d0bb7a70178cef6efc3a8e83024ec7715030b768caa1d1"
+    }
+  }
+}

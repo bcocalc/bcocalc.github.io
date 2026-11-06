@@ -32,7 +32,7 @@ try{
     await page.goto(base+'/pre-alpha/');
     await page.waitForFunction(()=>document.getElementById('connection').textContent.includes('Connected'));
     const openDevice=async id=>{await activate(page.locator('.main-nav [data-page="library"]'));await activate(page.locator('[data-source="device"]'));await activate(page.locator('.job-card[data-job="'+id+'"]'));await activate(page.locator('[data-step="tap"]'));await waitForWorkspaceSave(page);};
-    const output=async()=>page.locator('#results .result-panel:not(.bco-eta-panel)').evaluate(node=>[node.querySelector('.big-value').textContent,...[...node.querySelectorAll('.result-subgrid strong')].map(n=>n.textContent)].map(text=>text.trim()));
+    const output=async()=>page.locator('#results .result-panel:not(.bco-eta-panel)').evaluate(node=>[node.querySelector('.big-value').textContent,...[...node.querySelectorAll('.result-subgrid strong')].map(n=>n.textContent)].map(text=>text.replace(/ \((?:≈ )?-?[0-9 /]+ in\)/g,'').trim()));
     const checkOutputs=async lowerIn=>{
       const bco=geometry(state).bco;
       assert.deepEqual(await output(),[2+lowerIn,3+lowerIn,3+lowerIn+bco,lowerIn+1+bco,lowerIn,4.3125,2+lowerIn+4.3125].map(value=>value.toFixed(4)+' in'));

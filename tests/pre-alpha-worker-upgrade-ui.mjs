@@ -155,7 +155,7 @@ try{
         await activate(page.locator('[data-step="tap"]'));await waitSaved();
         assert.equal(await page.locator('[data-field="ld"]').inputValue(),'');
         assert.equal(await page.locator('[data-value-origin="ld"]').textContent(),'Default 0 - not entered');
-        assert.equal(await page.locator('#results .result-panel:not(.bco-eta-panel) .big-value').textContent(),'12.0000 in');
+        assert.equal(await page.locator('#results .result-panel:not(.bco-eta-panel) .big-value').textContent(),'12.0000 in (12 in)');
         assertBundle(durableJob(await durableSnapshot()));
       }
       await activate(page.locator('[data-operation="one"]'));await waitSaved();
@@ -163,7 +163,7 @@ try{
     }
     async function warmOriginals(){
       const before=await durableSnapshot();
-      assert.equal(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length,BUILD),0,'Installing17 does not prefetch original figures');
+      assert.equal(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length,BUILD),0,'Installing17 does not prefetch original figures');
       for(const stage of ['tap','plug']){
         await activate(page.locator('[data-step="'+stage+'"]'));await waitSaved();
         const guide=page.locator('[data-measurement-guidance="'+stage+'"]');await activate(guide.locator(':scope > summary'));
@@ -173,7 +173,7 @@ try{
         }
         await activate(guide.locator(':scope > summary'));
       }
-      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);
+      await page.waitForFunction(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).filter(r=>r.url.includes('/measurement-figures/')).length===5,BUILD);
       const prior=durableJob(before),after=durableJob(await durableSnapshot());
       assert.deepEqual(after.operations.map(op=>op.state),prior.operations.map(op=>op.state));assert.deepEqual(after.original,prior.original);
     }
@@ -198,17 +198,17 @@ try{
       await warmOriginals();
       await page.locator('[data-field="cpLiManual"]').fill('101.125');await waitSaved();
       const cacheKeys=await page.evaluate(()=>caches.keys());
-      assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD+'-actual-pop1'));
+      assert.ok(cacheKeys.includes('tapcalc-pre-alpha-'+BUILD+'-fractions1'));
       assert.ok(!cacheKeys.includes('tapcalc-pre-alpha-pre-alpha13'),'Stale13 cache is retired without reusing its identity');
       for(const asset of ['references.mjs','workspace.css'])assert.ok(await page.evaluate(async({build,asset})=>
-        !!await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).match(new URL('./'+asset+'?v='+build,location.href).href),
+        !!await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).match(new URL('./'+asset+'?v='+build,location.href).href),
         {build:BUILD,asset}),'Current reference asset is cached: '+asset);
       assert.ok(!cacheKeys.includes('tapcalc-pre-alpha-'+baselineCase.build),'Old experiment cache is retired: '+JSON.stringify(cacheKeys));
       assert.ok(cacheKeys.includes('tapcalc-live-sentinel')&&cacheKeys.includes('tapcalc-dev-sentinel'));
-      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));
-      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));
-      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).keys()).some(request=>request.url.includes('/measurement-help.mjs?v='+build)),BUILD));
-      assert.ok(await page.evaluate(async build=>!!await (await caches.open('tapcalc-pre-alpha-'+build+'-actual-pop1')).match(location.href,{ignoreSearch:true}),BUILD),'Navigation is cached before disconnecting');
+      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).some(request=>request.url.includes('/workspace-store.mjs?v='+build)),BUILD));
+      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).some(request=>request.url.includes('/workspace-database.mjs?v='+build)),BUILD));
+      assert.ok(await page.evaluate(async build=>(await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).keys()).some(request=>request.url.includes('/measurement-help.mjs?v='+build)),BUILD));
+      assert.ok(await page.evaluate(async build=>!!await (await caches.open('tapcalc-pre-alpha-'+build+'-fractions1')).match(location.href,{ignoreSearch:true}),BUILD),'Navigation is cached before disconnecting');
       if(originFailure)originUnavailable=true;else await context.setOffline(true);
       await page.reload();
       await page.waitForSelector('[data-field="cpLiManual"]');assert.equal(await value(),'101.125');
