@@ -4,12 +4,12 @@
   "files": {
     ".github/workflows/library-safeguard.yml": {
       "beforeSha256": "a630c5f6b340b507917be7a4bff75e99a7c2b75f621a40d119478731917f038b",
-      "afterSha256": "63bdef4d055d889369b03b9f4d74e9e7a5456eccc94c2f164c10f880e2501c2d",
+      "afterSha256": "1330811af3a73955139c537bbb5220bc29d98f5444a5fbd974bc13f8ccc04c8c",
       "hunks": [
         {
-          "offset": 3988,
-          "before": "",
-          "after": "Pivot Head setup dimensions and source qualifications\n        run: node tests/pre-alpha-pivot-setup-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Check "
+          "offset": 3698,
+          "before": "run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Fraction display and offline upgrade\n        run: node tests/pre-alpha-fractions",
+          "after": "timeout-minutes: 5\n        run: node tests/pre-alpha-actual-pop-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Fraction display and offline upgrade\n        run: node tests/pre-alpha-fractions-ui.mjs\n        env:\n          TAPCALC_BROWSER: ${{ matrix.browser }}\n      - name: Check Pivot Head setup dimensions and source qualifications\n        timeout-minutes: 5\n        run: node tests/pre-alpha-pivot-setup"
         }
       ]
     },
@@ -89,7 +89,7 @@
     },
     "tests/pre-alpha-pivot-setup-ui.mjs": {
       "added": true,
-      "afterSha256": "2b402eb242eef57629a1e5bc93f3b9b78a21b1d409d684332b83fbf8ce2bca14"
+      "afterSha256": "9290a60b3a89db636af0cff618f39ca5e63d7cc25d7929d78b6bd0b267c41536"
     },
     "tests/pre-alpha-pivot-setup.mjs": {
       "added": true,
