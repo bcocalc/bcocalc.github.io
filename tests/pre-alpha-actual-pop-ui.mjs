@@ -45,7 +45,7 @@ try{for(const mobile of [true,false]){
  step='upgrade';phase='new';await page.evaluate(async()=>{window.__popPreviousController=navigator.serviceWorker.controller;const r=await navigator.serviceWorker.getRegistration();await r.update();});
  // Cache creation begins installation; it is not evidence of activation or a complete offline cache.
  await page.waitForFunction(async()=>{const r=await navigator.serviceWorker.getRegistration();return !r.installing&&!r.waiting&&r.active?.state==='activated'&&navigator.serviceWorker.controller&&navigator.serviceWorker.controller!==window.__popPreviousController;},null,{timeout:30000});
- await page.waitForFunction(async()=>{const cache=await caches.open('tapcalc-pre-alpha-pre-alpha26-pivot-setup1');return (await Promise.all(['index.html','workspace.mjs?v=pre-alpha26','model.mjs?v=pre-alpha26','workspace.css?v=pre-alpha26'].map(file=>cache.match(new URL(file,location.href).href)))).every(Boolean);},null,{timeout:30000});
+ await page.waitForFunction(async()=>{const cache=await caches.open('tapcalc-pre-alpha-pre-alpha26-pivot-setup2');return (await Promise.all(['index.html','workspace.mjs?v=pre-alpha26','model.mjs?v=pre-alpha26','workspace.css?v=pre-alpha26'].map(file=>cache.match(new URL(file,location.href).href)))).every(Boolean);},null,{timeout:30000});
  step='upgrade reload';await page.reload();await page.locator('[data-field="v3ActualPopInput"]').waitFor();assert.equal(await readDurableWorkspace(page),before,'Opening upgrade preserves exact stored bytes');
  assert.equal(await page.locator('[data-actual-pop-apply]').isDisabled(),true);await result('Pilot on pipe',17);
  await page.locator('[data-field="v3ActualPopInput"]').fill('18 1/2');await result('Pilot on pipe',17);
