@@ -119,12 +119,12 @@
     },
     "tests/pre-alpha-reference-migration-ui.mjs": {
       "beforeSha256": "67118bb3cdbb318e1aa61505f130353722f608cd984b90becaf50d814fe994d8",
-      "afterSha256": "fc97a1bb91155026dc17ca36ab1e6d2ffc371a091bb011475ab8e5d369ddee09",
+      "afterSha256": "b7ebdf20e1f9dfaca719a662c39d29722a4f439659f3ea12e23c7053698ee2b7",
       "hunks": [
         {
           "offset": 5573,
           "before": "pressureBand','at500');assert.match(await text(),/Exactly 500 psi is not defined/);\n  await select('pressureBand','under500');assert.match(await text(),/12.5000 in/);\n  await select('material','DuctileIron');const displayed=await page.locator('[data-ref-filter=\"pipeSize\"]').inputValue();assert.ok(displayed,'The displayed material-dependent size and calculated selection stay aligned');\n  await filter('wall','1\"2');assert.match(await text(),/complet",
-          "after": "headType','conventional');assert.equal(await page.locator('[data-ref-filter=\"pressureBand\"]').count(),0);\n  assert.match(await text(),/12.5000 in/);assert.match(await text(),/12.7500 in/);await filter('measuredNose','12.5');assert.match(await text(),/Nose O.D. is within range/);await filter('measuredNose','12.75001');assert.match(await text(),/nose O.D. is above range/);\n  await select('material','DuctileIron');const displayed=await page.locator('[data-ref-filter=\"pipeSize\"]').inputValue();assert.ok(displayed,'The displayed material-dependent size and calculated selection stay aligned');\n  await filter('wall','1\"2');assert.match(await text(),/complete positiv"
+          "after": "headType','conventional');assert.equal(await page.locator('[data-ref-filter=\"pressureBand\"]').count(),0);\n  assert.match(await text(),/12.5000 in/);assert.match(await text(),/12.7500 in/);await filter('measuredNose','12.5');assert.match(await text(),/No backing plate required for this nose-size check/);assert.match(await text(),/within the dimensional range/);await filter('measuredNose','12.75001');assert.match(await text(),/nose O.D. is above range/);\n  await select('material','DuctileIron');const displayed=await page.locator('[data-ref-filter=\"pipeSize\"]').inputValue();assert.ok(displayed,'The displayed material-dependent size and calculated selection stay aligned');\n  await filter('wall','1\"2');assert.match(await text(),/complete positiv"
         }
       ]
     },
