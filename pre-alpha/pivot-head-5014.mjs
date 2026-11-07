@@ -5,6 +5,9 @@ import {parseHelperMeasurement} from './reference-helpers.mjs?v=pre-alpha26';
 import {inchText,FRACTION_NOTE} from './measurement-format.mjs?v=pre-alpha26';
 
 export const PIVOT_5014_SOURCE={document:'HTS-5014 — Sealing Element and Nose Plate Guidelines',revision:'Rev. 2, July 29, 2025',dimensions:'Section 10, pages 9–10',seals:'Seal notes, pages 2 and 4'};
+export const PIVOT_CENTER_GUIDE='Use the center punch mark when present. If it is missing, use two consecutive bolt holes to draw the two opposite-side lines. Their intersection identifies the hole-pattern center. Confirm the intended line alignment for this head; do not guess the construction. Confirm this corresponds to the nose-piece center before measuring the load-pad radius.';
+export const PIVOT_CENTER_SOURCE='Center-finding method: supplied TEAM Training load-pad slide, printed page 26. Revision and date are not visible on the supplied slide.';
+export const PIVOT_SHOP_BACKING_RULE='Configured shop rule: a conventional nose O.D. strictly below the listed minimum needs a shop-approved backing plate. This is a supplied shop instruction, not a requirement established by HTS-5014. The plate must match the actual head, seal and service; no plate size is calculated.';
 export const PIVOT_5014_NOTES=[
   'Basis: HTS-5014, Sealing Element and Nose Plate Guidelines, Rev. 2, July 29, 2025; nose and load pad: Section 10, pages 9–10. Supplied revision, not verification of the latest controlled procedure.',
   'Conventional pivot heads only, excluding HSSII, Hot Stops and Fluorogreen. Confirm the actual head, seal material, pipeline service, temperature and pressure rating before use. Dimensional fit is not equipment or setup approval.',
@@ -12,6 +15,10 @@ export const PIVOT_5014_NOTES=[
   'Nose O.D. ranges: nominal 3–4 in, I.D. minus 1/4 through minus 1/8; 6–12 in, minus 5/8 through minus 1/2; 14–48 in, minus 3/4 through minus 1/2. These deductions are diametral, not per-side clearances. The table has no 500 psi split and does not establish pressure suitability.',
   'Load-pad radius: half Pipe I.D., +0 / −1/16 in. Measure from the nose-piece center to both load-pad edges and the center of the pad. Page 10 shows no load-pad radius for 3–4 in conventional heads, and a radius for 6–48 in conventional heads, excluding Hot Stops.',
   'For a nose plate outside the indicated tolerance, HTS-5014 directs contact with HTS Technical Support for plate dimensions. It mentions a 0.063 in (14-gauge) aluminum backing plate may be required, except for Fluorogreen. It supplies no automatic conventional backing-plate O.D. formula or universal required/not-required decision.',
+  'The supplied TEAM Training nose-piece slide, printed page 25, repeats these nose ranges and refers to potential backing-plate options. No revision or date is visible on the supplied slide.',
+  PIVOT_SHOP_BACKING_RULE,
+  PIVOT_CENTER_GUIDE,
+  PIVOT_CENTER_SOURCE,
   'The conventional pivot seal pressure tables cover nominal 3–36 in. Nose-dimensional coverage through 48 in is not evidence of seal pressure/temperature suitability for 42–48 in equipment. HSSII/Hot Stop rules are separate and are not calculated here.'
 ];
 const finite=Number.isFinite;
@@ -51,13 +58,15 @@ export function calculatePivotSetup(values={}) {
     'family-unconfirmed':familyIssue,
     unavailable:'Nose comparison unavailable. Confirm dimensions and the applicable procedure.',
     'awaiting-measurement':'Enter the actual nose plate O.D. to compare with the procedure range.',
-    below:'STOP: measured nose plate O.D. is below the procedure range. Contact HTS Technical Support for plate dimensions.',
-    above:'STOP: measured nose plate O.D. is above the procedure range. Contact HTS Technical Support for plate dimensions.',
-    within:'Measured nose plate O.D. is within the dimensional range. This alone does not determine whether a backing plate is required or approve the setup.'
+    below:'Measured nose plate O.D. is below the procedure minimum. Under the configured shop rule, a backing plate is required. Confirm the existing shop-approved plate matches this head, seal and service before use.',
+    above:'STOP: measured nose plate O.D. is above the procedure maximum. A backing plate is not a remedy for an oversized nose. Confirm the correct nose piece and applicable approved specification before use.',
+    within:'Measured nose plate O.D. is within the dimensional range. No backing plate is required by the configured shop rule for this nose-size check. This does not rule out other backing-plate requirements or approve the setup.'
   }[status];
+  const shopBackingRequired=status==='below'?true:status==='within'?false:null;
+  const shopBackingLabel=shopBackingRequired===true?'Required under the configured shop rule':shopBackingRequired===false?'No backing plate required for this nose-size check':'Not determined by this check';
   const offsets=[[0,'Exact Pipe I.D.'],[1/16,'+1/16 in'],[1/8,'+1/8 in']];
   return {issues,familyIssue,material,pipeSize,pipeOd,calculatedId,pipeId,measuredIdUsed:finite(measuredId),measuredNose,headType,conventional,held,
-    loadPadRequired,loadPadTarget,loadPadLow,underMin,underMax,noseLow,noseHigh,status,backingStatus,backingRequired:null,backingOd:NaN,
+    loadPadRequired,loadPadTarget,loadPadLow,underMin,underMax,noseLow,noseHigh,status,backingStatus,shopBackingRequired,shopBackingLabel,backingRequired:null,backingOd:NaN,
     seals:finite(pipeId)&&!held?offsets.map(([offset,label])=>({offset,label,diameter:pipeId+offset})):[]};
 }
 
@@ -80,7 +89,7 @@ export function pivotSetupReference(values={}) {
         ['Measured nose plate O.D.',inches(r.measuredNose)],
         ['Load-pad radius',r.loadPadRequired===false?'Not applicable for this conventional 3–4 in head':inches(r.loadPadTarget)],
         ['Load-pad radius range',finite(r.loadPadLow)?inches(r.loadPadLow)+' to '+inches(r.loadPadTarget):'Not available'],
-        ['Backing plate required / O.D.','Not determined; obtain the applicable plate specification']
+        ['Backing plate: shop rule',r.shopBackingLabel],['Backing plate O.D.','Not calculated; confirm the existing shop-approved plate specification']
       ]),table('Seal size comparisons only',['Offset from I.D.','Diameter'],r.seals.map(s=>[s.label,inches(s.diameter)]))
     ]:[],lists:[{title:'Nose / backing review',items:[r.backingStatus]},{title:'Source and limitations',items:PIVOT_5014_NOTES}]};
 }

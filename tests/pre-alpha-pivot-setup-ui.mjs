@@ -15,8 +15,8 @@ try {
   const field=key=>page.locator('[data-ref-filter="'+key+'"]'),card=key=>page.locator('[data-pivot-card="'+key+'"]');
   await page.locator('#reference-category').selectOption('pivothead');
   await field('headType').selectOption('conventional');await field('pipeSize').selectOption('16.0');await field('wall').fill('3/8');await field('measuredNose').fill('14');
-  assert.equal(await page.locator('.pivot-result').count(),4);assert.deepEqual(await page.locator('.pivot-seal-options dt').allTextContents(),['Exact Pipe I.D.','+1/16 in','+1/8 in']);assert.match(await card('seals').innerText(),/15\.3750 in/);assert.match(await card('seals').innerText(),/not an approved seal tolerance/);
-  assert.match(await card('load-pad').innerText(),/7\.6250 in/);assert.match(await card('backing').innerText(),/STOP: nose O.D. is below range/);
+  assert.equal(await page.locator('.pivot-result').count(),4);assert.match(await card('load-pad').innerText(),/two consecutive bolt holes.*two opposite-side lines/);assert.match(await card('load-pad').innerText(),/hole-pattern center/);assert.match(await card('load-pad').innerText(),/page 26/);assert.equal(await page.locator('[data-pivot-center-guide] img,[data-pivot-center-guide] svg').count(),0);assert.deepEqual(await page.locator('.pivot-seal-options dt').allTextContents(),['Exact Pipe I.D.','+1/16 in','+1/8 in']);assert.match(await card('seals').innerText(),/15\.3750 in/);assert.match(await card('seals').innerText(),/not an approved seal tolerance/);
+  assert.match(await card('load-pad').innerText(),/7\.6250 in/);assert.match(await card('backing').innerText(),/Required under the configured shop rule/);assert.match(await card('backing').innerText(),/Not calculated; confirm the shop-approved plate/);assert.doesNotMatch(await card('backing').innerText(),/Contact HTS Technical Support|directs Technical Support/);assert.match(await card('backing').innerText(),/Backing plate required \(shop rule\)/);
   assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),false);
   await page.evaluate(()=>{window.__pivotSummary=document.querySelector('[data-pivot-details]>summary');document.querySelector('[data-ref-filter=measuredNose]').dispatchEvent(new Event('change',{bubbles:true}));});
   assert.equal(await page.evaluate(()=>window.__pivotSummary===document.querySelector('[data-pivot-details]>summary')),true,'An unchanged blur/change preserves the pending tap target');
@@ -24,14 +24,14 @@ try {
   await page.locator('[data-pivot-details]>summary').tap();assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),true);
   await field('wall').fill('.375');assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),true,'Expanded source stays open through edits');
   await page.locator('[data-pivot-details]>summary').tap();
-  await field('measuredNose').fill('14.75001');assert.match(await card('backing').innerText(),/above range/);
-  await field('measuredNose').fill('14.5');assert.match(await card('backing').innerText(),/within range/);
+  await field('measuredNose').fill('14.75001');assert.match(await card('backing').innerText(),/above range/);assert.match(await card('backing').innerText(),/not a remedy for an oversized nose/);assert.doesNotMatch(await card('backing').innerText(),/Backing plate required \(shop rule\)/);
+  await field('measuredNose').fill('14.5');assert.match(await card('backing').innerText(),/within range/);assert.match(await card('backing').innerText(),/No backing plate required for this nose-size check/);assert.doesNotMatch(await card('backing').innerText(),/Backing plate required \(shop rule\)/);await field('measuredNose').fill('14.49999');assert.match(await card('backing').innerText(),/Backing plate required \(shop rule\)/);
   await page.evaluate(()=>{const input=document.querySelector('[data-ref-filter=measuredNose]');input.value='14.74999';input.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.match(await card('backing').innerText(),/within range/,'A changed-value change without an input event still updates results');
   await page.evaluate(()=>{const input=document.querySelector('[data-ref-filter=measuredNose]');input.value='14.75001';input.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.match(await card('backing').innerText(),/above range/);
   assert.equal(await field('pressureBand').count(),0);
-  await field('headType').selectOption('hotstop');assert.match(await card('backing').innerText(),/not supported/);assert.doesNotMatch(await card('load-pad').innerText(),/7\.6250 in/);
+  await field('headType').selectOption('hotstop');assert.match(await card('backing').innerText(),/not supported/);assert.doesNotMatch(await card('backing').innerText(),/Backing plate required \(shop rule\)/);assert.doesNotMatch(await card('load-pad').innerText(),/7\.6250 in|two consecutive bolt holes/);
   await field('headType').selectOption('conventional');await field('wall').fill('1/');assert.match(await card('seals').innerText(),/Enter valid pipe dimensions/);
   await field('wall').fill('3/8');await page.locator('#reference-category').selectOption('uwire');await page.locator('#reference-category').selectOption('pivothead');assert.equal(await field('wall').inputValue(),'3/8');
   await page.locator('#reference-query').fill('load pad');assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),true);await page.locator('#reference-query').fill('');

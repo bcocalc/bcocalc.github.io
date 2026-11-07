@@ -1,6 +1,6 @@
 const BUILD = 'pre-alpha26';
 const PREFIX = 'tapcalc-pre-alpha-';
-const CACHE = PREFIX + BUILD + '-pivot-setup1';
+const CACHE = PREFIX + BUILD + '-pivot-setup2';
 const scope = new URL('./', self.location.href);
 const ASSETS = ['./','./index.html','./workspace.css?v='+BUILD,'./workspace.mjs?v='+BUILD,'./exports.mjs?v='+BUILD,'./shared-save.mjs?v='+BUILD,'./modern-sharing-config.mjs?v='+BUILD,'./modern-envelope.mjs?v='+BUILD,'./modern-transport.mjs?v='+BUILD,'./modern-saver.mjs?v='+BUILD,'./modern-view.mjs?v='+BUILD,'./modern-ui.mjs?v='+BUILD,'./shared-library.mjs?v='+BUILD,'./workspace-store.mjs?v='+BUILD,'./workspace-database.mjs?v='+BUILD,'./model.mjs?v='+BUILD,'./families.mjs?v='+BUILD,'./review.mjs?v='+BUILD,'./presentation.mjs?v='+BUILD,'./measurement-format.mjs?v='+BUILD,'./help.mjs?v='+BUILD,'./measurement-help.mjs?v='+BUILD,'./measurement-figures.mjs?v='+BUILD,'./eta.mjs?v='+BUILD,'./eta-view.mjs?v='+BUILD,'./auxiliary.mjs?v='+BUILD,'./references.mjs?v='+BUILD,'./reference-data.mjs?v='+BUILD,'./reference-supplement-data.mjs?v='+BUILD,'./reference-helpers.mjs?v='+BUILD,'./pivot-setup-view.mjs?v='+BUILD,'./pivot-head-5014.mjs?v='+BUILD,'./pipe-data.mjs?v='+BUILD,'./firebase-config.js?v='+BUILD];
 // Approved figures are cache-on-use, never an installation-time image download.
