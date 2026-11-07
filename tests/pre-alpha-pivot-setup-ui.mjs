@@ -25,9 +25,9 @@ try {
   await field('wall').fill('.375');assert.equal(await page.locator('[data-pivot-details]').evaluate(n=>n.open),true,'Expanded source stays open through edits');
   await page.locator('[data-pivot-details]>summary').tap();
   await field('measuredNose').fill('14.75001');assert.match(await card('backing').innerText(),/above range/);assert.match(await card('backing').innerText(),/not a remedy for an oversized nose/);assert.doesNotMatch(await card('backing').innerText(),/Backing plate required \(shop rule\)/);
-  await field('measuredNose').fill('14.5');assert.match(await card('backing').innerText(),/within range/);assert.match(await card('backing').innerText(),/No backing plate required for this nose-size check/);assert.doesNotMatch(await card('backing').innerText(),/Backing plate required \(shop rule\)/);await field('measuredNose').fill('14.49999');assert.match(await card('backing').innerText(),/Backing plate required \(shop rule\)/);
+  await field('measuredNose').fill('14.5');assert.match(await card('backing').innerText(),/within the dimensional range/);assert.match(await card('backing').innerText(),/No backing plate required for this nose-size check/);assert.doesNotMatch(await card('backing').innerText(),/Backing plate required \(shop rule\)/);await field('measuredNose').fill('14.49999');assert.match(await card('backing').innerText(),/Backing plate required \(shop rule\)/);
   await page.evaluate(()=>{const input=document.querySelector('[data-ref-filter=measuredNose]');input.value='14.74999';input.dispatchEvent(new Event('change',{bubbles:true}));});
-  assert.match(await card('backing').innerText(),/within range/,'A changed-value change without an input event still updates results');
+  assert.match(await card('backing').innerText(),/within the dimensional range/,'A changed-value change without an input event still updates results');
   await page.evaluate(()=>{const input=document.querySelector('[data-ref-filter=measuredNose]');input.value='14.75001';input.dispatchEvent(new Event('change',{bubbles:true}));});
   assert.match(await card('backing').innerText(),/above range/);
   assert.equal(await field('pressureBand').count(),0);

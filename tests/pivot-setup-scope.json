@@ -89,7 +89,7 @@
     },
     "tests/pre-alpha-pivot-setup-ui.mjs": {
       "added": true,
-      "afterSha256": "91d8e07c0c9d061cce02e3cf98650c92e91a16477e17235b61e646042df8ec68"
+      "afterSha256": "de6705a6d56f0c1ccba3569e37f4eac08cb9083eb1fa95961cb3896966eea6db"
     },
     "tests/pre-alpha-pivot-setup.mjs": {
       "added": true,
